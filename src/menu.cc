@@ -217,7 +217,7 @@ while ((num < 36) && ((menustr[num] = va_arg (args, char *)) != NULL))
    menu_flags_t flags;
    shortcut_index[num] = va_arg (args, int);
    shortcut_key  [num] = va_arg (args, int);
-   flags = va_arg (args, menu_flags_t);
+   flags = (menu_flags_t) va_arg (args, int);
    if (flags & MEN_TICK)
       {
       has_tick = 1;

@@ -573,7 +573,7 @@ distdiff:
 	tar -xzf ../yadex-arc/pub/$(ARCPREV).tar.gz -C $(TMP0)
 	mkdir -p $(TMPDIFF)
 	cd $(TMP0) && (diff -uNr $(ARCPREV) $(ARCHIVE) >$(DIFF) || true)
-	! grep "Binary files .* and .* differ" $(DIFF)
+	! grep "Binary files y.* and .* differ" $(DIFF)
 	scripts/process docsrc/README.diff >$(TMPDIFF)/README
 	cd $(TMP0) && tar -czf $(ARCDIFF).tar.gz $(ARCDIFF)
 	cd $(TMPO) && rm -rf $(ARCDIFF)

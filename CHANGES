@@ -1,6 +1,11 @@
 
                                     Changes
                                        
+Yadex 1.5.1 (2000-12-12)
+
+     * Platform: One-line fix in menu.cc to please GCC 2.96 (of Red Hat 7
+       fame). Thanks to Zebediah C. McClure for reporting the problem.
+       
 Yadex 1.5.0 (2000-08-27)
 
      * Build: Changed the way the diffs are generated after reading more
