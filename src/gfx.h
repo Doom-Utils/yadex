@@ -89,6 +89,7 @@ void ClearScreen (void);
 void update_display ();
 void force_window_not_pixmap ();
 void DrawScreenMeter (int, int, int, int, float);
+void DrawScreenLineLen (int x, int y, int width, int height);
 int TranslateToDoomColor (int);
 #if defined Y_BGI && defined CIRRUS_PATCH
 void SetHWCursorPos (unsigned, unsigned);

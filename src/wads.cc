@@ -8,25 +8,23 @@
 /*
 This file is part of Yadex.
 
-Yadex incorporates code from DEU 5.21 that was put in the public
-domain in 1994 by Raphaël Quinet and Brendon Wyber.
+Yadex incorporates code from DEU 5.21 that was put in the public domain in
+1994 by Raphaël Quinet and Brendon Wyber.
 
 The rest of Yadex is Copyright © 1997-1999 André Majorel.
 
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation; either version 2 of the License, or
-(at your option) any later version.
+This program is free software; you can redistribute it and/or modify it under
+the terms of the GNU General Public License as published by the Free Software
+Foundation; either version 2 of the License, or (at your option) any later
+version.
 
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
+This program is distributed in the hope that it will be useful, but WITHOUT
+ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 
-You should have received a copy of the GNU Library General Public
-License along with this library; if not, write to the Free
-Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
-02111-1307, USA.
+You should have received a copy of the GNU General Public License along with
+this program; if not, write to the Free Software Foundation, Inc., 59 Temple
+Place, Suite 330, Boston, MA 02111-1307, USA.
 */
 
 
@@ -139,7 +137,7 @@ return buf[0] | buf[1] << 8;
 /*
  *	wad_read_i16
  *	Same thing as above but the value read is not
- *	returned by stored in *buf.
+ *	returned but stored in *buf.
  *	If a read error occurs, calls fatal_error().
  */
 void wad_read_i16 (WadPtr wadfile, i16 *buf)
@@ -228,9 +226,9 @@ void file_write_name (FILE *fd, const char *name)
 {
 const unsigned char *const p0 = (const unsigned char *) name;
 const unsigned char *p = p0;  // "unsigned" for toupper()'s sake
-for (; p - p0 < WAD_NAME && *p; p++)
+for (; p - p0 < (ptrdiff_t) WAD_NAME && *p; p++)
    putc (toupper (*p), fd);
-for (; p - p0 < WAD_NAME; p++)
+for (; p - p0 < (ptrdiff_t) WAD_NAME; p++)
    putc ('\0', fd);
 }
 

@@ -15,6 +15,6 @@
 file=$1
 shift
 sed -e "s/\$DATE/$(date +%Y-%m-%d)/;
-	s/\$SELF_DATE/$(find $file -printf '%TY-%Tm-%Td')/;
-	s/\$SOURCE_DATE/$(cat .srcdate)/;
+	s/\$SELF_DATE/$(scripts/ftime -d $file)/;
+	s/\$SOURCE_DATE/$(cat src/.srcdate)/;
 	s/\$VERSION/$(cat VERSION)/;" $file

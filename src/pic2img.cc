@@ -9,25 +9,23 @@
 /*
 This file is part of Yadex.
 
-Yadex incorporates code from DEU 5.21 that was put in the public
-domain in 1994 by Raphaël Quinet and Brendon Wyber.
+Yadex incorporates code from DEU 5.21 that was put in the public domain in
+1994 by Raphaël Quinet and Brendon Wyber.
 
 The rest of Yadex is Copyright © 1997-1999 André Majorel.
 
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation; either version 2 of the License, or
-(at your option) any later version.
+This program is free software; you can redistribute it and/or modify it under
+the terms of the GNU General Public License as published by the Free Software
+Foundation; either version 2 of the License, or (at your option) any later
+version.
 
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
+This program is distributed in the hope that it will be useful, but WITHOUT
+ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 
-You should have received a copy of the GNU Library General Public
-License along with this library; if not, write to the Free
-Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
-02111-1307, USA.
+You should have received a copy of the GNU General Public License along with
+this program; if not, write to the Free Software Foundation, Inc., 59 Temple
+Place, Suite 330, Boston, MA 02111-1307, USA.
 */
 
 
@@ -161,7 +159,7 @@ NeededOffsets = (i32 *) GetMemory ((long) _pic_width * 4);
 if (long_offsets)
    wad_read_i32 (dir->wadfile, NeededOffsets, _pic_width);
 else
-   for (size_t n = 0; n < _pic_width; n++)
+   for (int n = 0; n < _pic_width; n++)
       {
       i16 ofs;
       wad_read_i16 (dir->wadfile, &ofs);

@@ -3,9 +3,9 @@ Yadex $VERSION ($SOURCE_DATE)
 WHAT IS YADEX ?
     Yadex is a Doom level (wad) editor for Unix systems running X,
     including Linux. It supports Doom, Doom II, Ultimate Doom, Final
-    Doom, Heretic, Doom beta and also, in a more or less limited way,
-    Hexen, Strife and Doom alpha. It is available under the terms of the
-    GPL.
+    Doom, Heretic, Doom press release pre beta and also, in a more or
+    less limited way, Hexen, Strife and Doom alpha. It is available
+    under the terms of the GPL.
 
 PREREQUISITES
     You need :

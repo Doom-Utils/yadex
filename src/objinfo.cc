@@ -7,25 +7,23 @@
 /*
 This file is part of Yadex.
 
-Yadex incorporates code from DEU 5.21 that was put in the public
-domain in 1994 by Raphaël Quinet and Brendon Wyber.
+Yadex incorporates code from DEU 5.21 that was put in the public domain in
+1994 by Raphaël Quinet and Brendon Wyber.
 
 The rest of Yadex is Copyright © 1997-1999 André Majorel.
 
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation; either version 2 of the License, or
-(at your option) any later version.
+This program is free software; you can redistribute it and/or modify it under
+the terms of the GNU General Public License as published by the Free Software
+Foundation; either version 2 of the License, or (at your option) any later
+version.
 
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
+This program is distributed in the hope that it will be useful, but WITHOUT
+ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 
-You should have received a copy of the GNU Library General Public
-License along with this library; if not, write to the Free
-Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
-02111-1307, USA.
+You should have received a copy of the GNU General Public License along with
+this program; if not, write to the Free Software Foundation, Inc., 59 Temple
+Place, Suite 330, Boston, MA 02111-1307, USA.
 */
 
 
@@ -46,6 +44,7 @@ static const int sprite_height = 90;
 
 objinfo_c::objinfo_c ()
 {
+box_disp    = false;
 obj_no      = OBJ_NO_NONE;
 obj_no_disp = OBJ_NO_NONE;
 prev_sector = OBJ_NO_NONE;
@@ -57,17 +56,24 @@ void objinfo_c::draw ()
 {
 char texname[WAD_TEX_NAME + 1];
 int  tag, n;
-int  sd1, sd2, s1, s2;
+int  sd1 = OBJ_NO_NONE;
+int  sd2 = OBJ_NO_NONE;
+int  s1 = OBJ_NO_NONE;
+int  s2 = OBJ_NO_NONE;
 int  x0, y0;		// Outer top left corner
 int  ix0, iy0;		// Inner top left corner
 int  width;
 int  height;
 
-/* Am I already drawn ? */
+// Am I already drawn ?
 if (! is_obj (obj_no) || obj_no == obj_no_disp && obj_type == obj_type_disp)
    return;
 
-/* The caller should have called set_y1() before ! */
+// Does the box need to be redrawn ?
+if (obj_type != obj_type_disp)
+   box_disp = false;
+
+// The caller should have called set_y1() before !
 if (! out_y1)
    return;
 
@@ -76,16 +82,25 @@ switch (obj_type)
    {
    case OBJ_THINGS:
       {
-      width  = 2 * BOX_BORDER + 2 * WIDE_HSPACING + 29 * FONTW + sprite_width;
+      const int columns = 28;
+      width  = 2 * BOX_BORDER + 3 * WIDE_HSPACING + columns * FONTW
+	                                                        + sprite_width;
       height = 2 * BOX_BORDER + 2 * WIDE_VSPACING
          + max ((int) (6.5 * FONTH), sprite_height);
       x0 = 0;
       y0 = out_y1 - height + 1;
       ix0 = x0 + BOX_BORDER + WIDE_HSPACING;
       iy0 = y0 + BOX_BORDER + WIDE_VSPACING;
-      int ix1 = x0 + width - BOX_BORDER - WIDE_HSPACING;
-      int iy1 = y0 + height - BOX_BORDER - WIDE_VSPACING;
-      DrawScreenBox3D (x0, y0, x0 + width - 1, y0 + height - 1);
+      int ix1 = x0 + width - 1 - BOX_BORDER - WIDE_HSPACING;
+      int iy1 = y0 + height - 1 - BOX_BORDER - WIDE_VSPACING;
+      if (box_disp)
+	 {
+	 push_colour (WINBG);
+         DrawScreenBox (ix0, iy0, ix0 + columns * FONTW - 1, iy1);
+	 pop_colour ();
+	 }
+      else
+         DrawScreenBox3D (x0, y0, x0 + width - 1, y0 + height - 1);
       if (obj_no < 0)
          {
          const char *message = "(no thing selected)";
@@ -102,7 +117,7 @@ switch (obj_type)
          Things[obj_no].xpos, Things[obj_no].ypos);
       DrawScreenText (-1, -1, "Type:   %d",
          Things[obj_no].type);
-      DrawScreenText (-1, -1, "Desc:   %s",
+      DrawScreenText (-1, -1, "Desc:   %.20s",
 	 get_thing_name (Things[obj_no].type));
       DrawScreenText (-1, -1, "Angle:  %s",
 	 GetAngleName (Things[obj_no].angle));
@@ -110,13 +125,15 @@ switch (obj_type)
 	 GetWhenName (Things[obj_no].when));
 
       // Show the corresponding sprite
-      draw_box_border (
-         ix1 - 2 * HOLLOW_BORDER - sprite_width + 1,
-         iy1 - 2 * HOLLOW_BORDER - sprite_height + 1,
-         sprite_width + 2 * HOLLOW_BORDER,
-         sprite_height + 2 * HOLLOW_BORDER,
-         HOLLOW_BORDER, 0);
       {
+      int sx1 = ix1 + 1 - HOLLOW_BORDER;
+      int sy1 = iy1 + 1 - HOLLOW_BORDER;
+      int sx0 = sx1 + 1 - sprite_width;
+      int sy0 = sy1 + 1 - sprite_height;
+      draw_box_border (sx0 - HOLLOW_BORDER, sy0 - HOLLOW_BORDER, 
+		       sprite_width + 2 * HOLLOW_BORDER,
+		       sprite_height + 2 * HOLLOW_BORDER,
+                       HOLLOW_BORDER, 0);
       const char *sprite_root = get_thing_sprite (Things[obj_no].type);
       char flags = get_thing_flags (Things[obj_no].type);
       if (sprite_root != NULL)
@@ -125,28 +142,45 @@ switch (obj_type)
          if (sprite_name != NULL)
 	    {
 	    hookfunc_comm_t c;
-	    c.x0 = ix1 - HOLLOW_BORDER - sprite_width + 1;
-	    c.y0 = iy1 - HOLLOW_BORDER - sprite_height + 1;
-	    c.x1 = ix1 - HOLLOW_BORDER;
-	    c.y1 = iy1 - HOLLOW_BORDER;
+	    c.x0 = sx0;
+	    c.y0 = sy0;
+	    c.x1 = sx1;
+	    c.y1 = sy1;
 	    c.xofs = INT_MIN;
 	    c.yofs = INT_MIN;
 	    c.name = sprite_name;
 	    c.flags = (flags & THINGDEF_SPECTRAL) ? HOOK_SPECTRAL : 0;
 	    display_pic (&c);
 	    }
+	 else
+	    {
+	    push_colour (WINBG);
+	    DrawScreenBox (sx0, sy0, sx1, sy1);
+	    pop_colour ();
+            set_colour (WINFG);
+	    DrawScreenString (
+	       sx0 + (sprite_width - strlen (sprite_root) * FONTW) / 2,
+	       sy0 + sprite_height / 2 + 1 - 3 * FONTH / 2, sprite_root);
+	    DrawScreenText (
+	       sx0 + (sprite_width - 3 * FONTW) / 2,
+	       sy0 + sprite_height / 2 + 1 - FONTH / 2, "not");
+	    DrawScreenText (
+	       sx0 + (sprite_width - 5 * FONTW) / 2,
+	       sy0 + sprite_height / 2 + 1 + FONTH / 2, "found");
+	    }
          }
       else
          {
+	 push_colour (WINBG);
+	 DrawScreenBox (sx0, sy0, sx1, sy1);
+	 pop_colour ();
          set_colour (WINFG_DIM);
          DrawScreenText (
-            ix1 - HOLLOW_BORDER - sprite_width + 1
-            + (sprite_width - 2 * FONTW) / 2,
-	    iy1 - HOLLOW_BORDER - sprite_height / 2 + 1 - FONTH, "no");
+            sx0 + (sprite_width - 2 * FONTW) / 2,
+	    sy0 + sprite_height / 2 + 1 - FONTH, "no");
          DrawScreenText (
-            ix1 - HOLLOW_BORDER - sprite_width + 1
-            + (sprite_width - 6 * FONTW) / 2,
-	    iy1 - HOLLOW_BORDER - sprite_height / 2 + 1, "sprite");
+            sx0 + (sprite_width - 6 * FONTW) / 2,
+	    sy0 + sprite_height / 2 + 1, "sprite");
          }
       }
       }
@@ -158,6 +192,7 @@ switch (obj_type)
       y0 = out_y1 - height + 1;
       ix0 = x0 + BOX_BORDER + WIDE_HSPACING;
       iy0 = y0 + BOX_BORDER + WIDE_VSPACING;
+      // Ignore box_disp -- always redraw the whole box
       DrawScreenBox3D (x0, y0, x0 + width - 1, y0 + height - 1);
       if (obj_no >= 0)
 	 {
@@ -217,6 +252,7 @@ switch (obj_type)
       width  = 2 * BOX_BORDER + 2 * WIDE_HSPACING + 24 * FONTW;
       ix0 = x0 + BOX_BORDER + WIDE_HSPACING;
       y0 = out_y1 - height + 1;
+      // Ignore box_disp -- always redraw the whole box
       DrawScreenBox3D (x0, y0, x0 + width - 1, y0 + height - 1);
       if (obj_no >= 0 && sd1 >= 0)
 	 {
@@ -269,6 +305,7 @@ switch (obj_type)
       x0 += width;
       ix0 = x0 + BOX_BORDER + WIDE_HSPACING;
       y0 = out_y1 - height + 1;
+      // Ignore box_disp -- always redraw the whole box
       DrawScreenBox3D (x0, y0, x0 + width - 1, y0 + height - 1);
       if (obj_no >= 0 && sd2 >= 0)
 	 {
@@ -318,6 +355,7 @@ switch (obj_type)
       y0 = out_y1 - height + 1;
       ix0 = x0 + BOX_BORDER + WIDE_HSPACING;
       iy0 = y0 + BOX_BORDER + WIDE_VSPACING;
+      // Ignore box_disp -- always redraw the whole box
       DrawScreenBox3D (x0, y0, x0 + width - 1, y0 + height - 1);
       if (obj_no < 0)
 	 {
@@ -337,9 +375,10 @@ switch (obj_type)
       {
       int x1, y1;
       int ix1, iy1;
+      const int columns = 32;
       width  = 2 * BOX_BORDER
              + 2 * WIDE_HSPACING
-             + 32 * FONTW
+             + columns * FONTW
              + WIDE_HSPACING + DOOM_FLAT_WIDTH;
       height = 2 * BOX_BORDER
              + 2 * WIDE_VSPACING
@@ -353,7 +392,14 @@ switch (obj_type)
       iy0 = y0 + BOX_BORDER + WIDE_VSPACING;
       ix1 = x1 - BOX_BORDER - WIDE_HSPACING;
       iy1 = y1 - BOX_BORDER - WIDE_VSPACING;
-      DrawScreenBox3D (x0, y0, x1, y1);
+      if (box_disp)
+	 {
+	 push_colour (WINBG);
+	 DrawScreenBox (ix0, iy0, ix0 + columns * FONTW - 1, iy1);
+	 pop_colour ();
+	 }
+      else
+         DrawScreenBox3D (x0, y0, x1, y1);
       if (obj_no < 0)
 	 {
          const char *const message = "(no sector selected)";
@@ -436,6 +482,7 @@ if (obj_type == OBJ_SECTORS)
       prev_ceilh  = Sectors[obj_no].ceilh;
       }
    }
+box_disp = true;
 obj_no_disp = obj_no;
 obj_type_disp = obj_type;
 }

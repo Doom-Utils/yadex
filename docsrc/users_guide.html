@@ -260,6 +260,7 @@ You'll get this:
 -i7 -iwad7         <var>string</var>     The name of the Doom alpha 0.4 iwad
 -i8 -iwad8         <var>string</var>     The name of the Doom alpha 0.5 iwad
 -i9 -iwad9         <var>string</var>     The name of the Doom press release iwad
+-i10 -iwad10       <var>string</var>     The name of the Strife 1.0 iwad
 -pw -pwad          <var>string</var>     Pwad file to load
 -P  -no_pixmap                No pixmap, saves memory, more flicker
 -q  -quiet                    Quiet mode
@@ -296,14 +297,14 @@ you want to override the default, use "<code>-g
 <dl>
 <dt>"<code>doom</code>"
 <dd>Doom and Ultimate Doom (shareware or registered)
+<dt>"<code>doom02</code>"
+<dd>Doom alpha 0.2
+<dt>"<code>doom04</code>"
+<dd>Doom alpha 0.4
+<dt>"<code>doom05</code>"
+<dd>Doom alpha 0.5
 <dt>"<code>doom2</code>"
 <dd>Doom II and Final Doom
-<dt>"<code>alpha02</code>"
-<dd>Doom alpha 0.2
-<dt>"<code>alpha04</code>"
-<dd>Doom alpha 0.4
-<dt>"<code>alpha05</code>"
-<dd>Doom alpha 0.5
 <dt>"<code>doompr</code>"
 <dd>Doom press release pre-beta
 <dt>"<code>heretic</code>"
@@ -311,7 +312,9 @@ you want to override the default, use "<code>-g
 <dt>"<code>hexen</code>"
 <dd>Hexen (demo or commercial)
 <dt>"<code>strife</code>"
-<dd>Strife (demo or commercial)
+<dd>Strife 1.1 or later (demo or commercial)
+<dt>"<code>strife10</code>"
+<dd>Strife 1.0 (demo or commercial)
 </dl>
 
 <p>Not all those games are fully supported. For details, see <a
@@ -443,11 +446,11 @@ one is used.
 <code>PNAMES</code> lumps, the last one is used. If there are
 several lumps for the same flat, the last one is used.
 
-<p>There is a bug in the handling of replacement flats: they're
-normally expected to be between <code>PP_START</code> and
-<code>PP_END</code> but, if they are, Yadex ignores them. For
-example, a pwad that contains only the <code>RSKY1</code> lump
-will work but a pwad that contains <code>PP_START</code>,
+<p>There is a bug in the handling of replacement patches:
+they're normally expected to be between <code>PP_START</code>
+and <code>PP_END</code> but, if they are, Yadex ignores them.
+For example, a pwad that contains only the <code>RSKY1</code>
+lump will work but a pwad that contains <code>PP_START</code>,
 <code>RSKY1</code>, <code>PP_END</code> will not. This will be
 fixed in another release.
 
@@ -1663,15 +1666,17 @@ oddities in the levels, such as linedefs with negative types or
 things with strange bits set in their flags, but I don't think
 it's Yadex's fault.
 
-<p>Writing levels in the Doom alpha format is not supported at
-all and probably never will, for three reasons. Firstly, there
-are parts of the format that I don't understand, and therefore
-don't know how to generate. Secondly, there is AFAIK no nodes
-builder for the alphas. Thirdly, even if the two above problems
-were solved, I don't expect many people to actually want to use
-the alphas because, from a player point of view, they're much
-less comfortable than the later versions of Doom. To say nothing
-of the fact that all we have is a DOS executable and no source
+<p>You can edit and save alpha levels be they will be saved in
+the regular Doom format, not the alpha format. Writing levels in
+the Doom alpha format is not supported at all and probably never
+will, for three reasons. Firstly, there are parts of the format
+that I don't understand, and therefore don't know how to
+generate. Secondly, there is AFAIK no nodes builder for the
+alphas. Thirdly, even if the two above problems were solved, I
+don't expect many people to actually want to use the alphas
+because, from a player point of view, they're much less
+comfortable than the later versions of Doom. To say nothing of
+the fact that all we have is a DOS executable and no source
 code.  That being said, I can't deny that it would indeed be
 cool to be able to generate wads for the alphas, if only for the
 fun of it.  If you want to do it, I won't discourage you and I
@@ -1681,8 +1686,8 @@ will gladly accept patches.
 
 <p>Supported. The different picture format is handled. Things
 type 2016 (evil sceptre) and 2017 (unholy bible) are defined in
-<code>alpha02.ygd</code>, <code>alpha04.ygd</code>,
-<code>alpha05.ygd</code>, <code>doompr.ygd</code>,
+<code>doom02.ygd</code>, <code>doom04.ygd</code>,
+<code>doom05.ygd</code>, <code>doompr.ygd</code>,
 <code>doom.ygd</code> and <code>doom2.ygd</code> and marked with
 "<code>[PR]</code>".  However, if you're using
 <code>betalevl.wad</code> and <code>betagrph.wad</code> supplied
@@ -1729,6 +1734,11 @@ mode.</strong>
 </ul>
 And perhaps other things as well. If you're a Strife hacker,
 your help would be welcome.
+
+<p>If you have Strife 1.0, you should use
+<code>-g&nbsp;strife10</code>. Strife&nbsp;1.0 uses the same
+format as Doom for textures, Strife&nbsp;1.1 and later use a
+different format.
 
 		<h3>Ultimate Doom</h3>
 

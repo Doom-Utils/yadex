@@ -49,16 +49,20 @@ static int DivideSegs(struct Seg *ts,struct Seg *best,struct Seg **rs,struct Seg
 	        int y = tmps->psy + tmps->pdy * ds + 0.5;
 
                 if (x==tmps->psx && y==tmps->psy)
+		 {
                   if (b<0)
                     goto leftside;
                   else
                     goto rightside;
+		 }
 
                 if (x==tmps->pex && y==tmps->pey)
+		 {
                   if (a<0)
                     goto leftside;
                   else
                     goto rightside;
+		 }
 
 /*		printf("Splitting Linedef %d at %d,%d\n",tmps->linedef,x,y); */
 

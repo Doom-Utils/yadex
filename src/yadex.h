@@ -8,25 +8,23 @@
 /*
 This file is part of Yadex.
 
-Yadex incorporates code from DEU 5.21 that was put in the public
-domain in 1994 by Raphaël Quinet and Brendon Wyber.
+Yadex incorporates code from DEU 5.21 that was put in the public domain in
+1994 by Raphaël Quinet and Brendon Wyber.
 
 The rest of Yadex is Copyright © 1997-1999 André Majorel.
 
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation; either version 2 of the License, or
-(at your option) any later version.
+This program is free software; you can redistribute it and/or modify it under
+the terms of the GNU General Public License as published by the Free Software
+Foundation; either version 2 of the License, or (at your option) any later
+version.
 
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
+This program is distributed in the hope that it will be useful, but WITHOUT
+ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 
-You should have received a copy of the GNU Library General Public
-License along with this library; if not, write to the Free
-Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
-02111-1307, USA.
+You should have received a copy of the GNU General Public License along with
+this program; if not, write to the Free Software Foundation, Inc., 59 Temple
+Place, Suite 330, Boston, MA 02111-1307, USA.
 */
 
 
@@ -156,12 +154,12 @@ class rgb_c;
 const int DOOM_PLAYER_HEIGHT         = 56;
 const int DOOM_FLAT_WIDTH            = 64;
 const int DOOM_FLAT_HEIGHT           = 64;
-const int DOOM_MIN_DEATHMATCH_STARTS = 4;
-const int DOOM_MAX_DEATHMATCH_STARTS = 10;
-const int DOOM_COLOURS               = 256;
+const size_t DOOM_MIN_DEATHMATCH_STARTS = 4;
+const size_t DOOM_MAX_DEATHMATCH_STARTS = 10;
+const size_t DOOM_COLOURS               = 256;
 typedef enum { YGPF_NORMAL, YGPF_ALPHA, YGPF_PR } ygpf_t;
-typedef enum { YGTF_NORMAL, YGTF_ALPHA04 } ygtf_t;
-typedef enum { YGTL_TEXTURE1, YGTL_TEXTURES } ygtl_t;
+typedef enum { YGTF_NORMAL, YGTF_NAMELESS, YGTF_STRIFE11 } ygtf_t;
+typedef enum { YGTL_NORMAL, YGTL_TEXTURES, YGTL_NONE } ygtl_t;
 
 
 /*
@@ -429,6 +427,7 @@ extern const char *Iwad6;	// Name of the Doom alpha 0.2 iwad
 extern const char *Iwad7;	// Name of the Doom alpha 0.4 iwad
 extern const char *Iwad8;	// Name of the Doom alpha 0.5 iwad
 extern const char *Iwad9;	// Name of the Doom press release iwad
+extern const char *Iwad10;	// Name of the Strife 1.0 iwad
 extern const char *MainWad;	// Name of the main wad file
 #ifdef AYM_MOUSE_HACKS
 extern int   MouseMickeysH; 
@@ -517,6 +516,7 @@ void DrawMapLine (int mapx1, int mapy1, int mapx2, int mapy2);
 void DrawMapVector (int, int, int, int);
 void DrawMapArrow (int, int, unsigned);
 void DrawScreenLine (int, int, int, int);
+void DrawScreenRect (int x, int y, int width, int height);
 void DrawScreenBox (int, int, int, int);
 void DrawScreenBox3D (int, int, int, int);
 void DrawScreenBox3DShallow (int, int, int, int);
@@ -557,11 +557,11 @@ void ReadFTextureNames (void);
 void ForgetWTextureNames (void);
 
 /* list.cc */
-void InputNameFromListWithFunc (int, int, const char *, int,
+void InputNameFromListWithFunc (int, int, const char *, size_t,
    const char *const *, int, char *, int, int,
    void (*hookfunc)(hookfunc_comm_t *),
    char flags_to_pass_to_callback = 0);
-void InputNameFromList (int, int, const char *, int, const char *const *,
+void InputNameFromList (int, int, const char *, size_t, const char *const *,
    char *);
 
 /* mouse.cc (this module is entirely DOS-specific) */

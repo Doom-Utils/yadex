@@ -1,6 +1,93 @@
 
                                     Changes
                                        
+Yadex 1.2.0 (1999-11-23)
+
+     * BSP: Added missing newline in banner.
+     * BSP: Silenced GCC 2.95.2 warnings about implicit braces.
+     * Build: The makefile doesn't rebuild doc/ every time a source file
+       is changed anymore.
+     * Build: Can now be built on machines where Perl is not installed.
+     * Build: The doc can now be built on machines with a non-GNU find.
+     * Build: Fixed compilation errors with GCC 2.95.2 in src/infobar.cc.
+     * Build: Silenced most GCC warnings.
+     * Code: Fixed a typo in the legal notices at the beginning of the
+       source files.
+     * Doc: HISTORY renamed as CHANGES, since that seems to be a more
+       widespread convention.
+     * Editing: The checks don't beep for every error anymore, just the
+       first one.
+     * Editing: Object info window: the sprite and flats graphics don't
+       flicker anymore when the pointer moves from one object to another.
+       Besides, if the sprite is not found, displays the message
+       "sprite_name not found" instead of just a blank area.
+     * Game/wad: Doom alpha & press release versions: it's now possible
+       to save levels. Note: they're saved to regular Doom format, not
+       Doom alpha format.
+     * Game/wad: Doom II: The boss shooter thing now has a sprite
+       (BOSFB0).
+     * Game/wad: Hacx and Aliens TC: fixed a bug that made Yadex segfault
+       when trying to edit a Hacx level (or alitcsf.wad from
+       alntc19{a,b}.zip).
+     * Game/wad: For homogeneity with DeuTex, less confusion and to
+       reduce the risk of conflicts with other applications, the game
+       names for Doom alpha 0.2, Doom alpha 0.4, and Doom alpha 0.5 are
+       now "doom02", "doom04" and "doom05" respectively instead of
+       "alpha02", "alpha04" and "alpha05". It follows that some
+       command-line options have changed :
+          + "-g alpha02" is now "-g doom02",
+          + "-g alpha04" is now "-g doom04",
+          + "-g alpha05" is now "-g doom05".
+       Configuration file directives :
+          + "game = alpha02" is now "game = doom02",
+          + "game = alpha04" is now "game = doom04",
+          + "game = alpha05" is now "game = doom05".
+       Paths :
+          + /usr/local/share/games/alpha02/ is now
+            /usr/local/share/games/doom02/,
+          + /usr/local/share/games/alpha04/ is now
+            /usr/local/share/games/doom04/,
+          + /usr/local/share/games/alpha05/ is now
+            /usr/local/share/games/doom05/,
+          + /usr/local/share/games/alpha02.ygd is now
+            /usr/local/share/games/doom02.ygd,
+          + /usr/local/share/games/alpha04.ygd is now
+            /usr/local/share/games/doom04.ygd,
+          + /usr/local/share/games/alpha05.ygd is now
+            /usr/local/share/games/doom05.ygd.
+     * Game/wad: Fixed Yadex aborting when trying to view textures for
+       versions of Strife >= 1.1. The problem was that Strife 1.1 and
+       above use a different format for the TEXTURE1 and TEXTURE2 lumps
+       (Strife 1.0 uses the same format as Doom). New game definition
+       file directive "texture_format strife11" to support that format.
+       strife.ygd now contains "texture_format strife11". Added
+       strife10.ygd that is identical to strife.ygd except that it
+       contains "texture_format normal". Summary :
+          + if you have the Strife 1.0 iwad, use "-g strife10" or "game =
+            strife10",
+          + if you have Strife 1.1 or above, use "-g strife" or "game =
+            strife".
+       Thanks to Kim Parrott for reporting the bug and Len Pitre for
+       pointing me in the right direction.
+     * Misc: The "dump" command now prints correctly the last line even
+       if the length of the lump is not a multiple of 16.
+     * Misc: For homogeneity with DeuTex, the following game definition
+       file directives have changed :
+          + "texture_format alpha04" is now "texture_format nameless",
+          + "texture_lump texture1" is now "texture_lump normal",
+          + new choice "texture_lump none".
+     * Misc: For homogeneity with DeuTex, automatic texture names for
+       Doom alpha 0.4 are now "TEXnnnn" where nnnn is zero-based.
+     * Misc: Bumped game definition file version# to 3.
+     * Misc: When trying to use a pwad as iwad, emit a warning instead of
+       seeing this as a fatal error.
+     * Misc: Added a palette viewer (PLAYPAL and COLORMAP). Can be run
+       from the prompt with the viewpal command or from the level editing
+       window with [Ctrl][P].
+     * Misc: The sometimes tedious pwad loading messages are not
+       displayed anymore, unless in verbose mode. By default, Yadex now
+       just prints which levels the pwad contains.
+       
 Yadex 1.1.0 (1999-08-22)
 
      * BSP: Included Colin Phipps' [1]fix for the bugs in
@@ -142,8 +229,9 @@ Yadex 1.1.0 (1999-08-22)
        are missing.
      * Game/wad: Strife : added partial support (-g strife). Yadex now
        knows about the translucent linedef flag and the new sector types.
-       Still missing : the new things flags, most things types and
-       linedefs types. Anybody wants to work on strife.ygd ?
+       Thanks to Len Pitre for the help. Still missing : the new things
+       flags, most things types and linedefs types. Anybody wants to work
+       on strife.ygd ?
      * Game/wad: MBF : supported. Yadex now knows about the friendly
        thing flag, thing type 888 (Dog) and linedef types 271 and 272
        (transfer sky texture).
@@ -172,6 +260,7 @@ Yadex 1.1.0 (1999-08-22)
      * Misc: Failure to load the specified X font is not a fatal error
        anymore.
      * Misc: New command line options --help and --version.
+     * Misc: Bumped game definition file version# to 2.
      * Platform: Removed dependency on nanosleep(), strcasecmp() and
        strncasecmp(). Thanks to Udo Munk for pointing out that
        nanosleep() is not always available.
@@ -275,9 +364,9 @@ Yadex 1.0.0_alpha1 (1998-12-17)
      * Editing: Editing object properties is now done by double-clicking
        on the object.
      * Editing: Selection and drag-and-drop have changed a lot.
-     * Editing: Selection box: removed the -a (addselbox) option. Whether
-       the selection box is additive or not is now controlled by the user
-       (with [Ctrl]).
+     * Editing: Selection box: removed the -a option and the addselbox
+       parameter. Whether the selection box is additive or not is now
+       controlled dynamically by the user (with [Ctrl]).
      * Editing: Sprite viewer: sprites are now centred.
      * Editing: Linedef info: shortened flags names to one character.
      * Editing: Linedef info: a missing normal texture on a 1-sided

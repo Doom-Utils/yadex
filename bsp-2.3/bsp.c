@@ -651,12 +651,13 @@ static void sortlump(struct lumplist **link)
 void usage(void)
 {
  printf("\nThis Node builder was created from the basic theory stated in DEU5 (OBJECTS.C)\n"
-        "\nCredits should go to :-\n"
+        "Credits should go to :-\n"
         "Matt Fell      (msfell@aol.com) for the Doom Specs.\n"
         "Raphael Quinet (Raphael.Quinet@eed.ericsson.se) for DEU and the original idea.\n"
         "Mark Harrison  (harrison@lclark.edu) for finding a bug in 1.1x\n"
         "Jim Flynn      (jflynn@pacbell.net) for many good ideas and encouragement.\n"
         "Jan Van der Veken for finding invisible barrier bug.\n"
+	"Colin Phipps for two bug fixes (http://lxdoom.linuxgames.com/notes.html#bsp).\n"
 #ifdef MSDOS
         "\nUsage: BSP [options] input.wad [[-o] <output.wad>]\n"
 #else
@@ -759,7 +760,7 @@ int main(int argc,char *argv[])
 #endif
 
  puts("* Doom BSP node builder ver 2.3 (c) 1998 Colin Reed, Lee Killough *");
- printf("* This is the modified version that comes with Yadex %s. *",
+ printf("* This is the modified version that comes with Yadex %s. *\n",
      YADEX_VERSION);
 
  parse_options(argc,argv);

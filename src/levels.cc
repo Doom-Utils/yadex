@@ -9,25 +9,23 @@
 /*
 This file is part of Yadex.
 
-Yadex incorporates code from DEU 5.21 that was put in the public
-domain in 1994 by Raphaël Quinet and Brendon Wyber.
+Yadex incorporates code from DEU 5.21 that was put in the public domain in
+1994 by Raphaël Quinet and Brendon Wyber.
 
 The rest of Yadex is Copyright © 1997-1999 André Majorel.
 
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation; either version 2 of the License, or
-(at your option) any later version.
+This program is free software; you can redistribute it and/or modify it under
+the terms of the GNU General Public License as published by the Free Software
+Foundation; either version 2 of the License, or (at your option) any later
+version.
 
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
+This program is distributed in the hope that it will be useful, but WITHOUT
+ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 
-You should have received a copy of the GNU Library General Public
-License along with this library; if not, write to the Free
-Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
-02111-1307, USA.
+You should have received a copy of the GNU General Public License along with
+this program; if not, write to the Free Software Foundation, Inc., 59 Temple
+Place, Suite 330, Boston, MA 02111-1307, USA.
 */
 
 
@@ -63,7 +61,7 @@ int NumWTexture;		/* number of wall textures */
 char **WTexture;		/* array of wall texture names */
 
 // FIXME all the flat list stuff should be put in a separate class
-int NumFTexture;		/* number of floor/ceiling textures */
+size_t NumFTexture;		/* number of floor/ceiling textures */
 flat_list_entry_t *flat_list;	// List of all flats in the directory
 
 int MapMaxX = -32767;		/* maximum X value of map */
@@ -120,14 +118,14 @@ inline const char *texno_texname (i16 texno)
 if (texno < 0)
    return "-";
 else
-   if (yg_texture_format == YGTF_ALPHA04)
+   if (yg_texture_format == YGTF_NAMELESS)
       {
-      sprintf (tex_name, "TEX%05u", (unsigned) (texno + 1));
+      sprintf (tex_name, "TEX%04u", (unsigned) texno);
       return tex_name;
       }
    else
       {
-      if (texno < ntex)
+      if (texno < (i16) ntex)
 	 return tex_list + WAD_TEX_NAME * texno;
       else
 	 return "unknown";
@@ -156,8 +154,8 @@ if (!Level)
    fatal_error ("level data not found");
 
 /* Get the number of vertices */
-i32 v_offset;
-i32 v_length;
+i32 v_offset = 42;
+i32 v_length = 42;
 if (yg_level_format == YGLF_ALPHA)  // Doom alpha
    dir = FindMasterDir (Level, "POINTS");
 else
@@ -172,7 +170,7 @@ if (dir)
       v_length -= 4;
       }
    OldNumVertices = (int) (v_length / WAD_VERTEX_BYTES);
-   if (OldNumVertices * WAD_VERTEX_BYTES != v_length)
+   if ((i32) (OldNumVertices * WAD_VERTEX_BYTES) != v_length)
       warn ("the %s lump has a weird size."
         " The wad might be corrupt.\n",
 	yg_level_format == YGLF_ALPHA ? "POINTS" : "VERTEXES");
@@ -182,7 +180,7 @@ else
 
 // Read THINGS
 verbmsg ("Reading %s things", levelname);
-i32 offset;
+i32 offset = 42;
 i32 length;
 dir = FindMasterDir (Level, "THINGS");
 if (dir)
@@ -192,7 +190,7 @@ if (dir)
    if (MainWad == Iwad4)  // Hexen mode
       {
       NumThings = (int) (length / WAD_HEXEN_THING_BYTES);
-      if (NumThings * WAD_HEXEN_THING_BYTES != length)
+      if ((i32) (NumThings * WAD_HEXEN_THING_BYTES) != length)
          warn ("the THINGS lump has a weird size."
             " The wad might be corrupt.\n");
       }
@@ -205,7 +203,7 @@ if (dir)
 	 }
       size_t thing_size = yg_level_format == YGLF_ALPHA ? 12 : WAD_THING_BYTES;
       NumThings = (int) (length / thing_size);
-      if (NumThings * thing_size != length)
+      if ((i32) (NumThings * thing_size) != length)
          warn ("the THINGS lump has a weird size."
             " The wad might be corrupt.\n");
       }
@@ -252,14 +250,14 @@ if (yg_level_format != YGLF_ALPHA)
       if (MainWad == Iwad4)  // Hexen mode
 	 {
 	 NumLineDefs = (int) (dir->dir.size / WAD_HEXEN_LINEDEF_BYTES);
-	 if (NumLineDefs * WAD_HEXEN_LINEDEF_BYTES != dir->dir.size)
+	 if ((i32) (NumLineDefs * WAD_HEXEN_LINEDEF_BYTES) != dir->dir.size)
 	    warn ("the LINEDEFS lump has a weird size."
 	       " The wad might be corrupt.\n");
 	 }
       else                   // Doom/Heretic/Strife mode
 	 {
 	 NumLineDefs = (int) (dir->dir.size / WAD_LINEDEF_BYTES);
-	 if (NumLineDefs * WAD_LINEDEF_BYTES != dir->dir.size)
+	 if ((i32) (NumLineDefs * WAD_LINEDEF_BYTES) != dir->dir.size)
 	    warn ("the LINEDEFS lump has a weird size."
 	       " The wad might be corrupt.\n");
 	 }
@@ -302,7 +300,7 @@ dir = FindMasterDir (Level, "SIDEDEFS");
 if (dir)
    {
    NumSideDefs = (int) (dir->dir.size / WAD_SIDEDEF_BYTES);
-   if (NumSideDefs * WAD_SIDEDEF_BYTES != dir->dir.size)
+   if ((i32) (NumSideDefs * WAD_SIDEDEF_BYTES) != dir->dir.size)
       warn ("the SIDEDEFS lump has a weird size."
          " The wad might be corrupt.\n");
    }
@@ -378,7 +376,7 @@ if (yg_level_format == YGLF_ALPHA)
       SideDefs = (SDPtr) GetFarMemory ((unsigned long) NumSideDefs
 	 * sizeof (struct SideDef));
       // Read TEXTURES
-      if (yg_texture_format != YGTF_ALPHA04)
+      if (yg_texture_format != YGTF_NAMELESS)
       {
 	 ntex = 0;
 	 MDirPtr d = FindMasterDir (MasterDir, "TEXTURES");
@@ -594,7 +592,7 @@ if (yg_level_format != YGLF_ALPHA)
    if (dir)
       {
       NumSectors = (int) (dir->dir.size / WAD_SECTOR_BYTES);
-      if (NumSectors * WAD_SECTOR_BYTES != dir->dir.size)
+      if ((i32) (NumSectors * WAD_SECTOR_BYTES) != dir->dir.size)
 	 warn ("the SECTORS lump has a weird size."
 	   " The wad might be corrupt.\n");
       }
@@ -903,7 +901,8 @@ for (n = 0; n < 3; n++)
    else if (n == 2)
       l = WAD_LL_NODES;
    lump_offset[l] = ftell (file);
-   if (Level && ! MadeMapChanges)
+   if (Level && ! MadeMapChanges
+       && yg_level_format != YGLF_ALPHA)  // Doom alpha lacks those lumps
       {
       wad_seek (dir->wadfile, dir->dir.start);
       CopyBytes (file, dir->wadfile->fd, dir->dir.size);
@@ -934,7 +933,8 @@ if (Level)
 // Write the REJECT lump
 l = WAD_LL_REJECT;
 lump_offset[l] = ftell (file);
-if (Level && ! MadeMapChanges)
+if (Level && ! MadeMapChanges
+    && yg_level_format != YGLF_ALPHA)  // Doom alpha lacks that lump
    {
    /* Copy the REJECT data */
    ObjectsNeeded (0);
@@ -948,7 +948,8 @@ if (Level)
 // Write the BLOCKMAP lump
 l = WAD_LL_BLOCKMAP;
 lump_offset[l] = ftell (file);
-if (Level && ! MadeMapChanges)
+if (Level && ! MadeMapChanges
+    && yg_level_format != YGLF_ALPHA)  // Doom alpha lacks that lump
    {
    ObjectsNeeded (0);
    wad_seek (dir->wadfile, dir->dir.start);
@@ -1038,6 +1039,14 @@ LogMessage (": Saving data to \"%s\"...\n", outfile);
 if ((file = fopen (outfile, "wb")) == NULL)
    fatal_error ("Unable to open file \"%s\"", outfile);
 
+/* Can we reuse the old nodes ? Not if this is a new level from
+   scratch or if the structure of the level has changed. If the
+   level comes from an alpha version of Doom, we can't either
+   because that version of Doom didn't have SEGS, NODES, etc. */
+bool reuse_nodes = Level
+  && ! MadeMapChanges
+  && yg_level_format != YGLF_ALPHA;
+
 // Write the pwad header
 WriteBytes (file, "PWAD", 4);		// Pwad file
 file_write_i32 (file, WAD_LL__);	// Number of entries = 11
@@ -1106,7 +1115,14 @@ if (Level)
 // Write the VERTEXES lump
 l = WAD_LL_VERTEXES;
 lump_offset[WAD_LL_VERTEXES] = ftell (file);
-if (! Level || MadeMapChanges)
+if (reuse_nodes)
+   {
+   /* Copy the vertices */
+   ObjectsNeeded (0);
+   wad_seek (dir->wadfile, dir->dir.start);
+   CopyBytes (file, dir->wadfile->fd, dir->dir.size);
+   }
+else
    {
    /* Write the vertices */
    ObjectsNeeded (OBJ_VERTICES, 0);
@@ -1115,13 +1131,6 @@ if (! Level || MadeMapChanges)
       file_write_i16 (file, Vertices[n].x);
       file_write_i16 (file, Vertices[n].y);
       }
-   }
-else
-   {
-   /* Copy the vertices */
-   ObjectsNeeded (0);
-   wad_seek (dir->wadfile, dir->dir.start);
-   CopyBytes (file, dir->wadfile->fd, dir->dir.size);
    }
 lump_size[l] = ftell (file) - lump_offset[l];
 if (Level)
@@ -1137,7 +1146,7 @@ for (n = 0; n < 3; n++)
    else if (n == 2)
       l = WAD_LL_NODES;
    lump_offset[l] = ftell (file);
-   if (Level && ! MadeMapChanges)
+   if (reuse_nodes)
       {
       wad_seek (dir->wadfile, dir->dir.start);
       CopyBytes (file, dir->wadfile->fd, dir->dir.size);
@@ -1168,7 +1177,7 @@ if (Level)
 // Write the REJECT lump
 l = WAD_LL_REJECT;
 lump_offset[l] = ftell (file);
-if (Level && ! MadeMapChanges)
+if (reuse_nodes)
    {
    /* Copy the REJECT data */
    ObjectsNeeded (0);
@@ -1182,7 +1191,7 @@ if (Level)
 // Write the BLOCKMAP lump
 l = WAD_LL_BLOCKMAP;
 lump_offset[l] = ftell (file);
-if (Level && ! MadeMapChanges)
+if (reuse_nodes)
    {
    ObjectsNeeded (0);
    wad_seek (dir->wadfile, dir->dir.start);
@@ -1286,7 +1295,7 @@ verbmsg ("Reading texture names\n");
 
 // Doom alpha 0.4 : "TEXTURES", no names
 if (yg_texture_lumps == YGTL_TEXTURES
- && yg_texture_format == YGTF_ALPHA04)
+ && yg_texture_format == YGTF_NAMELESS)
    {
    dir = FindMasterDir (MasterDir, "TEXTURES");
    if (dir != NULL)
@@ -1297,22 +1306,24 @@ if (yg_texture_lumps == YGTL_TEXTURES
       WTexture = (char **) GetMemory ((long) NumWTexture * sizeof *WTexture);
       WTexture[0] = (char *) GetMemory (WAD_TEX_NAME + 1);
       strcpy (WTexture[0], "-");
-      if (WAD_TEX_NAME != 8) nf_bug ("WAD_TEX_NAME is not 8");  // Sanity
-      for (long n = 1; n <= val; n++)
+      if (WAD_TEX_NAME < 7) nf_bug ("WAD_TEX_NAME to small");  // Sanity
+      for (long n = 0; n < val; n++)
 	 {
-	 WTexture[n] = (char *) GetMemory (WAD_TEX_NAME + 1);
-	 if (n > 99999)
+	 WTexture[n + 1] = (char *) GetMemory (WAD_TEX_NAME + 1);
+	 if (n > 9999)
 	    {
-	    warn ("more than 99999 textures. Ignoring excess.\n");
+	    warn ("more than 10,000 textures. Ignoring excess.\n");
 	    break;
 	    }
-	 sprintf (WTexture[n], "TEX%05ld", n);
+	 sprintf (WTexture[n + 1], "TEX%04ld", n);
 	 }
       }
    }
+
 // Doom alpha 0.5 : only "TEXTURES"
 else if (yg_texture_lumps == YGTL_TEXTURES
-      && yg_texture_format == YGTF_NORMAL)
+      && (yg_texture_format == YGTF_NORMAL
+	  || yg_texture_format == YGTF_STRIFE11))
    {
    dir = FindMasterDir (MasterDir, "TEXTURES");
    if (dir != NULL)  // In theory it always exists, though
@@ -1340,8 +1351,9 @@ else if (yg_texture_lumps == YGTL_TEXTURES
       warn ("TEXTURES lump not found. Iwad might be corrupt.\n");
    }
 // Other iwads : "TEXTURE1" and possibly "TEXTURE2"
-else if (yg_texture_lumps == YGTL_TEXTURE1
-      && yg_texture_format == YGTF_NORMAL)
+else if (yg_texture_lumps == YGTL_NORMAL
+      && (yg_texture_format == YGTF_NORMAL
+	  || yg_texture_format == YGTF_STRIFE11))
    {
    dir = FindMasterDir (MasterDir, "TEXTURE1");
    if (dir != NULL)  // In theory it always exists, though
@@ -1424,7 +1436,7 @@ FreeMemory (WTexture);
 void ReadFTextureNames ()
 {
 MDirPtr dir;
-int n, m;
+int n;
 
 verbmsg ("Reading flat names");
 NumFTexture = 0;
@@ -1472,13 +1484,13 @@ for (dir = MasterDir; (dir = FindMasterDir (dir, "F_START", "FF_START"));)
          dir = dir->next;
 
    verbmsg (" FF_START/%s %d", dir->dir.name, n);
-   if (! y_strnicmp (dir->dir.name, "FF_END", WAD_NAME))
+   if (dir && ! y_strnicmp (dir->dir.name, "FF_END", WAD_NAME))
       warn ("this wad uses FF_END. That won't work with Doom."
 	 " Use F_END instead.\n");
    /* get the actual names from master dir. */
    flat_list = (flat_list_entry_t *) ResizeMemory (flat_list,
       (NumFTexture + n) * sizeof *flat_list);
-   for (m = NumFTexture; m < NumFTexture + n; dir0 = dir0->next)
+   for (size_t m = NumFTexture; m < NumFTexture + n; dir0 = dir0->next)
       {
       // Skip all labels.
       if (dir0->dir.start == 0
@@ -1508,11 +1520,12 @@ verbmsg ("\n");
 qsort (flat_list, NumFTexture, sizeof *flat_list, flat_list_entry_cmp);
 
 /* AYM 19970817: eliminate all but the last duplicates of a flat */
-for (n = 0; n < NumFTexture; n++)
+for (size_t n = 0; n < NumFTexture; n++)
    {
-   if (n+1 < NumFTexture
+   if (n + 1 < NumFTexture
        && ! flat_list_entry_cmp (flat_list + n, flat_list + n + 1))
       {
+      size_t m;
       for (m = n; m + 1 < NumFTexture; m++)
 	 flat_list[m] = flat_list[m + 1];
 

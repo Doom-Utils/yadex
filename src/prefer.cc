@@ -7,25 +7,23 @@
 /*
 This file is part of Yadex.
 
-Yadex incorporates code from DEU 5.21 that was put in the public
-domain in 1994 by Raphaël Quinet and Brendon Wyber.
+Yadex incorporates code from DEU 5.21 that was put in the public domain in
+1994 by Raphaël Quinet and Brendon Wyber.
 
 The rest of Yadex is Copyright © 1997-1999 André Majorel.
 
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation; either version 2 of the License, or
-(at your option) any later version.
+This program is free software; you can redistribute it and/or modify it under
+the terms of the GNU General Public License as published by the Free Software
+Foundation; either version 2 of the License, or (at your option) any later
+version.
 
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
+This program is distributed in the hope that it will be useful, but WITHOUT
+ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 
-You should have received a copy of the GNU Library General Public
-License along with this library; if not, write to the Free
-Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
-02111-1307, USA.
+You should have received a copy of the GNU General Public License along with
+this program; if not, write to the Free Software Foundation, Inc., 59 Temple
+Place, Suite 330, Boston, MA 02111-1307, USA.
 */
 
 
@@ -61,15 +59,15 @@ for (n = 0; n < 9; n++)
    menustr[n] = (char *) GetMemory (80);
 sprintf (menustr[8], "Preferences");
 sprintf (menustr[0], "Change default middle texture  (Current: %.*s)",
-   WAD_TEX_NAME, default_middle_texture);
+   (int) WAD_TEX_NAME, default_middle_texture);
 sprintf (menustr[1], "Change default upper texture   (Current: %.*s)",
-   WAD_TEX_NAME, default_upper_texture);
+   (int) WAD_TEX_NAME, default_upper_texture);
 sprintf (menustr[2], "Change default lower texture   (Current: %.*s)",
-   WAD_TEX_NAME, default_lower_texture);
+   (int) WAD_TEX_NAME, default_lower_texture);
 sprintf (menustr[3], "Change default floor texture   (Current: %.*s)",
-   WAD_FLAT_NAME, default_floor_texture);
+   (int) WAD_FLAT_NAME, default_floor_texture);
 sprintf (menustr[4], "Change default ceiling texture (Current: %.*s)",
-   WAD_FLAT_NAME, default_ceiling_texture);
+   (int) WAD_FLAT_NAME, default_ceiling_texture);
 sprintf (menustr[5], "Change default floor height    (Current: %d)",
    default_floor_height);
 sprintf (menustr[6], "Change default ceiling height  (Current: %d)",

@@ -5,6 +5,7 @@ obj/0/acolours.o: src/ymemory.h src/aym.h src/wstructs.h src/input.h
 obj/0/acolours.o: src/acolours.h src/colour.h src/gfx.h src/rgb.h
 obj/0/aym.o: src/yadex.h atclib/atclib.h src/bitvec.h src/yerror.h
 obj/0/aym.o: src/ymemory.h src/aym.h src/wstructs.h src/input.h
+obj/0/aym.o: src/game.h src/rgb.h
 obj/0/bitvec.o: src/yadex.h atclib/atclib.h src/bitvec.h src/yerror.h
 obj/0/bitvec.o: src/ymemory.h src/aym.h src/wstructs.h src/input.h
 obj/0/cfgfile.o: src/yadex.h atclib/atclib.h src/bitvec.h src/yerror.h
@@ -64,9 +65,9 @@ obj/0/editloop.o: src/editobj.h src/editsave.h src/editzoom.h src/entry.h
 obj/0/editloop.o: src/entry2.h src/events.h src/gfx.h src/gfx2.h
 obj/0/editloop.o: src/gfx3.h src/rgbbmp.h src/gotoobj.h src/help2.h
 obj/0/editloop.o: src/l_flags.h src/levels.h src/things.h src/menubar.h
-obj/0/editloop.o: src/edwidget.h src/menu.h src/modpopup.h src/prefer.h
-obj/0/editloop.o: src/selbox.h src/selectn.h src/selpath.h src/spot.h
-obj/0/editloop.o: src/t_flags.h src/t_spin.h src/x_centre.h
+obj/0/editloop.o: src/edwidget.h src/menu.h src/modpopup.h src/palview.h
+obj/0/editloop.o: src/prefer.h src/selbox.h src/selectn.h src/selpath.h
+obj/0/editloop.o: src/spot.h src/t_flags.h src/t_spin.h src/x_centre.h
 obj/0/editloop.o: src/x_exchng.h src/xref.h
 obj/0/editobj.o: src/yadex.h atclib/atclib.h src/bitvec.h src/yerror.h
 obj/0/editobj.o: src/ymemory.h src/aym.h src/wstructs.h src/input.h
@@ -115,7 +116,7 @@ obj/0/gfx.o: src/acolours.h src/colour.h src/gcolour1.h src/gcolour2.h
 obj/0/gfx.o: src/gfx.h src/levels.h src/things.h src/x11.h
 obj/0/gfx2.o: src/yadex.h atclib/atclib.h src/bitvec.h src/yerror.h
 obj/0/gfx2.o: src/ymemory.h src/aym.h src/wstructs.h src/input.h
-obj/0/gfx2.o: src/colour.h src/gfx.h
+obj/0/gfx2.o: src/colour.h src/gcolour2.h src/gfx.h src/rgb.h
 obj/0/gfx3.o: src/yadex.h atclib/atclib.h src/bitvec.h src/yerror.h
 obj/0/gfx3.o: src/ymemory.h src/aym.h src/wstructs.h src/input.h
 obj/0/gfx3.o: src/colour.h src/gfx.h src/gfx3.h src/rgbbmp.h
@@ -200,6 +201,10 @@ obj/0/oldmenus.o: src/yadex.h atclib/atclib.h src/bitvec.h src/yerror.h
 obj/0/oldmenus.o: src/ymemory.h src/aym.h src/wstructs.h src/input.h
 obj/0/oldmenus.o: src/events.h src/gfx.h src/menu.h src/edwidget.h
 obj/0/oldmenus.o: src/oldmenus.h
+obj/0/palview.o: src/yadex.h atclib/atclib.h src/bitvec.h src/yerror.h
+obj/0/palview.o: src/ymemory.h src/aym.h src/wstructs.h src/input.h
+obj/0/palview.o: src/colour.h src/gcolour2.h src/gfx.h src/palview.h
+obj/0/palview.o: src/rgb.h src/ytime.h
 obj/0/pic2img.o: src/yadex.h atclib/atclib.h src/bitvec.h src/yerror.h
 obj/0/pic2img.o: src/ymemory.h src/aym.h src/wstructs.h src/input.h
 obj/0/pic2img.o: src/pic2img.h src/wads.h
@@ -332,5 +337,9 @@ obj/0/xref.o: src/levels.h src/things.h src/selectn.h
 obj/0/yadex.o: src/yadex.h atclib/atclib.h src/bitvec.h src/yerror.h
 obj/0/yadex.o: src/ymemory.h src/aym.h src/wstructs.h src/input.h
 obj/0/yadex.o: src/acolours.h src/colour.h src/cfgfile.h src/editlev.h
-obj/0/yadex.o: src/endian.h src/game.h src/rgb.h src/gfx.h src/help1.h
-obj/0/yadex.o: src/mkpalette.h src/sanity.h src/sprites.h src/x11.h
+obj/0/yadex.o: src/endian.h src/game.h src/rgb.h src/gfx.h src/gfx2.h
+obj/0/yadex.o: src/help1.h src/mkpalette.h src/palview.h src/sanity.h
+obj/0/yadex.o: src/sprites.h src/x11.h
+obj/0/ytime.o: src/yadex.h atclib/atclib.h src/bitvec.h src/yerror.h
+obj/0/ytime.o: src/ymemory.h src/aym.h src/wstructs.h src/input.h
+obj/0/ytime.o: src/ytime.h

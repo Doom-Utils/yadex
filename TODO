@@ -141,6 +141,9 @@ Game and wad support
 - Fix OpenPatchWad() so that, if a pwad contains FF_START ... FF_END
   F_END (mm2.wad), the F_END does not replace the F_END from the iwad,
   as this causes a spurious "this wad uses FF_END" warning.
+- When a pwad contains F_START F1_START ... F3_END F_END, the F_END
+  replaces the one from the iwad and this causes Yadex to think all
+  following lumps are flats (sod.wad).
 - icarus.wad uses F_END + FF_END. Sigh.
 - Heretic has some flats with a size of 4160. Is this why DeuTex accepts
   64x65 flats ?
@@ -687,20 +690,18 @@ Misc.
 - Instead of { Beep(); Notify (); }, should have a specialized function.
 - Somehow unify configuration variables and game definition variables,
   at least so that "set" displays both.
+- Palette viewer: better cursor.
+- Textures: load the texture descriptions (TEXTURE[12]) once for all
+  at startup.
+- Textures: don't abort if the TEXTURE[12] lumps have weird things in
+  them.
 
 To do soon
-- Generate home page from the makefile. Make it contain news and
-  a screenshot, and also old archives (at least the previous one) in
-  case something goes wrong with the latest one.
-- Generate history from news
-- Generate text announcement (yadex-announce, freshmeat, rgcde, cola)
-- Test XK_*_ISO_* on SCO X11R5
-- Add option to let Yadex tell you with which options it was compiled.
-- Test on Final Doom
-- Fix the tendency of the makefile to ignore the .h dependencies
-  (it's like yadex.dep wasn't there).
-- Fix the tendency of the makefile to remake doc/ every time a source
-  file has changed.
+- Try to restore the "save image to file" function. The data should
+  not be taken from the window, since clipping could occur, but directly
+  from the buffer.
+- Talk about the above in the doc. Mention that ppm files are always
+  created with NL = LF.
 - Finish window_to_rgbbmp()
 - Transfer rgbbmp_to_rawppm() in another file (rgbppm2.cc ?)
 - Rename rgbbmp_to_rawppm() -> _ppm(), and add a parameter to choose
@@ -708,17 +709,21 @@ To do soon
 - Add a parameter in the config file to choose between P3 and P6 for
   - screenshots
   - pictures saved
-- Try to restore the "save image to file" function. The data should
-  not be taken from the window, since clipping could occur, but directly
-  from the buffer.
-- Talk about the above in the doc. Mention that ppm files are always
-  created with NL = LF.
+- Test XK_*_ISO_* on SCO X11R5.
+- Test on Final Doom.
+- Add option to let Yadex tell you with which options it was compiled.
+- Generate home page from the makefile. Make it contain news and
+  a screenshot, and also old archives (at least the previous one) in
+  case something goes wrong with the latest one.
+- Generate history from news.
+- Generate text announcement (yadex-announce, freshmeat, rgcde, cola)
+- Fix the tendency of the makefile to ignore the .h dependencies
+  (it's like yadex.dep wasn't there).
 - Fix any remaining problems that might remain in saving.
 - "create": Fix the problem with levelname being NULL in EditLoop().
   Check [F3].
 - "create": every time you [F2], the wad name is reset to the default
-  (E.G. "map01.wad")
-- Find a good convention for the location of the alpha iwads.
+  (E.G. "map01.wad").
 
 
 ----------------------------------------

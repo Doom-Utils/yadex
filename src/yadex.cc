@@ -8,25 +8,23 @@
 /*
 This file is part of Yadex.
 
-Yadex incorporates code from DEU 5.21 that was put in the public
-domain in 1994 by Raphaël Quinet and Brendon Wyber.
+Yadex incorporates code from DEU 5.21 that was put in the public domain in
+1994 by Raphaël Quinet and Brendon Wyber.
 
 The rest of Yadex is Copyright © 1997-1999 André Majorel.
 
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation; either version 2 of the License, or
-(at your option) any later version.
+This program is free software; you can redistribute it and/or modify it under
+the terms of the GNU General Public License as published by the Free Software
+Foundation; either version 2 of the License, or (at your option) any later
+version.
 
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
+This program is distributed in the hope that it will be useful, but WITHOUT
+ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 
-You should have received a copy of the GNU Library General Public
-License along with this library; if not, write to the Free
-Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
-02111-1307, USA.
+You should have received a copy of the GNU General Public License along with
+this program; if not, write to the Free Software Foundation, Inc., 59 Temple
+Place, Suite 330, Boston, MA 02111-1307, USA.
 */
 
 
@@ -38,8 +36,10 @@ Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 #include "endian.h"
 #include "game.h"
 #include "gfx.h"
+#include "gfx2.h"
 #include "help1.h"
 #include "mkpalette.h"
+#include "palview.h"
 #include "rgb.h"
 #include "sanity.h"
 #include "sprites.h"
@@ -109,6 +109,7 @@ const char *Iwad6			= NULL;
 const char *Iwad7			= NULL;
 const char *Iwad8			= NULL;
 const char *Iwad9			= NULL;
+const char *Iwad10			= NULL;
 const char *MainWad			= NULL;
 #ifdef AYM_MOUSE_HACKS
 int       MouseMickeysH			= 5;
@@ -132,7 +133,7 @@ yglf_t yg_level_format   = YGLF__;
 ygln_t yg_level_name     = YGLN__;
 ygpf_t yg_picture_format = YGPF_NORMAL;
 ygtf_t yg_texture_format = YGTF_NORMAL;
-ygtl_t yg_texture_lumps  = YGTL_TEXTURE1;
+ygtl_t yg_texture_lumps  = YGTL_NORMAL;
 al_llist_t *ldtdef       = NULL;
 al_llist_t *ldtgroup     = NULL;
 al_llist_t *stdef        = NULL;
@@ -273,14 +274,14 @@ else if (Game != NULL && ! strcmp (Game, "strife"))
    {
    if (Iwad5 == NULL)
       {
-      report_error ("You have to tell me where strife.wad is.");
+      report_error ("You have to tell me where strife1.wad is.");
       fprintf (stderr,
          "Use \"-i5 <file>\" or put \"iwad5=<file>\" in yadex.cfg.\n");
       exit (1);
       }
    MainWad = Iwad5;
    }
-else if (Game != NULL && ! strcmp (Game, "alpha02"))
+else if (Game != NULL && ! strcmp (Game, "doom02"))
    {
    if (Iwad6 == NULL)
       {
@@ -291,7 +292,7 @@ else if (Game != NULL && ! strcmp (Game, "alpha02"))
       }
    MainWad = Iwad6;
    }
-else if (Game != NULL && ! strcmp (Game, "alpha04"))
+else if (Game != NULL && ! strcmp (Game, "doom04"))
    {
    if (Iwad7 == NULL)
       {
@@ -302,7 +303,7 @@ else if (Game != NULL && ! strcmp (Game, "alpha04"))
       }
    MainWad = Iwad7;
    }
-else if (Game != NULL && ! strcmp (Game, "alpha05"))
+else if (Game != NULL && ! strcmp (Game, "doom05"))
    {
    if (Iwad8 == NULL)
       {
@@ -324,6 +325,17 @@ else if (Game != NULL && ! strcmp (Game, "doompr"))
       }
    MainWad = Iwad9;
    }
+else if (Game != NULL && ! strcmp (Game, "strife10"))
+   {
+   if (Iwad10 == NULL)
+      {
+      report_error ("You have to tell me where strife1.wad is.");
+      fprintf (stderr,
+         "Use \"-i10 <file>\" or put \"iwad10=<file>\" in yadex.cfg.\n");
+      exit (1);
+      }
+   MainWad = Iwad10;
+   }
 else
    {
    if (Game == NULL)
@@ -332,8 +344,9 @@ else
       report_error ("Unknown game \"%s\"", Game);
    fprintf (stderr,
   "Use \"-g <game>\" on the command line or put \"game=<game>\" in yadex.cfg\n"
-  "where <game> is one of \"alpha02\", \"alpha04\", \"alpha05\", \"doom\","
-  " \"doom2\",\n\"doompr\", \"heretic\", \"hexen\" and \"strife\".\n");
+  "where <game> is one of \"doom\", \"doom02\", \"doom04\", \"doom05\","
+  " \"doom2\",\n\"doompr\", \"heretic\", \"hexen\", \"strife\" and "
+  "\"strife10\".\n");
    exit (1);
    }
 if (Debug)
@@ -692,6 +705,8 @@ for (;;)
               " to list all options and their values\n");
       printf ("v[iew] [SpriteName]               --"
               " to display the sprites\n");
+      printf ("viewpal                           --"
+	      " palette viewer\n");
       printf ("w[ads]                            --"
               " to display the open wads\n");
       printf ("x[tract] <DirEntry> <RawFile>     --"
@@ -705,7 +720,7 @@ for (;;)
       for (wad = WadFileList->next; wad; wad = wad->next)
 	 {
 	 printf ("%-40s  Pwad (%.*s)\n",
-	  wad->filename, WAD_NAME, wad->directory[0].name);
+	  wad->filename, (int) WAD_NAME, wad->directory[0].name);
 	 }
       }
 
@@ -891,6 +906,18 @@ for (;;)
       make_palette_ppm (0, out);
       }
 
+   // make_palette_ppm
+   else if (! strcmp (com, "mp2"))
+      {
+      out = strtok (NULL, "");
+      if (out == NULL)
+	 {
+	 printf ("Output file name argument missing.\n");
+	 continue;
+	 }
+      make_palette_ppm_2 (0, out);
+      }
+
    /* user asked to list all options and their values */
    else if (! strcmp (com, "set"))
       {
@@ -953,20 +980,20 @@ for (;;)
       TermGfx ();
       }
 
-   /* user asked to view the sprites */
-   else if (!strcmp (com, "patches") || !strcmp (com, "p"))
+   // "viewpal" - view the palette (PLAYPAL and COLORMAP)
+   else if (! strcmp (com, "viewpal"))
       {
       InitGfx ();
       init_input_status ();
       do
 	 get_input_status ();
       while (is.key != YE_EXPOSE);
-      com = strtok (NULL, " ");
       force_window_not_pixmap ();  // FIXME quick hack
-      ChooseSprite (-1, -1, "Sprite viewer", com);
+      Palette_viewer pv;
+      pv.run ();
       TermGfx ();
       }
-
+   
    /* user asked to save an object to a separate pwad file */
    else if (!strcmp (com, "save") || !strcmp (com, "s"))
       {
@@ -1125,7 +1152,7 @@ for (size_t n = 0; n < NCOLOURS; n++)
    else if (n == WINBG_HL)
       c.set (0x58, 0x50, 0x48);
    else if (n == WINFG_HL)
-      c.set (0xc0, 0xc0, 0xc0);
+      c.set (0xd0, 0xd0, 0xd0);
    else if (n == WINFG_DIM_HL)
       c.set (0x70, 0x70, 0x70);
    else if (n == GRID1)

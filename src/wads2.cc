@@ -8,25 +8,23 @@
 /*
 This file is part of Yadex.
 
-Yadex incorporates code from DEU 5.21 that was put in the public
-domain in 1994 by Raphaël Quinet and Brendon Wyber.
+Yadex incorporates code from DEU 5.21 that was put in the public domain in
+1994 by Raphaël Quinet and Brendon Wyber.
 
 The rest of Yadex is Copyright © 1997-1999 André Majorel.
 
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation; either version 2 of the License, or
-(at your option) any later version.
+This program is free software; you can redistribute it and/or modify it under
+the terms of the GNU General Public License as published by the Free Software
+Foundation; either version 2 of the License, or (at your option) any later
+version.
 
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
+This program is distributed in the hope that it will be useful, but WITHOUT
+ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 
-You should have received a copy of the GNU Library General Public
-License along with this library; if not, write to the Free
-Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
-02111-1307, USA.
+You should have received a copy of the GNU General Public License along with
+this program; if not, write to the Free Software Foundation, Inc., 59 Temple
+Place, Suite 330, Boston, MA 02111-1307, USA.
 */
 
 
@@ -36,6 +34,7 @@ Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 
 
 static char *locate_pwad (const char *filename);
+static int level_name_order (const void *p1, const void *p2);
 
 
 /*
@@ -52,8 +51,13 @@ WadPtr wad;
 /* open the wad file */
 printf ("Loading iwad: %s...\n", filename);
 wad = BasicWadOpen (filename, yg_picture_format);
-if (strncmp (wad->type, "IWAD", 4))
-   fatal_error ("\"%s\" is not an iwad file", filename);
+if (! strncmp (wad->type, "IWAD", 4))
+   ;  // OK
+else if (! strncmp (wad->type, "PWAD", 4))
+   warn ("\"%.256s\", that you're trying to use as an iwad, is a pwad.\n",
+       filename);
+else
+   fatal_error ("\"%s\" is not a wad", filename);
 
 /* create the master directory */
 lastp = NULL;
@@ -72,7 +76,12 @@ for (n = 0; n < wad->dirsize; n++)
 
 /* check if registered version */
 if (FindMasterDir (MasterDir, "E2M1") == NULL
- && FindMasterDir (MasterDir, "MAP32") == NULL)
+ && FindMasterDir (MasterDir, "MAP01") == NULL
+ && FindMasterDir (MasterDir, "MAP33") == NULL
+ && strcmp (Game, "doom02")
+ && strcmp (Game, "doom04")
+ && strcmp (Game, "doom05")
+ && strcmp (Game, "doompr"))
    {
    printf ("   *-----------------------------------------------------*\n");
    printf ("   | Warning: this is the shareware version of the game. |\n");
@@ -95,12 +104,12 @@ else
 void OpenPatchWad (const char *filename)
 {
 WadPtr wad;
-MDirPtr mdir;
+MDirPtr mdir = 0;
 long n;
 char entryname[WAD_NAME + 1];
-const char *entry_type;
+const char *entry_type = 0;
 char *real_name;
-int nitems;		// Number of items in group of flats/patches/sprites
+int nitems = 0;		// Number of items in group of flats/patches/sprites
 
 // Look for the file and ignore it if it doesn't exist
 real_name = locate_pwad (filename);
@@ -132,8 +141,11 @@ int state = 0;
 int replaces = 0;
 int state_prev;
 int replaces_prev;
-int names;		// Number of names already printed on current line
+int names = 0;		// Number of names already printed on current line
 const char *entry_type_prev;
+typedef char level_list_item_t[WAD_NAME];
+level_list_item_t *level_list = 0;
+size_t nlevels = 0;
 for (n = 0; n < wad->dirsize; n++)
    {
    strncpy (entryname, wad->directory[n].name, WAD_NAME);
@@ -150,7 +162,7 @@ for (n = 0; n < wad->dirsize; n++)
 	 entry_type = "label";
 	 replaces   = 0;
 	 }
-      // Deutex puts flats between FF_START and FF_END/F_END.
+      // DeuTex puts flats between FF_START and FF_END/F_END.
       // All lumps between those markers are assumed
       // to be flats.
       else if (! strncmp (entryname, "FF_START", WAD_NAME))
@@ -160,7 +172,7 @@ for (n = 0; n < wad->dirsize; n++)
 	 replaces   = 0;
          nitems     = 0;
 	 }
-      // Deutex puts patches between PP_START and PP_END.
+      // DeuTex puts patches between PP_START and PP_END.
       // All lumps between those markers are assumed
       // to be patches.
       else if (! strncmp (entryname, "PP_START", WAD_NAME))
@@ -170,7 +182,7 @@ for (n = 0; n < wad->dirsize; n++)
 	 replaces   = 0;
          nitems     = 0;
 	 }
-      // Deutex puts patches between SS_START and SS_END/S_END.
+      // DeuTex puts patches between SS_START and SS_END/S_END.
       // All lumps between those markers are assumed
       // to be sprites.
       else if (! strncmp (entryname, "SS_START", WAD_NAME))
@@ -189,6 +201,18 @@ for (n = 0; n < wad->dirsize; n++)
 	    {
 	    state = 11;
 	    entry_type = "level";
+	    // Add to list of level names
+	    {
+	    level_list_item_t *new_list;
+	    new_list = (level_list_item_t *)
+	       realloc (level_list, (nlevels + 1) * sizeof *level_list);
+	    if (new_list != 0)
+	       {
+	       level_list = new_list;
+	       strncpy (level_list[nlevels], entryname, sizeof *level_list);
+	       nlevels++;
+	       }
+	    }
 	    }
 	 else
 	    entry_type = "entry";
@@ -199,31 +223,31 @@ for (n = 0; n < wad->dirsize; n++)
 	  || entry_type_prev != entry_type)
          {
 	 if (n > 0)
-	    putchar ('\n');
+	    verbmsg ("\n");
 	 names = 0;
-	 printf ("  %s %s", replaces ? "Updating" : "Adding new", entry_type);
+	 verbmsg ("  %s %s", replaces ? "Updating" : "Adding new", entry_type);
          }
       if (names >= 6)
          {
-	 printf ("\n  %-*s %-*s",
+	 verbmsg ("\n  %-*s %-*s",
 	     strlen (replaces ? "Updating" : "Adding new"), "",
 	     strlen (entry_type), "");
 	 names = 0;
          }
-      printf  (" %-*s", WAD_NAME, entryname);
+      verbmsg  (" %-*s", WAD_NAME, entryname);
       names++;
       if ((*entry_type == 'm' || *entry_type == 'l') && wad->directory[n].size)
-	 printf (" warning: non-zero length (%ld)", wad->directory[n].size);
+	 verbmsg (" warning: non-zero length (%ld)", wad->directory[n].size);
       }
    // Either F_END or FF_END mark the end of a
-   // Deutex-generated group of flats.
+   // DeuTex-generated group of flats.
    else if (state == 'f')
       {
       if (! strncmp (entryname, "F_END", WAD_NAME)
 	  || ! strncmp (entryname, "FF_END", WAD_NAME))
          {
 	 state = 0;
-         printf ("/%.*s (%d flats)", WAD_NAME, entryname, nitems);
+         verbmsg ("/%.*s (%d flats)", WAD_NAME, entryname, nitems);
          }
       // Of course, F?_START and F?_END don't count
       // toward the number of flats in the group.
@@ -232,13 +256,13 @@ for (n = 0; n < wad->dirsize; n++)
                       || ! strcmp (entryname + 2, "_END"))))
          nitems++;
       }
-   // PP_END marks the end of a Deutex-generated group of patches.
+   // PP_END marks the end of a DeuTex-generated group of patches.
    else if (state == 'p')
       {
       if (! strncmp (entryname, "PP_END", WAD_NAME))
          {
          state = 0;
-         printf ("/PP_END (%d patches)", nitems);
+         verbmsg ("/PP_END (%d patches)", nitems);
          }
       // Of course, P?_START and P?_END don't count
       // toward the number of flats in the group.
@@ -248,14 +272,14 @@ for (n = 0; n < wad->dirsize; n++)
          nitems++;
       }
    // Either S_END or SS_END mark the end of a
-   // Deutex-generated group of sprites.
+   // DeuTex-generated group of sprites.
    else if (state == 's')
       {
       if (! strncmp (entryname, "S_END", WAD_NAME)
 	  || ! strncmp (entryname, "SS_END", WAD_NAME))
          {
 	 state = 0;
-         printf ("/%.*s (%d sprites)", WAD_NAME, entryname, nitems);
+         verbmsg ("/%.*s (%d sprites)", WAD_NAME, entryname, nitems);
          }
       // Of course, S?_START and S?_END don't count
       // toward the number of sprites in the group.
@@ -283,9 +307,38 @@ for (n = 0; n < wad->dirsize; n++)
    if (state > 0 && state <= 11)
       state--;
    }
+verbmsg ("\n");
+
+// Print list of levels found in this pwad
+if (level_list != 0)
+   {
+   printf ("  Levels: ");
+   qsort (level_list, nlevels, sizeof *level_list, level_name_order);
+   for (size_t n = 0; n < nlevels; n++)
+      {
+      int prev = n > 0           ? levelname2rank (level_list[n - 1]) : INT_MIN;
+      int cur  =                   levelname2rank (level_list[n    ]);
+      int next = n < nlevels - 1 ? levelname2rank (level_list[n + 1]) : INT_MAX;
+      if (cur != prev + 1 || cur != next - 1)
+         {
+         if (cur == prev + 1)
+	    putchar ('-');
+	 else if (n > 0)
+	    putchar (' ');
+         printf ("%.*s", (int) sizeof *level_list, level_list[n]);
+         }
+      }
    putchar ('\n');
+   free (level_list);
+   }
 }
 
+
+static int level_name_order (const void *p1, const void *p2)
+{
+return levelname2rank ((const char *) p1)
+     - levelname2rank ((const char *) p2);
+}
 
 
 /*
@@ -537,7 +590,12 @@ else
    printf ("Building a new Main Wad file \"%s\" (size approx 10 MB)\n",
       filename);
 if (FindMasterDir (MasterDir, "E2M4") == NULL
- && FindMasterDir (MasterDir, "MAP32") == NULL)  /* AYM */
+ && FindMasterDir (MasterDir, "MAP01") == NULL
+ && FindMasterDir (MasterDir, "MAP33") == NULL
+ && strcmp (Game, "doom02")
+ && strcmp (Game, "doom04")
+ && strcmp (Game, "doom05")
+ && strcmp (Game, "doompr"))
    fatal_error ("You were warned: you are not allowed to do this.");
 if ((file = fopen (filename, "wb")) == NULL)
    fatal_error ("unable to open file \"%s\"", filename);
@@ -602,10 +660,10 @@ MDirPtr entry;
 char dataname[WAD_NAME + 1];
 char key;
 int lines = 5;
-long n, c, i;
+long n = 0;
 unsigned char buf[16];
+const int bytes_per_line = 16;
 
-c = 0;
 entry = MasterDir;
 while (entry)
    {
@@ -615,19 +673,25 @@ while (entry)
       dataname[WAD_NAME] = '\0';
       fprintf (file, "Contents of entry %s (size = %ld bytes):\n", dataname, entry->dir.size);
       wad_seek (entry->wadfile, entry->dir.start);
-      n = 0;
-      i = -1;
-      for (c = 0; c < entry->dir.size; c += i)
+      for (n = 0; n < entry->dir.size;)
 	 {
+	 int i;
 	 fprintf (file, "%04lX: ", n);
-	 for (i = 0; i < 16; i++)
-	    {
-	    wad_read_bytes (entry->wadfile, &(buf[i]), 1);
+
+         // Nb of bytes to read for this line
+	 long bytes_to_read = entry->dir.size - n;
+	 if (bytes_to_read > bytes_per_line)
+	    bytes_to_read = bytes_per_line;
+	 long nbytes = wad_read_bytes2 (entry->wadfile, buf, bytes_to_read);
+	 n += nbytes;
+
+	 for (i = 0; i < nbytes; i++)
 	    fprintf (file, " %02X", buf[i]);
-	    n++;
-	    }
+	 for (; i < bytes_per_line; i++)
+	    fputs ("   ", file);
 	 fprintf (file, "   ");
-	 for (i = 0; i < 16; i++)
+
+	 for (i = 0; i < nbytes; i++)
 	    {
 	    if (buf[i] >= 0x20
                && buf[i] != 0x7f
@@ -640,6 +704,7 @@ while (entry)
 	       putc ('.', file);
 	    }
 	 putc ('\n', file);
+
 	 if (file == stdout && lines++ > screen_lines - 4)
 	    {
 	    lines = 0;
@@ -663,7 +728,7 @@ while (entry)
       }
    entry = entry->next;
    }
-if (! c)
+if (! n)
    {
    printf ("Entry not in master directory.\n");
    return;

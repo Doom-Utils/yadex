@@ -8,25 +8,23 @@
 /*
 This file is part of Yadex.
 
-Yadex incorporates code from DEU 5.21 that was put in the public
-domain in 1994 by Raphaël Quinet and Brendon Wyber.
+Yadex incorporates code from DEU 5.21 that was put in the public domain in
+1994 by Raphaël Quinet and Brendon Wyber.
 
 The rest of Yadex is Copyright © 1997-1999 André Majorel.
 
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation; either version 2 of the License, or
-(at your option) any later version.
+This program is free software; you can redistribute it and/or modify it under
+the terms of the GNU General Public License as published by the Free Software
+Foundation; either version 2 of the License, or (at your option) any later
+version.
 
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
+This program is distributed in the hope that it will be useful, but WITHOUT
+ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 
-You should have received a copy of the GNU Library General Public
-License along with this library; if not, write to the Free
-Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
-02111-1307, USA.
+You should have received a copy of the GNU General Public License along with
+this program; if not, write to the Free Software Foundation, Inc., 59 Temple
+Place, Suite 330, Boston, MA 02111-1307, USA.
 */
 
 
@@ -59,9 +57,10 @@ void x_bell ()
 
 /*
  *	x_catch_on
- *	Setup things so that the next X protocol errors will be
- *	handled by x_error_handler instead of the default
- *	handler.
+ *	Setup things so that from now on, any X protocol errors
+ *	will be handled by x_error_handler instead of the
+ *	default handler (that has the annoying property of
+ *	calling exit()).
  */
 void x_catch_on ()
 {
@@ -73,7 +72,7 @@ void x_catch_on ()
 
 /*
  *	x_catch_off
- *	Restore the default handler.
+ *	Restore the default error handler.
  */
 void x_catch_off ()
 {
@@ -84,7 +83,7 @@ void x_catch_off ()
 
 /*
  *	x_error_handler
- *	An error handler that does not exit
+ *	An error handler that does not exit.
  */
 int x_error_handler (Display *dpy, XErrorEvent *e)
 {

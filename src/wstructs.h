@@ -11,25 +11,23 @@
 /*
 This file is part of Yadex.
 
-Yadex incorporates code from DEU 5.21 that was put in the public
-domain in 1994 by Raphaël Quinet and Brendon Wyber.
+Yadex incorporates code from DEU 5.21 that was put in the public domain in
+1994 by Raphaël Quinet and Brendon Wyber.
 
 The rest of Yadex is Copyright © 1997-1999 André Majorel.
 
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation; either version 2 of the License, or
-(at your option) any later version.
+This program is free software; you can redistribute it and/or modify it under
+the terms of the GNU General Public License as published by the Free Software
+Foundation; either version 2 of the License, or (at your option) any later
+version.
 
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
+This program is distributed in the hope that it will be useful, but WITHOUT
+ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 
-You should have received a copy of the GNU Library General Public
-License along with this library; if not, write to the Free
-Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
-02111-1307, USA.
+You should have received a copy of the GNU General Public License along with
+this program; if not, write to the Free Software Foundation, Inc., 59 Temple
+Place, Suite 330, Boston, MA 02111-1307, USA.
 */
 
 
@@ -41,7 +39,7 @@ Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 
 
 // Directory
-const int WAD_NAME = 8;			// Length of a directory entry name
+const size_t WAD_NAME = 8;		// Length of a directory entry name
 typedef struct Directory huge *DirPtr;
 struct Directory
    {
@@ -52,9 +50,9 @@ struct Directory
 
 
 // Textures
-const int WAD_TEX_NAME  = 8;		// Length of a texture name
-const int WAD_FLAT_NAME = WAD_NAME;	// Length of a flat name
-const int WAD_PIC_NAME  = WAD_NAME;	// Length of a patch or sprite name
+const size_t WAD_TEX_NAME  = 8;		// Length of a texture name
+const size_t WAD_FLAT_NAME = WAD_NAME;	// Length of a flat name
+const size_t WAD_PIC_NAME  = WAD_NAME;	// Length of a patch or sprite name
 
 
 // Level objects properties

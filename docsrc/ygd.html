@@ -28,6 +28,7 @@ noting&nbsp;:
 <dl>
 <p><dt><strong><code>ldt</code></strong>
 
+  file has changed.
 <p><dd>Defines a linedef type.
 
 <p><dt><strong><code>ldtgroup</code></strong>
@@ -64,8 +65,9 @@ values&nbsp;:
     <code>doom</code> then <code>BEHAVIOR</code>).
   </table>
 
-<p>Reading is supported for all formats but writing is supported
-only for <code>doom</code>.
+<p>Reading is supported for all formats but writing is not
+supported for <code>hexen</code>. For <code>alpha</code>,
+writing is done in <code>doom</code> format.
 
 <p>This directive is mandatory. If there are several
 <code>level_format</code> directives, it's the last one that
@@ -145,9 +147,13 @@ values&nbsp;:
     <th>Value
     <th>Meaning
   <tr>
-    <td valign="top"><code>alpha04</code>
+    <td valign="top"><code>nameless</code>
     <td>The obsolete format used in Doom alpha 0.4 (no texture
     names).
+  <tr>
+    <td valign="top"><code>strife11</code>
+    <td>The format used by Strife 1.1 and later. Note that
+    Strife 1.0 uses the regular format (<code>normal</code>).
   <tr>
     <td valign="top"><code>normal</code>
     <td>The normal format used by all other iwads.
@@ -170,16 +176,19 @@ values&nbsp;:
   <tr>
     <td valign="top"><code>textures</code>
     <td>There is only one lump and it's called
-    <code>TEXTURES</code> (Doom alpha only).
+    <code>TEXTURES</code> (Doom alpha 0.4 and 0.5).
   <tr>
-    <td valign="top"><code>texture1</code>
+     <td valign="top"><code>none</code>
+     <td>There is no textures lump (Doom alpha 0.2)
+  <tr>
+    <td valign="top"><code>normal</code>
     <td>There is <code>TEXTURE1</code> and optionally
     <code>TEXTURE2</code> (all other iwads).
   </table>
 
 <p>This directive is optional. If it's missing, the default is
-<code>texture1</code>. If it's repeated, it's the last
-occurrence that counts.
+<code>normal</code>. If it's repeated, it's the last occurrence
+that counts.
 
 <p><dt><strong><code>thing</code></strong>
 

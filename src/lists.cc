@@ -8,25 +8,23 @@
 /*
 This file is part of Yadex.
 
-Yadex incorporates code from DEU 5.21 that was put in the public
-domain in 1994 by Raphaël Quinet and Brendon Wyber.
+Yadex incorporates code from DEU 5.21 that was put in the public domain in
+1994 by Raphaël Quinet and Brendon Wyber.
 
 The rest of Yadex is Copyright © 1997-1999 André Majorel.
 
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation; either version 2 of the License, or
-(at your option) any later version.
+This program is free software; you can redistribute it and/or modify it under
+the terms of the GNU General Public License as published by the Free Software
+Foundation; either version 2 of the License, or (at your option) any later
+version.
 
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
+This program is distributed in the hope that it will be useful, but WITHOUT
+ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 
-You should have received a copy of the GNU Library General Public
-License along with this library; if not, write to the Free
-Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
-02111-1307, USA.
+You should have received a copy of the GNU General Public License along with
+this program; if not, write to the Free Software Foundation, Inc., 59 Temple
+Place, Suite 330, Boston, MA 02111-1307, USA.
 */
 
 
@@ -63,7 +61,7 @@ void InputNameFromListWithFunc (
    int x0,
    int y0,
    const char *prompt,
-   int listsize,
+   size_t listsize,
    const char *const *list,
    int listdisp,
    char *name,
@@ -103,14 +101,14 @@ for (n = strlen (name) + 1; n <= maxlen; n++)
 l0 = 12;
 if (hookfunc != NULL)
    {
-   if (strlen (msg1) + 2 > l0)
+   if ((int) (strlen (msg1) + 2) > l0)  // (int) to prevent GCC warning
       l0 = strlen (msg1) + 2;
-   if (strlen (msg2) + 2 > l0)
+   if ((int) (strlen (msg2) + 2) > l0)  // (int) to prevent GCC warning
       l0 = strlen (msg2) + 2;
    }
 xlist = 10 + l0 * FONTW;
 l = l0 + maxlen;
-if (strlen (prompt) > l)
+if ((int) (strlen (prompt)) > l)  // (int) to prevent GCC warning
    l = strlen (prompt);
 l = 10 + FONTW * l;
 x1 = l + 8;
@@ -170,7 +168,7 @@ for (;;)
       if (y_stricmp (name, list[n]) <= 0)
 	 break;
    ok = n < listsize ? ! y_stricmp (name, list[n]) : 0;
-   if (n > listsize - 1)
+   if (n >= listsize)
       n = listsize - 1;
 
    // Display the <listdisp> next items in the list
@@ -236,24 +234,23 @@ for (;;)
    key = get_key ();
    if (firstkey && is_ordinary (key) && key != ' ')
       {
-      for (l = 0; l <= maxlen; l++)
-	 name[l] = '\0';
-      l = 0;
+      for (size_t i = 0; i <= maxlen; i++)
+	 name[i] = '\0';
       }
    firstkey = 0;
-   l = strlen (name);
-   if (l < maxlen && key >= 'a' && key <= 'z')
+   size_t len = strlen (name);
+   if (len < maxlen && key >= 'a' && key <= 'z')
       {
-      name[l] = key + 'A' - 'a';
-      name[l + 1] = '\0';
+      name[len] = key + 'A' - 'a';
+      name[len + 1] = '\0';
       }
-   else if (l < maxlen && is_ordinary (key) && key != ' ')
+   else if (len < maxlen && is_ordinary (key) && key != ' ')
       {
-      name[l] = key;
-      name[l + 1] = '\0';
+      name[len] = key;
+      name[len + 1] = '\0';
       }
-   else if (l > 0 && key == YK_BACKSPACE)		// BS
-      name[l - 1] = '\0';
+   else if (len > 0 && key == YK_BACKSPACE)		// BS
+      name[len - 1] = '\0';
    else if (key == 21 || key == 23)			// ^U, ^W
       *name = '\0';
    else if (key == YK_DOWN)				// [Down]
@@ -263,9 +260,9 @@ for (;;)
 	 Because sometimes the list has duplicates (for example
 	 when editing a Doom II pwad in Doom mode) and then the
 	 viewer gets "stuck" on the first duplicate. */
-      int m = n + 1;
+      size_t m = n + 1;
       while (m < listsize && ! y_stricmp (list[n], list[m]))
-	  m++;
+	 m++;
       if (m < listsize)
          strcpy (name, list[m]);
       else
@@ -291,7 +288,7 @@ for (;;)
       }
    else if ((key == YK_PU || key == 2) && n > 0)	// [Pgup], ^B
       {
-      if (n > listdisp)
+      if ((int) n > listdisp)
 	 strcpy (name, list[n - listdisp]);
       else
 	 strcpy (name, list[0]);
@@ -380,7 +377,7 @@ void InputNameFromList (
    int x0,
    int y0,
    const char *prompt,
-   int listsize,
+   size_t listsize,
    const char *const *list,
    char *name)
 {

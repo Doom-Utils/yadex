@@ -8,25 +8,23 @@
 /*
 This file is part of Yadex.
 
-Yadex incorporates code from DEU 5.21 that was put in the public
-domain in 1994 by Raphaël Quinet and Brendon Wyber.
+Yadex incorporates code from DEU 5.21 that was put in the public domain in
+1994 by Raphaël Quinet and Brendon Wyber.
 
 The rest of Yadex is Copyright © 1997-1999 André Majorel.
 
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation; either version 2 of the License, or
-(at your option) any later version.
+This program is free software; you can redistribute it and/or modify it under
+the terms of the GNU General Public License as published by the Free Software
+Foundation; either version 2 of the License, or (at your option) any later
+version.
 
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
+This program is distributed in the hope that it will be useful, but WITHOUT
+ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 
-You should have received a copy of the GNU Library General Public
-License along with this library; if not, write to the Free
-Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
-02111-1307, USA.
+You should have received a copy of the GNU General Public License along with
+this program; if not, write to the Free Software Foundation, Inc., 59 Temple
+Place, Suite 330, Boston, MA 02111-1307, USA.
 */
 
 
@@ -56,7 +54,7 @@ Entry2::Entry2 (const char *title, const char *fmt, ...)
   }
 
   background_drawn = false;
-  for (int f = 0; f < nfields; f++)
+  for (size_t f = 0; f < nfields; f++)
     entry_drawn[f] = false;
   field_no = 0;  // This seem redundant with jump_to_field (0)
   		 // but it's not. jump_to_field() really needs
@@ -259,7 +257,7 @@ Entry2_action_t Entry2::process_event (const input_status_t &is)
   // [Return]: Validate
   else if (key == YK_RETURN)
   {
-    int f;
+    size_t f;
     for (f = 0; f < nfields; f++)  // No FF_NONEMPTY fields must be empty
       if (   (entry_flags[f] & FF_TYPE) == FF_ENTRY
 	  && (entry_flags[f] & FF_SUBTYPE) == FF_STRING
@@ -306,7 +304,7 @@ void Entry2::refresh ()
     push_colour (YELLOW);
     DrawScreenString (title_x0, title_y0, title);
     set_colour (WINFG);
-    for (int f = 0; f < nfields; f++)
+    for (size_t f = 0; f < nfields; f++)
     {
       size_t yofs = f * vstep;
       DrawScreenString (caption_x0, caption_y0 + yofs, caption[f]);
@@ -321,7 +319,7 @@ void Entry2::refresh ()
 
   /* Draw the foreground (the part that might
      change as a result of the user actions). */
-  for (int f = 0; f < nfields; f++)
+  for (size_t f = 0; f < nfields; f++)
   {
     if (! background_drawn || ! entry_drawn[f])
     {
@@ -391,7 +389,7 @@ int Entry2::count_widgets (const char *fmt)
  */
 int Entry2::fill_in_widgets_info (const char *fmt, va_list args)
 {
-  int f = 0;
+  size_t f = 0;
   const char *last_literal = 0;
   const int F_PLUS     = 1;
   const int F_MINUS    = 2;
@@ -420,7 +418,8 @@ int Entry2::fill_in_widgets_info (const char *fmt, va_list args)
       if (f >= nfields)
       {
 	printf ("Internal error: at offset %d in widget fmt \"%s\": more than"
-	    " %d fields.\nIgnoring excess field(s)\n", (int) (p - fmt), fmt, f);
+	    " %d fields.\nIgnoring excess field(s)\n",
+	    (int) (p - fmt), fmt, (int) f);
 	break;
       }
       int flags     = 0;
@@ -563,7 +562,7 @@ int Entry2::fill_in_widgets_info (const char *fmt, va_list args)
   /* Second phase: retrieve the arguments from
      the list and fill in <buf> and perhaps also
      <box_len> and <buf_max_len> if needed. */
-  for (int f = 0; f < nfields; f++)
+  for (size_t f = 0; f < nfields; f++)
   {
     // "%*": retrieve the length
     if (buf_max_len[f] == L_ASTERISK)
@@ -613,6 +612,7 @@ int Entry2::fill_in_widgets_info (const char *fmt, va_list args)
     else
       ;  // To be implemented later
   }
+  return 0;
 }
 
  
@@ -625,14 +625,14 @@ void Entry2::do_geom ()
   // Compute the widths
   size_t title_len = strlen (title);	// Length of title
   size_t entry_len = 0;			// Length or longest entry
-  for (int f = 0; f < nfields; f++)
+  for (size_t f = 0; f < nfields; f++)
   {
     size_t l = box_len[f];
     if (l > entry_len)
       entry_len = l;
   }
   size_t caption_len = 0;		// Length of longest caption
-  for (int f = 0; f < nfields; f++)
+  for (size_t f = 0; f < nfields; f++)
   {
     size_t l = strlen (caption[f]);
     if (l > caption_len)
@@ -676,7 +676,7 @@ void Entry2::do_geom ()
  *	jump_to_field
  *	Jump to a particular field
  */
-void Entry2::jump_to_field (int field_no)
+void Entry2::jump_to_field (size_t field_no)
 {
   if (field_no >= nfields)
   {

@@ -7,25 +7,23 @@
 /*
 This file is part of Yadex.
 
-Yadex incorporates code from DEU 5.21 that was put in the public
-domain in 1994 by Raphaël Quinet and Brendon Wyber.
+Yadex incorporates code from DEU 5.21 that was put in the public domain in
+1994 by Raphaël Quinet and Brendon Wyber.
 
 The rest of Yadex is Copyright © 1997-1999 André Majorel.
 
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation; either version 2 of the License, or
-(at your option) any later version.
+This program is free software; you can redistribute it and/or modify it under
+the terms of the GNU General Public License as published by the Free Software
+Foundation; either version 2 of the License, or (at your option) any later
+version.
 
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
+This program is distributed in the hope that it will be useful, but WITHOUT
+ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 
-You should have received a copy of the GNU Library General Public
-License along with this library; if not, write to the Free
-Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
-02111-1307, USA.
+You should have received a copy of the GNU General Public License along with
+this program; if not, write to the Free Software Foundation, Inc., 59 Temple
+Place, Suite 330, Boston, MA 02111-1307, USA.
 */
 
 
@@ -130,31 +128,40 @@ int y0 = (ScrMaxY + 1 - height) / 2;
 
 HideMousePointer ();
 DrawScreenBox3D (x0, y0, x0 + width - 1, y0 + height - 1);
-set_colour (WINFG);
+push_colour (WINFG);
+push_colour (WINFG_HL);
 DrawScreenText (x0 + BOX_BORDER + WIDE_HSPACING,
                 y0 + BOX_BORDER + WIDE_VSPACING, what ());
+pop_colour ();
 DrawScreenText (-1, -1, "");
 DrawScreenText (-1, -1, "Copyright © 1997-1999 André Majorel");
 DrawScreenText (-1, -1, "Yadex is derived from DEU 5.21 by");
 DrawScreenText (-1, -1, "Raphaël Quinet and Brendon Wyber.");
 DrawScreenText (-1, -1, "");
+push_colour (WINFG_HL);
 DrawScreenText (-1, -1, "Home page :");
+pop_colour ();
 DrawScreenText (-1, -1, "http://www.teaser.fr/~amajorel/yadex/");
 DrawScreenText (-1, -1, "http://www.linuxgames.com/yadex/");
 DrawScreenText (-1, -1, "");
+push_colour (WINFG_HL);
 DrawScreenText (-1, -1, "Mailing lists :");
+pop_colour ();
 DrawScreenText (-1, -1, "yadex@middleearth.telefragged.com");
 DrawScreenText (-1, -1, "yadex-announce@middleearth.telefragged.com");
 DrawScreenText (-1, -1, "To subscribe, send mail with the");
 DrawScreenText (-1, -1, "subject \"subscribe <list_name>\"");
 DrawScreenText (-1, -1, "to listar@middleearth.telefragged.com");
 DrawScreenText (-1, -1, "");
+push_colour (WINFG_HL);
 DrawScreenText (-1, -1, "Maintainer :");
+pop_colour ();
 DrawScreenText (-1, -1, "André Majorel <amajorel@teaser.fr>");
 DrawScreenText (-1, -1, "");
 DrawScreenText (-1, -1, "");
 set_colour (YELLOW);
 DrawScreenText (-1, -1, "Press any key to return to the editor...");
+pop_colour ();
 get_key_or_click ();
 ShowMousePointer ();
 }

@@ -8,25 +8,23 @@
 /*
 This file is part of Yadex.
 
-Yadex incorporates code from DEU 5.21 that was put in the public
-domain in 1994 by Raphaël Quinet and Brendon Wyber.
+Yadex incorporates code from DEU 5.21 that was put in the public domain in
+1994 by Raphaël Quinet and Brendon Wyber.
 
 The rest of Yadex is Copyright © 1997-1999 André Majorel.
 
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation; either version 2 of the License, or
-(at your option) any later version.
+This program is free software; you can redistribute it and/or modify it under
+the terms of the GNU General Public License as published by the Free Software
+Foundation; either version 2 of the License, or (at your option) any later
+version.
 
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
+This program is distributed in the hope that it will be useful, but WITHOUT
+ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 
-You should have received a copy of the GNU Library General Public
-License along with this library; if not, write to the Free
-Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
-02111-1307, USA.
+You should have received a copy of the GNU General Public License along with
+this program; if not, write to the Free Software Foundation, Inc., 59 Temple
+Place, Suite 330, Boston, MA 02111-1307, USA.
 */
 
 
@@ -170,7 +168,9 @@ DisplayMessage (-1, -1, "Grinding...");
    display a message, then ask if the check should continue (prompt2 may be NULL)
 */
 
-Bool CheckFailed (int x0, int y0, char *prompt1, char *prompt2, Bool fatal)
+Bool CheckFailed (int x0, int y0, char *prompt1, char *prompt2, Bool fatal,
+    bool &first_time)
+
 {
 int key;
 size_t maxlen;
@@ -196,7 +196,8 @@ HideMousePointer ();
 DrawScreenBox3D (x0, y0, x0 + width - 1, y0 + height - 1);
 set_colour (LIGHTRED);
 DrawScreenText (text_x0, cur_y, "Verification failed:");
-Beep ();
+if (first_time)
+   Beep ();
 set_colour (WHITE);
 DrawScreenText (text_x0, cur_y += FONTH, prompt1);
 LogMessage ("\t%s\n", prompt1);
@@ -230,6 +231,7 @@ if (key != YK_ESC)
 //      "Verifying other objects...");
    }
 ShowMousePointer ();
+first_time = false;
 return (key == YK_ESC);
 }
 
@@ -243,6 +245,7 @@ void CheckSectors () /* SWAP! */
 int        s, n, sd;
 char huge *ends;
 char       msg1[80], msg2[80];
+bool       first_time = true;
 
 CheckingObjects ();
 LogMessage ("\nVerifying Sectors...\n");
@@ -277,7 +280,7 @@ for (s = 0; s < NumSectors; s++)
 	 {
 	 sprintf (msg1, "Sector #%d is not closed!", s);
 	 sprintf (msg2, "There is no sidedef ending at Vertex #%d", n);
-	 if (CheckFailed (-1, -1, msg1, msg2, 0))
+	 if (CheckFailed (-1, -1, msg1, msg2, 0, first_time))
 	    {
 	    GoToObject (OBJ_VERTICES, n);
 	    return;
@@ -287,7 +290,7 @@ for (s = 0; s < NumSectors; s++)
 	 {
 	 sprintf (msg1, "Sector #%d is not closed!", s);
 	 sprintf (msg2, "There is no sidedef starting at Vertex #%d", n);
-	 if (CheckFailed (-1, -1, msg1, msg2, 0))
+	 if (CheckFailed (-1, -1, msg1, msg2, 0, first_time))
 	    {
 	    GoToObject (OBJ_VERTICES, n);
 	    return;
@@ -336,7 +339,7 @@ for (n = 0; n < NumLineDefs; n++)
 	    sprintf (msg2, "Check linedef #%d (first sidedef: #%d)"
 	       " and the one facing it", n, sd);
 	    }
-	 if (CheckFailed (-1, -1, msg1, msg2, 0))
+	 if (CheckFailed (-1, -1, msg1, msg2, 0, first_time))
 	    {
 	    GoToObject (OBJ_LINEDEFS, n);
 	    return;
@@ -363,7 +366,7 @@ for (n = 0; n < NumLineDefs; n++)
 	    sprintf (msg2, "Check linedef #%d (second sidedef: #%d)"
 	       " and the one facing it", n, sd);
 	    }
-	 if (CheckFailed (-1, -1, msg1, msg2, 0))
+	 if (CheckFailed (-1, -1, msg1, msg2, 0, first_time))
 	    {
 	    GoToObject (OBJ_LINEDEFS, n);
 	    return;
@@ -383,6 +386,7 @@ void CheckCrossReferences () /* SWAP! */
 char   msg[80];
 int    n, m;
 SelPtr cur;
+bool   first_time = true;
 
 CheckingObjects ();
 LogMessage ("\nVerifying cross-references...\n");
@@ -393,7 +397,7 @@ for (n = 0; n < NumLineDefs; n++)
    if (LineDefs[n].sidedef1 < 0)
       {
       sprintf (msg, "ERROR: linedef #%d has no first sidedef!", n);
-      CheckFailed (-1, -1, msg, 0, 1);
+      CheckFailed (-1, -1, msg, 0, 1, first_time);
       GoToObject (OBJ_LINEDEFS, n);
       return;
       }
@@ -405,7 +409,7 @@ for (n = 0; n < NumLineDefs; n++)
       {
       sprintf (msg, "ERROR: linedef #%d uses the same sidedef twice (#%d)",
 	n, LineDefs[n].sidedef1);
-      CheckFailed (-1, -1, msg, 0, 1);
+      CheckFailed (-1, -1, msg, 0, 1, first_time);
       GoToObject (OBJ_LINEDEFS, n);
       return;
       }
@@ -416,7 +420,7 @@ for (n = 0; n < NumLineDefs; n++)
       {
       sprintf (msg, "ERROR: linedef #%d uses the same vertex twice (#%d)",
 	n, LineDefs[n].start);
-      CheckFailed (-1, -1, msg, 0, 1);
+      CheckFailed (-1, -1, msg, 0, 1, first_time);
       GoToObject (OBJ_LINEDEFS, n);
       return;
       }
@@ -593,6 +597,7 @@ int  n;
 int  sd1, sd2;
 int  s1, s2;
 char msg1[80], msg2[80];
+bool first_time = true;
 
 CheckingObjects ();
 LogMessage ("\nVerifying textures...\n");
@@ -603,7 +608,7 @@ for (n = 0; n < NumSectors; n++)
       {
       sprintf (msg1, "Error: sector #%d has no ceiling texture", n);
       sprintf (msg2, "You probably used a brain-damaged editor to do that...");
-      CheckFailed (-1, -1, msg1, msg2, 1);
+      CheckFailed (-1, -1, msg1, msg2, 1, first_time);
       GoToObject (OBJ_SECTORS, n);
       return;
       }
@@ -611,7 +616,7 @@ for (n = 0; n < NumSectors; n++)
       {
       sprintf (msg1, "Error: sector #%d has no floor texture", n);
       sprintf (msg2, "You probably used a brain-damaged editor to do that...");
-      CheckFailed (-1, -1, msg1, msg2, 1);
+      CheckFailed (-1, -1, msg1, msg2, 1, first_time);
       GoToObject (OBJ_SECTORS, n);
       return;
       }
@@ -621,7 +626,7 @@ for (n = 0; n < NumSectors; n++)
 	"Error: Sector #%d has its ceiling lower than its floor", n);
       sprintf (msg2,
 	"The textures will never be displayed if you cannot go there");
-      CheckFailed (-1, -1, msg1, msg2, 1);
+      CheckFailed (-1, -1, msg1, msg2, 1, first_time);
       GoToObject (OBJ_SECTORS, n);
       return;
       }
@@ -629,7 +634,7 @@ for (n = 0; n < NumSectors; n++)
       {
       sprintf (msg1, "Error: sector #%d has its ceiling too high", n);
       sprintf (msg2, "The maximum difference allowed is 1023 (ceiling - floor)");
-      CheckFailed (-1, -1, msg1, msg2, 1);
+      CheckFailed (-1, -1, msg1, msg2, 1, first_time);
       GoToObject (OBJ_SECTORS, n);
       return;
       }
@@ -657,7 +662,7 @@ for (n = 0; n < NumLineDefs; n++)
 	   " sidedef #%d has no middle texture", n, sd1);
 	 sprintf (msg2, "Do you want to set the texture to \"%s\""
 	   " and continue?", default_middle_texture);
-	 if (CheckFailed (-1, -1, msg1, msg2, 0))
+	 if (CheckFailed (-1, -1, msg1, msg2, 0, first_time))
 	    {
 	    GoToObject (OBJ_LINEDEFS, n);
 	    return;
@@ -677,7 +682,7 @@ for (n = 0; n < NumLineDefs; n++)
 	   " sidedef #%d has no upper texture", n, sd1);
 	 sprintf (msg2, "Do you want to set the texture to \"%s\""
 	   " and continue?", default_upper_texture);
-	 if (CheckFailed (-1, -1, msg1, msg2, 0))
+	 if (CheckFailed (-1, -1, msg1, msg2, 0, first_time))
 	    {
 	    GoToObject (OBJ_LINEDEFS, n);
 	    return;
@@ -695,7 +700,7 @@ for (n = 0; n < NumLineDefs; n++)
 	   " sidedef #%d has no lower texture", n, sd1);
 	 sprintf (msg2, "Do you want to set the texture to \"%s\""
 	   " and continue?", default_lower_texture);
-	 if (CheckFailed (-1, -1, msg1, msg2, 0))
+	 if (CheckFailed (-1, -1, msg1, msg2, 0, first_time))
 	    {
 	    GoToObject (OBJ_LINEDEFS, n);
 	    return;
@@ -715,7 +720,7 @@ for (n = 0; n < NumLineDefs; n++)
 	   " sidedef #%d has no upper texture", n, sd2);
 	 sprintf (msg2, "Do you want to set the texture to \"%s\""
 	   " and continue?", default_upper_texture);
-	 if (CheckFailed (-1, -1, msg1, msg2, 0))
+	 if (CheckFailed (-1, -1, msg1, msg2, 0, first_time))
 	    {
 	    GoToObject (OBJ_LINEDEFS, n);
 	    return;
@@ -733,7 +738,7 @@ for (n = 0; n < NumLineDefs; n++)
 	   " sidedef #%d has no lower texture", n, sd2);
 	 sprintf (msg2, "Do you want to set the texture to \"%s\""
 	   " and continue?", default_lower_texture);
-	 if (CheckFailed (-1, -1, msg1, msg2, 0))
+	 if (CheckFailed (-1, -1, msg1, msg2, 0, first_time))
 	    {
 	    GoToObject (OBJ_LINEDEFS, n);
 	    return;
@@ -770,6 +775,7 @@ void CheckTextureNames () /* SWAP! */
 {
 int  n;
 char msg1[80], msg2[80];
+bool first_time = true;
 
 CheckingObjects ();
 LogMessage ("\nVerifying texture names...\n");
@@ -782,8 +788,8 @@ for (n = 0; n < NumSectors; n++)
       {
       sprintf (msg1, "Invalid ceiling texture in sector #%d", n);
       sprintf (msg2, "The name \"%.*s\" is not a floor/ceiling texture",
-	WAD_FLAT_NAME, Sectors[n].ceilt);
-      if (CheckFailed (-1, -1, msg1, msg2, 0))
+	(int) WAD_FLAT_NAME, Sectors[n].ceilt);
+      if (CheckFailed (-1, -1, msg1, msg2, 0, first_time))
 	 {
 	 GoToObject (OBJ_SECTORS, n);
 	 return;
@@ -794,8 +800,8 @@ for (n = 0; n < NumSectors; n++)
       {
       sprintf (msg1, "Invalid floor texture in sector #%d", n);
       sprintf (msg2, "The name \"%.*s\" is not a floor/ceiling texture",
-	WAD_FLAT_NAME, Sectors[n].floort);
-      if (CheckFailed (-1, -1, msg1, msg2, 0))
+	(int) WAD_FLAT_NAME, Sectors[n].floort);
+      if (CheckFailed (-1, -1, msg1, msg2, 0, first_time))
 	 {
 	 GoToObject (OBJ_SECTORS, n);
 	 return;
@@ -810,8 +816,8 @@ for (n = 0; n < NumSideDefs; n++)
       {
       sprintf (msg1, "Invalid upper texture in sidedef #%d", n);
       sprintf (msg2, "The name \"%.*s\" is not a wall texture",
-	WAD_TEX_NAME, SideDefs[n].tex1);
-      if (CheckFailed (-1, -1, msg1, msg2, 0))
+	(int) WAD_TEX_NAME, SideDefs[n].tex1);
+      if (CheckFailed (-1, -1, msg1, msg2, 0, first_time))
 	 {
 	 GoToObject (OBJ_SIDEDEFS, n);
 	 return;
@@ -822,8 +828,8 @@ for (n = 0; n < NumSideDefs; n++)
       {
       sprintf (msg1, "Invalid lower texture in sidedef #%d", n);
       sprintf (msg2, "The name \"%.*s\" is not a wall texture",
-	WAD_TEX_NAME, SideDefs[n].tex2);
-      if (CheckFailed (-1, -1, msg1, msg2, 0))
+	(int) WAD_TEX_NAME, SideDefs[n].tex2);
+      if (CheckFailed (-1, -1, msg1, msg2, 0, first_time))
 	 {
 	 GoToObject (OBJ_SIDEDEFS, n);
 	 return;
@@ -834,8 +840,8 @@ for (n = 0; n < NumSideDefs; n++)
       {
       sprintf (msg1, "Invalid middle texture in sidedef #%d", n);
       sprintf (msg2, "The name \"%.*s\" is not a wall texture",
-	WAD_TEX_NAME, SideDefs[n].tex3);
-      if (CheckFailed (-1, -1, msg1, msg2, 0))
+	(int) WAD_TEX_NAME, SideDefs[n].tex3);
+      if (CheckFailed (-1, -1, msg1, msg2, 0, first_time))
 	 {
 	 GoToObject (OBJ_SIDEDEFS, n);
 	 return;
@@ -857,7 +863,7 @@ Bool p1 = 0;
 Bool p2 = 0;
 Bool p3 = 0;
 Bool p4 = 0;
-int  dm = 0;
+size_t dm = 0;
 int  t;
 
 ObjectsNeeded (OBJ_THINGS, 0);

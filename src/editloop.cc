@@ -8,25 +8,23 @@
 /*
 This file is part of Yadex.
 
-Yadex incorporates code from DEU 5.21 that was put in the public
-domain in 1994 by Raphaël Quinet and Brendon Wyber.
+Yadex incorporates code from DEU 5.21 that was put in the public domain in
+1994 by Raphaël Quinet and Brendon Wyber.
 
 The rest of Yadex is Copyright © 1997-1999 André Majorel.
 
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation; either version 2 of the License, or
-(at your option) any later version.
+This program is free software; you can redistribute it and/or modify it under
+the terms of the GNU General Public License as published by the Free Software
+Foundation; either version 2 of the License, or (at your option) any later
+version.
 
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
+This program is distributed in the hope that it will be useful, but WITHOUT
+ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 
-You should have received a copy of the GNU Library General Public
-License along with this library; if not, write to the Free
-Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
-02111-1307, USA.
+You should have received a copy of the GNU General Public License along with
+this program; if not, write to the Free Software Foundation, Inc., 59 Temple
+Place, Suite 330, Boston, MA 02111-1307, USA.
 */
 
 
@@ -55,6 +53,7 @@ Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 #include "menubar.h"
 #include "menu.h"
 #include "modpopup.h"
+#include "palview.h"
 #include "prefer.h"
 #include "rgbbmp.h"
 #include "selbox.h"
@@ -97,7 +96,7 @@ static int SortLevels (const void *item1, const void *item2);
  *	levels present in the master directory. If <levelno> is
  *	non-zero, the level name can be picked only from those
  *	levels in the master directory for which
- *	levelname2levelno() % 100 is equal to <levelno>. For
+ *	levelname2levelno() % 1000 is equal to <levelno>. For
  *	example, if <levelno> is equal to 12, only E1M2 and
  *	MAP12 would be listed. This feature is not used anymore
  *	because "e" now requires an argument and tends to deal
@@ -107,14 +106,14 @@ const char *SelectLevel (int levelno)
 {
 MDirPtr dir;
 static char name[WAD_NAME + 1]; /* AYM it was [7] previously */
-char **levels;
+char **levels = 0;
 int n = 0;           /* number of levels in the dir. that match */
 
 get_levels_that_match:
 for (dir = MasterDir; dir; dir = dir->next)
    {
    if (levelname2levelno (dir->dir.name) > 0
-    && (levelno==0 || levelname2levelno (dir->dir.name) % 100 == levelno))
+    && (levelno==0 || levelname2levelno (dir->dir.name) % 1000 == levelno))
       {
       if (n == 0)
 	 levels = (char **) GetMemory (sizeof (char *));
@@ -202,7 +201,7 @@ int    oldbuttons;
 
 Bool   StretchSelBox = 0;
 
-int object;  /* The object under the pointer */
+int object = OBJ_NO_NONE;  /* The object under the pointer */
 
 memset (&e, 0, sizeof e);	/* Catch-all */
 e.move_speed         = 20;
@@ -446,7 +445,7 @@ menu_c *menu_thing_flags = new menu_c (NULL,
 
 for (RedrawMap = 1; ; RedrawMap = 0)
    {
-   int motion;
+   int motion = 0;  // Initialized to silence GCC warning
 
    /*
     *  Step 1 -- Do all the displaying work
@@ -718,7 +717,7 @@ for (RedrawMap = 1; ; RedrawMap = 0)
 
       else
 	 {
-         int op;
+         int op = -1;
          e.modpopup->unset ();
          if (e.modal == 's')
             op = YO_SET;
@@ -771,7 +770,7 @@ for (RedrawMap = 1; ; RedrawMap = 0)
 
       else
          {
-         int op;
+         int op = -1;
          e.modpopup->unset ();
          if (e.modal == 's')
             op = YO_SET;
@@ -892,7 +891,7 @@ for (RedrawMap = 1; ; RedrawMap = 0)
       && IsSelected (e.Selected, object)
       && object == e.click_obj_no
       && e.obj_type == e.click_obj_type
-      && is.time - e.click_time <= double_click_timeout)
+      && is.time - e.click_time <= (unsigned long) double_click_timeout)
       {
       // Very important! If you don't do that, the release of the
       // click that closed the properties menu will drag the object.
@@ -1454,8 +1453,8 @@ cancel_save_as:
       else if (is.key == YK_TAB || is.key == YK_BACKTAB
        || is.key == 't' || is.key == 'v' || is.key == 'l' || is.key == 's')
 	 {
-         int old_mode;
-         int new_mode;
+         int    old_mode;
+         int    new_mode = -1;
 	 int    PrevMode = e.obj_type;
 	 SelPtr NewSel;
 
@@ -1895,7 +1894,7 @@ cancel_save_as:
 	    && e.Selected && e.Selected->next)
 	    {
 	    int firstv;
-            int obj_no;
+            int obj_no = OBJ_NO_NONE;
 
 	    ObjectsNeeded (OBJ_LINEDEFS, 0);
 	    if (e.Selected->next->next)
@@ -2071,33 +2070,39 @@ cancel_save_as:
 	 RedrawMap = 1;
 	 }
 
-      /* Debug info (not documented) */
+      // [!] Debug info (not documented)
       else if (is.key == '!')
          {
          DumpSelection (e.Selected);
          }
 
-      /* Show font (not documented) */
+      // [@] Show font (not documented)
       else if (is.key == '@')
          {
          show_font ();
 	 RedrawMap = 1;
          }
 
-      /* Show colours (not documented) */
+      // [|] Show colours (not documented)
       else if (is.key == '|')
          {
          show_colours ();
 	 RedrawMap = 1;
          }
 
-#if 0
-      /* Xref for sidedef (not documented) */
-      else if (is.key == '^')
+      // [Ctrl][p] Examine game palette (not documented)
+      else if (is.key == 16)
+         {
+	 Palette_viewer pv;
+	 pv.run ();
+	 RedrawMap = 1;
+         }
+
+      // [Ctrl][r] Xref for sidedef (not documented)
+      else if (is.key == 18)
 	 {
 	 xref_sidedef ();
 	 }
-#endif
 
       // [Ctrl][b] Select linedefs whose sidedefs reference non-existant sectors
       else if (is.key == 2)
@@ -2119,7 +2124,7 @@ cancel_save_as:
 	 secret_sectors ();
 	 }
 
-      /* Show object numbers */
+      // [&] Show object numbers
       else if (is.key == '&')
          {
          RedrawMap = 1;

@@ -1,4 +1,4 @@
-# Yadex game definition file version 2
+# Yadex game definition file version 3
 #
 #	strife.ygd
 #	Yadex Game Definitions for Strife
@@ -18,8 +18,8 @@
 level_format    doom
 level_name      map01
 picture_format  normal
-texture_format  normal
-texture_lumps   texture1
+texture_format  strife11
+texture_lumps   normal
 
 #
 #	Definition of linedef type groups

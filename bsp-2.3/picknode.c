@@ -420,10 +420,12 @@ onesided:
 
          do
            if (ch->pdx*psy - ch->pdy*psx > ch->ptmp)   /* Start */
+	    {
              if (ch->pdx*pey - ch->pdy*pex > ch->ptmp) /* End */
                goto skip;
              else
                start_is_out=1;     /* Mark starting vertex as outside */
+	    }
          while (ch++,--num);
 
     /* If the starting and vertices are both outside of the convex hull,
@@ -688,18 +690,22 @@ static int seg_is_visible(const struct Pseg *ps,
                  (t+ae || t+as || dotax<dotay)) ||
             ((t=p->pdz2*floorh)+bs<=0 && t+be<=0 &&
                  (t+be || t+bs || dotbx<dotby)) ))
+	 {
           if (ceil_blocked)
             return 0;
           else
             floor_blocked=1;
-         if (!ceil_blocked && (((t=p->pdz1*ceilh)+as<=0 && t+ae<=0 &&
-                  (t+ae || t+as || dotax<dotay)) ||
-            ((t=p->pdz2*ceilh)+bs<=0 && t+be<=0 &&
-                  (t+be || t+bs || dotbx<dotby)) ))
-          if (floor_blocked)
-            return 0;
-          else
-            ceil_blocked=1;
+	 }
+        if (!ceil_blocked && (((t=p->pdz1*ceilh)+as<=0 && t+ae<=0 &&
+                 (t+ae || t+as || dotax<dotay)) ||
+           ((t=p->pdz2*ceilh)+bs<=0 && t+be<=0 &&
+                 (t+be || t+bs || dotbx<dotby)) ))
+	 {
+	  if (floor_blocked)
+	    return 0;
+	  else
+	    ceil_blocked=1;
+	 }
        }
      }
     return floor_blocked ? CEILING : ceil_blocked ? FLOOR : FLOOR | CEILING;
@@ -751,18 +757,22 @@ static void bsp_traverse(const struct Node *tn, struct view *v)
  do
   {
    if (box_is_visible(tn->minx1,tn->miny1,tn->maxx1,tn->maxy1,v))
+    {
      if (tn->nextr)       /* Process only if bounding box is visible */
        bsp_traverse(tn->nextr,v);
      else                 /* Process right side */
        v->func(tn->chright,v);
+    }
    if (lr) break;
 
 leftside:
    if (box_is_visible(tn->minx2,tn->miny2,tn->maxx2,tn->maxy2,v))
+    {
      if (tn->nextl)       /* Process only if bounding box is visible */
        bsp_traverse(tn->nextl,v);
      else                 /* Process left side */
        v->func(tn->chleft,v);
+    }
   }
  while (lr);
 }
@@ -971,10 +981,12 @@ static void raise_ceil(int s, int depth)
      int s2=sidedefs[linedefs[i].sidedef2].sector;
      int s1=sidedefs[linedefs[i].sidedef1].sector;
      if (s1!=s)
+      {
        if (s2==s)
          s2=s1;
        else
          continue;
+      }
      if (s2!=s && sectors[s2].ceilh<l)
        l=sectors[s2].ceilh;
     }
@@ -993,10 +1005,12 @@ static void lower_floor(int s)
      int s2=sidedefs[linedefs[i].sidedef2].sector;
      int s1=sidedefs[linedefs[i].sidedef1].sector;
      if (s1!=s)
+      {
        if (s2==s)
          s2=s1;
        else
          continue;
+      }
      if (s2!=s && sectors[s2].floorh<l)
        l=sectors[s2].floorh;
     }
@@ -1015,10 +1029,12 @@ static void lowern_floor(int s, int depth)
      int s2=sidedefs[linedefs[i].sidedef2].sector;
      int s1=sidedefs[linedefs[i].sidedef1].sector;
      if (s1!=s)
+      {
        if (s2==s)
          s2=s1;
        else
          continue;
+      }
      if (s2!=s && sectors[s2].floorh>l)
        l=sectors[s2].floorh;
     }
@@ -1036,6 +1052,7 @@ top:
  sector_limits[s].floorh.moves=3;
  for (k=0;k<num_lines;k++)
    if (linedefs[k].sidedef2!=-1 && sidedefs[linedefs[k].sidedef1].sector==s)
+    {
      if (!(sector_limits[k=sidedefs[linedefs[k].sidedef2].sector].floorh.moves & 2) &&
          !strncmp(sectors[k].floort,sectors[s].floort,8))
       {
@@ -1044,6 +1061,7 @@ top:
       }
      else
        break;
+    }
 }
 
 /* Simple one-pass algorithm; does not take into account multiple effects. */
@@ -1176,6 +1194,7 @@ void warn_visplanes(const struct Node *tn)
        memset( (sector_vp_hitlist = GetMemory(num_sects)), 0, num_sects);
 
      if (sector_vp_hitlist[sector] <= VPOF_MAX_SECTOR)
+      {
        if (sector_vp_hitlist[sector]++ < VPOF_MAX_SECTOR)
         {
          printf(
@@ -1185,6 +1204,7 @@ void warn_visplanes(const struct Node *tn)
         }
        else
          printf("Further visplane overflow warnings suppressed in sector %d\n",sector);
+      }
     }
   }
  printf(" \nMaximum number of visplanes=%d, near linedef %d, sector %d\n",

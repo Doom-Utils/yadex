@@ -4,7 +4,7 @@
 ybsp \- node builder for Doom wad files
 
 .SH SYNOPSIS
-\fBybsp\fP [\fIoptions\fP] [\fB-o \fP\fIfile\fP] \fIfile\fP
+\fBybsp\fP [\fIoptions\fP] [\fB\-o \fP\fIfile\fP] \fIfile\fP
 
 .SH ATTENTION
 This (\fBybsp\fP) is BSP 2.3 with the following changes:
@@ -21,7 +21,7 @@ This version of BSP is NOT quite the same as the one that comes
 with Xwadtools or the one you would get by compiling bsp23x.zip.
 It is not the same as bsp30x.zip either.
 
-Xwadtools' BSP has the \fB-noprog\fP option. Zdoom's BSP has
+Xwadtools' BSP has the \fB\-noprog\fP option. Zdoom's BSP has
 support for Hexen. Yadex's BSP has Colin's bugfix and automatic
 disabling of progress indicator. Please bear with us until we
 get our acts together and release a common version that includes
@@ -45,14 +45,13 @@ around borders of deep water, invisible stairs, etc.
 .LP
 Furthermore, just for a grin, if the linedef's tag is 999, then the
 sidedef's x-offset set an angle adjustment in degrees to be
-applied \-\- you can look straight at a wall, but it might come
+applied\(emyou can look straight at a wall, but it might come
 right at you on both sides and "stretch".
 .LP
 BSP supports HOM-free transparent doors. Simply make the sector
-referenced by the doortracks have a sector tag of >= 900. No need
-to remember sector numbers and type them in on a command line \-\-
-just use any sector tag >= 900 to permanently mark the sector
-special.
+referenced by the doortracks have a sector tag of >= 900. No need to
+remember sector numbers and type them in on a command line\(emjust use
+any sector tag >= 900 to permanently mark the sector special.
 
 .SH OPTIONS
 .TP

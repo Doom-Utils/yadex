@@ -54,7 +54,7 @@ class Entry2
     int count_widgets (const char *fmt);
     int fill_in_widgets_info (const char *fmt, va_list args);
     void do_geom ();
-    void jump_to_field (int field_no);
+    void jump_to_field (size_t field_no);
     void prev_field ();
     void next_field ();
 

@@ -8,25 +8,23 @@
 /*
 This file is part of Yadex.
 
-Yadex incorporates code from DEU 5.21 that was put in the public
-domain in 1994 by Raphaël Quinet and Brendon Wyber.
+Yadex incorporates code from DEU 5.21 that was put in the public domain in
+1994 by Raphaël Quinet and Brendon Wyber.
 
 The rest of Yadex is Copyright © 1997-1999 André Majorel.
 
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation; either version 2 of the License, or
-(at your option) any later version.
+This program is free software; you can redistribute it and/or modify it under
+the terms of the GNU General Public License as published by the Free Software
+Foundation; either version 2 of the License, or (at your option) any later
+version.
 
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
+This program is distributed in the hope that it will be useful, but WITHOUT
+ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 
-You should have received a copy of the GNU Library General Public
-License along with this library; if not, write to the Free
-Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
-02111-1307, USA.
+You should have received a copy of the GNU General Public License along with
+this program; if not, write to the Free Software Foundation, Inc., 59 Temple
+Place, Suite 330, Boston, MA 02111-1307, USA.
 */
 
 
@@ -47,7 +45,7 @@ static const char *standard_directories[] =
    };
 
 
-const char ygd_file_magic[] = "# Yadex game definition file version 2";
+const char ygd_file_magic[] = "# Yadex game definition file version 3";
 
 
 /*
@@ -225,7 +223,7 @@ for (lineno = 2; fgets (readbuf, sizeof readbuf, ygdfile); lineno++)
       else if (! strcmp (token[1], "hexen"))
          yg_level_format = YGLF_HEXEN;
       else
-	 fatal_error ("%s(%d): invalid argument \"%s\" (alpha|doom|hexen)",
+	 fatal_error ("%s(%d): invalid argument \"%.32s\" (alpha|doom|hexen)",
             filename, lineno, token[1]);
       }
    else if (! strcmp (token[0], "level_name"))
@@ -239,7 +237,7 @@ for (lineno = 2; fgets (readbuf, sizeof readbuf, ygdfile); lineno++)
       else if (! strcmp (token[1], "map01"))
          yg_level_name = YGLN_MAP01;
       else
-	 fatal_error ("%s(%d): invalid argument \"%s\" (e1m1|e1m10|map01)",
+	 fatal_error ("%s(%d): invalid argument \"%.32s\" (e1m1|e1m10|map01)",
             filename, lineno, token[1]);
       }
    else if (! strcmp (token[0], "picture_format"))
@@ -253,8 +251,8 @@ for (lineno = 2; fgets (readbuf, sizeof readbuf, ygdfile); lineno++)
       else if (! strcmp (token[1], "normal"))
 	 yg_picture_format = YGPF_NORMAL;
       else
-	 fatal_error ("%s(%d): invalid argument \"%s\" (alpha|pr|normal)",
-	       filename, lineno, token[1]);
+	 fatal_error ("%s(%d): invalid argument \"%.32s\" (alpha|pr|normal)",
+	    filename, lineno, token[1]);
       }
    else if (! strcmp (token[0], "st"))
       {
@@ -272,13 +270,16 @@ for (lineno = 2; fgets (readbuf, sizeof readbuf, ygdfile); lineno++)
       {
       if (ntoks != 2)
          fatal_error (bad_arg_count, filename, lineno, token[0], 1);
-      if (! strcmp (token[1], "alpha04"))
-	 yg_texture_format = YGTF_ALPHA04;
+      if (! strcmp (token[1], "nameless"))
+	 yg_texture_format = YGTF_NAMELESS;
       else if (! strcmp (token[1], "normal"))
 	 yg_texture_format = YGTF_NORMAL;
+      else if (! strcmp (token[1], "strife11"))
+	 yg_texture_format = YGTF_STRIFE11;
       else
-	 fatal_error ("%s(%d): invalid argument \"%s\" (alpha04|normal)",
-	       filename, lineno, token[1]);
+	 fatal_error (
+	    "%s(%d): invalid argument \"%.32s\" (normal|nameless|strife11)",
+	    filename, lineno, token[1]);
       }
    else if (! strcmp (token[0], "texture_lumps"))
       {
@@ -286,11 +287,14 @@ for (lineno = 2; fgets (readbuf, sizeof readbuf, ygdfile); lineno++)
          fatal_error (bad_arg_count, filename, lineno, token[0], 1);
       if (! strcmp (token[1], "textures"))
 	 yg_texture_lumps = YGTL_TEXTURES;
-      else if (! strcmp (token[1], "texture1"))
-	 yg_texture_lumps = YGTL_TEXTURE1;
+      else if (! strcmp (token[1], "normal"))
+	 yg_texture_lumps = YGTL_NORMAL;
+      else if (! strcmp (token[1], "none"))
+	 yg_texture_lumps = YGTL_NONE;
       else
-	 fatal_error ("%s(%d): invalid argument \"%s\" (textures|texture1)",
-	       filename, lineno, token[1]);
+	 fatal_error (
+	    "%s(%d): invalid argument \"%.32s\" (normal|textures|none)",
+	    filename, lineno, token[1]);
       }
    else if (! strcmp (token[0], "thing"))
       {
@@ -317,7 +321,7 @@ for (lineno = 2; fgets (readbuf, sizeof readbuf, ygdfile); lineno++)
 	 fatal_error (bad_arg_count, filename, lineno, token[0], 3);
       buf.thinggroup = *token[1];
       if (getcolour (token[2], &buf.rgb))
-	 fatal_error ("%s(%d): bad colour spec \"%s\"",
+	 fatal_error ("%s(%d): bad colour spec \"%.32s\"",
             filename, lineno, token[2]);
       buf.acn = add_app_colour (buf.rgb);
       buf.desc = token[3];
@@ -325,7 +329,8 @@ for (lineno = 2; fgets (readbuf, sizeof readbuf, ygdfile); lineno++)
 	 fatal_error ("LGD5 (%s)", al_astrerror (al_aerrno));
       }
    else
-      fatal_error ("%s(%d): unknown directive \"%s\"", filename, lineno, token[0]);
+      fatal_error ("%s(%d): unknown directive \"%.32s\"",
+	 filename, lineno, token[0]);
    }
 
 fclose (ygdfile);

@@ -32,7 +32,7 @@ extern SPtr  Sectors;		/* sectors data */
 // FIXME should be somewhere else
 extern int   NumWTexture;	/* number of wall textures */
 extern char  **WTexture;	/* array of wall texture names */
-extern int   NumFTexture;	/* number of floor/ceiling textures */
+extern size_t NumFTexture;	/* number of floor/ceiling textures */
 typedef struct
 {
   char   name[WAD_NAME + 1];	// Name of flat

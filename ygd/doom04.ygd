@@ -1,6 +1,6 @@
-# Yadex game definition file version 2
+# Yadex game definition file version 3
 #
-#	alpha04.ygd
+#	doom04.ygd
 #	Yadex Game Definitions for the Doom alpha 0.4
 #	AYM 1999-07-09
 #
@@ -11,7 +11,7 @@
 level_format    alpha
 level_name      e1m10
 picture_format  alpha
-texture_format  alpha04
+texture_format  nameless
 texture_lumps   textures
 
 #

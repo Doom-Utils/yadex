@@ -27,6 +27,10 @@ HAVE_GCC := $(shell if gcc --version; then echo OK; fi)
 # Typical values : "/usr", "/usr/local" and "/opt".
 PREFIX = /usr/local
 
+# Does your system have gettimeofday() ?
+# Current rule: all systems have it.
+HAVE_GETTIMEOFDAY = 1
+
 # Does your system have nanosleep() ?
 # Current rule: only Linux has it.
 ifneq (,$(findstring $(OS),linux))
@@ -88,7 +92,8 @@ MODULES_YADEX =\
 	l_vertices	levels		lists		memory\
 	menubar		menu		mkpalette	mouse\
 	names		nop		objects		objinfo\
-	oldmenus	pic2img		prefer		s_centre\
+	oldmenus	palview		pic2img		prefer\
+	s_centre\
 	s_door		s_lift		s_linedefs	s_merge\
 	s_misc		s_prop		s_split		s_vertices\
 	sanity		savepic		scrnshot	selbox\
@@ -98,7 +103,7 @@ MODULES_YADEX =\
 	v_centre	v_merge		v_polyg		verbmsg\
 	version		wads		wads2		warn\
 	x_centre	x_exchng	x_mirror	x_rotate\
-	x11		xref		yadex
+	x11		xref		yadex		ytime
 
 # All the modules of Atclib without path or extension.
 MODULES_ATCLIB =\
@@ -171,6 +176,9 @@ DLDFLAGS =
 DEFINES += -DY_UNIX -DY_X11
 #DEFINES += -DY_ALPHA
 #DEFINES += -DY_BETA
+ifdef HAVE_GETTIMEOFDAY
+DEFINES += -DY_GETTIMEOFDAY
+endif
 ifdef HAVE_NANOSLEEP
 DEFINES += -DY_NANOSLEEP
 endif
@@ -198,9 +206,9 @@ DOBJ_ATCLIB = $(addprefix $(DOBJPHYSDIR_ATCLIB)/, $(addsuffix .o, $(MODULES_ATCL
 
 # The game definition files.
 YGD = $(addprefix ygd/,\
-	alpha02.ygd	alpha04.ygd	alpha05.ygd	doom.ygd\
+	doom.ygd	doom02.ygd	doom04.ygd	doom05.ygd\
 	doom2.ygd	doompr.ygd	heretic.ygd	hexen.ygd\
-	strife.ygd)
+	strife.ygd	strife10.ygd)
 
 # Files that are used with scripts/process to
 # generate files that are included in the
@@ -225,6 +233,7 @@ DOC2_SRC_HTML =\
 	docsrc/index.html\
 	docsrc/keeping_up.html\
 	docsrc/legal.html\
+	docsrc/palette.html\
 	docsrc/reporting.html\
 	docsrc/trivia.html\
 	docsrc/trouble.html\
@@ -251,11 +260,12 @@ DOC2 = $(addprefix doc/, $(PIX) $(notdir $(DOC2_SRC_HTML) $(DOC2_SRC_MISC)))
 # Misc. other files that must be put in the
 # distribution archive.
 MISC_FILES =\
-	.srcdate\
+	src/.srcdate\
+	src/.uptodate\
+	CHANGES\
 	COPYING\
 	COPYING.LIB\
 	GNUmakefile\
-	HISTORY\
 	Makefile\
 	TODO\
 	VERSION\
@@ -271,7 +281,12 @@ MISC_FILES =\
 PIX = $(shell cat docsrc/.pixlist)
 
 # The script files.
-SCRIPTS = $(addprefix scripts/, mkinstalldirs process youngest)
+SCRIPTS = $(addprefix scripts/,\
+	ftime.1\
+	ftime.c\
+	mkinstalldirs\
+	process\
+	youngest)
 
 # All files that must be put in the distribution archive.
 ARC_FILES = $(sort $(DOC1) $(DOC1_SRC) $(DOC2_SRC_HTML) $(DOC2_SRC_MISC)\
@@ -412,6 +427,7 @@ save:
 		--exclude "old/*"\
 		--exclude "*~"\
 		--exclude "*.bak"\
+		--exclude "web/arc"\
 		--exclude yadex-$$(date '+%Y%m%d').tgz\
 		.
 
@@ -454,7 +470,7 @@ dd:
 # being only 15% more efficient. That's why the creation
 # of the .tar.bz2 archive is commented out.
 .PHONY: dist
-dist: history distimage distgz #distbz2
+dist: changes distimage distgz #distbz2
 	@echo Removing distribution image tree $(ARCHIVE)
 	@rm -r $(ARCHIVE)
 
@@ -464,11 +480,7 @@ distimage: all $(ARC_FILES)
 	@if [ -e $(ARCHIVE) ]; then echo Error: $(ARCHIVE) already exists'!';\
 		false; fi
 	@scripts/mkinstalldirs $(ARCHIVE)
-	@cp -P $(ARC_FILES) $(ARCHIVE)
-	@#chmod 777 $(ARCHIVE)
-	@#chmod -R 664 $(ARCHIVE)/*
-	@#chmod -R 775 $(addprefix $(ARCHIVE)/,$(SCRIPTS))
-	@#find $(ARCHIVE) -type d -exec chmod 777 '{}' ';'
+	@tar -cf - $(ARC_FILES) | (cd $(ARCHIVE); tar -xf -)
 
 .PHONY: distgz
 distgz: distimage
@@ -499,19 +511,70 @@ yadex.dep: $(SRC_YADEX)
 	@makedepend -f- -p$(OBJDIR)/ -Y -Iatclib $(DEFINES) $(SRC_YADEX)\
 		2>/dev/null | sed -e "s:/src::" >$@
 
-# Contains the YYYY-MM-DD mtime of the most recently
-# modified source file. Acts as a cache for the
-# output of "scripts/youngest $(SRC_NON_GEN)".
-.srcdate: $(SRC_NON_GEN)
-	@echo Generating $@
-	@if perl -v >/dev/null; then\
-	  scripts/youngest $^ >$@;\
-	elif [ -e $@ ]; then\
-	  echo "Sorry, you need Perl to refresh $@. Keeping old $@.";\
+# The YYYY-MM-DD date indicated in the parentheses after the
+# version number is the mtime of the most recent source file
+# (where "being a source file" is defined as "being listed in
+# $(SRC_NON_GEN)"). That string is the output of a perl script,
+# scripts/youngest. Since perl is not necessarily installed on
+# all machines, we cache that string in the file src/.srcdate
+# and include that file in the distribution archive. If we
+# didn't do that, people who don't have perl would be unable to
+# build Yadex.
+#
+# Conceptually, src/.srcdate depends on $(SRC_NON_GEN) and
+# doc/*.html depend on src/.srcdate. However, we can't write the
+# makefile that way because if we did, that would cause two
+# problems. Firstly every time a source file is changed,
+# scripts/youngest would be ran, most of the time for nothing
+# since its output is always the same, unless it's never been
+# run today. Secondly, src/.srcdate being just generated, it's
+# more recent than the content of the doc/ directory. The result
+# would be that the entire doc/ directory would be rebuilt every
+# time a single source file is changed, which is guaranteed to
+# have an unnerving effect on the hacker at the keyboard.
+#
+# Part of the solution is to systematically force the mtime of
+# src/.srcdate to 00:00, today. Thus, src/.srcdate always looks
+# older than the content of the doc/ directory, unless it's not
+# been refreshed yet today.
+#
+# But that's not enough because then src/.srcdate also looks
+# always older than the source files it depends on, and thus
+# make attempts to regenerate it every time make is invoked at
+# all, which would render the very existence of src/.srcdate
+# useless. That's why we have another file, src/.uptodate, that
+# we touch to keep track of the time when we last generated
+# src/.srcdate.
+#
+# If there was a such thing as _date-only_ dependencies, I could
+# get away with just this :
+#
+# src/.srcdate: scripts/youngest
+# src/.srcdate <date_dependency_operator> $(SRC_NON_GEN)
+#         if perl -v >/dev/null 2>&1; then\
+#           scripts/youngest >$@;\
+#         else\
+#           blah...
+# doc/*.html <date_dependency_operator> src/.srcdate
+#         blah...
+#
+# That would save two calls to "touch", one intermediary
+# dependency (src/.uptodate) and a lot of obfuscation.
+
+src/.srcdate: src/.uptodate
+
+src/.uptodate: scripts/youngest $(SRC_NON_GEN)
+	@if perl -v >/dev/null 2>&1; then\
+	  echo Generating src/.srcdate;\
+	  scripts/youngest $(SRC_NON_GEN) >src/.srcdate;\
+	  touch -t $$(date '+%m%d')0000 src/.srcdate;\
+	elif [ -f src/.srcdate ]; then\
+	  echo Perl not available. Keeping old src/.srcdate;\
 	else\
-	  echo "Sorry, you need Perl to create $@. Creating empty $@.";\
-	  echo "????-??-??" >$@;\
+	  echo Perl not available. Creating bogus src/.srcdate;\
+	  date '+%Y-%m-%d' >src/.srcdate;\
 	fi
+	@touch $@;
 
 # Directories where objects and binaries are put.
 # (normal and debugging versions)
@@ -568,11 +631,11 @@ $(DOBJPHYSDIR_ATCLIB)/%.o: atclib/%.c $(HEADERS_ATCLIB)
 # A source file containing just the date of the
 # most recent source file and the version number
 # (found in ./VERSION).
-src/version.cc: $(SRC_NON_GEN) VERSION .srcdate
+src/version.cc: $(SRC_NON_GEN) VERSION src/.srcdate
 	@echo
 	@echo Generating $@
 	@printf "extern const char *const yadex_source_date = \"%s\";\n" \
-		$$(cat .srcdate) >$@
+		$$(cat src/.srcdate) >$@
 	@printf "extern const char *const yadex_version = \"%s\";\n" \
 		$$(cat VERSION) >>$@
 
@@ -590,7 +653,7 @@ docsrc/.pixlist: $(DOC2_SRC_HTML)
 	  echo "Sorry, you need Perl to refresh $@. Keeping old $@.";\
 	else\
 	  echo "Sorry, you need Perl to create $@. Creating empty $@.";\
-	  cp /dev/null $@;\
+	  touch $@;\
 	fi
 
 events.html: ev evhtml
@@ -599,36 +662,38 @@ events.html: ev evhtml
 events.txt: events.html
 	lynx -dump $< >$@
 
-log/log.html: log/*.log log2html
-	log2html -- $$(ls -r log/*.log) >$@
+changes/changes.html: changes/*.log log2html
+	./log2html -- $$(ls -r changes/*.log) >$@
 	
-.PHONY: history
-history: log/log.html
-	lynx -dump $< >HISTORY
+.PHONY: changes
+changes: changes/changes.html
+	lynx -dump $< >CHANGES
 
 
 # Generate the doc by filtering them through scripts/process
-doc/ybsp.6: bsp-2.3/ybsp.6 VERSION .srcdate scripts/process
+PROCESS = VERSION src/.srcdate scripts/process scripts/ftime
+
+doc/ybsp.6: bsp-2.3/ybsp.6 $(PROCESS)
 	@echo
 	@echo Generating $@
 	@scripts/process $< >$@
 
-doc/yadex.6: docsrc/yadex.6 VERSION .srcdate scripts/process
+doc/yadex.6: docsrc/yadex.6 $(PROCESS)
 	@echo
 	@echo Generating $@
 	@scripts/process $< >$@
 
-doc/README: docsrc/README.doc VERSION .srcdate scripts/process
+doc/README: docsrc/README.doc $(PROCESS)
 	@echo
 	@echo Generating $@
 	@scripts/process $< >$@
 
-%: docsrc/% VERSION .srcdate scripts/process
+%: docsrc/% $(PROCESS)
 	@echo
 	@echo Generating $@
 	@scripts/process $< >$@
 
-doc/%.html: docsrc/%.html VERSION .srcdate scripts/process
+doc/%.html: docsrc/%.html $(PROCESS)
 	@echo
 	@echo Generating $@
 	@scripts/process $< >$@
@@ -636,4 +701,12 @@ doc/%.html: docsrc/%.html VERSION .srcdate scripts/process
 # The images are just symlinked from docsrc/ to doc/
 doc/%.png: docsrc/%.png
 	@ln -sf ../$< $@
+
+
+#scripts/mdate: scripts/mdate.c
+#	$(CC) $< -o $@
+
+scripts/ftime: scripts/ftime.c
+	$(CC) $< -o $@
+
 

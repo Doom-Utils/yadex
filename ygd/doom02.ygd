@@ -1,6 +1,6 @@
-# Yadex game definition file version 2
+# Yadex game definition file version 3
 #
-#	alpha02.ygd
+#	doom02.ygd
 #	Yadex Game Definitions for the Doom alpha 0.2
 #	AYM 1999-07-09
 #
@@ -11,8 +11,7 @@
 level_format    alpha		# FIXME it's not even that !
 level_name      e1m1		# FIXME it's not even that !
 picture_format  alpha
-texture_format  alpha04		# FIXME apparently, there are no texture defs.
-texture_lumps   textures	# FIXME meaningless
+texture_lumps   none
 
 #
 #	Definition of linedef type groups
