@@ -611,8 +611,9 @@ showconf:
 #
 ########################################################################
 
-# If Makefile.config doesn't exist, give a hint...
+# If Makefile.config or config.h don't exist, give a hint...
 $(OBJDIR)/Makefile.config:
+$(OBJDIR)/config.h:
 	@echo "Sorry guv'nor, but... did you run ./configure ?" >&2
 	@false
 
@@ -639,7 +640,7 @@ $(OBJDIR)/files_share.man: $(OBJDIR)/config.share $(MAKEFILE)
 # Note: the modules of Atclib are not scanned as they all
 # depend on $(HEADERS_ATCLIB) and nothing else.
 
-yadex.dep: $(SRC_NON_GEN)
+yadex.dep: $(SRC_NON_GEN) src/config.h
 	@echo "Generating $@"
 	@makedepend -f- -Y -Iatclib $(SRC_NON_GEN) 2>/dev/null	\
 		| awk 'sub (/^src/, "") == 1 {				\
