@@ -11,7 +11,7 @@ This file is part of Yadex.
 Yadex incorporates code from DEU 5.21 that was put in the public domain in
 1994 by Raphaël Quinet and Brendon Wyber.
 
-The rest of Yadex is Copyright © 1997-2003 André Majorel and others.
+The rest of Yadex is Copyright © 1997-2005 André Majorel and others.
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -42,7 +42,7 @@ Serial_num master_dir_serial;		// The revision# thereof
  *
  *	Return 0 on success, non-zero on failure.
  */
-int file_read_i16 (FILE *fp, i16 *buf, long count)
+int file_read_i16 (FILE *fp, int16_t *buf, long count)
 {
   while (count-- > 0)
     *buf = getc (fp) | (getc (fp) << 8);
@@ -55,14 +55,14 @@ int file_read_i16 (FILE *fp, i16 *buf, long count)
  *
  *	Return 0 on success, non-zero on failure.
  */
-int file_read_i32 (FILE *fp, i32 *buf, long count)
+int file_read_i32 (FILE *fp, int32_t *buf, long count)
 {
   while (count-- > 0)
   {
-    *buf++ =    getc (fp)
-      | (      getc (fp) << 8)
-      | ((i32) getc (fp) << 16)
-      | ((i32) getc (fp) << 24);
+    *buf++ =       getc (fp)
+      | (          getc (fp) << 8)
+      | ((int32_t) getc (fp) << 16)
+      | ((int32_t) getc (fp) << 24);
   }
   return feof (fp) || ferror (fp);
 }
@@ -112,7 +112,7 @@ int file_read_bytes (FILE *fp, void *buf, long count)
  *
  *	Does no error checking.
  */
-void file_write_i16 (FILE *fd, i16 buf)
+void file_write_i16 (FILE *fd, int16_t buf)
 {
   putc (       buf & 0xff, fd);
   putc ((buf >> 8) & 0xff, fd);
@@ -124,10 +124,10 @@ void file_write_i16 (FILE *fd, i16 buf)
  *
  *	Does no error checking.
  */
-void file_write_i32 (FILE *fd, i32 buf, long count)
+void file_write_i32 (FILE *fd, int32_t buf, long count)
 {
   /* It would probably be more efficient to swap bytes in-core
-     and write the whole i32 at once. */
+     and write the whole int32_t at once. */
   while (count-- > 0)
   {
     putc (        buf & 0xff, fd);

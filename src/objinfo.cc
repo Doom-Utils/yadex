@@ -10,7 +10,7 @@ This file is part of Yadex.
 Yadex incorporates code from DEU 5.21 that was put in the public domain in
 1994 by Raphaël Quinet and Brendon Wyber.
 
-The rest of Yadex is Copyright © 1997-2003 André Majorel and others.
+The rest of Yadex is Copyright © 1997-2005 André Majorel and others.
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -252,7 +252,7 @@ void objinfo_c::draw ()
 	DrawScreenText (-1, iy0 + (int) (1.5 * FONTH),
 			"\1Flags:\2    %.19s",
 			GetLineDefFlagsName (LineDefs[obj_no].flags));
-	DrawScreenText (-1, -1, "\1Type:\2 %3d %.19s",
+	DrawScreenText (-1, -1, "\1Type:\2 %3d %.19s", // FIXME
 			LineDefs[obj_no].type,
 			GetLineDefTypeName (LineDefs[obj_no].type));
 	ObjectsNeeded (OBJ_SIDEDEFS, OBJ_SECTORS, 0);

@@ -34,6 +34,7 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 // as an object or not ? The issue could use some thought.
 
 // Object types
+typedef char obj_type_t;
 #define OBJ_NONE	0
 #define OBJ_THINGS	1
 #define OBJ_LINEDEFS	2
@@ -48,8 +49,22 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 #define OBJ_ANY		11
 
 // Special object numbers
-typedef i16  obj_no_t;
-typedef char obj_type_t;
+
+/* In Doom, vertices, sectors and sidedefs references are signed
+   shorts, so you can't have more that 32,768 of them. I'm not
+   sure whether there is a bound to the number of things and
+   linedefs, but I'll assume it's 32,768 as well.
+
+   The obj_no_t type is guaranteed to be able to hold any valid
+   object number. It's a signed short.
+
+   The obj_count_t type is guaranteed to be able to hold any
+   valid object number plus one, or any valid object count. It's
+   for use in loops like
+   
+   for (obj_count_t objnum = 0; objnum < NumLineDefs; objnum++); */
+typedef int16_t obj_no_t;
+typedef long    obj_count_t;
 #define OBJ_NO_NONE    -1
 #define OBJ_NO_CANVAS  -2
 #define is_obj(n)      ((n) >= 0)

@@ -1,0 +1,65 @@
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css">
+  p {
+    margin-bottom:	0.7em;
+    margin-top:		0.7em;
+  }
+
+  DT {
+    margin-bottom:	0.7em;
+    margin-top:		0.7em;
+    display:		list-item;
+    list-style-image:	none;
+    list-style-position: inside;
+    list-style-type:	disc;
+  }
+  DD {
+    margin-bottom:	0.7em;
+    margin-top:		0.7em;
+  }
+
+  DL.compact8 {
+    margin-bottom:	0.7em;
+    margin-top:		0.7em;
+  }
+  DL.compact8 > DT {
+    float:		left;
+    margin-bottom:	0;
+    margin-top:		0;
+    list-style-type:	none;
+  }
+  DL.compact8 > DD {
+    margin-bottom:	0;
+    margin-top:		0;
+    margin-left:	8em;
+  }
+
+  DL.compact4 {
+    margin-bottom:	0.7em;
+    margin-top:		0.7em;
+  }
+  DL.compact4 > DT {
+    float:		left;
+    margin-bottom:	0;
+    margin-top:		0;
+    list-style-type:	none;
+  }
+  DL.compact4 > DD {
+    margin-bottom:	0;
+    margin-top:		0;
+    margin-left:	4em;
+  }
+
+  table {
+    border-style:	1px solid;
+    border-collapse:	collapse;
+  }
+  tr {
+    border-style:	1px dotted;
+  }
+  td {
+    border-style:	1px dotted;
+    padding-left:	0.5em;
+    padding-right:	0.5em;
+  }
+</style>

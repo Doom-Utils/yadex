@@ -13,7 +13,7 @@
     <br>
     <br>
 
-    <h2>Compilation problems</h2>
+    <h2>Compilation issues</h2>
 
     <dl>
       <dt>
@@ -29,7 +29,7 @@
 
 	<p>
 	  If you have one but it's not in the path, either fix
-	  <code>$PATH</code> or pass the full pathname to the configure script
+	  <code>$$PATH</code> or pass the full pathname to the configure script
 	  with the <code>--cc</code> flag (E.G. "<code>./configure --cc
 	  /opt/sfw/bin/gcc</code>").
 	</p>
@@ -52,7 +52,7 @@
 
 	<p>
 	  If you have one but it's not in the path, either fix
-	  <code>$PATH</code> or pass the full pathname to the configure script
+	  <code>$$PATH</code> or pass the full pathname to the configure script
 	  with the <code>--cxx</code> flag (E.G.  "<code>./configure --cxx
 	  /opt/sfw/bin/g++</code>").
 	</p>
@@ -64,23 +64,13 @@
 	  --cxx icc</code>").
 	</p>
 
-      <dt><strong>X11/Xlib.h: No such file or directory</strong>
-
-      <dd>
-	<p>
-	  Are you sure you have the Xlib headers&nbsp;? If not, install them.
-	  If you already have them, then find out where they are and change the
-	  "<code>X11INCLUDEDIR =</code>" line in <code>GNUmakefile</code>
-	  accordingly.
-	</p>
-
       <dt><strong>The compiler chokes on the Xlib headers</strong>
 
       <dd>
 	<p>
 	  This happens on Solaris 2.6 with GCC 2.95.2. Oliver Kraus says that
-	  the solution is to add "<code>-fpermissive</code>" to "<code>CXXFLAGS
-	  =</code>" in <code>GNUmakefile</code>.
+	  the solution is to add "<code>-fpermissive</code>" to CXXFLAGS
+	  ("<code>./configure --cxxflags -fpermissive</code>").
 	</p>
 
       <dt>
@@ -97,16 +87,17 @@
 
       <dd>
 	<p>
-	  This happens with QNX 6 and other Unices. Add "<code>-lsocket</code>"
-	  to "<code>LDFLAGS =</code>" in <code>GNUmakefile</code>.
+	  This happens with QNX 6 and other Unices. In
+	  <code>GNUmakefile</code>, add "<code>-lsocket</code>" after all
+	  occurrences of "<code>-lX11</code>".
 	</p>
 
       <dt><strong>Solaris: can't resolve <code>gettimeofday()</code></strong>
 
       <dd>
 	<p>
-	  In <code>GNUmakefile</code>, add "<code>-lrt</code>" after
-	  "<code>-lX11</code>".
+	  In <code>GNUmakefile</code>, add "<code>-lrt</code>" after all
+	  occurrences of "<code>-lX11</code>".
 	</p>
 
       <dt>
@@ -236,7 +227,7 @@
 	</p>
     </dl>
 
-	    <h2>Misc.</h2>
+    <h2>Usage issues</h2>
 
     <dl>
       <dt><strong>I don't have an iwad</strong>
@@ -257,15 +248,6 @@
 	  >Strife demo</a>
 	</ul>
 
-      <dt><strong>What about a 3D preview&nbsp;?</strong>
-
-      <dd>
-        <p>
-	  Andrew Apted has written an amazing <a
-	  href="http://glbsp.sourceforge.net/files/RenderDiff.gz">patch</a>
-	  that does exactly that.
-	</p>
-
       <dt><strong>Yadex is slow, particularly when dragging objects</strong>
 
       <dd>
@@ -275,12 +257,18 @@
 	  generating a lot of flicker. In the meantime, try the <code>-P</code>
 	  option.
 	</p>
+    </dl>
 
-      <dt><strong>How many people use Yadex&nbsp;?</strong>
+    <h2>Development and contributions</h2>
+
+    <dl>
+      <dt><strong>What about a 3D preview&nbsp;?</strong>
 
       <dd>
         <p>
-	  I don't know for sure. Each new release gets a few hundred downloads.
+	  Andrew Apted has written an amazing patch that does exactly that. See
+	  the <a href="http://glbsp.sourceforge.net/yadex/">Yadex patch
+	  page</a>.
 	</p>
 
       <dt><strong>Why didn't you use &lt;insert speaker's favourite
@@ -293,6 +281,109 @@
 	  translate the existing BGI calls to Xlib than to some higher level
 	  toolkit. Thirdly, I feared that depending on a toolkit would hurt
 	  portability.
+	</p>
+
+      <dt><strong>Why hasn't patch <i>x</i> been integrated&nbsp;?</strong>
+
+      <dd>
+        <p>
+	  Adapted from <a
+	  href="http://www.freelists.org/archives/yadex/01-2004/msg00009.html">this
+	  post</a>&nbsp;:
+	</p>
+
+        <p>
+	  Maybe the patch is not good enough. Even if it's perfectly good,
+	  other reasons could delay or prevent its integration.
+	</p>
+
+	<p>
+	  The first issue is the cost of reviewing. As a general rule, I don't
+	  integrate code without reviewing it. Reviewing code, especially code
+	  you have not written and don't understand <em>a priori</em>, is hard
+	  work.  In fact, validating code written by someone else can take more
+	  time and effort than writing it yourself from scratch.
+	</p>
+
+        <p>
+	  Reviewing code is also a lot less fun than writing or designing, at
+	  least to me. Clearly, your patch better be interesting if it's to be
+	  integrated.
+	</p>
+
+	<p>
+	  The second issue is, surprise surprise, time. I don't have much free
+	  time and am not always able and willing to spend it on Yadex. And
+	  yes, sometimes a year or more will pass until I find myself with
+	  nothing more urgent and motivating to do today than processing your
+	  patch.
+	</p>
+
+	<p>
+	  The third issue is timing. At this point in the development of Yadex,
+	  the top priority as I see it is not adding features, it's improving
+	  the architecture. Specifically,
+	</p>
+
+	<ul>
+	  <li>rewrite the wad directory handling code,
+	  <li>replace the level data globals by a Level class,
+	  <li>replace <code>EditorLoop()</code> by something sane,
+	  <li> modify the game definition code to support includes, alternative
+	    sorting methods, and a programmatic access to details of linedef
+	    types.
+	</ul>
+
+	<p>
+	  These changes will bring enormous benefits, directly or indirectly.
+	  Undo (which in turn solves the problem of having to confirm every
+	  little change). Editing several levels at once.  Doing cut and paste
+	  across levels. No more <code>P_START</code>/<code>P_END</code>
+	  problems. Better consistency checking. Console mode and
+	  multiple-keystroke bindings, which means not having to rack one's
+	  brain for a good shortcut anymore, which in turn means it's going to
+	  be a lot easier to add functions. Macros. Customisable bindings (and
+	  bindings cheat-sheet for free). Better linedef type selector. Mouse
+	  tools à la Mac (or Gimp).
+	</p>
+
+	<p>
+	  Now, most patches I get are about adding features over the exisiting
+	  architecture. Desirable as those features may be, they distract me
+	  from what I think I should be doing first. They also add to my
+	  workload because they add more code that will have to be updated
+	  after the rewrites. The patches that touch <code>EditorLoop()</code>
+	  are the worst.
+	</p>
+
+	<p>
+	  The fourth issue is that I have quite a few patches in my to-do list.
+	  Maybe yours isn't being processed because others have been submitted
+	  earlier and are still waiting for me to look at them.
+	</p>
+
+	<p>
+	  Sometimes, I'll let a patch jump the queue if it's a no-brainer (E.G.
+	  a bug fix), or if its value/cost ratio is high enough (E.G. the 3D
+	  preview patch). But, in general, I don't think it would be fair to
+	  process submissions in last-in-first-out order.
+	</p>
+
+	<p>
+	  As a final note, don't take rejection personally. Whether or not a
+	  patch gets integrated has a lot more to do with the patch itself and
+	  the circumstances than with who submitted it.
+	</p>
+    </dl>
+
+    <h2>Misc.</h2>
+
+    <dl>
+      <dt><strong>How many people use Yadex&nbsp;?</strong>
+
+      <dd>
+        <p>
+	  I don't know for sure. Each new release gets a few hundred downloads.
 	</p>
     </dl>
 

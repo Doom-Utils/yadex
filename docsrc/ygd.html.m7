@@ -7,6 +7,10 @@
       font-weight: normal;
       text-decoration: underline;
     }
+    table {
+      border-collapse:	collapse;
+      padding:		1em;
+    }
   </style>
 </head>
 <body>
@@ -106,7 +110,9 @@ foo bar "baz "
       <td>Description that will be displayed in the object info
 	window. There is no limit on the length of this field
 	but only the first 16 characters of it are shown in the
-	object info window.
+	object info window. The content should follow the
+	conventions described in the <a
+	href="users_guide.html#ld-type-desc">user's guide</a>.
 
     <tr valign="top">
       <td><code><var>longdesc</var></code>
@@ -151,6 +157,34 @@ foo bar "baz "
     not define the same group more than once.</p>
 
 <br>
+
+<p><dt><h3><code><strong>flat_format</strong>
+		<var>flat_format</var></code></h3></p>
+
+<p><dd>Indicates the format in which flats are stored in the
+  wad. There is only one argument. It can have the following
+  values&nbsp;:</p>
+
+  <p><table border>
+  <tr>
+    <th>Value
+    <th>Meaning
+  <tr>
+    <td valign="top"><code>normal</code>
+    <td>Normal Doom format, 64&times;64 flats.
+  <tr>
+    <td valign="top"><code>heretic</code>
+    <td>Heretic format, 64&times;64 or 64&times;65.
+  <tr>
+    <td valign="top"><code>hexen</code>
+    <td>Hexen format, 64&times;64 or 64&times;128.
+  </table></p>
+
+  <p>This directive is optional. If it's missing, the default is
+  <code>normal</code>. If it's repeated, it's the last occurrence
+  that counts.</p>
+
+  <br>
 
 <p><dt><h3><code><strong>level_format</strong>
 		<var>level_format</var></code></h3></p>

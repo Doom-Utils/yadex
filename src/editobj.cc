@@ -11,7 +11,7 @@ This file is part of Yadex.
 Yadex incorporates code from DEU 5.21 that was put in the public domain in
 1994 by Raphaël Quinet and Brendon Wyber.
 
-The rest of Yadex is Copyright © 1997-2003 André Majorel and others.
+The rest of Yadex is Copyright © 1997-2005 André Majorel and others.
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -849,7 +849,7 @@ switch (val)
 	 {
 	 if (Expert
             || blindly_swap_sidedefs
-            || Confirm (-1, -1,
+            || confirm_simple (-1, -1,
                "Warning: the sector references are also swapped",
                "You may get strange results if you don't know what you are doing..."))
 	    FlipLineDefs (*list, 0);

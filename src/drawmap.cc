@@ -10,7 +10,7 @@ This file is part of Yadex.
 Yadex incorporates code from DEU 5.21 that was put in the public domain in
 1994 by Raphaël Quinet and Brendon Wyber.
 
-The rest of Yadex is Copyright © 1997-2003 André Majorel and others.
+The rest of Yadex is Copyright © 1997-2005 André Majorel and others.
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -199,6 +199,8 @@ static void draw_grid (edit_t *e)
 
   {
     set_colour (GRID2V);
+    if (grid_64 && grid_step_2 == 64)
+      set_colour (GRID64_2V);
     int mapx0_2 = (mapx0 / grid_step_2) * grid_step_2;
     if (mapx0_2 < mapx0)
       mapx0_2 += grid_step_2;
@@ -209,6 +211,8 @@ static void draw_grid (edit_t *e)
 
   {
     set_colour (GRID2H);
+    if (grid_64 && grid_step_2 == 64)
+      set_colour (GRID64_2H);
     int mapy0_2 = (mapy0 / grid_step_2) * grid_step_2;
     if (mapy0_2 < mapy0)
       mapy0_2 += grid_step_2;
@@ -219,6 +223,8 @@ static void draw_grid (edit_t *e)
 
   {
     set_colour (GRID3V);
+    if (grid_64 && grid_step_3 == 64)
+      set_colour (GRID64_3V);
     int mapx0_3 = (mapx0 / grid_step_3) * grid_step_3;
     if (mapx0_3 < mapx0)
       mapx0_3 += grid_step_3;
@@ -229,6 +235,8 @@ static void draw_grid (edit_t *e)
 
   {
     set_colour (GRID3H);
+    if (grid_64 && grid_step_3 == 64)
+      set_colour (GRID64_3H);
     int mapy0_3 = (mapy0 / grid_step_3) * grid_step_3;
     if (mapy0_3 < mapy0)
       mapy0_3 += grid_step_3;
@@ -239,6 +247,8 @@ static void draw_grid (edit_t *e)
 
   {
     set_colour (GRID4V);
+    if (grid_64 && grid_step_4 == 64)
+      set_colour (GRID64_4V);
     int mapx0_4 = (mapx0 / grid_step_4) * grid_step_4;
     if (mapx0_4 < mapx0)
       mapx0_4 += grid_step_4;
@@ -249,6 +259,8 @@ static void draw_grid (edit_t *e)
 
   {
     set_colour (GRID4H);
+    if (grid_64 && grid_step_4 == 64)
+      set_colour (GRID64_4H);
     int mapy0_4 = (mapy0 / grid_step_4) * grid_step_4;
     if (mapy0_4 < mapy0)
       mapy0_4 += grid_step_4;
@@ -282,6 +294,8 @@ static void draw_grid (edit_t *e)
     }
     npoints = n;
     set_colour (GRID1);
+    if (grid_64 && grid_step_1 == 64)
+      set_colour (GRID64_1);
     for (int j = mapy0_1; j <= mapy1; j += grid_step_1)
     {
       points[0].y = SCREENY (j);
@@ -622,7 +636,7 @@ static void draw_things_squares (edit_t *e)
 class Thing_npixels
 {
   public :
-    Thing_npixels (i16 thing_no, unsigned long npixels, wad_ttype_t type)
+    Thing_npixels (int16_t thing_no, unsigned long npixels, wad_ttype_t type)
       : thing_no (thing_no), npixels (npixels), type (type) { }
     bool operator< (const Thing_npixels& other) const
       { if (this->npixels > other.npixels  // Decreasing npixels major
@@ -631,7 +645,7 @@ class Thing_npixels
 	  return true;
 	return false;
       }
-    i16 thing_no;
+    int16_t thing_no;
     unsigned long npixels;
     wad_ttype_t type;
 };
@@ -655,7 +669,7 @@ class Thing_list_by_size
 	  wad_res.sprites.loc_by_root (sprite_root, loc);
 	else
 	  loc.len = 0;
-	a.push_back (Thing_npixels ((i16) n, loc.len, Things[n].type));
+	a.push_back (Thing_npixels ((int16_t) n, loc.len, Things[n].type));
       }
       sort (a.begin (), a.end ());
     }
@@ -680,7 +694,7 @@ struct sprite_dim_t
   unsigned short height;
 };
 
-typedef std::map <i16, sprite_dim_t> dim_map_t;
+typedef std::map <int16_t, sprite_dim_t> dim_map_t;
 static dim_map_t dim_map;  // FIXME there should be one for each game
 
 

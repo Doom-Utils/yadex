@@ -11,7 +11,7 @@ This file is part of Yadex.
 Yadex incorporates code from DEU 5.21 that was put in the public domain in
 1994 by Raphaël Quinet and Brendon Wyber.
 
-The rest of Yadex is Copyright © 1997-2003 André Majorel and others.
+The rest of Yadex is Copyright © 1997-2005 André Majorel and others.
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -61,23 +61,23 @@ Place, Suite 330, Boston, MA 02111-1307, USA.
 
 void check_types ()
 {
-  assert_size (u8,  1);
-  assert_size (i8,  1);
-  assert_size (u16, 2);
-  assert_size (i16, 2);
-  assert_size (u32, 4);
-  assert_size (i32, 4);
+  assert_size (uint8_t,  1);
+  assert_size (int8_t,   1);
+  assert_size (uint16_t, 2);
+  assert_size (int16_t,  2);
+  assert_size (uint32_t, 4);
+  assert_size (int32_t,  4);
   assert_size (struct LineDef, 14);
   assert_size (struct Sector,  26);
   assert_size (struct SideDef, 30);
   assert_size (struct Thing,   10);
   assert_size (struct Vertex,   4);
-  assert_wrap (u8,          255,           0);
-  assert_wrap (i8,          127,        -128);
-  assert_wrap (u16,       65535,           0);
-  assert_wrap (i16,       32767,      -32768);
-  assert_wrap (u32, 4294967295u,           0);
-  assert_wrap (i32,  2147483647, -2147483648);
+  assert_wrap (uint8_t,          255,           0);
+  assert_wrap (int8_t,           127,        -128);
+  assert_wrap (uint16_t,       65535,           0);
+  assert_wrap (int16_t,        32767,      -32768);
+  assert_wrap (uint32_t, 4294967295u,           0);
+  assert_wrap (int32_t,   2147483647, -2147483648);
 }
 
 

@@ -11,7 +11,7 @@ This file is part of Yadex.
 Yadex incorporates code from DEU 5.21 that was put in the public domain in
 1994 by Raphaël Quinet and Brendon Wyber.
 
-The rest of Yadex is Copyright © 1997-2003 André Majorel and others.
+The rest of Yadex is Copyright © 1997-2005 André Majorel and others.
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -88,7 +88,7 @@ void InputNameFromListWithFunc (
    void (*hookfunc)(hookfunc_comm_t *),
    char flags_to_pass_to_callback)
 {
-const char *msg1 = "Press Shift-F1 to";
+const char *msg1 = "[shift]-[f1] to";
 const char *msg2 = "save image to file";
 int    key;
 size_t n;
@@ -209,6 +209,7 @@ int disp_x1 = disp_x0 - 1;
 int disp_y1 = disp_y0 - 1;
 
 int maxpatches = 0;
+bool medusa = false;
 
 // The event loop
 for (;;)
@@ -318,6 +319,26 @@ for (;;)
 	 }
       }
 
+      // Display the medusa effect indicator
+      if (c.flags & HOOK_MEDUSA_VALID)
+      {
+	const char *text = "Medusa";
+	const int   medusa_x0  = x0 + 10;
+	const int   medusa_y0  = y0 + 50 + FONTH;
+
+	if (medusa && ! c.medusa)
+	{
+	  set_colour (WINBG);
+	  DrawScreenBoxwh (medusa_x0, medusa_y0, strlen (text) * FONTW, FONTH);
+	}
+	else if (c.medusa && ! medusa)
+	{
+	  set_colour (WINFG);
+	  DrawScreenString (medusa_x0, medusa_y0, text);
+	}
+	medusa = c.medusa;
+      }
+
 #ifdef DEBUG
       // Display the file name and file offset of the picture
       {
@@ -415,7 +436,7 @@ shortcut:
 	 different name. Why not just use the next item ?
 	 Because sometimes the list has duplicates (for example
 	 when editing a Doom II pwad in Doom mode) and then the
-	 viewer gets "stuck" on the first duplicate. */
+	 selector gets "stuck" on the first duplicate. */
       size_t m = n + 1;
       while (m < listsize && ! y_stricmp (list[n], list[m]))
 	 m++;

@@ -11,7 +11,7 @@ This file is part of Yadex.
 Yadex incorporates code from DEU 5.21 that was put in the public domain in
 1994 by Raphaël Quinet and Brendon Wyber.
 
-The rest of Yadex is Copyright © 1997-2003 André Majorel and others.
+The rest of Yadex is Copyright © 1997-2005 André Majorel and others.
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -29,11 +29,20 @@ Place, Suite 330, Boston, MA 02111-1307, USA.
 
 
 #include "yadex.h"
+
 #ifdef Y_X11
 #include <time.h>	// nanosleep ()
+
+#if ! defined Y_NANOSLEEP && ! defined Y_USLEEP
+#  include <sys/time.h>
+#  include <sys/types.h>
+#  include <unistd.h>
+#endif
+
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>  // XLookupString
 #include <X11/keysym.h>
+
 #include "gfx.h"
 
 
@@ -160,16 +169,27 @@ if (! dpy)  /* Sanity check */
 if (XPending (dpy) == 0)
    {
    // No event ? Wait for <idle_sleep_ms> ms before polling again.
+   /* FIXME: if autoscroll is turned off, might as well call XNextEvent
+      and sleep for good. */
 #if defined Y_NANOSLEEP
-   struct timespec treq = { 0, 1000000ul * idle_sleep_ms };
+   struct timespec treq;
+   treq.tv_sec  = idle_sleep_ms / 1000;
+   treq.tv_nsec = 1000000ul * (idle_sleep_ms % 1000);
    struct timespec trem;
    nanosleep (&treq, &trem);
 #elif defined Y_USLEEP
    usleep (1000ul * idle_sleep_ms );
 #else
-   ;  // Neither nanosleep() no usleep() so be a CPU hog.
-   // FIXME: if autoscroll is turned off, could as well
-   // call XNextEvent and sleep for good.
+   {
+     fd_set set;
+     FD_ZERO (&set);
+
+     struct timeval timeout; 
+     timeout.tv_sec  = idle_sleep_ms / 1000;
+     timeout.tv_usec = 1000 * (idle_sleep_ms % 1000);
+
+     select (0, &set, &set, &set, &timeout);
+   }
 #endif
    return;
    }

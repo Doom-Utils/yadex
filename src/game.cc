@@ -11,7 +11,7 @@ This file is part of Yadex.
 Yadex incorporates code from DEU 5.21 that was put in the public domain in
 1994 by Raphaël Quinet and Brendon Wyber.
 
-The rest of Yadex is Copyright © 1997-2003 André Majorel and others.
+The rest of Yadex is Copyright © 1997-2005 André Majorel and others.
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -36,6 +36,8 @@ Place, Suite 330, Boston, MA 02111-1307, USA.
 #include "things.h"
 #include "trace.h"
 
+
+char **ygd_user_path = NULL;
 
 const char ygd_file_magic[] = "# Yadex game definition file version 4";
 
@@ -74,15 +76,21 @@ al_scps (basename, game,   sizeof basename - 1);
 al_saps (basename, ".ygd", sizeof basename - 1);
 
 /* Locate the game definition file. */
+if (ygd_user_path != NULL)
 {
-   Locate locate (yadex_share_path, basename, false);
-   const char *pathname = locate.get_next ();
-   if (pathname == NULL)
-      fatal_error ("Game definition file \"%s\" not found", basename);
-   if (strlen (pathname) > sizeof filename - 1)
-      fatal_error ("%s: file name too long");
-   strcpy (filename, pathname);
-   printf ("Reading game definition file \"%s\".\n", filename);
+  Locate locate (ygd_user_path, basename, false);	// -G first
+  const char *pathname = locate.get_next ();
+  if (pathname == NULL)
+  {
+    Locate locate (yadex_share_path, basename, false);	// System path second
+    pathname = locate.get_next ();
+  }
+  if (pathname == NULL)
+    fatal_error ("Game definition file \"%s\" not found", basename);
+  if (strlen (pathname) > sizeof filename - 1)
+    fatal_error ("%s: file name too long");
+  strcpy (filename, pathname);
+  printf ("Reading game definition file \"%s\".\n", filename);
 }
 
 ygdfile = fopen (filename, "r");
@@ -193,6 +201,22 @@ for (lineno = 2; fgets (readbuf, sizeof readbuf, ygdfile); lineno++)
       buf.desc     = token[2];
       if (al_lwrite (ldtgroup, &buf))
 	 fatal_error ("LGD2 (%s)", al_astrerror (al_aerrno));
+      }
+   else if (! strcmp (token[0], "flat_format"))
+      {
+      if (ntoks != 2)
+	 fatal_error (bad_arg_count, filename, lineno, token[0], 1);
+      if (! strcmp (token[1], "normal"))
+	 yg_flat_format = YGFF_NORMAL;
+      else if (! strcmp (token[1], "heretic"))
+	 yg_flat_format = YGFF_HERETIC;
+      else if (! strcmp (token[1], "hexen"))
+	 yg_flat_format = YGFF_HEXEN;
+      else
+	 fatal_error (
+	    "%s(%d): invalid argument \"%.32s\" (normal|heretic|hexen)",
+	    filename, lineno, token[1]);
+      free (buf);
       }
    else if (! strcmp (token[0], "level_format"))
       {

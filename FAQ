@@ -1,9 +1,9 @@
-                               Fancy logo
-                        Yadex 1.7.0 (2003-12-28)
+                             [1]Fancy logo
+                        Yadex 1.8.0 (2005-03-11)
 
                                Yadex FAQ
 
-Compilation problems
+Compilation issues
 
    During configure,
    error: none of (gcc, c89, cc) work, is your PATH set right?
@@ -31,18 +31,11 @@ Compilation problems
            pass the name to the configure script with the --cxx flag
            (E.G. "./configure --cxx icc").
 
-   X11/Xlib.h: No such file or directory
-
-           Are you sure you have the Xlib headers ? If not, install
-           them. If you already have them, then find out where they
-           are and change the "X11INCLUDEDIR =" line in GNUmakefile
-           accordingly.
-
    The compiler chokes on the Xlib headers
 
            This happens on Solaris 2.6 with GCC 2.95.2. Oliver Kraus
            says that the solution is to add "-fpermissive" to
-           "CXXFLAGS =" in GNUmakefile.
+           CXXFLAGS ("./configure --cxxflags -fpermissive").
 
    /usr/X11R6/lib/libX11.so: undefined reference to `recv'
    /usr/X11R6/lib/libX11.so: undefined reference to `connect'
@@ -54,12 +47,13 @@ Compilation problems
    /usr/X11R6/lib/libX11.so: undefined reference to `getpeername'
    /usr/X11R6/lib/libX11.so: undefined reference to `getsockname'
 
-           This happens with QNX 6 and other Unices. Add "-lsocket"
-           to "LDFLAGS =" in GNUmakefile.
+           This happens with QNX 6 and other Unices. In GNUmakefile,
+           add "-lsocket" after all occurrences of "-lX11".
 
    Solaris: can't resolve gettimeofday()
 
-           In GNUmakefile, add "-lrt" after "-lX11".
+           In GNUmakefile, add "-lrt" after all occurrences of
+           "-lX11".
 
    Mac OS X:
    al_adigits.o literal C string section (__TEXT,__cstring) does not
@@ -69,7 +63,7 @@ Compilation problems
            OS X's ld is incorrect in rejecting it. As a workaround,
            change the size of al_adigits[] from 36 to 37 in
            al_adigits.c and atclib.h. The real fix is to complain to
-           Apple for selling you a linker that won't link valid C
+           [2]Apple for selling you a linker that won't link valid C
            code.
 
    GCC 3.0: Yadex 1.5.1 doesn't compile
@@ -140,21 +134,16 @@ Compilation problems
            In src/vector.h, delete line 44 ("return this;") and
            compile again.
 
-Misc.
+Usage issues
 
    I don't have an iwad
 
            You can download certain iwads for free ;
 
-              * Doom 1.8 shareware iwad
-              * Heretic shareware version
-              * Hexen demo
-              * Strife demo
-
-   What about a 3D preview ?
-
-           Andrew Apted has written an amazing patch that does
-           exactly that.
+              * [3]Doom 1.8 shareware iwad
+              * [4]Heretic shareware version
+              * [5]Hexen demo
+              * [6]Strife demo
 
    Yadex is slow, particularly when dragging objects
 
@@ -163,10 +152,12 @@ Misc.
            making that without generating a lot of flicker. In the
            meantime, try the -P option.
 
-   How many people use Yadex ?
+Development and contributions
 
-           I don't know for sure. Each new release gets a few hundred
-           downloads.
+   What about a 3D preview ?
+
+           Andrew Apted has written an amazing patch that does
+           exactly that. See the [7]Yadex patch page.
 
    Why didn't you use <insert speaker's favourite toolkit> ?
 
@@ -176,6 +167,96 @@ Misc.
            Xlib than to some higher level toolkit. Thirdly, I feared
            that depending on a toolkit would hurt portability.
 
-     --------------------------------------------------------------
+   Why hasn't patch x been integrated ?
 
-   AYM 2003-12-28
+           Adapted from [8]this post :
+
+           Maybe the patch is not good enough. Even if it's perfectly
+           good, other reasons could delay or prevent its
+           integration.
+
+           The first issue is the cost of reviewing. As a general
+           rule, I don't integrate code without reviewing it.
+           Reviewing code, especially code you have not written and
+           don't understand a priori, is hard work. In fact,
+           validating code written by someone else can take more time
+           and effort than writing it yourself from scratch.
+
+           Reviewing code is also a lot less fun than writing or
+           designing, at least to me. Clearly, your patch better be
+           interesting if it's to be integrated.
+
+           The second issue is, surprise surprise, time. I don't have
+           much free time and am not always able and willing to spend
+           it on Yadex. And yes, sometimes a year or more will pass
+           until I find myself with nothing more urgent and
+           motivating to do today than processing your patch.
+
+           The third issue is timing. At this point in the
+           development of Yadex, the top priority as I see it is not
+           adding features, it's improving the architecture.
+           Specifically,
+
+              * rewrite the wad directory handling code,
+              * replace the level data globals by a Level class,
+              * replace EditorLoop() by something sane,
+              * modify the game definition code to support includes,
+                alternative sorting methods, and a programmatic
+                access to details of linedef types.
+
+           These changes will bring enormous benefits, directly or
+           indirectly. Undo (which in turn solves the problem of
+           having to confirm every little change). Editing several
+           levels at once. Doing cut and paste across levels. No more
+           P_START/P_END problems. Better consistency checking.
+           Console mode and multiple-keystroke bindings, which means
+           not having to rack one's brain for a good shortcut
+           anymore, which in turn means it's going to be a lot easier
+           to add functions. Macros. Customisable bindings (and
+           bindings cheat-sheet for free). Better linedef type
+           selector. Mouse tools `a la Mac (or Gimp).
+
+           Now, most patches I get are about adding features over the
+           exisiting architecture. Desirable as those features may
+           be, they distract me from what I think I should be doing
+           first. They also add to my workload because they add more
+           code that will have to be updated after the rewrites. The
+           patches that touch EditorLoop() are the worst.
+
+           The fourth issue is that I have quite a few patches in my
+           to-do list. Maybe yours isn't being processed because
+           others have been submitted earlier and are still waiting
+           for me to look at them.
+
+           Sometimes, I'll let a patch jump the queue if it's a
+           no-brainer (E.G. a bug fix), or if its value/cost ratio is
+           high enough (E.G. the 3D preview patch). But, in general,
+           I don't think it would be fair to process submissions in
+           last-in-first-out order.
+
+           As a final note, don't take rejection personally. Whether
+           or not a patch gets integrated has a lot more to do with
+           the patch itself and the circumstances than with who
+           submitted it.
+
+Misc.
+
+   How many people use Yadex ?
+
+           I don't know for sure. Each new release gets a few hundred
+           downloads.
+
+   -------------------------------------------------------------------
+
+   AYM 2005-03-06
+
+References
+
+   Visible links
+   2. http://www.apple.com/
+   3. ftp://ftp.idsoftware.com/idstuff/doom/doom-1.8.wad.gz
+   4. ftp://ftp.idsoftware.com/idstuff/heretic/htic_v12.zip
+   5. ftp://ftp.idsoftware.com/idstuff/hexen/hexndemo.zip
+   6. http://www.rogue-ent.com/sfiles.html
+   7. http://glbsp.sourceforge.net/yadex/
+   8. http://www.freelists.org/archives/yadex/01-2004/msg00009.html

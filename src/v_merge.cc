@@ -11,7 +11,7 @@ This file is part of Yadex.
 Yadex incorporates code from DEU 5.21 that was put in the public domain in
 1994 by Raphaël Quinet and Brendon Wyber.
 
-The rest of Yadex is Copyright © 1997-2003 André Majorel and others.
+The rest of Yadex is Copyright © 1997-2005 André Majorel and others.
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -30,21 +30,11 @@ Place, Suite 330, Boston, MA 02111-1307, USA.
 
 #include "yadex.h"
 #include "dialog.h"
+#include "l_merge.h"
 #include "levels.h"
 #include "objects.h"
 #include "objid.h"
 #include "selectn.h"
-
-
-typedef struct  /* Used only by AutoMergeVertices() and SortLinedefs() */
-  {
-  int vertexl;
-  int vertexh;
-  int linedefno;
-  } linedef_t;
-
-/* Called only by AutoMergeVertices() */
-static int SortLinedefs  (const void *item1, const void *item2);
 
 
 /*
@@ -195,9 +185,9 @@ while (ref)
          char buf[81];
 	 redraw = true;
          sprintf (buf, "Vertices %d and %d occupy the same position", refv, v);
-	 if (Confirm2 (-1, -1, &confirm_flag,
+	 if (confirm (-1, -1, confirm_flag,
             buf,
-	    "Do you want to merge them into one?"))
+	    "Merge them into one?"))
 	    {
 	    /* merge the two vertices */
 	    mergedone = true;
@@ -259,9 +249,9 @@ while (ref)
          char buf[81];
 	 redraw = true;
          sprintf (buf, "Vertex %d is on top of linedef %d", refv, ld);
-	 if (Confirm2 (-1, -1, &confirm_flag,
+	 if (confirm (-1, -1, confirm_flag,
             buf,
-            "Do you want to split the linedef there?"))
+            "Split the linedef there?"))
 	    {
 	    /* split the linedef */
 	    mergedone = true;
@@ -296,119 +286,11 @@ if (! isldend || ! mergedone)
    return redraw;
 
 /* finally, test if two linedefs are between the same pair of vertices */
-/* AYM 1997-07-17
-   Here I put a new algorithm. The original one led to a very large
-   number of tests (N*(N-1)/2 where N is number of linedefs). For
-   example, for a modest sized level (E1M4, 861 linedefs), it made
-   about 350,000 tests which, on my DX4/75, took about 3 seconds.
-   That IS irritating.
-   The new algorithm makes about N*log(N)+N tests, which is, in the
-   same example as above, about 3,400 tests. That's about 100 times
-   less. To be rigorous, it is not really 100 times faster because the
-   N*log(N) operations are function calls from within qsort() that
-   must take longer than inline tests. Anyway, the checking is now
-   almost instantaneous and that's what I wanted.
-   The principle is to sort the linedefs by smallest numbered vertex
-   then highest numbered vertex. Thus, two overlapping linedefs must
-   be neighbours in the array. No need to test the N-2 others like
-   before. */
-
 //DisplayMessage (-1, -1, "Checking superimposed linedefs");
-confirm_flag = YC_ASK_ONCE;
-{
-linedef_t *linedefs;
-
-/* Copy the linedefs into array 'linedefs' and sort it */
-linedefs = (linedef_t *) GetMemory (NumLineDefs * sizeof (linedef_t));
-for (ld = 0; ld < NumLineDefs; ld++)
-  {
-  linedefs[ld].vertexl = y_min (LineDefs[ld].start, LineDefs[ld].end);
-  linedefs[ld].vertexh = y_max (LineDefs[ld].start, LineDefs[ld].end);
-  linedefs[ld].linedefno = ld;
-  }
-qsort (linedefs, NumLineDefs, sizeof (linedef_t), SortLinedefs);
-
-/* Search for superimposed linedefs in the array */
-for (ld = 0; ld+1 < NumLineDefs; ld++)
-   {
-   if (linedefs[ld+1].vertexl != linedefs[ld].vertexl
-    || linedefs[ld+1].vertexh != linedefs[ld].vertexh)
-     continue;
-   int ld1 = linedefs[ld].linedefno;
-   int ld2 = linedefs[ld+1].linedefno;
-   char prompt[81];
-   y_snprintf (prompt, sizeof prompt, "Linedefs %d and %d are superimposed",
-      ld1, ld2);
-   redraw = true;
-   if (Expert || Confirm2 (-1, -1, &confirm_flag,
-      prompt, "(and perhaps others too). Merge them ?"))
-      {
-      LDPtr ldo = LineDefs + ld1;
-      LDPtr ldn = LineDefs + ld2;
-      /* Test if the linedefs have the same orientation */
-      if (ldn->start == ldo->end)
-	 flipped = true;
-      else
-	 flipped = false;
-      /* Merge linedef ldo (ld) into linedef ldn (ld+1) */
-      /* FIXME When is this done ? Most of the time when adding a
-	 door/corridor/window between two rooms, right ? So we should
-	 handle this in a smarter way by copying middle texture into
-	 lower and upper texture if the sectors don't have the same
-	 heights and maybe setting the LTU and UTU flags.
-	 This also applies when a linedef becomes two-sided as a
-	 result of creating a new sector. */
-      if (ldn->sidedef1 < 0)
-	 {
-	 if (flipped)
-	    {
-	    ldn->sidedef1 = ldo->sidedef2;
-	    ldo->sidedef2 = OBJ_NO_NONE;
-	    }
-	 else
-	    {
-	    ldn->sidedef1 = ldo->sidedef1;
-	    ldo->sidedef1 = OBJ_NO_NONE;
-	    }
-	 }
-      if (ldn->sidedef2 < 0)
-         {
-	 if (flipped)
-	    {
-	    ldn->sidedef2 = ldo->sidedef1;
-	    ldo->sidedef1 = OBJ_NO_NONE;
-	    }
-	 else
-	    {
-	    ldn->sidedef2 = ldo->sidedef2;
-	    ldo->sidedef2 = OBJ_NO_NONE;
-	    }
-         }
-      if (ldn->sidedef1 >= 0 && ldn->sidedef2 >= 0 && (ldn->flags & 0x04) == 0)
-	 ldn->flags = 0x04;
-      DeleteObject (Objid (OBJ_LINEDEFS, ld1));
-      }
-   }
-
-FreeMemory (linedefs);
-}
+if (merge_superimposed_linedefs ())
+  redraw = true;
 
 return redraw;
-}
-
-
-/*
-   compare two linedefs for sorting by lowest numbered vertex
-*/
-static int SortLinedefs (const void *item1, const void *item2)
-{
-#define ld1 ((const linedef_t *) item1)
-#define ld2 ((const linedef_t *) item2)
-if (ld1->vertexl != ld2->vertexl)
-  return ld1->vertexl - ld2->vertexl;
-if (ld1->vertexh != ld2->vertexh)
-  return ld1->vertexh - ld2->vertexh;
-return 0;
 }
 
 

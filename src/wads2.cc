@@ -11,7 +11,7 @@ This file is part of Yadex.
 Yadex incorporates code from DEU 5.21 that was put in the public domain in
 1994 by Raphaël Quinet and Brendon Wyber.
 
-The rest of Yadex is Copyright © 1997-2003 André Majorel and others.
+The rest of Yadex is Copyright © 1997-2005 André Majorel and others.
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -461,7 +461,7 @@ if (e || memcmp (wf->type, "IWAD", 4) != 0 && memcmp (wf->type, "PWAD", 4) != 0)
    }
 }
 verbmsg ("  Type %.4s, directory has %ld entries at offset %08lXh\n",
-   wf->type, (long) wf->dirsize, (long) wf->dirstart);
+   wf->type, (long) wf->dirsize, (unsigned long) wf->dirstart);
 
 // Load the directory of the wad
 wf->directory = (DirPtr) GetMemory ((long) sizeof (struct Directory)
@@ -469,11 +469,11 @@ wf->directory = (DirPtr) GetMemory ((long) sizeof (struct Directory)
 if (fseek (wf->fp, wf->dirstart, SEEK_SET) != 0)
    {
    printf ("%.128s: can't seek to directory at %08lXh\n",
-      filename, wf->dirstart);
+      filename, (unsigned long) wf->dirstart);
    fail = true;
    goto byebye;
    }
-for (i32 n = 0; n < wf->dirsize; n++)
+for (int32_t n = 0; n < wf->dirsize; n++)
    {
    bool e  = file_read_i32   (wf->fp, &wf->directory[n].start);
    e      |= file_read_i32   (wf->fp, &wf->directory[n].size);

@@ -8,6 +8,8 @@
 #include "rgb.h"
 
 
+extern char **ygd_user_path;
+
 extern const char ygd_file_magic[];
 
 
@@ -68,9 +70,16 @@ typedef struct
  *	Those variables are defined in yadex.cc
  */
 
+typedef enum				// flat_format
+{
+  YGFF_NORMAL,				// Doom, Strife: 64x64
+  YGFF_HERETIC,				// Heretic: 64x64 and 64x65
+  YGFF_HEXEN				// Hexen: 64x64 and 64x128
+} ygff_t;
 typedef enum { YGLF__, YGLF_ALPHA, YGLF_DOOM, YGLF_HEXEN } yglf_t;
 typedef enum { YGLN__, YGLN_E1M10, YGLN_E1M1, YGLN_MAP01 } ygln_t;
 // ygpf_t and ygtf_t are defined in yadex.h
+extern ygff_t yg_flat_format;
 extern yglf_t yg_level_format;
 extern ygln_t yg_level_name;
 extern ygpf_t yg_picture_format;

@@ -11,7 +11,7 @@ This file is part of Yadex.
 Yadex incorporates code from DEU 5.21 that was put in the public domain in
 1994 by Raphaël Quinet and Brendon Wyber.
 
-The rest of Yadex is Copyright © 1997-2003 André Majorel and others.
+The rest of Yadex is Copyright © 1997-2005 André Majorel and others.
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -105,9 +105,10 @@ int       double_click_timeout		= 200;
 bool      Expert			= false;
 const char *Game			= NULL;
 int       grid_pixels_min		= 10;
+bool      grid_64			= false;
 int       GridMin			= 2;
 int       GridMax			= 128;
-int       idle_sleep_ms			= 50;
+unsigned  idle_sleep_ms			= 50;
 bool      InfoShown			= true;
 int       zoom_default			= 0;  // 0 means fit
 int       zoom_step			= 0;  // 0 means sqrt(2)
@@ -145,6 +146,7 @@ int       welcome_message		= 1;
 const char *bench			= 0;
 
 // Global variables declared in game.h
+ygff_t yg_flat_format    = YGFF_NORMAL;
 yglf_t yg_level_format   = YGLF__;
 ygln_t yg_level_name     = YGLN__;
 ygpf_t yg_picture_format = YGPF_NORMAL;
@@ -709,6 +711,8 @@ for (;;)
               " create and edit a new (empty) level\n");
       printf ("d[ump] <DirEntry> [outfile]       --"
               " dump a directory entry in hex\n");
+      printf ("dump_linedef_types                --"
+	      " list known linedef types\n");
       printf ("e[dit] <levelname>                --"
               " edit a game level saving results to\n");
       printf ("                                          a patch wad file\n");
@@ -999,6 +1003,20 @@ for (;;)
 	 }
       else
 	 DumpDirectoryEntry (stdout, com);
+      }
+
+   /* dump_linedef_types */
+   else if (strcmp (com, "dump_linedef_types") == 0)
+      {
+      for (long n = 0; n <= 32767; n++)
+	 {
+	 const char *desc = GetLineDefTypeName (n);
+
+	 if (strcmp (desc, "?? UNKNOWN") == 0)
+	    continue;
+	 printf ("%5ld %04lX [%-17.17s] %c\n",
+	    n, n, desc, strlen (desc) > 17 ? '*' : ' ');
+	 }
       }
 
    // "v"/"view" - view the sprites
@@ -1332,6 +1350,13 @@ for (size_t n = 0; n < NCOLOURS; n++)
    else if (n == GRID3V)		c.set (0xd0, 0xd0, 0xff);
    else if (n == GRID4H)		c.set (0xb0, 0xb0, 0xff);
    else if (n == GRID4V)		c.set (0xb0, 0xb0, 0xff);
+   else if (n == GRID64_1)		c.set (0x60, 0, 0xc0);	// FIXME
+   else if (n == GRID64_2H)		c.set (0x18, 0, 0x30);	// FIXME
+   else if (n == GRID64_2V)		c.set (0x20, 0, 0x40);	// FIXME
+   else if (n == GRID64_3H)		c.set (0x28, 0, 0x50);	// FIXME
+   else if (n == GRID64_3V)		c.set (0x38, 0, 0x70);	// FIXME
+   else if (n == GRID64_4H)		c.set (0x40, 0, 0x80);	// FIXME
+   else if (n == GRID64_4V)		c.set (0x60, 0, 0xc0);	// FIXME
 #else
    else if (n == GRID1)			c.set (0, 0, 0xc0);
    else if (n == GRID2H)		c.set (0, 0, 0x30);
@@ -1340,6 +1365,13 @@ for (size_t n = 0; n < NCOLOURS; n++)
    else if (n == GRID3V)		c.set (0, 0, 0x70);
    else if (n == GRID4H)		c.set (0, 0, 0x80);
    else if (n == GRID4V)		c.set (0, 0, 0xc0);
+   else if (n == GRID64_1)		c.set (0x90, 0x60, 0xc0);
+   else if (n == GRID64_2H)		c.set (0x20, 0x18, 0x30);
+   else if (n == GRID64_2V)		c.set (0x2b, 0x20, 0x40);
+   else if (n == GRID64_3H)		c.set (  53, 0x28, 0x50);
+   else if (n == GRID64_3V)		c.set (  75, 0x38, 0x70);
+   else if (n == GRID64_4H)		c.set (  85, 0x40, 0x80);
+   else if (n == GRID64_4V)		c.set (0x90, 0x60, 0xc0);
 #endif
 
    else if (n == LINEDEF_NO)		c.set (0x40, 0xd0, 0xf0);

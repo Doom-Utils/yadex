@@ -1,10 +1,10 @@
 .TH YADEX 6 $SOURCE_DATE "Yadex $VERSION" \" -*- nroff -*-
 .\" .OP - synopsis of an option
-.\"   $1: short name
-.\"   $2: long name
-.\"   $3: argument
+.\"   $$1: short name
+.\"   $$2: long name
+.\"   $$3: argument
 .de OP
-\\fB\-\\$1\\fP, \\fB\-\\$2\\fP \\fI\\$3\\fP
+\\fB\-\\$$1\\fP, \\fB\-\\$$2\\fP \\fI\\$$3\\fP
 ..
 .SH NAME
 yadex \- a Doom/Heretic/Strife level editor
@@ -103,6 +103,13 @@ Set the game to \fIstring\fP, which can be one of the following:
 .if t .sp 0.4
 This option is equivalent to and overrides the \fBgame\fP
 directive of the configuration file.
+.TP
+.BI \-G \ path
+Add \fIpath\fP to the .ygd file search path.
+Directories specified with this option are searched before the system
+directories.
+If this option is used more than once, the corresponding directories are
+searched in the order they appeared on the command line.
 .TP
 .OP h height integer
 (X11 only) Initial height of the window. If the argument is just
@@ -259,7 +266,7 @@ $FILES_ETC
 $FILES_SHARE
 .fi
 .SS Swap files
-.B $TMPDIR/yadexswp??????
+.B $$TMPDIR/yadexswp??????
 .br
 .B /tmp/yadexswp??????
 .SH ENVIRONMENT VARIABLES

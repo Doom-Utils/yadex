@@ -127,9 +127,9 @@ If you haven't, see <a href="users_guide.html#compiling">there</a>.
 <p>For the sake of discussion, we'll assume you want to edit MAP01
 of Doom II. From the shell, type&nbsp;:
 <p>
-<code>$ </code><kbd>yadex -g doom2</kbd>
+<code>$$ </code><kbd>yadex -g doom2</kbd>
 <p>
-(of course, you don't have to type the "<code>$</code>" !)<br>
+(of course, you don't have to type the "<code>$$</code>" !)<br>
 You should see a couple of messages
 and then the Yadex prompt, which looks like this&nbsp;:
 <p>
@@ -333,8 +333,8 @@ on your level with BSP and then test it with Doom, type
 something along the lines of&nbsp;:
 
 <p><pre>
-$ bsp -o final.wad mywad.wad
-$ doom -file final.wad
+$$ bsp -o final.wad mywad.wad
+$$ doom -file final.wad
 </pre>
 
 		<h3>Fixing your level</h3>
@@ -347,7 +347,7 @@ running Yadex with the name of your pwad as argument (you can
 ommit the <code>.wad</code> extension). E.G.&nbsp;:
 
 <p>
-<code>$ yadex -g doom2 mywad</code>
+<code>$$ yadex -g doom2 mywad</code>
 <p>
 That's it&nbsp;! You've been through an entire
 edit-build-test-edit cycle. Doubtlessly the first of thousands

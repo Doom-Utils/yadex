@@ -1,6 +1,6 @@
 #
 #	Makefile for Yadex
-#	Copyright © André Majorel 1998-2003.
+#	Copyright © André Majorel 1998-2005.
 #	AYM 1998-06-10
 #
 
@@ -44,6 +44,9 @@ DUMMY := $(shell							\
 
 include $(OBJDIR)/Makefile.config
 
+X11CC := $(addprefix -I,$(X11INC))
+X11LD := $(addprefix -L,$(X11LIB))
+
 ########################################################################
 #
 #	Definitions that end users
@@ -51,72 +54,49 @@ include $(OBJDIR)/Makefile.config
 #
 ########################################################################
 
-# Which OS ?
-OS := $(shell uname -s | tr A-Z a-z)
+# DEU-style round things. The angle is not shown. Little reason to use
+# this.
+#CXXFLAGS += -DROUND_THINGS
 
-# Where your X11 libraries and headers reside.
-# Current rule:
-# - AIX has them in /usr/lpp/X11/{lib,include},
-# - Solaris has them in /usr/openwin/{lib,include},
-# - all other unices in /usr/X11R6/{lib,include}.
-ifeq ($(findstring $(OS), aix), $(OS))
-  X11LIBDIR     = /usr/lpp/X11/lib
-  X11INCLUDEDIR = /usr/lpp/X11/include
-else
-  ifeq ($(findstring $(OS), solaris sunos), $(OS))
-    X11LIBDIR     = /usr/openwin/lib
-    X11INCLUDEDIR = /usr/openwin/include
-  else
-    X11LIBDIR     = /usr/X11R6/lib
-    X11INCLUDEDIR = /usr/X11R6/include
-  endif
-endif
-
-# $(CC) and $(CXX) are the C and C++ compiler respectively. They're
-# normally autodetected by ./configure and passed to make through
-# obj/0/Makefile.config.
-#CC  =
-#CXX =
-
-# Options used when compiling Atclib.
-CFLAGS = -O
-
-# Options used when compiling and linking Yadex.
-# ld is invoked through the C++ compiler so
-# LDFLAGS should not contain options that mean
-# something to the C++ compiler.
-CXXFLAGS = -O
+# Dark-on-light UI. Some parts need work.
 #CXXFLAGS += -DWHITE_BACKGROUND
-#LDFLAGS  =
+
+# Old drawmap() code. Slightly more precise but precludes hardware
+# scrolling. Little reason to use this.
+#CXXFLAGS += -DY_SWARM
+
+# 1.7.900 is an alpha release
+CXXFLAGS += -DY_ALPHA
+
 
 # Options used to compile and link the debugging
 # targets. Not used by normal end-user targets.
 # Unlike CFLAGS, CXXFLAGS and LDFLAGS, assume
 # GCC/EGCS.
-DCFLAGS		= -g -O
+DCFLAGS		= $(CFLAGS) -g -O
 DCFLAGS		+= -Wall			# GCC warnings
 DCFLAGS		+= -pedantic			# GCC warnings
-DCFLAGS		+= -Wno-parentheses		# GCC warnings
-DCFLAGS		+= -Wpointer-arith		# GCC warnings
 DCFLAGS		+= -Wcast-qual			# GCC warnings
 DCFLAGS		+= -Wcast-align			# GCC warnings
-DCFLAGS		+= -Wwrite-strings		# GCC warnings
+DCFLAGS		+= -Winline			# GCC warnings
 DCFLAGS		+= -Wmissing-declarations	# GCC warnings
 DCFLAGS		+= -Wmissing-prototypes		# GCC warnings
-DCFLAGS		+= -Winline			# GCC warnings
+DCFLAGS		+= -Wno-parentheses		# GCC warnings
+DCFLAGS		+= -Wpointer-arith		# GCC warnings
+DCFLAGS		+= -Wwrite-strings		# GCC warnings
 DCFLAGS		+= -pg				# Profiling
 
-DCXXFLAGS	= -g -O
+DCXXFLAGS	= $(CXXFLAGS) -g -O
 DCXXFLAGS	+= -Wall			# GCC warnings
 DCXXFLAGS	+= -pedantic			# GCC warnings
-DCXXFLAGS	+= -Wno-parentheses		# GCC warnings
-DCXXFLAGS	+= -Wpointer-arith		# GCC warnings
 DCXXFLAGS	+= -Wcast-qual			# GCC warnings
 DCXXFLAGS	+= -Wcast-align			# GCC warnings
-DCXXFLAGS	+= -Wwrite-strings		# GCC warnings
-DCXXFLAGS	+= -Wmissing-declarations	# GCC warnings
-DCXXFLAGS	+= -Wmissing-prototypes		# GCC warnings
+#DCXXFLAGS	+= -Weffc++			# GCC warnings
 #DCXXFLAGS	+= -Winline			# GCC warnings
+DCXXFLAGS	+= -Wmissing-prototypes		# GCC warnings
+DCXXFLAGS	+= -Wno-parentheses		# GCC warnings
+DCXXFLAGS	+= -Wpointer-arith		# GCC warnings
+DCXXFLAGS	+= -Wwrite-strings		# GCC warnings
 DCXXFLAGS	+= -pg				# Profiling
 
 DLDFLAGS	=
@@ -149,7 +129,8 @@ MODULES_YADEX =								\
 	gotoobj		help1		help2		highlt		\
 	img		imgscale	imgspect	infobar		\
 	input		l_align		l_centre	l_flags		\
-	l_misc		l_prop		l_unlink	l_vertices	\
+	l_merge		l_misc		l_prop		l_unlink	\
+	l_vertices							\
 	levels		lists		locate		lumpdir		\
 	macro		memory		menubar		menu		\
 	mkpalette	mouse		names		nop		\
@@ -198,67 +179,53 @@ SRC = $(filter-out src/config.cc, $(SRC_YADEX))				\
 SRC_NON_GEN = $(filter-out src/credits.cc src/prefix.cc src/version.cc, $(SRC))
 
 # The object files
-OBJ_CONFIG  =# $(OBJDIR)/config.o
-DOBJ_CONFIG =# $(DOBJDIR)/config.o
 OBJ_YADEX   = $(addprefix $(OBJDIR)/,  $(addsuffix .o, $(MODULES_YADEX)))
 DOBJ_YADEX  = $(addprefix $(DOBJDIR)/, $(addsuffix .o, $(MODULES_YADEX)))
 OBJ_ATCLIB  = $(addprefix $(OBJDIR_ATCLIB)/,  $(addsuffix .o,$(MODULES_ATCLIB)))
 DOBJ_ATCLIB = $(addprefix $(DOBJDIR_ATCLIB)/, $(addsuffix .o,$(MODULES_ATCLIB)))
 
 # The game definition files.
-YGD = $(addprefix ygd/,							\
+YGDDIR = ygd
+YGD = $(addprefix $(YGDDIR)/,						\
 	doom.ygd	doom02.ygd	doom04.ygd	doom05.ygd	\
 	doom2.ygd	doompr.ygd	heretic.ygd	hexen.ygd	\
 	strife.ygd	strife10.ygd)
 
-# Files that are used with scripts/process to
-# generate files that are included in the
-# distribution archive.
-DOC1_SRC =				\
-	docsrc/README			\
-	docsrc/README.doc
+# Files included in the distribution archive. Most (but not all) are
+# generated from $(DOC1_SRC_*) into the base directory.
+DOC1 =					\
+	FAQ				\
+	README				\
+	doc/README
 
-# Files that are used with scripts/process to
-# generate files that go in the doc/ directory
-# and are NOT included in the archive.
-DOC2_SRC_HTML =				\
-	docsrc/advanced.html		\
-	docsrc/contact.html		\
-	docsrc/credits.html		\
-	docsrc/deu_diffs.html		\
-	docsrc/editing_docs.html	\
-	docsrc/faq.html			\
-	docsrc/feedback.html		\
-	docsrc/getting_started.html	\
-	docsrc/hackers_guide.html	\
-	docsrc/help.html		\
-	docsrc/index.html		\
-	docsrc/keeping_up.html		\
-	docsrc/legal.html		\
-	docsrc/packagers_guide.html	\
-	docsrc/palette.html		\
-	docsrc/reporting.html		\
-	docsrc/tips.html		\
-	docsrc/trivia.html		\
-	docsrc/trouble.html		\
-	docsrc/users_guide.html		\
-	docsrc/wad_specs.html		\
-	docsrc/ygd.html
+# Files not included in the distribution archive.
+DOC2 = $(DOC2_M7) $(DOC2_CP)
 
-DOC2_SRC_MISC =				\
-	docsrc/yadex.6			\
-#	docsrc/yadex.lsm\
-
-# Files that must be put in the distribution
-# archive. Most (but not all) are generated from
-# $(DOC1_SRC_*) into the base directory.
-DOC1 = FAQ README doc/README
-
-# Files that go in the doc/ directory and must
-# NOT be put in the distribution archive. Most
-# are either generated from $(DOC2_SRC_*) or
-# symlinked for docsrc/*.png.
-DOC2 = $(addprefix doc/, $(PIX) $(notdir $(DOC2_SRC_HTML) $(DOC2_SRC_MISC)))
+# Files not included in the distribution archive and generated with m7
+DOC2_M7 = 				\
+	doc/advanced.html		\
+	doc/contact.html		\
+	doc/credits.html		\
+	doc/deu_diffs.html		\
+	doc/editing_docs.html		\
+	doc/faq.html			\
+	doc/feedback.html		\
+	doc/getting_started.html	\
+	doc/hackers_guide.html		\
+	doc/help.html			\
+	doc/index.html			\
+	doc/keeping_up.html		\
+	doc/legal.html			\
+	doc/packagers_guide.html	\
+	doc/palette.html		\
+	doc/reporting.html		\
+	doc/tips.html			\
+	doc/trivia.html			\
+	doc/trouble.html		\
+	doc/users_guide.html		\
+	doc/wad_specs.html		\
+	doc/yadex.6			\
+	doc/ygd.html
 
 # Misc. other files that must be put in the
 # distribution archive.
@@ -310,9 +277,12 @@ MISC_FILES =								\
 	boost/boost/utility_fwd.hpp					\
 	cache/copyright.man						\
 	cache/copyright.txt						\
+	cache/doc.dep							\
+	cache/m7src							\
 	cache/pixlist							\
 	cache/srcdate							\
 	cache/uptodate							\
+	cache/yadex.dep							\
 	configure							\
 	docsrc/copyright						\
 	CHANGES								\
@@ -322,23 +292,58 @@ MISC_FILES =								\
 	Makefile							\
 	TODO								\
 	VERSION								\
-	yadex.cfg							\
-	yadex.dep
+	yadex.cfg
 
 # The images used in the HTML doc. FIXME: "<img"
 # and "src=" have to be on the same line. These
 # are symlinked into doc/ when $(DOC2) is made.
 PIX = $(shell cat cache/pixlist)
 
+DOC2_CP = $(addprefix doc/, $(PIX))
+
+# docsrc - returns the primary source of any doc file.
+define docsrc
+$(if $(filter doc/README, $1),
+  docsrc/README.doc.m7,
+  $(if $(filter README, $1),
+    docsrc/README.m7,
+    $(if $(filter FAQ, $1),
+      docsrc/faq.html.m7,
+      $(patsubst doc/%, docsrc/%.m7, $1)
+    )
+  )
+)
+endef
+
+# M7ROOTS lists all the primary m7 source files, primary meaning that
+# they are mentioned in an m7 command line. sourced files don't count.
+# If any of these files changes, we must refresh M7SRC.
+M7ROOTS = $(strip							\
+	  docsrc/common.m7						\
+	  $(foreach f, $(DOC1) $(DOC2_M7), $(call docsrc, $f))		\
+	)
+
+# M7SRC lists all the files that are used by m7, directly or indirectly.
+# If any of these files files changes, we must refresh doc.dep.
+include cache/m7src
+
 # The script files.
 SCRIPTS = $(addprefix scripts/,	\
 	copyright		\
-	ftime.1			\
-	ftime.c			\
+	htmlimg			\
+	input.h			\
+	input_buf.h		\
+	input_file.h		\
 	install.c		\
+	m7.1			\
+	m7.cc			\
+	m7.h			\
 	mkinstalldirs		\
 	notexist.c		\
-	process			\
+	output.h		\
+	output_buf.h		\
+	output_file.h		\
+	output_null.h		\
 	youngest)
 
 # The patches
@@ -347,9 +352,8 @@ PATCHES = $(addprefix patches/,	\
 	1.5.0_gcc27.diff)
 
 # All files that must be put in the distribution archive.
-ARC_FILES = $(sort $(DOC1) $(DOC1_SRC) $(DOC2_SRC_HTML) $(DOC2_SRC_MISC)\
-	$(MISC_FILES) $(addprefix docsrc/, $(PIX)) $(SCRIPTS) $(SRC) $(YGD)\
-	$(PATCHES))
+ARC_FILES = $(sort $(DOC1) $(M7SRC) $(MISC_FILES) $(addprefix docsrc/, $(PIX))\
+	$(SCRIPTS) $(SRC) $(YGD) $(PATCHES))
 
 # The "root" directory of the archives. The
 # basename of the archives is also based on this.
@@ -374,19 +378,19 @@ DLDFLAGS  := $(strip $(DLDFLAGS))
 ########################################################################
 
 .PHONY: all
-all: doc yadex.dep yadex $(YGD)
+all: doc yadex $(YGD)
 
 .PHONY: yadex
 yadex: $(OBJDIR)/yadex
 
-$(OBJDIR)/yadex: $(OBJ_CONFIG) $(OBJ_YADEX) $(OBJ_ATCLIB) $(MAKEFILE)
+$(OBJDIR)/yadex: $(OBJ_YADEX) $(OBJ_ATCLIB) $(MAKEFILE)
 	@echo "** Linking Yadex"
-	$(CXX) $(OBJ_CONFIG) $(OBJ_YADEX) $(OBJ_ATCLIB) -o $@		\
-	  -L$(X11LIBDIR) -lX11 -lm -lc $(LDFLAGS)
+	$(CXX) $(LDFLAGS) -o $@	$(OBJ_YADEX) $(OBJ_ATCLIB) \
+	  $(X11LD) -lX11 -lm -lc
 
 .PHONY: test
 test:
-	$(OBJDIR)/yadex $(A)
+	$(OBJDIR)/yadex -G $(YGDDIR) $(A)
 
 .PHONY: install
 install: $(OBJDIR)/install
@@ -416,9 +420,8 @@ install: $(OBJDIR)/install
 
 .PHONY: clean
 clean:
-	rm -f $(OBJ_CONFIG) $(OBJ_YADEX) $(OBJ_ATCLIB) $(OBJDIR)/yadex
-	rm -f $(DOBJ_CONFIG) $(DOBJ_YADEX) $(DOBJ_ATCLIB) $(DOBJDIR)/yadex
-	rm -f $(OBJDIR)/ftime
+	rm -f $(OBJ_YADEX) $(OBJ_ATCLIB) $(OBJDIR)/yadex
+	rm -f $(DOBJ_YADEX) $(DOBJ_ATCLIB) $(DOBJDIR)/yadex
 	rm -f $(OBJDIR)/install
 	rm -f $(OBJDIR)/notexist
 	rm -f $(OBJDIR)
@@ -489,19 +492,19 @@ save:
 		.
 
 .PHONY: dall
-dall: yadex.dep dyadex $(YGD)
+dall: dyadex $(YGD)
 
 .PHONY: dyadex
 dyadex: $(DOBJDIR)/yadex
 	
 $(DOBJDIR)/yadex: $(DOBJ_CONFIG) $(DOBJ_YADEX) $(DOBJ_ATCLIB) $(MAKEFILE)
-	@echo "** Linking Yadex"
-	$(CXX) $(DOBJ_CONFIG) $(DOBJ_YADEX) $(DOBJ_ATCLIB) -o $@	\
-	  -L$(X11LIBDIR) -lX11 -lm -lc $(DLDFLAGS)
+	@echo "** Linking Yadex (debug)"
+	$(CXX) $(DLDFLAGS) -o $@ $(DOBJ_CONFIG) $(DOBJ_YADEX) $(DOBJ_ATCLIB) \
+	  $(X11LD) -lX11 -lm -lc
 
 .PHONY: dtest
 dtest:
-	$(DOBJDIR)/yadex $(A)
+	$(DOBJDIR)/yadex -G $(YGDDIR) $(A)
 	gprof $(DOBJDIR)/yadex >gprof.out
 
 .PHONY: dg
@@ -519,18 +522,18 @@ asm: $(addprefix $(OBJDIR)/, $(addsuffix .S, $(MODULES_YADEX)))
 # GNU cp, gzip and optionally bzip2 (if distbz2 is
 # uncommented).
 .PHONY: dist
-dist: changes distimage distgz distdiff #distbz2
+dist: all changes distimage distgz distdiff #distbz2
 	@echo "** Removing distribution image tree $(ARCHIVE)"
 	rm -r $(ARCHIVE)
 
 .PHONY: distimage
-distimage: all $(ARC_FILES)
+distimage: $(ARC_FILES)
 	@echo "** Creating distribution image tree $(ARCHIVE)"
 	rm -rf $(ARCHIVE)
 	scripts/mkinstalldirs $(ARCHIVE)
 	@tar -cf - $(ARC_FILES) | (cd $(ARCHIVE); tar -xf -)
 
-.PHONY: distgz
+
 distgz: distimage
 	@echo "** Creating tar.gz distribution"
 	tar -czf $(ARCHIVE).tar.gz $(ARCHIVE)
@@ -551,7 +554,7 @@ distdiff:
 	mkdir -p $(TMP0)
 	tar -xzf                  $(ARCHIVE).tar.gz -C $(TMP0)
 	tar -xzf ../yadex-arc/pub/$(ARCPREV).tar.gz -C $(TMP0)
-	scripts/process docsrc/README.diff >$(TMP0)/$(ARCDIFF)
+	$(OBJDIR)/m7 docsrc/common.m7 docsrc/README.diff.m7 >$(TMP0)/$(ARCDIFF)
 	echo >>$(TMP0)/$(ARCDIFF)
 	cd $(TMP0) && (diff -uaNr $(ARCPREV) $(ARCHIVE) >>$(ARCDIFF) || true)
 	@# KLUDGE - On my system, just "! grep" makes make choke
@@ -570,6 +573,14 @@ distdiff:
 
 .PHONY: showconf
 showconf:
+	@awk 'FNR == 1 { if (NR > 1) print ""; print FILENAME ":" }	\
+	  { printf("%d\t%s\n", FNR, $$0) } END { print "" }'		\
+	  $(OBJDIR)/Makefile.config					\
+	  $(OBJDIR)/config.h						\
+	  $(OBJDIR)/config.cc						\
+	  $(OBJDIR)/config.etc						\
+	  $(OBJDIR)/config.share					\
+	  
 	@echo "ARCHIVE            \"$(ARCHIVE)\""
 	@echo "BINDIR             \"$(BINDIR)\""
 	@echo "CC                 \"$(CC)\""
@@ -581,25 +592,19 @@ showconf:
 	@echo "DLDFLAGS           \"$(DLDFLAGS)\""
 	@echo "ETCDIR             \"$(ETCDIR)\""
 	@echo "ETCDIRNV           \"$(ETCDIRNV)\""
-	@echo "HAVE_GETTIMEOFDAY  \"$(HAVE_GETTIMEOFDAY)\""
-	@echo "HAVE_NANOSLEEP     \"$(HAVE_NANOSLEEP)\""
-	@echo "HAVE_SNPRINTF      \"$(HAVE_SNPRINTF)\""
-	@echo "HAVE_USLEEP        \"$(HAVE_USLEEP)\""
 	@echo "LDFLAGS            \"$(LDFLAGS)\""
 	@echo "MANDIR             \"$(MANDIR)\""
-	@echo "OS                 \"$(OS)\""
-	@echo "PREFIX             \"$(PREFIX)\""
 	@echo "SHAREDIR           \"$(SHAREDIR)\""
 	@echo "SHAREDIRNV         \"$(SHAREDIRNV)\""
 	@echo "SHELL              \"$(SHELL)\""
 	@echo "SYSTEM             \"$(SYSTEM)\""
 	@echo "VERSION            \"$(VERSION)\""
-	@echo "X11INCLUDEDIR      \"$(X11INCLUDEDIR)\""
-	@echo "X11LIBDIR          \"$(X11LIBDIR)\""
+	@echo "X11INC             \"$(X11INC)\""
+	@echo "X11LIB             \"$(X11LIB)\""
 	@echo "CXX --version      \"`$(CXX) --version`\""
 	@echo "CC --version       \"`$(CC) --version`\""
 	@echo "shell              \"$$SHELL\""
-	@echo "uname              \"`uname`\""
+	@echo "uname -a           \"`uname -a`\""
 
 
 ########################################################################
@@ -609,16 +614,21 @@ showconf:
 #
 ########################################################################
 
-# If Makefile.config doesn't exist, give a hint...
+# If Makefile.config or config.h don't exist, give a hint...
 $(OBJDIR)/Makefile.config:
+$(OBJDIR)/config.h:
 	@echo "Sorry guv'nor, but... did you run ./configure ?" >&2
 	@false
 
 $(OBJDIR)/files_etc.man: $(OBJDIR)/config.etc $(MAKEFILE)
-	sed 's/%v/$(VERSION)/g; s,.*,.B &/yadex.cfg,' $< >$@
+	@echo "Generating $@"
+	@sed 's/%v/$(VERSION)/g; s,.*,.B &/yadex.cfg,' $< >$(@D)/.$(@F)
+	@mv $(@D)/.$(@F) $@
 
 $(OBJDIR)/files_share.man: $(OBJDIR)/config.share $(MAKEFILE)
-	sed 's/%v/$(VERSION)/g; s,.*,.BI &/ game .ygd,' $< >$@
+	@echo "Generating $@"
+	@sed 's/%v/$(VERSION)/g; s,.*,.BI &/ game .ygd,' $< >$(@D)/.$(@F)
+	@mv $(@D)/.$(@F) $@
 
 # Dependencies of the modules of Yadex
 # -Y is here to prevent the inclusion of dependencies on
@@ -637,20 +647,28 @@ $(OBJDIR)/files_share.man: $(OBJDIR)/config.share $(MAKEFILE)
 # Note: the modules of Atclib are not scanned as they all
 # depend on $(HEADERS_ATCLIB) and nothing else.
 
-yadex.dep: $(SRC_NON_GEN)
+cache/yadex.dep: $(SRC_NON_GEN) src/config.h
 	@echo "Generating $@"
-	@makedepend -f- -Y -Iatclib $(SRC_NON_GEN) 2>/dev/null	\
-		| awk 'sub (/^src/, "") == 1 {				\
+	@test -d cache || mkdir cache
+	@makedepend -f- -Y -Iatclib $(SRC_NON_GEN) 2>/dev/null		\
+		| $(AWK) 'sub (/^src/, "") == 1 {			\
 				print "'$(OBJDIR)'" $$0;		\
 				print "'$(DOBJDIR)'" $$0;		\
 				next;					\
-			}' >$@
+			}' >$(@D)/.$(@F)
+	@mv $(@D)/.$(@F) $@
 
 cache/copyright.man: $(MAKEFILE) scripts/copyright docsrc/copyright
-	scripts/copyright -m docsrc/copyright >$@
+	@echo "Generating $@"
+	@test -d cache || mkdir cache
+	@scripts/copyright -m docsrc/copyright >$(@D)/.$(@F)
+	@mv $(@D)/.$(@F) $@
 
 cache/copyright.txt: $(MAKEFILE) scripts/copyright docsrc/copyright
-	scripts/copyright -t docsrc/copyright | sed 's/^./    &/' >$@
+	@echo "Generating $@"
+	@test -d cache || mkdir cache
+	@scripts/copyright -t docsrc/copyright | sed 's/^./    &/' >$(@D)/.$(@F)
+	@mv $(@D)/.$(@F) $@
 
 # The YYYY-MM-DD date indicated in the parentheses after the
 # version number is the mtime of the most recent source file
@@ -704,7 +722,7 @@ cache/copyright.txt: $(MAKEFILE) scripts/copyright docsrc/copyright
 cache/srcdate: cache/uptodate
 
 cache/uptodate: scripts/youngest $(SRC_NON_GEN)
-	@mkdir -p cache
+	@test -d cache || mkdir cache
 	@if perl -v >/dev/null 2>&1; then				\
 	  echo Generating cache/srcdate;				\
 	  scripts/youngest $(SRC_NON_GEN) >cache/srcdate;		\
@@ -719,7 +737,7 @@ cache/uptodate: scripts/youngest $(SRC_NON_GEN)
 
 # To compile the modules of Yadex
 # (normal and debugging versions)
-include yadex.dep
+include cache/yadex.dep
 
 # It's simpler to copy config.cc into src/ than to have a
 # compilation rule for just one file.
@@ -730,41 +748,47 @@ src/config.h: $(OBJDIR)/config.h
 	cp -p $< $@
 
 $(OBJDIR)/%.o: src/%.cc
-	$(CXX) -c -Iatclib -Iboost -I$(X11INCLUDEDIR) $(CXXFLAGS) $< -o $@
+	$(CXX) $(CXXFLAGS) -Iatclib -Iboost $(X11CC) -c $< -o $@
 
 $(DOBJDIR)/%.o: src/%.cc
-	$(CXX) -c -Iatclib -Iboost -I$(X11INCLUDEDIR) $(DCXXFLAGS) $< -o $@
+ifeq "$(filter -Weffc++,$(DCXXFLAGS))" ""
+	$(CXX) $(DCXXFLAGS) -Iatclib -Iboost $(X11CC) -c $< -o $@
+else
+	$(CXX) $(DCXXFLAGS) -Iatclib -Iboost $(X11CC) -c $< -o $@ 2>&1	\
+	  | awk '/^[^ ]/ { c = 0 } /^\/usr\/include\// { c = 1 } !c'
+endif
 
 # To compile the modules of Atclib
 # (normal and debugging versions)
-$(OBJDIR_ATCLIB)/%.o: atclib/%.c $(HEADERS_ATCLIB)
+$(OBJDIR_ATCLIB)/%.o: atclib/%.c $(HEADERS_ATCLIB) $(OBJDIR)/Makefile.config
 	$(CC) -c $(CFLAGS) $< -o $@
 
-$(DOBJDIR_ATCLIB)/%.o: atclib/%.c $(HEADERS_ATCLIB)
+$(DOBJDIR_ATCLIB)/%.o: atclib/%.c $(HEADERS_ATCLIB) $(OBJDIR)/Makefile.config
 	$(CC) -c $(DCFLAGS) $< -o $@
 
 # To see the generated assembly code
 # for the modules of Yadex
 $(OBJDIR)/%.S: src/%.cc $(MAKEFILE)
-	$(CXX) $(CXXFLAGS) -S -fverbose-asm -Iatclib -Iboost -I$(X11INCLUDEDIR)\
-	  $< -o $@
+	$(CXX) $(CXXFLAGS) -fverbose-asm -Iatclib -Iboost $(X11CC) -S $< -o $@
 
 # A source file containing the credits
 src/credits.cc: $(MAKEFILE) docsrc/copyright scripts/copyright
-	@echo Generating $@
-	@echo '// DO NOT EDIT -- generated from docsrc/copyright' >$@
-	scripts/copyright -c docsrc/copyright >>$@
+	@echo "Generating $@"
+	@echo '// DO NOT EDIT -- generated from docsrc/copyright' >$(@D)/.$(@F)
+	@scripts/copyright -c docsrc/copyright >>$(@D)/.$(@F)
+	@mv $(@D)/.$(@F) $@
 
 # A source file containing just the date of the
 # most recent source file and the version number
 # (found in ./VERSION)
 src/version.cc: $(SRC_NON_GEN) VERSION cache/srcdate $(MAKEFILE)
-	@echo Generating $@
-	@printf '// DO NOT EDIT -- generated from VERSION\n\n' >$@
+	@echo "Generating $@"
+	@printf '// DO NOT EDIT -- generated from VERSION\n\n' >$(@D)/.$(@F)
 	@printf "extern const char *const yadex_source_date = \"%s\";\n" \
-		`cat cache/srcdate` >>$@
+		`cat cache/srcdate` >>$(@D)/.$(@F)
 	@printf "extern const char *const yadex_version = \"%s\";\n" 	\
-		"$(VERSION)" >>$@
+		"$(VERSION)" >>$(@D)/.$(@F)
+	@mv $(@D)/.$(@F) $@
 
 
 # -------- Doc-related stuff --------
@@ -772,12 +796,29 @@ src/version.cc: $(SRC_NON_GEN) VERSION cache/srcdate $(MAKEFILE)
 docdirs:
 	@if [ ! -d doc ]; then mkdir doc; fi
 
-cache/pixlist: $(DOC2_SRC_HTML)
-	@echo Generating $@
-	@mkdir -p cache
+# FIXME if $(M7SRC) changes, pixlist is not regenerated.
+cache/pixlist: $(filter %.html, $(DOC2_M7))
+	@echo "Generating $@"
+	@test -d cache || mkdir cache
+	@touch cache/.htmlimg
+	@scripts/htmlimg $^ >$(@D)/.$(@F)
+	@test -f cache/.htmlimg || mv $(@D)/.$(@F) $@
+
+dummy:
 	@if perl -v >/dev/null 2>/dev/null; then			\
-	  perl -ne '@l = m/<img\s[^>]*src="?([^\s">]+)/io;		\
-	    print "@l\n" if @l;' $(DOC2_SRC_HTML) | sort | uniq >$@;	\
+	  perl -we '							\
+	    use strict;							\
+	    my %imgsrc;							\
+	    undef $$/;							\
+	    while (defined (my $$data = <>))				\
+	    {								\
+	      map { $$imgsrc{$$_} = undef }				\
+		grep defined $$_ && $$_ !~ m{^\w+://},			\
+		  $$data =~ m/<img\s[^>]*\bsrc=(?:"([[:graph:]]+?)"|([[:graph:]]+?)[\s>])/gis;\
+	    }								\
+	    print map "$$_\n", sort keys %imgsrc;			\
+	    ' $^ >$(@D)/.$(@F)						\
+	    && mv $(@D)/.$(@F) $@;					\
 	elif [ -f $@ ]; then						\
 	  echo "Sorry, you need Perl to refresh $@. Keeping old $@.";	\
 	else								\
@@ -832,9 +873,10 @@ ps: doc/yadex.ps
 # Use docsrc/faq.html and not directly
 # doc/faq.html because we don't want FAQ to be
 # remade at first build time.
-FAQ: docsrc/faq.html
-	scripts/process $< >cache/faq.html
-	links -width 72 -dump cache/faq.html >$@
+FAQ: docsrc/faq.html.m7
+	@test -d cache || mkdir cache
+	$(OBJDIR)/m7 docsrc/common.m7 $< >cache/faq.html
+	links -dump-width 72 -dump cache/faq.html >$@
 	rm cache/faq.html
 
 doc/yadex.dvi: doc/yadex.6
@@ -843,47 +885,80 @@ doc/yadex.dvi: doc/yadex.6
 doc/yadex.ps: doc/yadex.6
 	groff -Tps -man $^ >$@
 	
+#
+#	Doc generation by processing with m7
+#
 
-# Generate the doc by filtering them through scripts/process
+# FIXME since m7src depends on the m7 executable, it's always remade the
+# first time.
+cache/m7src: $(OBJDIR)/m7 $(M7ROOTS) $(M7SRC)
+	@echo "Generating $@"
+	@test -d cache || mkdir cache
+	@$(OBJDIR)/m7 -M $(M7ROOTS)					\
+	  | sort							\
+	  | uniq							\
+	  | awk 'BEGIN{print"M7SRC = \\"}{print"\t"$$0" \\"}END{print""}'\
+	  >$(@D)/.$(@F)
+	@mv $(@D)/.$(@F) $@
+
 PROCESS =				\
 	VERSION				\
 	cache/copyright.man		\
 	cache/copyright.txt		\
 	cache/srcdate			\
-	scripts/process			\
-	$(OBJDIR)/ftime			\
+	docsrc/common.m7		\
 	$(OBJDIR)/files_etc.man		\
 	$(OBJDIR)/files_share.man	\
+	$(OBJDIR)/m7			\
 	$(OBJDIR)/notexist
 
-doc/yadex.6: docsrc/yadex.6 $(PROCESS)
-	@echo Generating $@
-	@scripts/process $< >$@
+doc/README: docsrc/README.doc.m7 $(PROCESS)
+	@echo "Generating $@"
+	@test -d doc || mkdir doc
+	@$(OBJDIR)/m7 docsrc/common.m7 $< >$(@D)/.$(@F) && mv $(@D)/.$(@F) $@
 
-doc/README: docsrc/README.doc $(PROCESS)
-	@echo Generating $@
-	@scripts/process $< >$@
+doc/%: docsrc/%.m7 $(PROCESS)
+	@echo "Generating $@"
+	@test -d doc || mkdir doc
+	@$(OBJDIR)/m7 docsrc/common.m7 $< >$(@D)/.$(@F) && mv $(@D)/.$(@F) $@
 
-%: docsrc/% $(PROCESS)
-	@echo Generating $@
-	@scripts/process $< >$@
+%: docsrc/%.m7 $(PROCESS)
+	@echo "Generating $@"
+	@$(OBJDIR)/m7 docsrc/common.m7 $< >$(@D)/.$(@F) && mv $(@D)/.$(@F) $@
 
-doc/%.html: docsrc/%.html $(PROCESS)
-	@echo Generating $@
-	@scripts/process $< >$@
-
-# The images are just symlinked from docsrc/ to doc/
+# The images are just copied from docsrc/ to doc/
 doc/%.png: docsrc/%.png
-	@rm -f $@
-	@ln -s ../$< $@
+	@echo "Creating $@"
+	@rm -f $@ && cp -p $< $@
 
-$(OBJDIR)/ftime: scripts/ftime.c
-	$(CC) $< -o $@
+include cache/doc.dep
 
-$(OBJDIR)/install: scripts/install.c
-	$(CC) $< -o $@
+cache/doc.dep: $(PROCESS) cache/m7src $(M7SRC)
+	@echo "Generating $@"
+	@test -d cache || mkdir cache
+	@for f in $(DOC2_M7); do					\
+	  files="docsrc/common.m7 docsrc/$${f#doc/}.m7";		\
+	  $(OBJDIR)/m7 -Ma -o $$f $$files				\
+	    || {							\
+	      echo "m7: error processing $$files" >&2;			\
+	      exit 1;							\
+	    };								\
+	  done >$(@D)/.$(@F)
+	@mv $(@D)/.$(@F) $@
 
-$(OBJDIR)/notexist: scripts/notexist.c
-	$(CC) $< -o $@
+#
+#	Compile the "scripts"
+#
+$(OBJDIR)/%: $(OBJDIR)/%.o
+	$(CC) $(LDFLAGS) $< -o $@
+	
+$(OBJDIR)/%: $(OBJDIR)/%.oo
+	$(CXX) $(LDFLAGS) $< -o $@
 
+$(OBJDIR)/%.o: scripts/%.c
+	$(CC) $(CFLAGS) -c $< -o $@
+
+# -g because m7 is shaky. -O costs more than it buys.
+$(OBJDIR)/%.oo: scripts/%.cc
+	$(CXX) $(filter-out -O%, $(CXXFLAGS)) -g -c $< -o $@
 

@@ -12,7 +12,7 @@ This file is part of Yadex.
 Yadex incorporates code from DEU 5.21 that was put in the public domain in
 1994 by Raphaël Quinet and Brendon Wyber.
 
-The rest of Yadex is Copyright © 1997-2003 André Majorel and others.
+The rest of Yadex is Copyright © 1997-2005 André Majorel and others.
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -119,7 +119,7 @@ NumVertices = 0;
 static char *tex_list = 0;
 static size_t ntex = 0;
 static char tex_name[WAD_TEX_NAME + 1];
-inline const char *texno_texname (i16 texno)
+inline const char *texno_texname (int16_t texno)
 {
 if (texno < 0)
    return "-";
@@ -131,7 +131,7 @@ else
       }
    else
       {
-      if (texno < (i16) ntex)
+      if (texno < (int16_t) ntex)
 	 return tex_list + WAD_TEX_NAME * texno;
       else
 	 return "unknown";
@@ -159,8 +159,8 @@ if (!Level)
    fatal_error ("level data not found");
 
 /* Get the number of vertices */
-i32 v_offset = 42;
-i32 v_length = 42;
+int32_t v_offset = 42;
+int32_t v_length = 42;
 {
 const char *lump_name = "BUG";
 if (yg_level_format == YGLF_ALPHA)  // Doom alpha
@@ -180,7 +180,7 @@ else
       v_length -= 4;
       }
    OldNumVertices = (int) (v_length / WAD_VERTEX_BYTES);
-   if ((i32) (OldNumVertices * WAD_VERTEX_BYTES) != v_length)
+   if ((int32_t) (OldNumVertices * WAD_VERTEX_BYTES) != v_length)
       warn ("the %s lump has a weird size."
         " The wad might be corrupt.\n", lump_name);
    }
@@ -190,8 +190,8 @@ else
 {
 const char *lump_name = "THINGS";
 verbmsg ("Reading %s things", levelname);
-i32 offset = 42;
-i32 length;
+int32_t offset = 42;
+int32_t length;
 dir = FindMasterDir (Level, lump_name);
 if (dir == 0)
    NumThings = 0;
@@ -202,7 +202,7 @@ else
    if (MainWad == Iwad4)  // Hexen mode
       {
       NumThings = (int) (length / WAD_HEXEN_THING_BYTES);
-      if ((i32) (NumThings * WAD_HEXEN_THING_BYTES) != length)
+      if ((int32_t) (NumThings * WAD_HEXEN_THING_BYTES) != length)
          warn ("the %s lump has a weird size."
             " The wad might be corrupt.\n", lump_name);
       }
@@ -215,7 +215,7 @@ else
 	 }
       size_t thing_size = yg_level_format == YGLF_ALPHA ? 12 : WAD_THING_BYTES;
       NumThings = (int) (length / thing_size);
-      if ((i32) (NumThings * thing_size) != length)
+      if ((int32_t) (NumThings * thing_size) != length)
          warn ("the %s lump has a weird size."
             " The wad might be corrupt.\n", lump_name);
       }
@@ -237,7 +237,7 @@ if (NumThings > 0)
    if (MainWad == Iwad4)		// Hexen mode
       for (long n = 0; n < NumThings; n++)
 	 {
-         u8 dummy2[6];
+         uint8_t dummy2[6];
 	 wf->read_i16   ();					// Tid
 	 wf->read_i16   (&Things[n].xpos );
 	 wf->read_i16   (&Things[n].ypos );
@@ -286,14 +286,14 @@ if (yg_level_format != YGLF_ALPHA)
       if (MainWad == Iwad4)  // Hexen mode
 	 {
 	 NumLineDefs = (int) (dir->dir.size / WAD_HEXEN_LINEDEF_BYTES);
-	 if ((i32) (NumLineDefs * WAD_HEXEN_LINEDEF_BYTES) != dir->dir.size)
+	 if ((int32_t) (NumLineDefs * WAD_HEXEN_LINEDEF_BYTES) != dir->dir.size)
 	    warn ("the %s lump has a weird size."
 	       " The wad might be corrupt.\n", lump_name);
 	 }
       else                   // Doom/Heretic/Strife mode
 	 {
 	 NumLineDefs = (int) (dir->dir.size / WAD_LINEDEF_BYTES);
-	 if ((i32) (NumLineDefs * WAD_LINEDEF_BYTES) != dir->dir.size)
+	 if ((int32_t) (NumLineDefs * WAD_LINEDEF_BYTES) != dir->dir.size)
 	    warn ("the %s lump has a weird size."
 	       " The wad might be corrupt.\n", lump_name);
 	 }
@@ -313,7 +313,7 @@ if (yg_level_format != YGLF_ALPHA)
       if (MainWad == Iwad4)  // Hexen mode
 	 for (long n = 0; n < NumLineDefs; n++)
 	    {
-	    u8 dummy[6];
+	    uint8_t dummy[6];
 	    wf->read_i16   (&LineDefs[n].start);
 	    wf->read_i16   (&LineDefs[n].end);
 	    wf->read_i16   (&LineDefs[n].flags);
@@ -357,7 +357,7 @@ dir = FindMasterDir (Level, lump_name);
 if (dir)
    {
    NumSideDefs = (int) (dir->dir.size / WAD_SIDEDEF_BYTES);
-   if ((i32) (NumSideDefs * WAD_SIDEDEF_BYTES) != dir->dir.size)
+   if ((int32_t) (NumSideDefs * WAD_SIDEDEF_BYTES) != dir->dir.size)
       warn ("the SIDEDEFS lump has a weird size."
          " The wad might be corrupt.\n");
    }
@@ -454,7 +454,7 @@ if (yg_level_format == YGLF_ALPHA)
 	 const char *lump_name = "TEXTURES";
 	 bool success = false;
 	 ntex = 0;
-	 i32 *offset_table = 0;
+	 int32_t *offset_table = 0;
 	 MDirPtr d = FindMasterDir (MasterDir, lump_name);
 	 if (! d)
 	    {
@@ -469,7 +469,7 @@ if (yg_level_format == YGLF_ALPHA)
 	    warn ("%s: seek error\n", lump_name);
 	    goto textures_done;
 	    }
-	 i32 num;
+	 int32_t num;
 	 wf->read_i32 (&num);
 	 if (wf->error ())
 	    {
@@ -481,7 +481,7 @@ if (yg_level_format == YGLF_ALPHA)
 	    goto textures_done;
 	    }
 	 ntex = num;
-	 offset_table = new i32[ntex];
+	 offset_table = new int32_t[ntex];
 	 for (size_t n = 0; n < ntex; n++)
 	    {
 	    wf->read_i32 (offset_table + n);
@@ -531,24 +531,24 @@ if (yg_level_format == YGLF_ALPHA)
       for (size_t n = 0; n < nlines; n++)
 	 {
 	 LDPtr ld = LineDefs + n;
-	 ld->start   = wf->read_i16 ();
-	 ld->end     = wf->read_i16 ();
-	 ld->flags   = wf->read_i16 ();
-	               wf->read_i16 ();  // Unused ?
-	 ld->type    = wf->read_i16 ();
-	 ld->tag     = wf->read_i16 ();
-	               wf->read_i16 ();  // Unused ?
-	 i16 sector1 = wf->read_i16 ();
-	 i16 xofs1   = wf->read_i16 ();
-	 i16 tex1m   = wf->read_i16 ();
-	 i16 tex1u   = wf->read_i16 ();
-	 i16 tex1l   = wf->read_i16 ();
-	               wf->read_i16 ();  // Unused ?
-	 i16 sector2 = wf->read_i16 ();
-	 i16 xofs2   = wf->read_i16 ();
-	 i16 tex2m   = wf->read_i16 ();
-	 i16 tex2u   = wf->read_i16 ();
-	 i16 tex2l   = wf->read_i16 ();
+	 ld->start       = wf->read_i16 ();
+	 ld->end         = wf->read_i16 ();
+	 ld->flags       = wf->read_i16 ();
+	                   wf->read_i16 ();  // Unused ?
+	 ld->type        = wf->read_i16 ();
+	 ld->tag         = wf->read_i16 ();
+	                   wf->read_i16 ();  // Unused ?
+	 int16_t sector1 = wf->read_i16 ();
+	 int16_t xofs1   = wf->read_i16 ();
+	 int16_t tex1m   = wf->read_i16 ();
+	 int16_t tex1u   = wf->read_i16 ();
+	 int16_t tex1l   = wf->read_i16 ();
+	                   wf->read_i16 ();  // Unused ?
+	 int16_t sector2 = wf->read_i16 ();
+	 int16_t xofs2   = wf->read_i16 ();
+	 int16_t tex2m   = wf->read_i16 ();
+	 int16_t tex2u   = wf->read_i16 ();
+	 int16_t tex2l   = wf->read_i16 ();
 	 if (sector1 >= 0)			// Create first sidedef
 	    {
 	    ld->sidedef1 = s;
@@ -693,7 +693,7 @@ if (NumVertices > 0)
    MapMinY = 32767;
    for (long n = 0; n < NumVertices; n++)
       {
-      i16 val;
+      int16_t val;
       wf->read_i16 (&val);
       if (val < MapMinX)
 	 MapMinX = val;
@@ -731,7 +731,7 @@ if (yg_level_format != YGLF_ALPHA)
    if (dir)
       {
       NumSectors = (int) (dir->dir.size / WAD_SECTOR_BYTES);
-      if ((i32) (NumSectors * WAD_SECTOR_BYTES) != dir->dir.size)
+      if ((int32_t) (NumSectors * WAD_SECTOR_BYTES) != dir->dir.size)
 	 warn ("the %s lump has a weird size."
 	   " The wad might be corrupt.\n", lump_name);
       }
@@ -769,9 +769,9 @@ if (yg_level_format != YGLF_ALPHA)
    }
 else  // Doom alpha--a wholly different SECTORS format
    {
-   i32  *offset_table = 0;
-   i32   nsectors     = 0;
-   i32   nflatnames   = 0;
+   int32_t  *offset_table = 0;
+   int32_t   nsectors     = 0;
+   int32_t   nflatnames   = 0;
    char *flatnames    = 0;
    if (dir == 0)
       {
@@ -802,7 +802,7 @@ else  // Doom alpha--a wholly different SECTORS format
    NumSectors = nsectors;
    Sectors = (SPtr) GetFarMemory ((unsigned long) NumSectors
       * sizeof (struct Sector));
-   offset_table = new i32[nsectors];
+   offset_table = new int32_t[nsectors];
    for (size_t n = 0; n < (size_t) nsectors; n++)
       wf->read_i32 (offset_table + n);
    if (wf->error ())
@@ -869,7 +869,7 @@ else  // Doom alpha--a wholly different SECTORS format
 	 rc = 1;
 	 goto sectors_alpha_done;
 	 }
-      i16 index;
+      int16_t index;
       wf->read_i16 (&Sectors[n].floorh);
       wf->read_i16 (&Sectors[n].ceilh );
       wf->read_i16 (&index);
@@ -1309,7 +1309,7 @@ void ReadWTextureNames ()
 {
 MDirPtr dir;
 int n;
-i32 val;
+int32_t val;
 
 verbmsg ("Reading texture names\n");
 
@@ -1364,7 +1364,7 @@ else if (yg_texture_lumps == YGTL_TEXTURES
 	  || yg_texture_format == YGTF_STRIFE11))
    {
    const char *lump_name = "TEXTURES";
-   i32 *offsets = 0;
+   int32_t *offsets = 0;
    dir = FindMasterDir (MasterDir, lump_name);
    if (dir == NULL)  // In theory it always exists, though
       {
@@ -1387,7 +1387,7 @@ else if (yg_texture_lumps == YGTL_TEXTURES
       }
    NumWTexture = (int) val + 1;
    /* read in the offsets for texture1 names */
-   offsets = (i32 *) GetMemory ((long) NumWTexture * 4);
+   offsets = (int32_t *) GetMemory ((long) NumWTexture * 4);
    wf->read_i32 (offsets + 1, NumWTexture - 1);
    if (wf->error ())
       {
@@ -1427,7 +1427,7 @@ else if (yg_texture_lumps == YGTL_NORMAL
 	  || yg_texture_format == YGTF_STRIFE11))
    {
    const char *lump_name = "TEXTURE1";
-   i32 *offsets = 0;
+   int32_t *offsets = 0;
    dir = FindMasterDir (MasterDir, lump_name);
    if (dir != NULL)  // In theory it always exists, though
       {
@@ -1445,7 +1445,7 @@ else if (yg_texture_lumps == YGTL_NORMAL
       }
       NumWTexture = (int) val + 1;
       /* read in the offsets for texture1 names */
-      offsets = (i32 *) GetMemory ((long) NumWTexture * 4);
+      offsets = (int32_t *) GetMemory ((long) NumWTexture * 4);
       wf->read_i32 (offsets + 1, NumWTexture - 1);
       {
 	// FIXME
@@ -1489,7 +1489,7 @@ else if (yg_texture_lumps == YGTL_NORMAL
 	// FIXME
       }
       /* read in the offsets for texture2 names */
-      offsets = (i32 *) GetMemory ((long) val * 4);
+      offsets = (int32_t *) GetMemory ((long) val * 4);
       wf->read_i32 (offsets, val);
       if (wf->error ())
       {
@@ -1582,7 +1582,11 @@ for (dir = MasterDir; (dir = FindMasterDir (dir, "F_START", "FF_START"));)
 		  WAD_NAME, dir->dir.name);
 	 continue;
 	 }
-      if (dir->dir.size != 4096)
+      if (dir->dir.size == 4096
+       || dir->dir.size == 4160 && yg_flat_format == YGFF_HERETIC
+       || dir->dir.size == 8192 && yg_flat_format == YGFF_HEXEN)
+	 ;
+      else
 	 warn ("flat \"%.*s\" has weird size %lu."
 	     " Using 4096 instead.\n",
 	       WAD_NAME, dir->dir.name, (unsigned long) dir->dir.size);

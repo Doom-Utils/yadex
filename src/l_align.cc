@@ -11,7 +11,7 @@ This file is part of Yadex.
 Yadex incorporates code from DEU 5.21 that was put in the public domain in
 1994 by Raphaël Quinet and Brendon Wyber.
 
-The rest of Yadex is Copyright © 1997-2003 André Majorel and others.
+The rest of Yadex is Copyright © 1997-2005 André Majorel and others.
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -149,19 +149,19 @@ MadeChanges = 1;
 void AlignTexturesX (SelPtr *sdlist) /* SWAP! */
 {
 			/* FIRST texture name used in the highlited objects */
-char texname[WAD_TEX_NAME + 1];
-char errormessage[80];	/* area to hold the error messages produced */
-int  ldef;		/* linedef number */
-int  sd1;		/* current sidedef in *sdlist */
-int  vert1, vert2;	/* vertex 1 and 2 for the linedef under scrutiny */
-int  xoffset;		/* xoffset accumulator */
-int  useroffset;	/* user input offset for first input */
-i16  texlength;		/* the length of texture to format to */
-int  length;		/* length of linedef under scrutiny */
-i16  dummy;		/* holds useless data */
-int  type_off;		/* do we have an initial offset to use */
-int  type_tex;		/* do we check for same textures */
-int  type_sd;		/* do we align sidedef 1 or sidedef 2 */
+char    texname[WAD_TEX_NAME + 1];
+char    errormessage[80]; /* area to hold the error messages produced */
+int     ldef;		/* linedef number */
+int     sd1;		/* current sidedef in *sdlist */
+int     vert1, vert2;	/* vertex 1 and 2 for the linedef under scrutiny */
+int     xoffset;	/* xoffset accumulator */
+int     useroffset;	/* user input offset for first input */
+int16_t texlength;	/* the length of texture to format to */
+int     length;		/* length of linedef under scrutiny */
+int16_t dummy;		/* holds useless data */
+int     type_off;	/* do we have an initial offset to use */
+int     type_tex;	/* do we check for same textures */
+int     type_sd;	/* do we align sidedef 1 or sidedef 2 */
 
 type_sd  = 0;		/* which sidedef to align, 1=SideDef1, 2=SideDef2 */
 type_tex = 0;		/* do we test for similar textures, 0 = no, 1 = yes */
@@ -307,7 +307,7 @@ while (*sdlist)  /* main processing loop */
    sd1 = (*sdlist)->objnum;
 
    if (type_sd == 1) /* throw out all 2nd SideDefs untill a 1st is found */
-   {
+     {
      while (LineDefs[ldef].sidedef1!=sd1 && ldef<=NumLineDefs)
        {
        ldef++;

@@ -9,6 +9,7 @@
 # FIXME probably needs work, especially in
 # the things definitions dept.
 
+flat_format     normal
 level_format    alpha		# FIXME it's not even that !
 level_name      e1m1		# FIXME it's not even that !
 picture_format  alpha

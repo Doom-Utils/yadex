@@ -15,11 +15,8 @@
 
 		<h2><a name="homepage">Home page</a></h2>
 
-<p>The home page is <a
-href="http://www.teaser.fr/~amajorel/yadex/"
-><code>http://www.teaser.fr/~amajorel/yadex/</code></a>,<br>
-mirrored at <a href="http://www.linuxgames.com/yadex/"
-><code>http://www.linuxgames.com/yadex/</code></a>.
+<p>The home page is <a href="$WWW"><code>$WWW</code></a>.
+<p>The mirror at <code>linuxgames.com</code> has been taken down.
 
 		<h2>Mailing lists</h2>
 
@@ -78,7 +75,8 @@ ratio high are appreciated.
 <em>not</em> to me.</p>
 
 <p>The current maintainer is André Majorel <a
-href="http://www.teaser.fr/~amajorel/"><code>http://www.teaser.fr/~amajorel/</code></a>.</p>
+href="http://www.teaser.fr/~amajorel/"><code
+>http://www.teaser.fr/~amajorel/</code></a>.</p>
 
 <p>Send all email to <code>spambait@freelists.org</code>,
 <em>not</em> to me.</p>

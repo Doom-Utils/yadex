@@ -11,7 +11,7 @@ This file is part of Yadex.
 Yadex incorporates code from DEU 5.21 that was put in the public domain in
 1994 by Raphaël Quinet and Brendon Wyber.
 
-The rest of Yadex is Copyright © 1997-2003 André Majorel and others.
+The rest of Yadex is Copyright © 1997-2005 André Majorel and others.
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -45,6 +45,7 @@ typedef struct
   pcolour_t pcn;	// The physical colour# (pixel value).
   rgb_c rgb;		// Its RGB value.
   int usage_count;	// Number of logical colours that use it.
+  bool alloc;		// Colour must be XFreeColors()'d
 } pcolours_table_entry_t;
 pcolours_table_entry_t *pcolours = 0;
 size_t physical_colours = 0;  // Number of entries in <pcolours>
@@ -58,7 +59,7 @@ static void dump_pcolours ();
  *	Convert an 8-bit RGB component value to a 16-bit one.
  *	Will convert 00h to 0000h, 80h to 8080h and FFh to FFFFh.
  */
-inline u16 eight2sixteen (u8 v)
+inline uint16_t eight2sixteen (uint8_t v)
 {
   return (v << 8) | v;
 }
@@ -77,9 +78,8 @@ pcolour_t *alloc_colours (rgb_c rgb_values[], size_t count)
   if (pcn_table == NULL)
     fatal_error (msg_nomem);
 
-  /* Allocate the physical colours if necessary. Should not do
-     it for static visuals (StaticColor, TrueColor). It does no
-     harm but it's useless. */
+  /* Put the colours in the global table. Allocate the physical colours if
+     necessary (not on true colour displays). */
   for (size_t n = 0; n < count; n++)
   {
     // Is there already a physical colour for this RGB value ?
@@ -98,25 +98,57 @@ pcolour_t *alloc_colours (rgb_c rgb_values[], size_t count)
     // There isn't. Try to create a new physical colour.
     if (pcn_table[n] == PCOLOUR_NONE)
     {
+      bool alloc;
+      bool success;
       XColor xc;
-      xc.red   = eight2sixteen (rgb_values[n].r);
-      xc.green = eight2sixteen (rgb_values[n].g);
-      xc.blue  = eight2sixteen (rgb_values[n].b);
-      Status r = XAllocColor (dpy, cmap, &xc);
+
+      if (win_vis_class == TrueColor || win_vis_class == StaticGray)
+      {
+	alloc = false;
+	xpv_t r = rgb_values[n].r;
+	xpv_t g = rgb_values[n].g;
+	xpv_t b = rgb_values[n].b;
+	xpv_t r_scaled, g_scaled, b_scaled;
+	if (win_r_ofs + win_r_bits < 8)
+	  r_scaled = r >> (8 - (win_r_ofs + win_r_bits));
+	else
+	  r_scaled = r << (win_r_ofs + win_r_bits - 8) & win_r_mask;
+	if (win_g_ofs + win_g_bits < 8)
+	  g_scaled = g >> (8 - (win_g_ofs + win_g_bits));
+	else
+	  g_scaled = g << (win_g_ofs + win_g_bits - 8) & win_g_mask;
+	if (win_b_ofs + win_b_bits < 8)
+	  b_scaled = b >> (8 - (win_b_ofs + win_b_bits));
+	else
+	  b_scaled = b << (win_b_ofs + win_b_bits - 8) & win_b_mask;
+	pcn_table[n] = r_scaled | g_scaled | b_scaled;
+	success = true;
+      }
+      else
+      {
+	alloc = true;
+	xc.red   = eight2sixteen (rgb_values[n].r);
+	xc.green = eight2sixteen (rgb_values[n].g);
+	xc.blue  = eight2sixteen (rgb_values[n].b);
+	Status r = XAllocColor (dpy, cmap, &xc);
+	success = r != 0;
+	if (success)
+	  pcn_table[n] = (pcolour_t) xc.pixel;
+      }
 
       /* Allocation successful. Add a new entry to
 	 the table of physical colours. */
-      if (r != 0)
+      if (success)
       {
-	pcn_table[n] = (pcolour_t) xc.pixel;
 	physical_colours++;
 	pcolours = (pcolours_table_entry_t *)
 	  realloc (pcolours, physical_colours * sizeof *pcolours);
 	if (pcolours == NULL)
 	  fatal_error (msg_nomem);
-	pcolours[physical_colours - 1].pcn         = (pcolour_t) xc.pixel;
+	pcolours[physical_colours - 1].pcn         = pcn_table[n];
 	pcolours[physical_colours - 1].rgb         = rgb_values[n];
 	pcolours[physical_colours - 1].usage_count = 1;
+	pcolours[physical_colours - 1].alloc       = alloc;
       }
 
       /* Couldn't allocate (the colormap is full).
@@ -135,7 +167,8 @@ pcolour_t *alloc_colours (rgb_c rgb_values[], size_t count)
 	    best_delta = delta;
 	  }
 	}
-	verbmsg ("colours: alloc_colours %d/%d/%d: reused %d/%d/%d, delta=%d\n",
+	verbmsg ("colours: alloc_colours %d/%d/%d: reused %d/%d/%d, delta=%d"
+	   "\n",
 	   rgb_values[n].r, rgb_values[n].g, rgb_values[n].b, 
 	   pcolours[best_fit].rgb.r, pcolours[best_fit].rgb.g,
 	   pcolours[best_fit].rgb.b,
@@ -145,6 +178,7 @@ pcolour_t *alloc_colours (rgb_c rgb_values[], size_t count)
       }
     }
   }
+
   return pcn_table;
 }
 
@@ -182,13 +216,16 @@ void free_colours (pcolour_t *pcn_table, size_t count)
     pcolours[i].usage_count--;
     if (pcolours[i].usage_count == 0)
     {
-      unsigned long pixel = (unsigned long) *pcn;
-      x_catch_on ();
-      XFreeColors (dpy, cmap, &pixel, 1, 0);
-      // Should not happen but sometimes does (not reproducible)
-      if (const char *err_msg = x_error ())
-	warn ("error freeing colour %08lXh (%s).\n", pixel, err_msg);
-      x_catch_off ();
+      if (pcolours[i].alloc)
+      {
+	unsigned long pixel = (unsigned long) *pcn;
+	x_catch_on ();
+	XFreeColors (dpy, cmap, &pixel, 1, 0);
+	// Should not happen but sometimes does (not reproducible)
+	if (const char *err_msg = x_error ())
+	  warn ("error freeing colour %08lXh (%s).\n", pixel, err_msg);
+	x_catch_off ();
+      }
       pcolours[i].pcn = PCOLOUR_NONE;
     }
   }

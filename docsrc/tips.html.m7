@@ -21,8 +21,8 @@ not have to be the same. For example, from Unix box <code>mine</code> on your
 desk, you can telnet into Unix box <code>hers</code> in another room and run
 Yadex from there, but have it display on <code>mine</code>.
 
-<pre>mine$ <b>xhost hers</b>
-hers$ <b>DISPLAY=mine:0 yadex</b></pre>
+<pre>mine$$ <b>xhost hers</b>
+hers$$ <b>DISPLAY=mine:0 yadex</b></pre>
 
 	<h2>Having several versions of Yadex installed simultaneously</h2>
 

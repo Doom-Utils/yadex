@@ -10,7 +10,7 @@ This file is part of Yadex.
 Yadex incorporates code from DEU 5.21 that was put in the public domain in
 1994 by Raphaël Quinet and Brendon Wyber.
 
-The rest of Yadex is Copyright © 1997-2003 André Majorel and others.
+The rest of Yadex is Copyright © 1997-2005 André Majorel and others.
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -89,18 +89,20 @@ typedef struct
   Img img;          // [returned] Image buffer (clipped !)
   int width;        // [returned] Width of image before clipping
   int height;       // [returned] Height of image before clipping
-  int npatches;     // [returned] Textures only : number of patches
+  int npatches;     // [returned] Textures: number of patches
   int maxpatches;   // [expected] Textures: if !0 only render that many patches
+  int medusa;       // [returned] Textures: medusa effect on at least 1 column
   Lump_loc lump_loc;// [returned] Location of lump that was just displayed
 } hookfunc_comm_t;
-const int HOOK_DRAWN      = 1 << 0;	// Image is completely drawn
-const int HOOK_SIZE_VALID = 1 << 1;	// width and height are valid
-const int HOOK_DISP_SIZE  = 1 << 2;	// Caller should display "widthxheight"
-const int HOOK_SPECTRAL   = 1 << 3;	// Render picture with a spectral look
-const int HOOK_PATCH      = 1 << 4;	// Use patch_dir.loc_by_name()
-const int HOOK_SPRITE     = 1 << 5;	// Use wad_res.sprites.loc_by_name()
-const int HOOK_LOC_VALID  = 1 << 6;	// lump_loc is valid
-const int HOOK_ROOT       = 1 << 7;	// .name is the prefix. Use loc_by_root
+const int HOOK_DRAWN        = 1 << 0;	// Image is completely drawn
+const int HOOK_SIZE_VALID   = 1 << 1;	// width and height are valid
+const int HOOK_DISP_SIZE    = 1 << 2;	// Caller should display "widthxheight"
+const int HOOK_SPECTRAL     = 1 << 3;	// Render picture with a spectral look
+const int HOOK_PATCH        = 1 << 4;	// Use patch_dir.loc_by_name()
+const int HOOK_SPRITE       = 1 << 5;	// Use wad_res.sprites.loc_by_name()
+const int HOOK_LOC_VALID    = 1 << 6;	// lump_loc is valid
+const int HOOK_ROOT         = 1 << 7;	// .name is the prefix. Use loc_by_root
+const int HOOK_MEDUSA_VALID = 1 << 8;	// .medusa is valid
 
 
 void InputNameFromListWithFunc (int, int, const char *, size_t,

@@ -18,7 +18,7 @@ class rgb_c;
    With BGI 16-colour modes, it's an IRGB value. */
 
 #if defined Y_BGI
-typedef i16 pcolour_t;			// BGI: up to 8 BPP.
+typedef int16_t pcolour_t;		// BGI: up to 8 BPP.
 #define PCOLOUR_NONE  0xffff		/* An "impossible" colour no. */
 #elif defined Y_X11
 typedef unsigned long pcolour_t;	// X11: up to 32 BPP.

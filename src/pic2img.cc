@@ -12,7 +12,7 @@ This file is part of Yadex.
 Yadex incorporates code from DEU 5.21 that was put in the public domain in
 1994 by Raphaël Quinet and Brendon Wyber.
 
-The rest of Yadex is Copyright © 1997-2003 André Majorel and others.
+The rest of Yadex is Copyright © 1997-2005 André Majorel and others.
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -73,14 +73,14 @@ int LoadPicture (
    int *pic_height)		// (can be NULL)
 {
 MDirPtr	dir;
-i16	pic_width_;
-i16	pic_height_;
-i16	pic_intrinsic_x_ofs;
-i16	pic_intrinsic_y_ofs;
-u8	*ColumnData;
-u8	*Column;
-i32	*NeededOffsets;
-i32	CurrentOffset;
+int16_t	pic_width_;
+int16_t	pic_height_;
+int16_t	pic_intrinsic_x_ofs;
+int16_t	pic_intrinsic_y_ofs;
+uint8_t	*ColumnData;
+uint8_t	*Column;
+int32_t	*NeededOffsets;
+int32_t	CurrentOffset;
 int	ColumnInMemory;
 long	ActualBufLen;
 int	pic_x;
@@ -88,7 +88,7 @@ int	pic_x0;
 int	pic_x1;
 int	pic_y0;
 int	pic_y1;
-u8      *buf;	/* This variable is set to point to the element of
+uint8_t      *buf;	/* This variable is set to point to the element of
 		   the image buffer where the top of the current column
 		   should be pasted. It can be off the image buffer! */
 
@@ -190,16 +190,16 @@ if (pic_y_offset == INT_MIN)
    (255 x 5 + 1) = 1276 bytes per column. */
 #define TEX_COLUMNSIZE  1300
 
-ColumnData    = (u8 *) GetMemory (TEX_COLUMNBUFFERSIZE);
+ColumnData    = (uint8_t *) GetMemory (TEX_COLUMNBUFFERSIZE);
 /* FIXME DOS and pic_width_ > 16000 */
-NeededOffsets = (i32 *) GetMemory ((long) pic_width_ * 4);
+NeededOffsets = (int32_t *) GetMemory ((long) pic_width_ * 4);
 
 if (long_offsets)
    dir->wadfile->read_i32 (NeededOffsets, pic_width_);
 else
    for (int n = 0; n < pic_width_; n++)
       {
-      i16 ofs;
+      int16_t ofs;
       dir->wadfile->read_i16 (&ofs);
       NeededOffsets[n] = ofs;
       }
@@ -252,7 +252,7 @@ for (pic_x = pic_x0,
    pic_x <= pic_x1;
    pic_x++, buf++)
    {
-   u8 *filedata;
+   uint8_t *filedata;
 
    CurrentOffset  = NeededOffsets[pic_x];
    ColumnInMemory = CurrentOffset >= NeededOffsets[0]
@@ -261,7 +261,7 @@ for (pic_x = pic_x0,
       Column = ColumnData + CurrentOffset - NeededOffsets[0];
    else
       {
-      Column = (u8 *) GetFarMemory (TEX_COLUMNSIZE);
+      Column = (uint8_t *) GetFarMemory (TEX_COLUMNSIZE);
       dir->wadfile->seek (dir->dir.start + CurrentOffset);
       if (dir->wadfile->error ())
          {
@@ -280,7 +280,7 @@ for (pic_x = pic_x0,
  
    // For each post of the column...
    {
-   register u8 *post;
+   register uint8_t *post;
    for (post = filedata; *post != 0xff;)
       {
       int post_y_offset;	// Y-offset of top of post to origin of buffer
@@ -321,8 +321,8 @@ for (pic_x = pic_x0,
 
       {					// "Paste" the post onto the buffer
       register img_pixel_t *b;
-      register const u8 *p          = post + post_y0;
-               const u8 *const pmax = post + post_y1;
+      register const uint8_t *p          = post + post_y0;
+               const uint8_t *const pmax = post + post_y1;
       int buf_width = img_width;
 
       for (b = buf + buf_width * (post_y_offset + post_y0);

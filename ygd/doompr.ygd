@@ -10,6 +10,7 @@
 # FIXME	probably needs work, especially in
 # the things definitions dept.
 
+flat_format     normal
 level_format    doom
 level_name      e1m1
 picture_format  pr

@@ -1,4 +1,4 @@
-Yadex 1.7.0 (2003-12-28)
+Yadex 1.7.900 (2005-03-28)
 
 WHAT IS YADEX ?
     Yadex is a Doom level (wad) editor for Unix systems running X,
@@ -19,49 +19,62 @@ PREREQUISITES
     - hypot() and either nanosleep() or usleep().
 
 BUILDING AND INSTALLING
-    To install in /usr/local :
+    To compile with the default options and install in /usr/local :
 
                     ./configure
                     make
                     su -c 'make install'
 
-    To install somewhere else, for example in ~/yadex :
+    To deviate from the defaults, you can pass ./configure one or more
+    of the following options :
 
-                    ./configure --prefix ~/yadex
-                    make
-                    make install
+        --cc           C compiler (default: auto-detected gcc/c89/cc)
+        --cxx          C++ compiler (default: auto-detected g++/c++/cxx)
+        --cflags       C compiler flags (default -O)
+        --cxxflags     C++ compiler flags (default -O)
+        --ldflags      Linker flags (default none)
+        --prefix       Installation path (default /usr/local)
+	--x-includes   Path to the X11 headers (default: auto-detected)
+	--x-libraries  Path to the X11 libraries (default: auto-detected)
 
-    To force the use of a particular C/C++ compiler :
+    For example, to compile in 64-bit mode with GCC 3.3 and install in
+    ~/yadex, you could do something along these lines :
 
-                    ./configure --cc gcc-3.3 --cxx g++-3.3 
-                    make
-                    make install
+                ./configure                            \
+                    --cc       gcc-3.3                 \
+                    --cflags   '-m64 -O2'              \
+                    --cxx      g++-3.3                 \
+                    --cxxflags '-m64 -O2 -fpermissive' \
+                    --ldflags  -m64                    \
+                    --prefix   ~/yadex
+                make
+                make install
 
     Got problems getting Yadex to compile ? See doc/faq.html.
     Got no problem ? Read the FAQ anyway. See doc/faq.html.
     
     Beware, the installation OVERWRITES the following files (assuming
     you're installing in /usr/local) :
-           /etc/yadex/1.7.0/yadex.cfg
+           /etc/yadex/1.7.900/yadex.cfg
            /usr/local/bin/yadex
-           /usr/local/bin/yadex-1.7.0
+           /usr/local/bin/yadex-1.7.900
            /usr/local/man/man6/yadex.6
-           /usr/local/man/man6/yadex-1.7.0.6
-           /usr/local/share/games/yadex/1.7.0/doom.ygd
-           /usr/local/share/games/yadex/1.7.0/doom02.ygd
-           /usr/local/share/games/yadex/1.7.0/doom04.ygd
-           /usr/local/share/games/yadex/1.7.0/doom05.ygd
-           /usr/local/share/games/yadex/1.7.0/doom2.ygd 
-           /usr/local/share/games/yadex/1.7.0/doompr.ygd
-           /usr/local/share/games/yadex/1.7.0/heretic.ygd
-           /usr/local/share/games/yadex/1.7.0/hexen.ygd
-           /usr/local/share/games/yadex/1.7.0/strife.ygd
-           /usr/local/share/games/yadex/1.7.0/strife10.ygd
+           /usr/local/man/man6/yadex-1.7.900.6
+           /usr/local/share/games/yadex/1.7.900/doom.ygd
+           /usr/local/share/games/yadex/1.7.900/doom02.ygd
+           /usr/local/share/games/yadex/1.7.900/doom04.ygd
+           /usr/local/share/games/yadex/1.7.900/doom05.ygd
+           /usr/local/share/games/yadex/1.7.900/doom2.ygd 
+           /usr/local/share/games/yadex/1.7.900/doompr.ygd
+           /usr/local/share/games/yadex/1.7.900/heretic.ygd
+           /usr/local/share/games/yadex/1.7.900/hexen.ygd
+           /usr/local/share/games/yadex/1.7.900/strife.ygd
+           /usr/local/share/games/yadex/1.7.900/strife10.ygd
 
 CONFIGURING AND RUNNING
     Before you run Yadex, you need to tell it where to find your iwads.
     Assuming you have installed in /usr/local, open
-    /etc/yadex/1.7.0/yadex.cfg with your favourite text editor and
+    /etc/yadex/1.7.900/yadex.cfg with your favourite text editor and
     insert the appropriate values for the parameters "iwad1", "iwad2",
     etc. If you don't want Doom II to be the default iwad, also change
     the value of the "game" parameter.
@@ -89,17 +102,11 @@ DOCUMENTATION
     If you're upgrading from a previous version of Yadex, please read
     carefully CHANGES.
 
-STATUS
-    Yadex is work in progress. It still lacks important features like a
-    better interface, cut-and-paste, undo/redo, support for Boom and
-    many more. I know. They will come faster if you help. The source
-    code is a horrible mess. I'm not proud of it. Be indulgent.
-
 LEGAL
     1. Yadex
 
-    Parts copyright Andrew Apted 2000-2001, GNU GPL v2
-    Parts copyright André Majorel 1997-2003, GNU GPL v2
+        Parts copyright Andrew Apted 2000-2001, GNU GPL v2
+    Parts copyright André Majorel 1997-2005, GNU GPL v2
     Parts copyright Matthew W. Miller 2000, GNU GPL v2
     Parts written by Raphaël Quinet, public domain
     Parts written by Brendon Wyber, public domain
@@ -116,7 +123,8 @@ LEGAL
 
     You should have received a copy of the GNU General Public License
     along with this program; if not, write to the Free Software
-    Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+    Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
+    02111-1307, USA.
 
     2. Atclib
 
@@ -138,4 +146,4 @@ LEGAL
 CONTACT
     See doc/contact.html for addresses.
 
-AYM 2003-12-28
+AYM 2005-03-15

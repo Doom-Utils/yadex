@@ -1,0 +1,503 @@
+.TH M7 1 2005-03-12 "m7 0.0.1"
+.SH NAME
+m7 \- unobtrusive macro processor
+.SH SYNOPSIS
+.B m7 \-\-help
+.br
+.B m7 \-\-version
+.br
+.B m7
+.RB [ \-abdM ]
+.RB [ \-B
+.IR num ]
+.RB [ \-m
+.IR char ]
+.RB [ \-o
+.IR file ]
+.RB [ file \ ...]
+.SH DESCRIPTION
+\fBm7\fP expands macros references in a character stream.
+The data is read from the arguments (or standard input if no arguments are
+given).
+The processed data is written to the argument of \fB\-o\fP (or standard output
+if no \fB\-o\fP option is given).
+.PP
+\fBm7\fP is still very primitive compared to \fBm4\fP(1) but has an arguably
+more engaging syntax which draws mainly from GNU make and \fBsh\fP(1).
+.PP
+In theory, \fBm7\fP can cope with binary data but is really meant for text.
+.SH OPTIONS
+If \fB\-\-help\fP is the only argument, \fBm7\fP prints a usage message to
+standard output and exits successfully.
+.PP
+If \fB\-\-version\fP is the only argument, \fBm7\fP prints its version number
+to standard output and exits successfully.
+.TP
+.B \-a
+With \fB\-M\fP, also list leave dependencies (\fBblob\fP and \fBfile\fP).
+By default, only potential nodes are listed (\fBsource\fP).
+.TP
+.B \-b
+Open all files in binary mode.
+On certain platforms such as MS-DOS, stdin and stdout are often in text mode by
+default.
+\fB\-b\fP doesn't change that.
+You may have to use \fB\-o\fP.
+.PP
+.RS
+On platforms such as Unix where text mode is indistinguishable from binary
+mode, this option is has no visible effect.
+.RE
+.TP
+.BI \-B \ num
+Set the size of the output buffer to \fInum\fP bytes.
+\fB0\fP makes the output line-buffered (\fB_IOLBF\fP).
+\fB1\fP makes the output unbuffered (\fB_IONBF\fP).
+.TP
+.B \-d
+Print debugging information on standard error in addition to normal processing.
+.TP
+.BI \-m \ char 
+Use \fIchar\fP as the metacharacter.
+The default is "\fB$\fP".
+.TP
+.B \-M
+Generate a makefile fragment describing the dependency relationships between
+the arguments.
+For each file \fIf\fP sourced, \fBm7\fP writes "\fItarget\fP\fB:\fP \fIf\fP" to
+standard output, where \fItarget\fP is the argument of \fB\-o\fP.
+If no \fB\-o\fP option is given, \fBm7\fP omits the "\fIfile\fP\fB:\fP" part.
+.PP
+.RS
+For example, assuming file \fBb\fP sources file \fBc\fP, the output of
+.RE
+.PP
+.RS
+.RS
+\fBm7 -M -o foo a b\fP
+.RE
+.RE
+.PP
+.RS
+would be
+.RE
+.PP
+.RS
+.RS
+.nf
+\fBfoo: a
+foo: b
+foo: c\fP
+.fi
+.RE
+.RE
+.PP
+.RS
+The makefile fragment is always written to standard output; no files are opened
+for writing and the argument of \fB\-o\fP is not used other than to set
+\fItarget\fP.
+.RE
+.TP
+.BI \-o \ file
+Write to \fIfile\fP instead of standard output.
+This is useful to process binary data on platforms where stdout is in text mode
+by default or when you can't rely on the shell for redirection.
+When \fB\-M\fP is in effect, this option controls the target name.
+.SH SYNTAX
+.SS Long form macro references
+A macro reference may take two different forms.
+The \fIlong form\fP is:
+.PP
+.ce
+\fB$(\fP[\fIflags\fP]\fIname\fP[ \fIargument\fP]...\fB)\fP
+.PP
+The \fIflags\fP are optional characters that affect the behaviour of the macro.
+See the \fBFLAGS\fP section.
+.PP
+\fIname\fP is the name of the macro (one or more ASCII alphabetic characters
+and underscores).
+.PP
+The arguments, if any, are separated from each other and from the name by
+whitespace.
+Whitespace before the \fB)\fP is ignored.
+.SS Short form macro references
+The second form is the \fIshort form\fP:
+.PP
+.ce
+\fB$\fP[\fIflags\fP]\fIname\fP[ \fIargument\fP]...\fP
+.PP
+Because there is no end delimiter, the number of arguments has to be guessed.
+The rule is to use as few words as possible, unless the "\fB*\fP flag" is set
+in which case the parser will use as many words as possible.
+.PP
+If the macro takes no arguments, the macro name may be immediately followed by
+plain text.
+For example,
+.PP
+.RS
+\fBLast update $date.\fP
+.RE
+.PP
+will expand to:
+.PP
+.RS
+\fBLast update 2005-03-06.\fP
+.RE
+.PP
+.SS Arguments
+Each macro has a minimum and maximum number of arguments.
+A macro reference that does not satisfy these requirements is an error.
+.PP
+Any macro references in the arguments are recursively expanded before the
+argument is passed to the macro.
+For example, assuming the \fBecho\fP macro expands to its arguments, "\fB$(echo
+a$(echo b)c)\fP" is equivalent to "\fB$(echo abc)\fP".
+.SS Escaping
+The metacharacter escapes itself, whitespace and "\fB)\fP".
+Thus, to include a literal "\fB$\fP" in the input, you may write "\fB$$\fP":
+.PP
+.RS
+.nf
+In:	\fBA $$500 bottle of wine.\fP
+Out:	\fBA $500 bottle of wine.\fP
+.fi
+.RE
+.PP
+To include whitespace in a macro argument, escape it with "\fB$\fP":
+.PP
+.RS
+.nf
+In:	\fB$(echo a$ b$
+	c)\fP
+Out:	\fBabc\fP
+.fi
+.RE
+.PP
+To include a "\fB)\fP" in a macro argument, escape it with "\fB$\fP":
+.PP
+.RS
+.nf
+In:	\fB$(echo :-$))\fP
+Out:	\fB:-)\fP
+.fi
+.RE
+.PP
+Note that the metacharacter retains its escape character status outside of
+macro references, even though "\fB)\fP" and whitespace are not special outside
+of a macro reference.
+.PP
+A metacharacter not followed by a syntactically valid macro reference or an
+escapable character is an error, even at end of file.
+.SH FLAGS
+.TP
+.B *
+Greedy.
+Swallow up as many arguments as the macro will accept.
+This is only useful in short form references.
+For long form references, there is no ambiguity on the number of arguments and
+using this flag elicits a warning.
+.TP
+.B \-
+Ignore errors.
+A reference to an undefined macro is not an error if it has this flag.
+The result of the expansion is an empty string.
+In the future this flag may be modified to ignore other errors, such as
+failure to open files etc.
+.TP
+.B @
+Omit whitespace after the macro reference.
+This is similar to \fBm4\fP(1)'s \fBdnl\fP, except that leading whitespace is
+unfortunately not stripped (for the moment).
+.SH INTRINSIC MACROS
+.TP
+.BI blob \ filename
+Expands to the unprocessed contents of file \fIfilename\fP.
+The contents of the file are \fInot\fP processed in any way; any \fBm7\fP
+constructs it may contain will be ignored.
+Contrast with \fBfile\fP and \fBsource\fP.
+.PP
+.RS
+This macro has the "\fB@\fP" flag by default.
+.RE
+.TP
+\fBdate\fP [\fIformat\fP]
+The current system time.
+The time is expressed in UTC and formatted with \fBstrftime\fP(3).
+The default format is "\fB%Y\-%m\-%d\fP".
+FIXME need an option to give local time.
+.TP
+\fBdefine\fP \fIname\fP \fIargmin\fP \fIargmax\fP \fItext\fP
+Define a user macro which takes between \fIargmin\fP and \fIargmax\fP
+arguments.
+Further references to macro \fIname\fP will expand as \fItext\fP would.
+For example,
+.PP
+.RS
+.RS
+.nf
+\fB$(define mymacro 0 0 foo)
+$mymacro\fP
+.fi
+.RE
+.PP
+expands to:
+.PP
+.RS
+.nf
+\fBfoo\fP
+.fi
+.RE
+.PP
+The \fItext\fP argument is greedy, i.e. extends to the end of the \fBdefine\fP
+reference, regardless of any intervening white space.
+Thus,
+.PP
+.RS
+.nf
+\fB$(define mymacro 0 0 A whole sentence.)
+$mymacro\fP
+.fi
+.RE
+.PP
+expands to:
+.PP
+.RS
+.nf
+\fBA whole sentence.\fP
+.fi
+.RE
+.PP
+As with \fBmake\fP(1) recursively-expanded variables (\fB=\fP) and GNU make's
+\fBdefine\fP directive, any macro references in \fItext\fP are parsed but not
+expanded.
+The expansion takes place when \fIname\fP is referenced and in the context in
+which \fIname\fP is referenced.
+Thus,
+.PP
+.RS
+.nf
+\fB$(set myvar)
+$(define mymacro 0 0 $myvar)
+$(set myvar x)
+$mymacro\fP
+.fi
+.RE
+.PP
+expands to:
+.PP
+.RS
+.nf
+\fBx\fP
+.fi
+.RE
+.PP
+Within the user-defined macro, the arguments are referred to by \fB$1\fP,
+\fB$2\fP, ... \fB$10\fP and so on.
+For example,
+.PP
+.RS
+.nf
+\fB$(define manref 2 2 <b>$1<b>($2$))
+See $manref lart 8 for details\fP
+.fi
+.RE
+.PP
+expands to:
+.PP
+.RS
+\fBSee <b>lart</b>(8) for details\fP
+.RE
+.PP
+This macro has the "\fB@\fP" flag by default.
+.RE
+.TP
+\fBecho\fP [\fIstring\fP]
+Expands to its argument.
+Unlike \fBecho\fP(1), it does not insert a space between its arguments.
+This intrinsic has in fact a single argument because whitespace is not a
+separator.
+For that reason, it can only be invoked in the long form (the parser wouldn't
+know where to stop).
+.PP
+.RS
+.nf
+In:	\fB$(echo $   a
+	 b
+	c)\fP
+Out:	\fB  a
+	 b
+	c\fP
+.fi
+.RE
+.TP
+.BI file \ filename
+Expands to the unprocessed contents of file \fIfilename\fP with all trailing
+newlines removed.
+Other than stripping the trailing newlines, the contents of the file are
+\fInot\fP processed in any way; any macro references it may contain are
+ignored.
+Contrast with \fBblob\fP and \fBsource\fP.
+.PP
+.RS
+This macro has the "\fB@\fP" flag by default.
+.RE
+.TP
+\fBmtime\fP [\fIformat\fP]
+The mtime of the current source file (or the system time if reading from
+standard input).
+The time is expressed in UTC and formatted with \fBstrftime\fP(3).
+The default format is "\fB%Y\-%m\-%d\fP".
+FIXME need an option to give local time.
+FIXME need an option to give the mtime of an arbitrary file.
+.TP
+\fBset\fP \fIname\fP [\fIvalue\fP]
+Assign the expansion of \fIvalue\fP to macro \fIname\fP.
+\fIname\fP must be a valid macro name.
+If \fIvalue\fP is missing, the macro is assigned the empty string.
+In the form \fB$(set\fP \fIname\fP \fIvalue\fP\fB)\fP, the \fIvalue\fP argument
+may contain whitespace.
+.PP
+.RS
+.RS
+.nf
+\fB$set TODAY $(date)
+$(set MES a well-read punk peasant)\fP
+.fi
+.RE
+.RE
+.PP
+.RS
+Note that processor constructs in the value are evaluated at assignement time,
+not at reference time.
+In other words, macros defined with \fBset\fP work like shell variables and
+simply-expanded GNU make variables (\fB:=\fP), not like traditional
+recursively-expanded \fBmake\fP(1) variables (\fB=\fP).
+.RE
+.PP
+.RS
+Attempting to \fBset\fP an intrinsic macro is an error.
+.RE
+.PP
+.RS
+This macro has the "\fB@\fP" flag by default.
+.RE
+.TP
+.BI source \ filename
+Source the specified file as if it were part of the source file.
+The maximum allowed number of nested inclusions is only limited by the stack
+size, available memory and \fBOPEN_MAX\fP.
+Contrast with \fBblob\fP and \fBfile\fP.
+.PP
+.RS
+This macro has the "\fB@\fP" flag by default.
+.RE
+.SH TODO
+Need error handling flags.
+If a macro cannot be expanded, the default is to abort.
+We may wish to return an empty string and resume execution.
+An interesting alternative is to return a string describing the error (I think
+PHP does this).
+\fB\-\fP might be a good flag to say "ignore errors" (think \fBmake\fP(1)).
+.PP
+Need a way to expand environment variables.
+What about making them indistinguishable from macros, as is done in
+\fBmake\fP(1)?
+E.G. \fB$(PATH)\fP.
+.PP
+Need a way to pass options to macros.
+I'm leaning towards \fB\-x\fP, which is consistent with the general sh-ness of
+the syntax (whitespace as an argument separator).
+.PP
+Need to have a macro reference form any number of arguments, as in \fBsh\fP(1).
+\fBeval\fP or maybe a special flag.
+.PP
+Allow macro references in the macro name, as in \fB$($\fP\fIname\fP\fB))\fP.
+\fBmake\fP(1) does and it's useful for several things, including associative
+arrays.
+\fBeval\fP would make it possible, albeit with an awkward syntax.
+.PP
+\fBdefine\fP: at the moment, there is no way to specify names or flags for the
+parameters (greedy, uint, id, recursive).
+There is no way to handle a variable number of arguments.
+The fact that user macros are expanded in a subcontext makes it impossible to
+write a macro that modifies a variable in its parent's context.
+Maybe pass by reference ?
+If options are implemented, user macros need to be able to parse them easily.
+User macros need to be able to set their own default flags (\fB@\fP).
+.PP
+Should the default flags be propagated?
+\fB$(source somefile)\fP has the \fB@\fP.
+\fB$(set x $(source somefile))\fP doesn't.
+.TP
+\fB#\fP [\fIstring\fP] ...
+A comment.
+The arguments are ignored but may not contain a "\fB)\fP".
+The value is the empty string.
+FIXME allow meta to escape "\fB)\fP"
+FIXME allow comment-to-EOL.
+FIXME if alone on the line, ignore the whole line.
+.PP
+Need \fB\-e\fP or \fB\-c\fP for providing source from the command line.
+At the very least, set variables from the command line, à la \fBawk\fP(1)
+\fB\-v\fP.
+.PP
+Need a smarter version of \fBmtime\fP that gives the most recent of all source
+files included.
+Requires two passes.
+.PP
+Need \fB$(value name)\fP or some other way to override \fBMDF_RECURSE\fP.
+.PP
+Need \fB$(origin name)\fP.
+.PP
+\fB\-M\fP does not quote makefile metacharacters (\fB$\fP, \fB:\fP, etc.).
+.PP
+A reference to an undefined macro executes its arguments.
+This is probably not a good idea.
+It would be best to simply discard everything until EOM.
+Balancing delimiters would be a nice touch.
+There are bugs too.
+.TP
+.B FIXME "' dq .,;:?!  +-*/=  %&@|$#\\_  ^`~  []{}<>"
+Indent/don't indent the value of the macro like the reference.
+.PP
+Arithmetic:
+\fBadd\fP ($1 + $2 + ...),
+\fBsub\fP ($1 - $2 - ...),
+\fBmul\fP ($1 * $2 * ...),
+\fBdiv\fP ($1 / $2 / ...),
+\fBinc\fP ($1 += $* or 1 if only one argument),
+\fBdec\fP ($1 -= $* or 1 if only one argument).
+.PP
+Wishlist:
+.nf
+$(toc)
+$(c word): code. In HTML, <code>$1</code>; in Troff, \\fB$1\\fP.
+$(f word): function. In HTML, <code>$1</code>; in Troff, \\fB$1\\fP.
+$(k word): key. In HTML, [<kbd>$1</kbd>]; in Troff, [\\fB$1\\fP].
+$(m name num): man page.
+.fi
+.SH AUTHOR
+André Majorel http://www.teaser.fr/~amajorel/
+.PP
+\fBm7\fP is copyright André Majorel 2005.
+.PP
+This program is free software; you can redistribute it and/or modify
+it under the terms of version 2 of the GNU General Public License as
+published by the Free Software Foundation.
+.PP
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+.PP
+You should have received a copy of the GNU Library General Public
+License along with this library; if not, write to the Free
+Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
+02111-1307, USA.
+.SH EXIT STATUS
+\fB0\fP	OK
+.br
+\fB>0\fP	Errors occurred
+.SH SEE ALSO
+.BR cpp (1),
+.BR m4 (1)

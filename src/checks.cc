@@ -11,7 +11,7 @@ This file is part of Yadex.
 Yadex incorporates code from DEU 5.21 that was put in the public domain in
 1994 by Raphaël Quinet and Brendon Wyber.
 
-The rest of Yadex is Copyright © 1997-2003 André Majorel and others.
+The rest of Yadex is Copyright © 1997-2005 André Majorel and others.
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -445,8 +445,9 @@ for (n = NumLineDefs - 1; n >= 1; n--)
    }
 if (cur
   && (Expert
-   || Confirm (-1, -1, "There are multiple linedefs between the same vertices",
-	   "Do you want to delete the redundant linedefs?")))
+   || confirm_simple (-1, -1,
+	   "There are multiple linedefs between the same vertices",
+	   "Delete the redundant linedefs?")))
    DeleteObjects (OBJ_LINEDEFS, &cur);
 else
    ForgetSelection (&cur);
@@ -457,9 +458,9 @@ for (n = 0; n < NumLineDefs; n++)
    if ((LineDefs[n].flags & 0x01) == 0 && LineDefs[n].sidedef2 < 0)
       SelectObject (&cur, n);
 if (cur && (Expert
-    || Confirm (-1, -1, "Some linedefs have only one side but their I flag is"
-	" not set",
-        "Do you want to set the 'Impassible' flag?")))
+    || confirm_simple (-1, -1,
+	"Some linedefs have only one side but their I flag is not set",
+        "Set the 'Impassable' flag?")))
    while (cur)
       {
       LogMessage  ("Check: 1-sided linedef without I flag: %d", cur->objnum);
@@ -475,9 +476,9 @@ for (n = 0; n < NumLineDefs; n++)
       SelectObject (&cur, n);
 if (cur
   && (Expert
-      || Confirm (-1, -1, "Some linedefs have only one side but their 2 flag"
-	  " is set",
-	   "Do you want to clear the 'two-sided' flag?")))
+      || confirm_simple (-1, -1,
+	    "Some linedefs have only one side but their 2 flag is set",
+	    "Clear the 'two-sided' flag?")))
    {
    while (cur)
       {
@@ -495,9 +496,9 @@ for (n = 0; n < NumLineDefs; n++)
       SelectObject (&cur, n);
 if (cur
   && (Expert
-      || Confirm (-1, -1,
+      || confirm_simple (-1, -1,
 	   "Some linedefs have two sides but their 2S bit is not set",
-	   "Do you want to set the 'two-sided' flag?")))
+	   "Set the 'two-sided' flag?")))
    {
    while (cur)
       {
@@ -526,8 +527,8 @@ for (n = 0; n < NumLineDefs; n++)
 /* check if there are any Vertices left */
 if (cur
   && (Expert
-     || Confirm (-1, -1, "Some vertices are not bound to any linedef",
-			"Do you want to delete these unused Vertices?")))
+     || confirm_simple (-1, -1, "Some vertices are not bound to any linedef",
+			"Delete these unused vertices?")))
    {
    DeleteObjects (OBJ_VERTICES, &cur);
    ObjectsNeeded (OBJ_LINEDEFS, 0);
@@ -553,8 +554,8 @@ for (n = 0; n < NumLineDefs; n++)
 /* check if there are any SideDefs left */
 if (cur
   && (Expert
-      || Confirm (-1, -1, "Some sidedefs are not bound to any linedef",
-			 "Do you want to delete these unused sidedefs?")))
+      || confirm_simple (-1, -1, "Some sidedefs are not bound to any linedef",
+			 "Delete these unused sidedefs?")))
    DeleteObjects (OBJ_SIDEDEFS, &cur);
 else
    ForgetSelection (&cur);
@@ -581,8 +582,8 @@ for (n = 0; n < NumLineDefs; n++)
 /* check if there are any Sectors left */
 if (cur
  && (Expert
-     || Confirm (-1, -1, "Some sectors are not bound to any sidedef",
-			"Do you want to delete these unused sectors?")))
+     || confirm_simple (-1, -1, "Some sectors are not bound to any sidedef",
+			"Delete these unused sectors?")))
    DeleteObjects (OBJ_SECTORS, &cur);
 else
    ForgetSelection (&cur);
@@ -668,8 +669,8 @@ for (n = 0; n < NumLineDefs; n++)
 	 {
 	 sprintf (msg1, "Error in one-sided linedef #%d:"
 	   " sidedef #%d has no middle texture", n, sd1);
-	 sprintf (msg2, "Do you want to set the texture to \"%s\""
-	   " and continue?", default_middle_texture);
+	 sprintf (msg2, "Set the texture to \"%s\" and continue?",
+	     default_middle_texture);
 	 if (CheckFailed (-1, -1, msg1, msg2, 0, first_time))
 	    {
 	    GoToObject (Objid (OBJ_LINEDEFS, n));
@@ -687,8 +688,8 @@ for (n = 0; n < NumLineDefs; n++)
 	 {
 	 sprintf (msg1, "Error in first sidedef of linedef #%d:"
 	   " sidedef #%d has no upper texture", n, sd1);
-	 sprintf (msg2, "Do you want to set the texture to \"%s\""
-	   " and continue?", default_upper_texture);
+	 sprintf (msg2, "Set the texture to \"%s\" and continue?",
+	     default_upper_texture);
 	 if (CheckFailed (-1, -1, msg1, msg2, 0, first_time))
 	    {
 	    GoToObject (Objid (OBJ_LINEDEFS, n));
@@ -705,8 +706,8 @@ for (n = 0; n < NumLineDefs; n++)
 	 {
 	 sprintf (msg1, "Error in first sidedef of linedef #%d:"
 	   " sidedef #%d has no lower texture", n, sd1);
-	 sprintf (msg2, "Do you want to set the texture to \"%s\""
-	   " and continue?", default_lower_texture);
+	 sprintf (msg2, "Set the texture to \"%s\" and continue?",
+	     default_lower_texture);
 	 if (CheckFailed (-1, -1, msg1, msg2, 0, first_time))
 	    {
 	    GoToObject (Objid (OBJ_LINEDEFS, n));
@@ -724,8 +725,8 @@ for (n = 0; n < NumLineDefs; n++)
 	 {
 	 sprintf (msg1, "Error in second sidedef of linedef #%d:"
 	   " sidedef #%d has no upper texture", n, sd2);
-	 sprintf (msg2, "Do you want to set the texture to \"%s\""
-	   " and continue?", default_upper_texture);
+	 sprintf (msg2, "Set the texture to \"%s\" and continue?",
+	     default_upper_texture);
 	 if (CheckFailed (-1, -1, msg1, msg2, 0, first_time))
 	    {
 	    GoToObject (Objid (OBJ_LINEDEFS, n));
@@ -742,8 +743,8 @@ for (n = 0; n < NumLineDefs; n++)
 	 {
 	 sprintf (msg1, "Error in second sidedef of linedef #%d:"
 	   " sidedef #%d has no lower texture", n, sd2);
-	 sprintf (msg2, "Do you want to set the texture to \"%s\""
-	   " and continue?", default_lower_texture);
+	 sprintf (msg2, "Set the texture to \"%s\" and continue?",
+	     default_lower_texture);
 	 if (CheckFailed (-1, -1, msg1, msg2, 0, first_time))
 	    {
 	    GoToObject (Objid (OBJ_LINEDEFS, n));
@@ -892,8 +893,9 @@ for (t = 0; t < NumThings; t++)
 if (! p1)
    {
    Beep ();
-   if (! Confirm (-1, -1, "Warning: there is no player 1 starting point. The"
-       " game", "will crash if you play with this level. Save anyway ?"))
+   if (! confirm_simple (-1, -1,
+       "Warning: there is no player 1 starting point. The game",
+       "will crash if you play with this level. Save anyway ?"))
       return false;
    else 
       return true;  // No point in doing further checking !
@@ -912,7 +914,7 @@ if (! p2 || ! p3 || ! p4)
      " You will not be able", t);
    sprintf (msg2, "to use this level for multi-player games."
      " Save anyway ?");
-   if (! Confirm (-1, -1, msg1, msg2))
+   if (! confirm_simple (-1, -1, msg1, msg2))
       return false;
    else
       return true;  // No point in doing further checking !
@@ -930,7 +932,7 @@ if (dm < DOOM_MIN_DEATHMATCH_STARTS)
        " You need at least %d", dm, DOOM_MIN_DEATHMATCH_STARTS);
    sprintf (msg2, "deathmatch starts to play deathmatch games."
      " Save anyway ?");
-   if (! Confirm (-1, -1, msg1, msg2))
+   if (! confirm_simple (-1, -1, msg1, msg2))
      return false;
    }
 return true;

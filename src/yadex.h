@@ -11,7 +11,7 @@ This file is part of Yadex.
 Yadex incorporates code from DEU 5.21 that was put in the public domain in
 1994 by Raphaël Quinet and Brendon Wyber.
 
-The rest of Yadex is Copyright © 1997-2003 André Majorel and others.
+The rest of Yadex is Copyright © 1997-2005 André Majorel and others.
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -49,6 +49,9 @@ Place, Suite 330, Boston, MA 02111-1307, USA.
  *	Standard headers
  */
 #include <stddef.h>
+#ifdef Y_INTTYPES
+#include <inttypes.h>
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -78,33 +81,11 @@ Place, Suite 330, Boston, MA 02111-1307, USA.
 #endif
 #include <atclib.h>
 #include "bitvec.h"  /* bv_set, bv_clear, bv_toggle */
+#include "dialog.h"  /* confirm_t */
 #include "yerror.h"
 #include "aym.h"     /* Needs yerror.h */
 #include "windim.h"
 #include "ymemory.h"
-
-
-/*
- *	Platform-independant types and formats.
- */
-typedef unsigned char  u8;
-typedef signed   char  i8;
-
-typedef unsigned short u16;
-#define F_U16_D "hu"
-#define F_U16_H "hX"
-
-typedef signed   short i16;
-#define F_I16_D "hd"
-#define F_I16_H "hX"
-
-typedef unsigned long  u32;
-#define F_U32_D "lu"
-#define F_U32_H "lX"
-
-typedef signed   long  i32;
-#define F_I32_D "ld"
-#define F_I32_H "lX"
 
 
 /*
@@ -185,13 +166,17 @@ struct MasterDirectory
    having to do a directory lookup. */
 struct Lump_loc
    {
-   Lump_loc () { wad = 0; }
-   Lump_loc (const Wad_file *w, i32 o, i32 l) { wad = w; ofs = o; len = l; }
+   Lump_loc () :
+     wad (0), ofs (0), len (0)
+     { }
+   Lump_loc (const Wad_file *w, int32_t o, int32_t l) :
+     wad (w), ofs (o), len (l)
+     { }
    bool operator == (const Lump_loc& other) const
      { return wad == other.wad && ofs == other.ofs && len == other.len; }
    const Wad_file *wad;
-   i32 ofs;
-   i32 len;
+   int32_t ofs;
+   int32_t len;
    };
 #include "wstructs.h"
 
@@ -206,7 +191,7 @@ struct Lump_loc
 /* acolour_t -- an application colour number.
    Several different application colours may refer to the same
    physical colour. */
-typedef u8 acolour_t;
+typedef uint8_t acolour_t;
 #define ACOLOUR_NONE 0xff  // The out-of-band value
 
 #ifndef Y_BGI
@@ -254,20 +239,27 @@ const acolour_t GRID3H          = 31;
 const acolour_t GRID3V          = 32;
 const acolour_t GRID4H          = 33;
 const acolour_t GRID4V          = 34;
-const acolour_t LINEDEF_NO      = 35;
-const acolour_t SECTOR_NO       = 36;
-const acolour_t THING_NO        = 37;
-const acolour_t VERTEX_NO       = 38;
-const acolour_t CLR_ERROR       = 39;
-const acolour_t THING_REM       = 40;	// Things when not in things mode
+const acolour_t GRID64_1        = 35;
+const acolour_t GRID64_2H       = 36;
+const acolour_t GRID64_2V       = 37;
+const acolour_t GRID64_3H       = 38;
+const acolour_t GRID64_3V       = 39;
+const acolour_t GRID64_4H       = 40;
+const acolour_t GRID64_4V       = 41;
+const acolour_t LINEDEF_NO      = 42;
+const acolour_t SECTOR_NO       = 43;
+const acolour_t THING_NO        = 44;
+const acolour_t VERTEX_NO       = 45;
+const acolour_t CLR_ERROR       = 46;
+const acolour_t THING_REM       = 47;	// Things when not in things mode
 
-const acolour_t SECTOR_TAG      = 41;
-const acolour_t SECTOR_TAGTYPE  = 42;
-const acolour_t SECTOR_TYPE     = 43;
+const acolour_t SECTOR_TAG      = 48;
+const acolour_t SECTOR_TAGTYPE  = 49;
+const acolour_t SECTOR_TYPE     = 50;
 
-const acolour_t WINTITLE        = 44;
+const acolour_t WINTITLE        = 51;
 
-const acolour_t NCOLOURS        = 45;
+const acolour_t NCOLOURS        = 52;
 
 
 /*
@@ -282,15 +274,6 @@ typedef enum
   YS_REMOVE = BV_CLEAR,	// Remove from selection
   YS_TOGGLE = BV_TOGGLE	// If not in selection, add; else, remove
 } sel_op_t;
-
-// Confirmation options are stored internally this way :
-typedef enum
-   {
-   YC_YES      = 'y',
-   YC_NO       = 'n',
-   YC_ASK      = 'a',
-   YC_ASK_ONCE = 'o'
-   } confirm_t;
 
 // Bit bashing operations
 const int YO_AND    = 'a';  // Argument = mask
@@ -309,14 +292,6 @@ const int YO_XOR    = 'x';  // Argument = mask
 extern const char *const log_file;        // "yadex.log"
 extern const char *const msg_unexpected;  // "unexpected error"
 extern const char *const msg_nomem;       // "Not enough memory"
-
-// Convert screen/window coordinates to map coordinates
-#define MAPX(x)		(OrigX + (int) (((int) (x) - ScrCenterX) / Scale))
-#define MAPY(y)		(OrigY + (int) ((ScrCenterY - (int) (y)) / Scale))
-
-// Convert map coordinates to screen/window coordinates
-#define SCREENX(x)	(ScrCenterX + (int) (((x) - OrigX) * Scale))
-#define SCREENY(y)	(ScrCenterY + (int) ((OrigY - (y)) * Scale))
 
 // AYM 19980213: InputIntegerValue() uses this to mean that Esc was pressed
 #define IIV_CANCEL  INT_MIN
@@ -366,9 +341,10 @@ extern int   double_click_timeout;// Max ms between clicks of double click.
 extern bool  Expert;		// Don't ask for confirmation for some ops.
 extern const char *Game;	// Name of game "doom", "doom2", "heretic", ...
 extern int   grid_pixels_min;   // Minimum grid step in pixels when not locked
+extern bool  grid_64;		// Highlight the 64-unit grid
 extern int   GridMin;	 	// Minimum grid step in map units
 extern int   GridMax;		// Maximum grid step in map units
-extern int   idle_sleep_ms;	// Time to sleep after empty XPending()
+extern unsigned idle_sleep_ms;	// Time to sleep after empty XPending()
 extern int   zoom_default;	// Initial zoom factor for map
 extern int   zoom_step;		// Step between zoom factors in percent
 extern int   digit_zoom_base;	// Zoom factor of `1' key, in percent
@@ -516,7 +492,7 @@ void MouseCallBackFunction (void);
 // names.cc
 const char *GetObjectTypeName (int);
 const char *GetEditModeName (int);
-const char *GetLineDefTypeName (int);
+const char *GetLineDefTypeName (wad_ldtype_t type);
 const char *GetLineDefTypeLongName (int);
 const char *GetLineDefFlagsName (int);
 const char *GetLineDefFlagsLongName (int);

@@ -9,6 +9,7 @@
 # FIXME probably needs work, especially in
 # the things definitions dept.
 
+flat_format     normal
 level_format    alpha
 level_name      e1m10
 picture_format  alpha

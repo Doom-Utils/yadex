@@ -1,0 +1,479 @@
+	<h2>Variables and configuration</h2>
+
+<p>
+  Yadex has internal variables that serve to configure its
+  behaviour. Variables have a name (a string of letters, digits
+  and underscores), a type and a value. The type constraints
+  the value (boolean, integer, strings, etc.).
+</p>
+
+<p>
+  Variables can be set in four ways&nbsp;: 
+</p>
+
+<ul>
+  <li>from the Preferences menu,
+  <li>from the command line,
+  <li>through environment variables.
+  <li>from the configuration files,
+</ul>
+
+<p>
+  The settings from the Preferences menu override those from the
+  command line options which in turn override those from the
+  environment variables which in turn override those from the
+  configuration files.
+</p>
+
+		<h3>Variables</h3>
+
+<p>
+  You can get a list of variables with their description and value
+  by typing <code>set</code> at the <code>yadex:</code> prompt.
+</p>
+
+			<h4>The font</h4>
+
+<p>
+  By default, Yadex uses the default font of your system (that
+  is often "<code>fixed</code>" a.k.a. "<code>6x13</code>"). But
+  you can use the font of your choice by using the "<code>-fn
+  </code><var>font_name</var>" option or setting
+  "<code>font&nbsp;=&nbsp;</code><var>font_name</var>" in
+  <code>yadex.cfg</code>. You should use a fixed-width font and
+  not one that is too large for the size of your Yadex window or
+  the display will look ugly. If Yadex does not find the
+  specified font, it emits a warning and falls back on the
+  default system font.
+</p>
+
+<p>
+  You can get a list of all available fonts on your system with
+  the command <code>xlsfonts</code>.
+</p>
+
+			<h4>Mouse wheel and other mouse issues</h4>
+
+<p>
+  The 3rd mouse button (middle button) is not used yet but you
+  can bet it will a future version. So a 3-button mouse is of
+  course recommended.
+</p>
+
+<p>
+  You can swap the left and right buttons by setting the <a
+  href="#param_swap_buttons"><code>swap_buttons</code></a>
+  variable.
+</p>
+
+<p>
+  Buttons 4 and 5 are used for zooming in and out. Wheel mice
+  typically have the wheel mapped to buttons 4 and 5 in such a
+  way that when you roll the wheel "up" (forwards), button4
+  press events are generated and when you roll the wheel "down"
+  (backwards), button5 press events are generated.
+</p>
+  
+<p>
+  To configure your X server in the way described above, check
+  the vendor documentation. I have XFree86 and a Logitech Pilot
+  Mouse + and this is what I put in my <code>XF86Config</code>
+  file&nbsp;:
+</p>
+
+<blockquote>
+  <pre>Section "Pointer"
+    Protocol      "Intellimouse"
+    Device        "/dev/mouse"
+    Buttons       5
+    ZAxisMapping  4 5</pre>
+</blockquote>
+
+		<h3>Preferences</h3>
+
+<p>
+  When you create objects, their properties are automatically
+  given default values. Some of those default values can be set
+  from the configuration file or from the command line but also
+  through the Preferences menu, that pops up when you press
+  [<kbd>f5</kbd>].
+</p>
+
+<p>
+  The Preferences menu lets you set the <code>default_*</code>
+  variables interactively. The settings made from the
+  Preferences menu are lost when you exit Yadex.
+</p>
+
+		<h3>Command line</h3>
+
+<p>
+  See the <a href="#opt">Options</a> section.
+</p>
+
+		<h3>Environment variables</h3>
+
+<p>
+  See the <a href="#env">Environment variables</a> section.
+</p>
+
+		<h3>Configuration files</h3>
+
+			<h4>Contents of configuration files</h4>
+
+<p>Configuration files are text files. White space at the
+beginning of a line is ignored. There are three kinds of
+lines&nbsp;:
+
+<dl>
+  <dt>Empty lines (lines containing only white space)
+  <dd>
+    <p>
+      No effect.
+    </p>
+  
+  <dt>Comments (lines whose first non white space character is a
+      <code>#</code>)
+  <dd>
+    <p>
+      No effect.
+    </p>
+
+  <dt>Variable assignments (lines of the form "<i>name</i>
+      <code>=</code> <i>value</i>")
+  <dd>
+    <p>The effect is to assign <i>value</i> to the variable
+      <i>name</i>. <i>name</i> is a string of one or more
+      <i>identifier characters</i> i.e. letters, digits and
+      underscores. <i>value</i> is a string of zero or more
+      non white space characters. There may be any amount of
+      white space around and between the three tokens, including
+      none at all.
+    </p>
+
+    <p>
+      Please note that&nbsp;:
+    </p>
+
+    <ul>
+      <li>
+        <p>
+	  <code>#</code> is special only at the beginning of a
+	  line. Therefore you can't put a comment on the same
+	  line as a variable assignment.
+	</p>
+      </li>
+
+      <li>
+        <p>
+	  Because white space is a token delimiter and there's
+	  no way to quote or escape it, including white space in
+	  a value is impossible.
+	</p>
+      </li>
+
+      <li>
+        <p>
+	  Yadex's idea of what is a letter or digit is
+	  deliberately locale-independent. Whether it's white
+	  space or not, on the other hand, is locale-dependent
+	  (<code>isspace</code>(3)).
+	</p>
+      </li>
+    </ul>
+</dl>
+
+<p>
+  Parse errors are not fatal. In general, they cause a warning
+  message to be printed and the entire line to be ignored. This
+  is to facilitate the sharing of configuration files across
+  versions of Yadex.
+</p>
+
+<p>
+  The configuration file is self-documenting. Look at the sample
+  configuration file in the Yadex distribution to see what
+  options are available.
+</p>
+
+			<h4><a name="config_locate">Locating
+			configuration files</a></h4>
+
+<p>
+  This is the process by which Yadex turns a configuration file
+  name into one or more actual pathnames.
+</p>
+
+<p>
+  If the specified name is absolute, the location yields exactly
+  that. A name is considered absolute if and only if it begins
+  with a <code>/</code>.
+</p>
+
+<p>
+  If the specified name is relative, Yadex uses a search path,
+  much like the shell uses <code>$$PATH</code> to locate
+  commands. The composition of the search path depends on the
+  installation prefix (the argument to <code>./configure
+  --prefix</code>).
+</p>
+
+<dl>
+  <dt><code>/usr/local</code> or <code>/usr</code>&nbsp;:
+  <dd>
+    <ol>
+      <li><code>.</code>
+      <li><code>~/.yadex/$VERSION</code>
+      <li><code>~/.yadex</code>
+      <li><code>/etc/yadex/$VERSION</code>
+      <li><code>/etc/yadex</code>
+    </ol>
+
+  <dt><code>/opt/<var>some/path</var></code>&nbsp;:
+  <dd>
+    <ol>
+      <li><code>.</code>
+      <li><code>~/.yadex/$VERSION</code>
+      <li><code>~/.yadex</code>
+      <li><code>/etc/opt/<var>some/path</var></code>
+    </ol>
+
+  <dt><code><var>/some/path</var></code>&nbsp;:
+  <dd>
+    <ol>
+      <li><code>.</code>
+      <li><code>~/.yadex/$VERSION</code>
+      <li><code>~/.yadex</code>
+      <li><code><var>/some/path</var>/etc</code>
+    </ol>
+</dl>
+
+<p>
+  The search path may be walked in either direction, depending
+  on the application. For each element in the search path, a
+  pathname is made by concatenating the path and the specified
+  name. The pathname is tested with <code>stat</code>(2). The
+  result of the location is the list of the pathnames that exist
+  and are not directories.
+</p>
+
+<p>
+  For example, assuming Yadex was compiled with the
+  <code>/usr/local</code> prefix, a front-to-back search for a
+  file named <code>foo/bar.cfg</code> would return those of the
+  following pathnames that exist and are not directories&nbsp;:
+</p>
+
+<ol>
+  <li><code>./foo/bar.cfg</code>
+  <li><code>~/.yadex/$VERSION/foo/bar.cfg</code>
+  <li><code>~/.yadex/foo/bar.cfg</code>
+  <li><code>/etc/yadex/$VERSION/foo/bar.cfg</code>
+  <li><code>/etc/yadex/foo/bar.cfg</code>
+</ol>
+
+			<h4>Default configuration files</h4>
+
+<p>
+  By default, Yadex performs a back-to-front search for files
+  named <code>yadex.cfg</code> and reads all the matches in
+  order. For example, assuming Yadex was compiled with the
+  <code>/usr/local</code> prefix, the following configuration
+  files will be read if they exist&nbsp;:
+</p>
+
+<ol>
+  <li><code>/etc/yadex/yadex.cfg</code>
+  <li><code>/etc/yadex/$VERSION/yadex.cfg</code>
+  <li><code>~/.yadex/yadex.cfg</code>
+  <li><code>~/.yadex/$VERSION/yadex.cfg</code>
+  <li><code>./yadex.cfg</code>
+</ol>
+
+<p>
+  Because the search path is walked back-to-front, any parameter
+  settings in a local configuration file override the settings
+  inherited from less local configuration files. For example,
+  assuming <code>/etc/yadex/$VERSION/yadex.cfg</code>
+  contains&nbsp;:
+</p>
+
+<blockquote>
+  <code>
+    a = old<br>
+    b = old
+  </code>
+</blockquote>
+
+<p>
+  and <code>./yadex.cfg</code> contains&nbsp;:
+</p>
+
+<blockquote>
+  <code>
+     a = new<br>
+     c = new
+  </code>
+</blockquote>
+
+<p>
+  the net effect is&nbsp;:
+</p>
+
+<blockquote>
+  <code>
+     a = new<br>
+     b = old<br>
+     c = new
+  </code>
+</blockquote>
+
+			<h4>User-specified configuration files</h4>
+
+<p>
+  The <code>-f</code> option can be used to override Yadex's
+  default choice of configuration files.
+</p>
+
+<p>
+  If Yadex is started with the <code>-f</code> option, the
+  default configuration files are not used. Instead, Yadex
+  performs a front-to-back search for the argument of the
+  <code>-f</code> option, according to the algorithm described
+  in <a href="#config_locate">Locating configuration files</a>.
+  The first match is used as a configuration file. Any other
+  matches are ignored.
+</p>
+
+<p>
+  For example, assuming Yadex was built with the
+  <code>/usr/local</code> prefix and run with the
+  <code>-f&nbsp;myown.cfg</code> option, it will use the first
+  file in this list that exists and is not a directory&nbsp;:
+</p>
+
+<ol>
+  <li><code>./myown.cfg</code>
+  <li><code>~/.yadex/$VERSION/myown.cfg</code>
+  <li><code>~/.yadex/myown.cfg</code>
+  <li><code>/etc/yadex/$VERSION/myown.cfg</code>
+  <li><code>/etc/yadex/myown.cfg</code>
+</ol>
+
+			<h4>Organising your configuration files</h4>
+
+<p>
+  As Yadex looks for its configuration files in several places,
+  you are put in the situation of having to decide which one to
+  use. Here are a few guidelines to help you make a decision.
+</p>
+
+<dl>
+  <dt>Avoid redundancy
+  <dd>
+    <p>
+      Take advantage of Yadex's ability to use more than one
+      config file. Put each setting in the right place. Your
+      config files will be easier to read and maintain.
+    </p>
+
+  <dt>Versionless vs. versionful files
+  <dd>
+    <p>
+      Versionful files
+      (<code>/etc/yadex/$VERSION/yadex.cfg</code> and
+      <code>~/.yadex/$VERSION/yadex.cfg</code>) are useful to
+      store settings that only work with a particular version of
+      Yadex. But remember that the versionful system-wide file
+      can be clobbered by a reinstallation.
+    </p>
+
+    <p>
+      Versionless files (<code>/etc/yadex/yadex.cfg</code> and
+      <code>~/.yadex/yadex.cfg</code>) have the advantage of
+      being seen by all versions of Yadex. If you enter your
+      settings there, you won't have to enter them again when
+      you install a new version of Yadex, as long as the config
+      file syntax remains compatible. 
+    </p>
+
+  <dt>System-wide vs. user vs. local files
+  <dd>
+    <p>
+      System-wide configuration files have the theoretical
+      advantage of being seen by all users, which makes them a
+      good place to put settings that apply to everybody, such
+      as the pathnames of the iwads. Of course, it doesn't make
+      any difference for the typical (single-user) Yadex
+      installation.
+    </p>
+
+    <p>
+      Per-user files (the ones in <code>~/.yadex</code>) are
+      appropriate for settings that have to do with personal
+      preferences (fonts etc.). They also have the advantage
+      over system-wide files of not being overwritten by the
+      installation procedure (typing <code>make install</code> a
+      second time will wipe the versionful system file).
+    </p>
+
+    <p>
+      Local files (<code>./yadex.cfg</code>) are well suited to
+      settings that vary from project to project, such as
+      default textures.
+    </p>
+</dl>
+
+<p>
+  Concrete application&nbsp;: Yadex was compiled with
+  <code>/usr/local</code> as the prefix. You are the only user
+  on your system. All your levels are for Doom&nbsp;2, except
+  the one in <code>~/herewad</code> which is for Heretic. One of
+  your Doom&nbsp;2 levels (<code>~/cave</code>) is quite dark
+  and requires a different default light level. You usually run
+  Yadex from the directory where the pwad is.
+</p>
+
+<p>
+  There are several ways to configure Yadex for this setup.
+  Here's a solution in accordance with the above
+  guidelines&nbsp;:
+</p>
+
+<p>
+  <code>~/.yadex/yadex.cfg</code>&nbsp;:
+</p>
+
+<blockquote>
+  <pre>iwad2 = /somewhere/doom2.wad
+iwad3 = /somewhere/else/heretic.wad
+game  = doom2</pre>
+</blockquote>
+
+<p>
+  <code>~/herewad/yadex.cfg</code>&nbsp;:
+</p>
+
+<blockquote>
+  <pre>game                    = heretic
+default_floor_texture   = floor11
+default_ceiling_texture = floor06
+default_lower_texture   = sandsq2
+default_middle_texture  = sandsq2
+default_upper_texture   = sandsq2
+default_thing           = 66</pre>
+</blockquote>
+
+<p>
+  <code>~/cave/yadex.cfg</code>&nbsp;:
+</p>
+
+<blockquote>
+  <pre>default_light_level = 112</pre>
+</blockquote>
+
+<p>
+  Note how <code>game</code> is set in the per-user config file
+  (the general case) and overridden in the local config file for
+  Heretic level (the exception).  
+</p>

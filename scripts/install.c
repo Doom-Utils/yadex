@@ -44,7 +44,6 @@ int main (int argc, char *argv[])
   int rc = 0;
   const char *target_dir = NULL;
   mode_t mode = 0;
-  int help = 0;
 
   /* Parse the command line */
   if (argc == 2 && strcmp (argv[1], "--help") == 0)

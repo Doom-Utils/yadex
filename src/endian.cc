@@ -11,7 +11,7 @@ This file is part of Yadex.
 Yadex incorporates code from DEU 5.21 that was put in the public domain in
 1994 by Raphaël Quinet and Brendon Wyber.
 
-The rest of Yadex is Copyright © 1997-2003 André Majorel and others.
+The rest of Yadex is Copyright © 1997-2005 André Majorel and others.
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -41,7 +41,7 @@ verbmsg ("CPU endianness: ");
 union
    {
    char mem[17];  // 5 is enough in theory
-   u32 n;
+   uint32_t n;
    } u;
 memset (u.mem, '\0', sizeof (u.mem));
 u.n = 0x31323334;

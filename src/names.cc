@@ -10,7 +10,7 @@ This file is part of Yadex.
 Yadex incorporates code from DEU 5.21 that was put in the public domain in
 1994 by Raphaël Quinet and Brendon Wyber.
 
-The rest of Yadex is Copyright © 1997-2003 André Majorel and others.
+The rest of Yadex is Copyright © 1997-2005 André Majorel and others.
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -28,6 +28,9 @@ Place, Suite 330, Boston, MA 02111-1307, USA.
 
 
 #include "yadex.h"
+
+#include <string>
+
 #include "game.h"
 #include "objid.h"
 
@@ -80,14 +83,210 @@ return "< Bug! >";
    get a short (16 char.) description of the type of a linedef
 */
 
-const char *GetLineDefTypeName (int type)
+static const char *bgl_trigger[8] =
 {
-if (CUR_LDTDEF != NULL && CUR_LDTDEF->number == type)
-  return CUR_LDTDEF->shortdesc;
-for (al_lrewind (ldtdef); ! al_leol (ldtdef); al_lstep (ldtdef))
-  if (CUR_LDTDEF->number == type)
+  "W1", "WR", "S1", "SR", "G1", "GR", "D1", "DR"
+};
+
+static const char *bgl_speed[4] =
+{
+  "S", "N", "F", "T"
+};
+
+static const char *updown4[8] =
+{
+  "dN", "dn", "Dn", "DN", "uP", "up", "Up", "UP"
+};
+
+static const char *bgl_keys[16] =
+{
+  "any", "rcard", "bcard", "ycard", "rskul", "bskul", "yskul", "all6",
+  "any", "red",  "blu",  "yel",  "red",  "blu",  "yel",  "all3"
+};
+
+static const char *bgl_door[16] =
+{
+  "ODC", "Open", "CDO", "Close"
+};
+
+static const char *bgl_door_delay[4] =
+{
+  "1", "4", "9", "30"			// 35/150/300/1050 tics
+};
+
+static const char *bgl_lift_target[4] =
+{
+  // LnF, NnF, LnC, HnF-LnF
+  "LIF", "lEF", "LIC", "HEF/LIF"
+};
+
+static const char *bgl_lift_delay[4] =
+{
+  "1", "3", "5", "10"			// 35/105/165/350 tics
+};
+
+static const char *bgl_tex[2] =
+{
+  "", "X"
+};
+
+const char *GetLineDefTypeName (wad_ldtype_t type)
+{
+  if (CUR_LDTDEF != NULL && CUR_LDTDEF->number == type)
     return CUR_LDTDEF->shortdesc;
-return "??  UNKNOWN";
+  for (al_lrewind (ldtdef); ! al_leol (ldtdef); al_lstep (ldtdef))
+    if (CUR_LDTDEF->number == type)
+      return CUR_LDTDEF->shortdesc;
+
+  // Boom generalised linedef types
+  if (type >= 0x2f80)
+  {
+    static std::string s;
+
+    s.reserve (20);
+    s = "";
+
+    if (type < 0x3000)		// 0010 1111 1QMS STTT  2F80h-2FFFh: crushers
+    {
+      s += bgl_trigger[type & 0x0007];
+      if (type & 0x0020)
+	s += 'm';
+      s += " Crush ";
+      s += bgl_speed[(type >> 3) & 0x0003];
+      if (type & 0x0040)
+	s += " silent";
+    }
+    else if (type < 0x3400)	// 0011 00XU HHMS STTT  3000h-33FFh: stairs
+    {
+      static const char *units[4] =
+      {
+	"4", "8", "16", "24"
+      };
+
+      s += bgl_trigger[type & 0x0007];
+      if (type & 0x0020)
+	s += 'm';
+      s += " Stair ";
+      s += updown4[((type >> 3) & 0x0003) + 4 * ((type >> 8) & 0x0001)];
+      s += ' ';
+      s += units[(type >> 6) & 0x0003];
+      s += ' ';
+      s += bgl_tex[(type >> 9) & 0x0001];
+    }
+    else if (type < 0x3800)	// 0011 01GG DDMS STTT  3400h-37FFh: lifts
+    {
+      s += bgl_trigger[type & 0x0007];
+      if (type & 0x0020)
+	s += 'm';
+      wad_ldtype_t target = (type >> 8) & 0x0003;
+      if (target == 3)
+      {
+	s += "& Plat ";
+      }
+      else
+      {
+	s += " Lift ";			// FIXME
+	s += bgl_lift_target[target];
+	s += ' ';
+      }
+      s += bgl_lift_delay[(type >> 6) & 0x0003];
+      s += ' ';
+      s += bgl_speed[(type >> 3) & 0x0003];
+    }
+    else if (type < 0x3c00)	// 0011 10KK KKOS STTT  3800h-3BFFh: key doors
+    {
+      s += bgl_trigger[type & 0x0007];
+      if (type & 0x0020)
+        s += " Open ";
+      else
+        s += " ODC 4 ";
+      s += bgl_speed[(type >> 3) & 0x0003];
+      s += ' ';
+      wad_ldtype_t same = (type >> 9) & 0x0001;
+      wad_ldtype_t lock = (type >> 6) & 0x0007;
+      s += bgl_keys[same * 8 + lock];
+    }
+    else if (type < 0x4000)	// 0011 11DD MAAS STTT  3C00h-3FFFh: doors
+    {
+      s += bgl_trigger[type & 0x0007];
+      if (type & 0x0080)
+	s += 'm';
+      s += ' ';
+#if 0
+      wad_ldtype_t action = (type >> 5) & 0x0003;
+      wad_ldtype_t delay  = (type >> 8) & 0x0003;
+      s += bgl_door[4 * action + delay];
+#else
+      wad_ldtype_t action = (type >> 5) & 0x0003;
+      s += bgl_door[action];
+      if (action == 0 || action == 2)	// ODC & CDO
+      {
+	s += ' ';
+	s += bgl_door_delay[(type >> 8) & 0x0003];
+      }
+#endif
+      s += ' ';
+      s += bgl_speed[(type >> 3) & 0x0003];
+    }
+    else			// 010! CCGG GUZS STTT  4000h-5FFFh: ceilings
+    {				// 011! CCGG GUZS STTT  6000h-7FFFh: floors
+      const unsigned trigger   =         type & 0x0007;
+      const unsigned speed     = (type >>  3) & 0x0003;
+      const unsigned model     = (type >>  5) & 0x0001;
+      const unsigned direction = (type >>  6) & 0x0001;
+      const unsigned target    = (type >>  7) & 0x0007;
+      const unsigned change    = (type >> 10) & 0x0003;
+      const unsigned crush     = (type >> 12) & 0x0001;
+      const unsigned floor     = (type >> 13) & 0x0001;
+
+      static const char *ftarget_str[8] =
+      {
+	// FIXME why do boomref.txt and the UDS disagree ? (LIF vs. LEF)
+	"HEF", "LIF", "hEF", "LIC", "C", "SLT", "24", "32"
+      };
+      static const char *ctarget_str[8] =
+      {
+	"HEC", "LEC", "hEC", "HEF", "F", "SUT", "24", "32"
+      };
+      static const char *change_str[4] =
+      {
+	"", "XZ", "X", "XP"
+      };
+
+      s += bgl_trigger[trigger];
+      if (change == 0 && model != 0)
+	s += 'm';
+      s += floor ? " F " : " C ";
+      s += updown4[speed + 4 * direction];
+      if (crush)
+	s += '!';
+      s += ' ';
+      if (floor)
+      {
+	// Target NnF translates into hEF (if up) or lEF (if down)
+	if (direction == 1 && target == 2)
+	  s += "lEF";
+	else
+	  s += ftarget_str[target];
+      }
+      else
+      {
+	// Target NnC translates into hEC (if up) or lEC (if down)
+	if (direction == 1 && target == 2)
+	  s += "lEC";
+	else
+	  s += ctarget_str[target];
+      }
+      s += ' ';
+      if (change != 0)
+	s += (model == 0 ? 'T' : 'N');
+      s += change_str[change];
+    }
+
+    return s.c_str ();
+  }
+
+  return "?? UNKNOWN";
 }
 
 

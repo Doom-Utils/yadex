@@ -10,7 +10,7 @@ This file is part of Yadex.
 Yadex incorporates code from DEU 5.21 that was put in the public domain in
 1994 by Raphaël Quinet and Brendon Wyber.
 
-The rest of Yadex is Copyright © 1997-2003 André Majorel and others.
+The rest of Yadex is Copyright © 1997-2005 André Majorel and others.
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -123,7 +123,7 @@ void DisplayHelp () /* SWAP! */
 void about_yadex ()
 {
   int widthc  = 57;
-  int heightc = 19;
+  int heightc = 18;
 
   for (const char *const *s = yadex_copyright; *s != 0; s++)
   {
@@ -151,7 +151,6 @@ void about_yadex ()
   DrawScreenText (-1, -1, "Home page :");
   pop_colour ();
   DrawScreenText (-1, -1, "http://www.teaser.fr/~amajorel/yadex/");
-  DrawScreenText (-1, -1, "http://www.linuxgames.com/yadex/");
   DrawScreenText (-1, -1, "");
   push_colour (WINFG_HL);
   DrawScreenText (-1, -1, "Mailing lists :");

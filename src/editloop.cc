@@ -11,7 +11,7 @@ This file is part of Yadex.
 Yadex incorporates code from DEU 5.21 that was put in the public domain in
 1994 by Raphaël Quinet and Brendon Wyber.
 
-The rest of Yadex is Copyright © 1997-2003 André Majorel and others.
+The rest of Yadex is Copyright © 1997-2005 André Majorel and others.
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -163,9 +163,9 @@ return strcmp (*((const char * const *) item1),
 // A table of the modes in the editor.
 typedef struct
    {
-   i8 obj_type;		// Corresponding object type
-   i8 item_no;		// # of item to tick in the "View" menu
-   i8 menu_no;		// # of flavour of the "Misc op." menu
+   int8_t obj_type;		// Corresponding object type
+   int8_t item_no;		// # of item to tick in the "View" menu
+   int8_t menu_no;		// # of flavour of the "Misc op." menu
    } editmode_t;
 
 const int NB_MODES = 4;
@@ -1155,8 +1155,8 @@ for (RedrawMap = 1; ; RedrawMap = 0)
 	    {
 	    ForgetSelection (&e.Selected);
 	    if (!MadeChanges
-	     || Confirm (-1, -1, "You have unsaved changes."
-				" Do you really want to quit?", 0))
+	     || confirm_simple (-1, -1, "You have unsaved changes."
+				" Quit anyway?", 0))
 	       break;
 	    RedrawMap = 1;
 	    }
@@ -1672,7 +1672,7 @@ cancel_save_as:
 	    ok = true;
 	 else
 	    {
-	    ok = Confirm (-1, -1,
+	    ok = confirm_simple (-1, -1,
 			  "Global mode is experimental and probably highly",
 			  "unstable. This means crashes. Are you sure ?");
 	    RedrawMap = 1;
@@ -1992,7 +1992,7 @@ cancel_save_as:
 	 {
 	 if (e.obj_type == OBJ_THINGS
 	  || Expert
-	  || Confirm (-1, -1,
+	  || confirm_simple (-1, -1,
 		(e.Selected && e.Selected->next ?
 		     "Do you really want to delete these objects?"
 		   : "Do you really want to delete this object?"),

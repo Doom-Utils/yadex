@@ -1,3 +1,4 @@
+$(set c)
 <html>
 <head>
 <title>Yadex hacker's guide</title>
@@ -1142,7 +1143,7 @@ $c al_saps() instead of $c strcat(), etc.
 
 Put $c yadex.h first,
 then any standard headers needed (E.G. $c math.h)
-then all the Yadex headers needed by alphabetical order.
+then all the Yadex headers needed in alphabetical order.
 <p>
 If the need arises to protect a Yadex header against multiple inclusion,
 use this :

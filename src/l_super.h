@@ -47,7 +47,7 @@ class Superimposed_ld
 
   private:
     obj_no_t refldno;			// Reference linedef
-    obj_no_t ldno;			// get() will start from there
+    obj_count_t ldno;			// get() will start from there
 };
 
 

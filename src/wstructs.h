@@ -14,7 +14,7 @@ This file is part of Yadex.
 Yadex incorporates code from DEU 5.21 that was put in the public domain in
 1994 by Raphaël Quinet and Brendon Wyber.
 
-The rest of Yadex is Copyright © 1997-2003 André Majorel and others.
+The rest of Yadex is Copyright © 1997-2005 André Majorel and others.
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -44,8 +44,8 @@ typedef char wad_name_t[WAD_NAME];
 typedef struct Directory huge *DirPtr;
 struct Directory
 {
-  i32        start;			// Offset to start of data
-  i32        size;			// Byte size of data
+  int32_t    start;			// Offset to start of data
+  int32_t    size;			// Byte size of data
   wad_name_t name;			// Name of data block
 };
 
@@ -66,22 +66,22 @@ typedef char wad_pic_name_t[WAD_TEX_NAME];
 
 
 // Level objects properties
-typedef i16 wad_coord_t;		// Map (X,Y) coordinates
-typedef i16 wad_ldn_t;			// Linedef#
-typedef i16 wad_sdn_t;			// Sidedef#
-typedef i16 wad_sn_t;			// Sector#
-typedef i16 wad_tag_t;			// Tag
-typedef i16 wad_tn_t;			// Thing# (theor. there might be more)
-typedef i16 wad_vn_t;			// Vertex#
-typedef i16 wad_z_t;			// Map Z coordinate
+typedef int16_t wad_coord_t;		// Map (X,Y) coordinates
+typedef int16_t wad_ldn_t;		// Linedef#
+typedef int16_t wad_sdn_t;		// Sidedef#
+typedef int16_t wad_sn_t;		// Sector#
+typedef int16_t wad_tag_t;		// Tag
+typedef int16_t wad_tn_t;		// Thing# (theor. there might be more)
+typedef int16_t wad_vn_t;		// Vertex#
+typedef int16_t wad_z_t;		// Map Z coordinate
 
 
 // Things
 const size_t WAD_THING_BYTES       = 10;  // Size in the wad file
 const size_t WAD_HEXEN_THING_BYTES = 20;  // Size in the wad file
-typedef i16 wad_ttype_t;
-typedef i16 wad_tangle_t;
-typedef i16 wad_tflags_t;
+typedef int16_t wad_ttype_t;
+typedef int16_t wad_tangle_t;
+typedef int16_t wad_tflags_t;
 struct Thing
 {
   wad_coord_t      xpos;		// FIXME rename to "x"
@@ -92,19 +92,19 @@ struct Thing
 };
 typedef struct
 {
-  i16              tid;
+  int16_t              tid;
   wad_coord_t      x;
   wad_coord_t      y;
   wad_z_t          height;
   wad_tangle_t     angle;
   wad_ttype_t      type;
-  i16              options;
-  u8               special;
-  u8               arg1;
-  u8               arg2;
-  u8               arg3;
-  u8               arg4;
-  u8               arg5;
+  int16_t          options;
+  uint8_t          special;
+  uint8_t          arg1;
+  uint8_t          arg2;
+  uint8_t          arg3;
+  uint8_t          arg4;
+  uint8_t          arg5;
 } wad_hexen_thing_t;
 typedef struct Thing huge *TPtr;
 
@@ -112,8 +112,8 @@ typedef struct Thing huge *TPtr;
 // Linedefs
 const size_t WAD_LINEDEF_BYTES       = 14;  // Size in the wad file
 const size_t WAD_HEXEN_LINEDEF_BYTES = 16;  // Size in the wad file
-typedef i16 wad_ldflags_t;
-typedef i16 wad_ldtype_t;
+typedef int16_t wad_ldflags_t;
+typedef int16_t wad_ldtype_t;
 struct LineDef
 {
   wad_vn_t      start;			// # of start vertex
@@ -129,12 +129,12 @@ typedef struct
   wad_vn_t      start;
   wad_vn_t      end;
   wad_ldflags_t flags;
-  u8            type;
-  u8            arg1;
-  u8            arg2;
-  u8            arg3;
-  u8            arg4;
-  u8            arg5;
+  uint8_t       type;
+  uint8_t       arg1;
+  uint8_t       arg2;
+  uint8_t       arg3;
+  uint8_t       arg4;
+  uint8_t       arg5;
   wad_sdn_t     sidedef1;
   wad_sdn_t     sidedef2;
 } wad_hexen_linedef_t;
@@ -169,14 +169,14 @@ typedef struct Vertex huge *VPtr;
 
 // Sectors
 const size_t WAD_SECTOR_BYTES = 26;	// Size in the wad file
-typedef i16 wad_stype_t;
+typedef int16_t wad_stype_t;
 struct Sector
 {
   wad_z_t         floorh;		// Floor height
   wad_z_t         ceilh;		// Ceiling height
   wad_flat_name_t floort;		// Name of floor texture
   wad_flat_name_t ceilt;		// Name of ceiling texture
-  i16             light;		// Light level (0-255)
+  int16_t         light;		// Light level (0-255)
   wad_stype_t     special;		// FIXME rename to "type"
   wad_tag_t       tag;
 };

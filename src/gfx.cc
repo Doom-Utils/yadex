@@ -11,7 +11,7 @@ This file is part of Yadex.
 Yadex incorporates code from DEU 5.21 that was put in the public domain in
 1994 by Raphaël Quinet and Brendon Wyber.
 
-The rest of Yadex is Copyright © 1997-2003 André Majorel and others.
+The rest of Yadex is Copyright © 1997-2005 André Majorel and others.
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -96,14 +96,14 @@ Drawable drw;		// Points to either <win> or <pixmap>
 int      drw_mods;	// Number of modifications to drw since last call to
 			// update_display(). Number of modifications to drw
 			// plus 1 since last call to ClearScreen().
-Visual  *win_vis;	// The visual for win */
-xpv_t    win_r_mask;	// The RGB masks for win's visual */
+Visual  *win_vis;	// The visual for win
+xpv_t    win_r_mask;	// The RGB masks for win's visual
 xpv_t    win_g_mask;
 xpv_t    win_b_mask;
-int      win_r_bits;	// The RGB masks' respective lengths */
+int      win_r_bits;	// The RGB masks' respective lengths
 int      win_g_bits;
 int      win_b_bits;
-int      win_r_ofs;	// The RGB masks' respective offsets relative to b0 */
+int      win_r_ofs;	// The RGB masks' respective offsets relative to b0
 int      win_g_ofs;
 int      win_b_ofs;
 int      win_ncolours;	// The number of possible colours for win's visual.
@@ -811,17 +811,6 @@ void force_window_not_pixmap ()
 }
 
 
-/*
- *	set_pcolour - set the current drawing colour
- *
- *	<colour> must be an physical colour number (a.k.a. pixel value).
- */
-void set_pcolour (pcolour_t colour)
-{
-  XSetForeground (dpy, gc, (xpv_t) colour);
-}
-
-
 // Last application colour set by set_colour()
 static acolour_t current_acolour = 0;
 #ifdef Y_BGI
@@ -859,6 +848,18 @@ void set_colour (acolour_t colour)
     XSetForeground (dpy, gc, app_colour[colour]);
   }
 #endif
+}
+
+
+/*
+ *	set_pcolour - set the current drawing colour
+ *
+ *	<colour> must be an physical colour number (a.k.a. pixel value).
+ */
+void set_pcolour (pcolour_t colour)
+{
+  current_acolour = ACOLOUR_NONE;
+  XSetForeground (dpy, gc, (xpv_t) colour);
 }
 
 

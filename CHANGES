@@ -1,5 +1,103 @@
 Changes
 
+Yadex 1.8.0 (2005-??-??)
+
+  * Build: Don't omit config.h from yadex.dep when you update a source
+    file before the first make all. Thanks to Andrew Apted for
+    reporting this.
+
+  * Build: ./configure now takes three more options: --cflags,
+    --cxxflags and --ldflags. The sanctioned way of customising CFLAGS,
+    CXXFLAGS or LDFLAGS is now to run ./configure again with the
+    appropriate --cflags/­--cxxflags/­--ldflags options. Changing
+    CFLAGS, CXXFLAGS or LDFLAGS in the makefile will still often work,
+    but not always. For example, adding a compiler flag to change the
+    word size on a platform where inttypes.h is missing could result in
+    a broken binary.
+
+  * Build: While checking that the C and C++ compiler actually work, ./
+    configure now attempts to link and execute the objects. This helps
+    to catch certain errors sooner (libstdc++.so not in the SO path on
+    Solaris, for instance).
+
+  * Build: If the compiler is GCC, builds are now done with -Wall by
+    default.
+
+  * Build: If va_copy() is defined, it's used.
+
+  * Code: On TrueColor and StaticGray visuals, compute pixel values
+    instead of calling XAllocColors(). Over an ADSL link (average
+    latency 70 ms), the time to open a window is down from 23 seconds
+    to 1 second. The time to close a window is down from about 20
+    seconds to instantaneous.
+
+  * Code: Changed SCREENX() and SCREENY() so that, for a given zoom
+    factor, any two map coordinates are always rendered the same number
+    of pixels apart, regardless of where they are in the window. This
+    is a prerequisite for fast scrolling (i.e. using XCopyArea()
+    instead of rendering everything from scratch). You can still get
+    the old behaviour by compiling with -DY_SWARM.
+
+  * Code: The idle_sleep_ms config variable is now unsigned as it
+    should be. If neither nanosleep() nor usleep() is available, we use
+    select().
+
+  * Command-line: New option -G to specify additional search
+    directories for YGD files (think "cc -I"). You can now use "make
+    test" without installing first.
+
+  * Doc: Updated the texture/flat/sprite selector documentation.
+
+  * Doc: Documented the highlighting (at least partly).
+
+  * Doc: Documented the object info box, especially the conventions
+    used in the short descriptions of the linedef types.
+
+  * Editing: FIXME The linedef merging that happens after dragging
+    vertices has changed. You can now accept to merge or not each
+    superimposed linedef. There used to be a bug where, if there were
+    more than one superimposed linedefs in the level, merging could
+    delete a random linedef, or even cause a segfault. This bug has
+    been reported very recently (http://www.freelists.org/archives/
+    yadex/11-2003/msg00004.html), but I think it's been there for a
+    long time (1997).
+
+  * Editing: A failed attempt at highlighting the parts of the grid
+    that fall on multiples of 64 units. The config file variable is
+    grid_64. It's off by default. This feature doesn't work very well ;
+    the grid design as it stands is not good at following map units.
+
+  * Editing: Don't crash when highlighting a linedef on a level that
+    has 32,768 linedefs (bug introduced in 1.7.0).
+
+  * Editing: Added an indicator for potential medusa effect in the
+    texture selector.
+
+  * Game/wad: FIXME Decode Boom generalised linedef types.
+
+  * Game/wad: New game definition directive flat_format. Possible
+    values are "normal" (Doom and Strife, 64×64), "heretic" (Heretic,
+    64×65 for scrolling flats) and "hexen" (Hexen, 64×128 for scrolling
+    flats). This silences the warnings with Heretic and Hexen.
+    (Warning: flat "x" has weird size n. Using 4096 instead.).
+
+  * Misc: New "dump_linedef_types" command.
+
+  * Platform: Fixed 64-bit portability issues. Yadex now compiles out
+    of the box on LP64 platforms where long is 64-bit wide (tested on
+    AIX/PPC64, Solaris/SPARC64).
+
+  * Platform: ./configure now automatically locates the X11 headers and
+    libraries. Yadex should now find the X11 files without any makefile
+    tweaking on most platforms. Two new options, --x-includes and
+    --x-libraries are provided to override the autodetection.
+
+  * Platform: ./configure now checks that the feature-test programs not
+    only compile but link. This helps with Solaris where nanosleep() is
+    declared in time.h but lives in a separate library (-lrt), causing
+    Yadex to compile but not link. This is of course an expedient. It's
+    OK because we can fall back on usleep() or select().
+
 Yadex 1.7.0 (2003-12-28)
 
   * Build: The configure script autodetects the C and C++ compiler (cc,
@@ -703,9 +801,9 @@ Yadex 1.5.0 (2000-08-27)
 
   * Misc: The window size (width/height and -w/-h) can now be expressed
     in percent of the screen size, by appending a "%" to the value. The
-    default size, instead of being 640×480 in the executable and 900×
-    600 in the config file is now 90%×90%. It's still possible to give
-    absolute width and heights, of course.
+    default size, instead of being 640×480 in the executable and
+    900×600 in the config file is now 90%×90%. It's still possible to
+    give absolute width and heights, of course.
 
   * Misc: No tantrum thrown if the game definition file contains no
     thing directive.

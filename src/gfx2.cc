@@ -11,7 +11,7 @@ This file is part of Yadex.
 Yadex incorporates code from DEU 5.21 that was put in the public domain in
 1994 by Raphaël Quinet and Brendon Wyber.
 
-The rest of Yadex is Copyright © 1997-2003 André Majorel and others.
+The rest of Yadex is Copyright © 1997-2005 André Majorel and others.
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -71,10 +71,14 @@ get_key_or_click ();
 void show_colours ()
 {
 int ncolours = get_pcolours_count ();
+int digits = 1;
+for (int n = ncolours; n >= 10; n /= 10)
+   digits++;
 const int columns = 16;
 int lines = (ncolours + columns - 1) / columns;
 const int pixels = 16;
-int width = 2 * BOX_BORDER + 2 * WIDE_HSPACING + columns * (pixels + 1);
+int width = 2 * BOX_BORDER + 2 * WIDE_HSPACING + columns * (pixels + 1)
+          + (digits + 1) * FONTW;
 int height = 2 * BOX_BORDER + 2 * WIDE_VSPACING + lines * (pixels + 1);
 int x0 = (ScrMaxX - width) / 2;
 int y0 = (ScrMaxY - height) / 2;
@@ -96,6 +100,9 @@ for (int n = 0; n < ncolours; n++)
          y = y0 + BOX_BORDER + WIDE_VSPACING;
       else
          y += pixels + 1;
+      set_colour (WINFG);
+      DrawScreenText (x, y, "%*d", digits, n);
+      x += (digits + 1) * FONTW;
       }
    else
       x += pixels + 1;

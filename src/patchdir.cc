@@ -11,7 +11,7 @@ This file is part of Yadex.
 Yadex incorporates code from DEU 5.21 that was put in the public domain in
 1994 by Raphaël Quinet and Brendon Wyber.
 
-The rest of Yadex is Copyright © 1997-2003 André Majorel and others.
+The rest of Yadex is Copyright © 1997-2005 André Majorel and others.
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -89,8 +89,8 @@ void Patch_dir::refresh (MDirPtr master_dir)
     do
     {
       MDirPtr dir;
-      i32 npatches_head = -42;
-      i32 npatches_body = -42;
+      int32_t npatches_head = -42;
+      int32_t npatches_body = -42;
 
       dir = FindMasterDir (master_dir, lump_name);
       if (dir == 0)
@@ -98,7 +98,7 @@ void Patch_dir::refresh (MDirPtr master_dir)
 	warn ("No %s lump, won't be able to render textures\n", lump_name);
 	break;
       }
-      i32 pnames_body_size = dir->dir.size - 4;
+      int32_t pnames_body_size = dir->dir.size - 4;
       if (pnames_body_size < 0)
       {
 	warn ("Bad %s (negative size %ld), won't be able to render textures\n",
@@ -254,7 +254,7 @@ void Patch_dir::loc_by_name (const char *name, Lump_loc& loc)
  *	Return the (wad, offset, length) location of the lump
  *	that contains patch# <num>.
  */
-void Patch_dir::loc_by_num (i16 num, Lump_loc& loc)
+void Patch_dir::loc_by_num (int16_t num, Lump_loc& loc)
 {
   wad_pic_name_t *nm = name_for_num (num);
   if (nm == 0)
@@ -271,7 +271,7 @@ void Patch_dir::loc_by_num (i16 num, Lump_loc& loc)
  *	Return a pointer on the name of the patch of number <num>
  *	or 0 if no such patch.
  */
-wad_pic_name_t *Patch_dir::name_for_num (i16 num)
+wad_pic_name_t *Patch_dir::name_for_num (int16_t num)
 {
   if (num < 0 || (size_t) num >= npnames)  // Cast to silence GCC warning
     return 0;

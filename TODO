@@ -4,12 +4,22 @@ TO-DO LIST FOR YADEX
 
 ----------------------------------------
 
+Before 1.8.0:
+- Finish Boom generalised linedef types
+- Correct $(mtime)
+- l_merge
+- Recover if perl isn't available
+- Users's guide TOC ?
+- Make the doc as close as possible to 1.7.0 ? The extensions have changed
+  anyway.
 
 General
-- Automatically adapt to level to edit; if it's a Doom level (ExMy),
+- Automatically adapt to the level to edit; if it's a Doom level (ExMy),
   reread doom.wad, if it's a Doom II level (MAPnn), reread doom2.wad.
   what if it's a Heretic level ? It must be possible to tell a Heretic
   level by the special sector & thing types.
+- ftime is now useless. Need to clean up the mess created by the move to
+  m7.
 
 Command line
 - Add option -e like in sed and Perl. Auto quit at end or not ?
@@ -101,11 +111,9 @@ Game definitions
   definition (currently it just *adds* and, since the new definition is
   at the end the of list, it's *ignored*). Possibly with an option to
   warn about such redefinitions.
-- New option -Y (or -y or -G ?) to insert a directory at the beginning
-  of the .ygd files search path. Perhaps -Y- to clear the path (think
-  -I-). Add it to "make test" and "make dtest".
 - New option --print-ygd-path or --ygd-dirs to print the ygd file search
   path and exit.
+- -G comes before ".". This could be wrong.
 
 Game and wad support
 - Some wads have sidedefs with a sector# of -1. Apparently, those are
@@ -192,15 +200,12 @@ Doom press release pre-beta
 - Matt says there is a separate resource file named texture2.lmp.
 
 Hexen
-- Hexen has some flats with a size of 8 kB.
 - Generate the "thing" directives by either parsing info.c or ripping
   off the one in DETH.
 - Hexen: add linedef types and check
 
 Heretic
-- Heretic has some flats with a size of 4160. Is this why DeuTex accepts
-  64x65 flats ?
-- Most "1.666" linedefs types are wrong.
+- Heretic has a flat with a size of 4 (F_SKY1).
 
 Strife
 - Extract the radii from the exe.
@@ -507,6 +512,69 @@ Editing in general
 - Arguably, when snap to grid is on,
   - the pointer position shown in the info bar should honour it,
   - the pointer position used for dragging etc. should honour it.
+- Move the info boxes to the right, from top to bottom.
+   ______________________________________________________
+  |_File__Edit_____________________________________Help_|
+  |         .           .          .         |Linedef 42|
+  |    a    .     b     .     c    .    d    |          |
+  |         .           .          .         |          |
+  | . . . . + . . . . . + . . . . .+ . . . . |__________|
+  |         .           .          .         |Sidedef 69|
+  |    e    .     f     .     g    .    h    |          |
+  |         .           .          .         |          |
+  |         .           .          .         |__________|
+  | . . . . + . . . . . + . . . . .+ . . . . |Sidedef 70|
+  |         .           .          .         |          |
+  |    i    .     j     .     k    .    l    |          |
+  |         .           .          .         |__________|
+  |         .           .          .         |          |
+  | . . . . + . . . . . + . . . . .+ . . . . |          |
+  |         .           .          .         |          |
+  |    m    .     n     .     o    .    p    |          |
+  |         .           .          .         |          |
+  |__________________________________________|__________|
+  |_bletch.wad__E1M7____________________________________|
+
+  Makes the map area a rectangle and eliminates the overlap between the
+  map and the info boxes (less flicker, no more highlighting object on
+  top of the info boxes, makes it possible to draw directly onto the
+  window, which is faster).
+
+  Width of the info boxes:
+  - vertices: Vertex #32767
+              Coordinates: (-32768, -32768)
+  - things:   Thing #32767
+	      Coords: (-32768, -32768)
+	      Type:   -32768
+	      Desc:   [19]
+	      Angle:  255 North-west
+	      Flags:  ---- ---- ---- ----
+  - linedefs: Linedef #32767
+	      Flags:    ---- ---- ---- ----
+	      Type: -32768 1234567890123456
+	      Tag:      -32768 (#32767+)
+	      Vertices: (#-32768, #-32768)
+	      Length:   65535
+	      1st sd:   #-32768
+	      2nd sd:   #-32768
+  - sidedefs: Sidedef1 #32767
+	      Upper:  ABCDEFGH
+	      Middle: ABCDEFGH
+	      Lower:  ABCDEFGH
+	      X-ofs:  -32768
+	      Y-ofs:  -32768
+	      Sector: #-32768
+  - sectors:  Sector #32767
+	      Floor:    -32768
+	      Ceiling:  -32768
+	      Headroom: 65535
+	      Floor:    ABCDEFGH
+	      Ceiling:  ABCDEFGH
+	      Light:    255
+	      Type: -32768 12345678901234
+	      Tag:      -32768 (#32767+)
+  The linedef is the widest with 29 characters. With the default 7x13
+  font, that's 203 pixels. That's not quite 320. Shrink the preview ?
 
 Editing, global mode:
 - Editing properties (double-clicking or [Return]), selecting by
@@ -724,6 +792,8 @@ Editing linedefs and sidedefs
   1. bad type,
   2. type requires a tag but its tag is set to 0,
   3. type requires a tag but no sector uses that tag,
+  3b. type requires a tag to a linedef but no sector uses that tag,
+  3c. type requires a tag to a linedef but several linedef have it,
   4. door type on a single-sided linedef,
   4b. W? linedef type used on single-sided linedef,
   5. missing texture (HOM) (though this is normal for some tricks),
@@ -746,6 +816,8 @@ Editing linedefs and sidedefs
 - Check texture names: if the sidedef is not used by any linedefs, you
   are still prompted to "press [esc] to see the object". If you do, you
   get a "Bug: GetObjectCoords: bad sector# x" message.
+- For linedef types that take a tag to another linedef, show the correct
+  object number in the info box and highlight the other linedef.
 
 Editing sectors
 - Set floor height to ceiling height - headroom.
@@ -849,13 +921,8 @@ Build:
 - Should not build yadex.dep from scratch every time you type "make".
 - "make clean all" fails because clean removes obj/0 but does not create
   it again.
-- Some configuration items are not detected by configure but by the
-  makefile. This is confusing (there's no simple rule).
 - It would be nice to automatically detect when -fpermissive is needed
   (GCC >= 3 + "extern XSetTransientForHint" in /usr/include/X11/Xlib.h)
-- It would be nice to automatically detect where the X11 headers and
-  library are. And omit -I/usr/X11R6/include from the command line when
-  it's not needed.
 
 DOS/BGI port
 - Do more modules splitting (deu.c, ReadConfigFile, menus.c). In
@@ -929,12 +996,11 @@ Unix port
   al_fana() to use dynamically allocated buffers.
 
 Platforms/Portability
-- Solaris 7: bad X11/Xlib.h. With GCC, need -fpermissive
-  and/or  -isystem /usr/openwin/include
-- Solaris 7: don't assume that having gcc implies that cc is
-  gcc. cc might be the native compiler in which case -Wall might
-  no be appreciated.
-- Solaris 9: nanosleep() needs -lrt. Best to use usleep() ?
+- Solaris 7: bad X11/Xlib.h. With GCC, need -fpermissive and/or -isystem
+  /usr/openwin/include. As of GCC 3.3, the problem doesn't show anymore
+  (neither on Solaris 9 nor on AIX 5.1).
+- Solaris: someday, update configure to add -lrt by itself.
+- Solaris 9 SPARC32: unreproducible segfault (see TODO.sol9segfault).
 
 Prompt
 - Add access to the prompt from an editing window (":" like in vi).
@@ -1048,9 +1114,8 @@ Web
   mention that the latest patches can be found in
   http://www.teaser.fr/~amajorel/yadex/patches/.
 - patches/README: mention the fate of the patches (some have already
-  made in into the dev version, some will have not because I haven't
-  decided yet or haven't even looked into them and some will never make
-  it).
+  made in into the dev version, some not because I haven't decided yet or
+  haven't even looked into them and some will never make it).
 - Have an index page for patches/ ready, in case the web server does not
   support automatic indexing. Use dldir for that.
 - Should all patches in the web page be also included in the

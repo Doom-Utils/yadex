@@ -1,0 +1,376 @@
+<p>
+  The format of a linedef type short description is
+</p>
+
+<div align="center">
+  <var>number</var> <var>trigger</var> <var>description</var>
+</div>
+
+<dl>
+  <dt><var>number</var>
+  <dd>
+    <p>
+      The linedef type in decimal.
+    </p>
+
+  <dt><var>trigger</var>
+  <dd>
+    <p>
+      How the linedef special is triggered.
+      This subfield follows the UDS convention&nbsp;:
+    </p>
+
+    <dl class="compact4">
+      <dt><code>W1</code><dd>Triggered by crossing the linedef
+      <dt><code>WR</code><dd>Triggered by crossing the linedef, repeatable
+      <dt><code>S1</code><dd>Triggered by activating the linedef
+      <dt><code>SR</code><dd>Triggered by activating the linedef, repeatable
+      <dt><code>S1</code><dd>Triggered by shooting the linedef
+      <dt><code>SR</code><dd>Triggered by shooting the linedef, repeatable
+      <dt><code>D1</code><dd>Door trigger
+      <dt><code>DR</code><dd>Door trigger, repeatable
+    </dl>
+
+    <p>
+      For linedef types that end the level, the second character is
+      "<code>-</code>" (E.G. "<code>S- End level</code>").
+    </p>
+
+    <p>
+      The "<code>&amp;</code>" suffix means that this linedef type has the
+      side-effect of locking out the sector from further changes.
+    </p>
+
+    <p>
+      The "<code>m</code>" suffix is used for Boom generalised linedef
+      types and means that this linedef type can be triggered by monsters.
+    </p>
+
+  <dt><var>description</var>
+  <dd>
+    <p>
+      The nomenclature tries to adhere to the traditional UDS/DEU
+      conventions&nbsp;; it sometimes deviates from the <i>Boom reference</i>.
+    </p>
+
+$(define fn 1 1 <code><var>$1</var></code>)
+$(define fv 1 1 <code><strong>$1</strong></code>)
+${set ddelay
+        <tr><td rowspan=4>$fn delay
+	    <td>$fv 1  <td>35 tics
+	<tr><td>$fv 4  <td>150 tics
+	<tr><td>$fv 9  <td>300 tics
+	<tr><td>$fv 30 <td>1050 tics
+}
+
+${set dspeed
+	<tr><td rowspan=4>$fn speed
+	    <td>$fv S  <td>Slow (2 units per tic)
+	<tr><td>$fv N  <td>Normal (4 units per tic)
+	<tr><td>$fv F  <td>Fast (8 units per tic)
+	<tr><td>$fv T  <td>Turbo (16 units per tic)
+}
+
+${set fspeed
+	<tr><td rowspan=4>$fn speed
+	    <td>$fv S  <td>Slow (1 unit per tic)
+	<tr><td>$fv N  <td>Normal (2 units per tic)
+	<tr><td>$fv F  <td>Fast (4 units per tic)
+	<tr><td>$fv T  <td>Turbo (8 units per tic)
+}
+
+${set keys
+	<tr><td rowspan=12>$fn keys
+	    <td>$fv bcard <td>Blue keycard
+	<tr><td>$fv bskul <td>Blue skull key
+	<tr><td>$fv rcard <td>Red keycard
+	<tr><td>$fv rskul <td>Red skull key
+	<tr><td>$fv ycard <td>Yellow keycard
+	<tr><td>$fv yskul <td>Yellow skull key
+	<tr><td>$fv all3 <td>Any red key <em>and</em> any blue key
+	    <em>and</em> any yellow key
+	<tr><td>$fv all6 <td>All six keys
+	<tr><td>$fv any <td>Any key
+	<tr><td>$fv blu <td>Any blue key
+	<tr><td>$fv red <td>Any red key
+	<tr><td>$fv yel <td>Any yellow key
+}
+
+${set ldelay
+	<tr><td rowspan=4>$fn delay
+	    <td>$fv 1  <td>35 tics
+	<tr><td>$fv 3  <td>105 tics
+	<tr><td>$fv 5  <td>165 tics
+	<tr><td>$fv 10 <td>350 tics
+}
+
+${set ltarget
+  <tr>
+    <td rowspan=3>$fn target
+    <td>$fv lEF
+    <td>Next lower floor among neighbours, excluding the tagged
+      sector.
+
+  <tr>
+    <td>$fv LIC
+    <td>Lowest ceiling among neighbours, including the tagged sector.
+
+  <tr>
+    <td>$fv LIF
+    <td>Lowest floor among neighbours, including the tagged sector.
+}
+
+${set movement
+	<tr><td rowspan=8>$fn movement
+	    <td>$fv uP <td>Move up, slow
+	<tr><td>$fv up <td>Move up, normal
+	<tr><td>$fv Up <td>Move up, fast
+	<tr><td>$fv UP <td>Move up, turbo
+	<tr><td>$fv dN <td>Move down, slow
+	<tr><td>$fv dn <td>Move down, normal
+	<tr><td>$fv Dn <td>Move down, fast
+	<tr><td>$fv DN <td>Move down, turbo
+}
+
+${set target
+	  <tr>
+	  <td rowspan=15>$fn target
+	  <td>$fv 24
+	  <td>24 units above or below the current height.
+
+	  <tr>
+	  <td>$fv 32
+	  <td>32 units above or below the current height.
+
+	  <tr>
+	  <td>$fv C
+	  <td>Ceiling height of the tagged sector.
+
+	  <tr>
+	  <td>$fv F
+	  <td>Floor height of the tagged sector.
+
+	  <tr>
+	  <td>$fv hEC
+	  <td>Next higher ceiling among neighbours, excluding the tagged
+	  sector.
+
+	  <tr>
+	  <td>$fv HEC
+	  <td>Highest ceiling among neighbours, excluding the tagged sector.
+
+	  <tr>
+	  <td>$fv hEF
+	  <td>Next higher floor among neighbours, excluding the tagged sector.
+
+	  <tr>
+	  <td>$fv HEF
+	  <td>Highest floor among neighbours, excluding the tagged sector.
+
+	  <tr>
+	  <td>$fv lEC
+	  <td>Next lower ceiling among neighbours, excluding the tagged sector.
+
+	  <tr>
+	  <td>$fv LEC
+	  <td>Lowest ceiling among neighbours, excluding the tagged sector.
+
+	  <tr>
+	  <td>$fv lEF
+	  <td>Next lower floor among neighbours, excluding the tagged sector.
+
+	  <tr>
+	  <td>$fv LIC
+	  <td>Lowest ceiling among neighbours, including the tagged sector.
+
+	  <tr>
+	  <td>$fv LIF
+	  <td>Lowest floor among neighbours, including the tagged sector.
+
+	  <tr>
+	  <td>$fv SLT
+	  <td>
+	    The height of the shortest lower texture facing away from the
+	    tagged sector.
+	  </td>
+
+	  <tr>
+	  <td>$fv SUT
+	  <td>Same as above, s/lower/upper/.
+}
+
+$(define l 1 1 <strong>$1</strong>)
+$(define v 1 1 <code><var>$1</var></code>)
+
+    <dl>
+      <dt><code>$l C $v movement $v target [$(v xfer)]</code>
+      <dt><code>$l F $v movement $v target [$(v xfer)]</code>
+      <dd>
+        <p>
+	  The ceiling or floor height goes to $(fn target).
+	  Slow, normal, fast and turbo mean 1, 2, 4 and 8 units per tic
+	  respectively.
+	</p>
+
+	<table border>
+	  $movement
+	  $target
+	</table>
+
+	<p>
+	  The $fn xfer field describes the trigger model and transfer
+	  properties.
+	  Certain linedef types involve setting certain attributes of the
+	  tagged sector after a certain model sector.
+	</p>
+
+	<p>
+	  The first character describes how the model sector is found&nbsp;:
+	</p>
+
+	<dl class="compact4">
+	  <dt><code>T</code>
+	  <dd>
+	    Trigger model.
+	    The model sector is the one on the first sidedef of the tagged
+	    linedef.
+	  </dd>
+
+	  <dt><code>N</code>
+	  <dd>
+	    Numeric model.
+	    The model sector is that which faces the lowest-numbered linedef
+	    that faces both the tagged sector and any sector whose floor is at
+	    the target height.
+	  </dd>
+	</dl>
+
+	<p>
+	  The rest of the code indicates what is done to the tagged
+	  sector&nbsp;:
+	</p>
+
+	<dl class="compact4">
+	  <dt><code>P</code>
+	  <dd>The type is set to that of the model.
+
+	  <dt><code>X</code>
+	  <dd>The floor texture is set to that of the model.
+
+	  <dt><code>Z</code>
+	  <dd>The type is set to 0.
+	</dl>
+      </dd>
+
+      <dt><code>$l CDO $v delay $v speed </code>
+      <dd>
+        <p>
+	  Close a door, wait for about $v delay seconds  and open it again.
+	</p>
+
+	<table border>
+	  $ddelay
+	  $dspeed
+	</table>
+
+      <dt><code>$l Close $v speed </code>
+      <dd>
+        <p>
+	  Close a door (stays closed).
+	</p>
+
+	<table border>
+	  $dspeed
+	</table>
+
+      <dt><code>$l Crush $v speed [$(l silent)]</code>
+      <dd>
+        <p>
+	  Start a crushing ceiling.
+	</p>
+
+	<table border>
+	  $fspeed
+	</table>
+
+      <dt><code>$l Lift $v target $v delay $v speed </code>
+      <dd>
+	<p>
+	  Lower a lift.
+	  The floor of the tagged sector moves at speed $fn speed to height
+	  $(fn target), stays there for about $v delay seconds and returns to
+	  its original height.
+	</p>
+
+	<table border>
+	  $ltarget
+	  $ldelay
+	  $fspeed
+	</table>
+
+      <dt><code>$l ODC $v delay $v speed [$(v keys)] </code>
+      <dt><code>$l Open $v speed [$(v keys)]</code>
+      <dd>
+        <p>
+	  Open a door.
+	  For <code>$l ODC</code>, the door closes again after about $fn delay
+	  seconds.
+	  For <code>$l Open</code>, the door stays open.
+	  If the $fn keys field is present, one or more keys are required.
+	</p>
+
+	<table border>
+	  $ddelay
+	  $dspeed
+	  $keys
+	</table>
+
+      <dt><code>$l Plat $v delay  $v speed </code>
+      <dd>
+        <p>
+	  Start a moving floor (perpetual lift between HEF and LIF).
+	</p>
+
+	<table border>
+	  $ldelay
+	  $fspeed
+	</table>
+
+      <dt><code>$l Stair $v movement <var>height</var> [$(fv X)]</code>
+      <dd>
+        <p>
+	  Raise/lower stairs.
+	  The step height is <code><var>height</var></code> units (may be 4, 8,
+	  16 or 24).
+	  The $fv X tag means that the effect propagates across floor texture
+	  changes (what the <i>Boom Reference</i> calls <q>ignore texture</q>).
+	</p>
+
+	<p>
+	  Slow, normal, fast and turbo mean 0.25, 0.5, 2 and 4 units per tic
+	  respectively.
+	</p>
+
+	<table border>
+	  $movement
+	</table>
+
+    </dl>
+
+    <p>
+      In addition, the following codes are used for non-Boom-generalised
+      linedef types&nbsp;:
+    </p>
+
+    <dl class="compact8">
+      <dt><code>$(l Door)</code><dd>cf. <code>$(l ODC)</code>
+      <dt><code>$(l Door$ (0$))</code><dd>cf. <code>$(l open)</code>
+      <dt><code>$(l DOOR)</code><dd>cf. <code>$(l ODC$ T)</code>
+      <dt><code>$(l Elevator)</code><dd>Boom elevator
+      <dt><code>$(l Telept)</code><dd>Teleport
+      <dt>$fv nhEF <dd>Synonym for $(fv hEF).
+      <dt>$fv nlEF <dd>Synonym for $(fv lEF).
+    </dl>
+
+  </dd>
+</dl>

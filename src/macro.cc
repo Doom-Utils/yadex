@@ -11,7 +11,7 @@ This file is part of Yadex.
 Yadex incorporates code from DEU 5.21 that was put in the public domain in
 1994 by Raphaël Quinet and Brendon Wyber.
 
-The rest of Yadex is Copyright © 1997-2003 André Majorel and others.
+The rest of Yadex is Copyright © 1997-2005 André Majorel and others.
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -89,7 +89,9 @@ int vmacro_expand (char *buf, size_t size, const char *fmt, va_list list)
     const char *macro_name = 0;
     const char *macro_value = 0;
 
-#ifdef __va_copy
+#ifdef va_copy
+    va_copy(l, list);
+#elif defined __va_copy
     __va_copy(l, list);
 #else
     l = list;

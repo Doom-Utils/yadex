@@ -11,7 +11,7 @@ This file is part of Yadex.
 Yadex incorporates code from DEU 5.21 that was put in the public domain in
 1994 by Raphaël Quinet and Brendon Wyber.
 
-The rest of Yadex is Copyright © 1997-2003 André Majorel and others.
+The rest of Yadex is Copyright © 1997-2005 André Majorel and others.
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -29,9 +29,12 @@ Place, Suite 330, Boston, MA 02111-1307, USA.
 
 
 #include "yadex.h"
+#include <vector>
+
 #ifdef Y_X11
 #include <X11/Xlib.h>
 #endif
+
 #include "dialog.h"
 #include "game.h"      /* yg_picture_format */
 #include "gfx.h"
@@ -53,10 +56,10 @@ void DisplayWallTexture (hookfunc_comm_t *c)
 {
 MDirPtr  dir = 0;	// Main directory pointer to the TEXTURE* entries
 int      n;		// General counter
-i16      width, height;	// Size of the texture
-i16      npatches;	// Number of patches in the textures
-i32      numtex;	// number of texture names in TEXTURE* list
-i32      texofs;	// Offset in the wad file to the texture data
+int16_t  width, height;	// Size of the texture
+int16_t  npatches;	// Number of patches in the textures
+int32_t  numtex;	// number of texture names in TEXTURE* list
+int32_t  texofs;	// Offset in the wad file to the texture data
 char     tname[WAD_TEX_NAME + 1];	/* texture name */
 char     picname[WAD_PIC_NAME + 1];	/* wall patch name */
 bool     have_dummy_bytes;
@@ -161,7 +164,7 @@ else if (yg_texture_lumps == YGTL_TEXTURES
    dir = FindMasterDir (MasterDir, lump_name);
    if (dir != NULL)  // (Theoretically, it should always exist)
       {
-      i32 *offsets = NULL;  // Array of offsets to texture names
+      int32_t *offsets = NULL;  // Array of offsets to texture names
       const Wad_file *wf = dir->wadfile;
 
       wf->seek (dir->dir.start);
@@ -177,7 +180,7 @@ else if (yg_texture_lumps == YGTL_TEXTURES
 	 goto textures_done;
 	 }
       // Read in the offsets for texture1 names and info
-      offsets = (i32 *) GetMemory ((long) numtex * 4);
+      offsets = (int32_t *) GetMemory ((long) numtex * 4);
       wf->read_i32 (offsets, numtex);
       if (wf->error ())
 	 {
@@ -218,7 +221,7 @@ else if (yg_texture_lumps == YGTL_NORMAL
    if (dir != NULL)  // (Theoretically, it should always exist)
       {
       const Wad_file *wf = dir->wadfile;
-      i32 *offsets = NULL;  // Array of offsets to texture names
+      int32_t *offsets = NULL;  // Array of offsets to texture names
 
       wf->seek (dir->dir.start);
       if (wf->error ())
@@ -233,7 +236,7 @@ else if (yg_texture_lumps == YGTL_NORMAL
 	 goto texture1_done;
 	 }
       // Read in the offsets for texture1 names and info
-      offsets = (i32 *) GetMemory ((long) numtex * 4);
+      offsets = (int32_t *) GetMemory ((long) numtex * 4);
       wf->read_i32 (offsets, numtex);
       if (wf->error ())
 	 {
@@ -267,7 +270,7 @@ else if (yg_texture_lumps == YGTL_NORMAL
    if (texofs == 0)
       {
       const char *lump_name = "TEXTURE2";
-      i32 *offsets = NULL;  // Array of offsets to texture names
+      int32_t *offsets = NULL;  // Array of offsets to texture names
 
       dir = FindMasterDir (MasterDir, lump_name);
       if (dir != NULL)  // Doom II has no TEXTURE2
@@ -286,7 +289,7 @@ else if (yg_texture_lumps == YGTL_NORMAL
 	    goto texture2_done;
 	    }
 	 // Read in the offsets for TEXTURE2 names
-	 offsets = (i32 *) GetMemory ((long) numtex * 4);
+	 offsets = (int32_t *) GetMemory ((long) numtex * 4);
 	 wf->read_i32 (offsets, numtex);
 	 if (wf->error ())
 	    {
@@ -325,7 +328,7 @@ if (texofs == 0)
    return;
 
 // Read the info for this texture
-i32 header_ofs;
+int32_t header_ofs;
 if (yg_texture_format == YGTF_NAMELESS)
    header_ofs = texofs;
 else
@@ -338,7 +341,7 @@ dir->wadfile->read_i16 (&height);
 // FIXME
 if (have_dummy_bytes)
    {
-   i16 dummy;
+   int16_t dummy;
    dir->wadfile->read_i16 (&dummy);
    dir->wadfile->read_i16 (&dummy);
    }
@@ -348,7 +351,7 @@ dir->wadfile->read_i16 (&npatches);
 c->width    = width;
 c->height   = height;
 c->npatches = npatches;
-c->flags   |= HOOK_SIZE_VALID | HOOK_DISP_SIZE;
+c->flags   |= HOOK_SIZE_VALID | HOOK_DISP_SIZE | HOOK_MEDUSA_VALID;
 
 /* Clip the texture to size. Done *after* setting c->width and
    c->height so that the selector shows the unclipped size. */
@@ -373,13 +376,15 @@ c->img.set_opaque (false);
    made of. Unless c->npatches is non-zero, in which case we
    paste only the first maxpatches ones. */
 int maxpatches = npatches;
+c->medusa = false;
+std::vector<bool> colpatch (width);
 if (c->maxpatches != 0 && c->maxpatches <= npatches)
    maxpatches = c->maxpatches;
 for (n = 0; n < maxpatches; n++)
    {
    hookfunc_comm_t subc;
-   i16 xofs, yofs;	// Offset in texture space for the patch
-   i16 pnameind;	// Index of patch in PNAMES
+   int16_t xofs, yofs;	// Offset in texture space for the patch
+   int16_t pnameind;	// Index of patch in PNAMES
 
    dir->wadfile->seek (header_ofs + header_size + (long) n * item_size);
    dir->wadfile->read_i16 (&xofs);
@@ -387,8 +392,8 @@ for (n = 0; n < maxpatches; n++)
    dir->wadfile->read_i16 (&pnameind);
    if (have_dummy_bytes)
       {
-      i16 stepdir;
-      i16 colormap;
+      int16_t stepdir;
+      int16_t colormap;
       dir->wadfile->read_i16 (&stepdir);   // Always 1, unused.
       dir->wadfile->read_i16 (&colormap);  // Always 0, unused.
       }
@@ -436,9 +441,28 @@ for (n = 0; n < maxpatches; n++)
 #endif
    subc.name = picname;
 
-   if (LoadPicture (c->img, picname, loc, xofs, yofs, 0, 0))
+   int patchw;
+   if (LoadPicture (c->img, picname, loc, xofs, yofs, &patchw, 0))
       warn ("texture \"%.*s\": patch \"%.*s\" not found.\n",
 	  WAD_TEX_NAME, tname, WAD_PIC_NAME, picname);
+
+   // Check for potential medusa effect
+   if (! c->medusa)
+   {
+     int texcol0 = xofs;
+     int texcol1 = y_min (xofs + patchw, width);
+
+     for (int texcol = texcol0; texcol < texcol1; texcol++)
+     {
+       if (colpatch[texcol])
+       {
+	 c->medusa = true;
+	 break;
+       }
+       colpatch[texcol] = true;
+     }
+   }
+
    }
 
 // Display the texture
@@ -460,13 +484,13 @@ setviewport (0, 0, ScrMaxX, ScrMaxY, 1);
 /*
    Function to get the size of a wall texture
 */
-void GetWallTextureSize (i16 *width, i16 *height, const char *texname)
+void GetWallTextureSize (int16_t *width, int16_t *height, const char *texname)
 {
 MDirPtr  dir = 0;			// Pointer in main directory to texname
-i32    *offsets;			// Array of offsets to texture names
+int32_t *offsets;			// Array of offsets to texture names
 int      n;				// General counter
-i32      numtex;			// Number of texture names in TEXTURE*
-i32      texofs;			// Offset in wad for the texture data
+int32_t  numtex;			// Number of texture names in TEXTURE*
+int32_t  texofs;			// Offset in wad for the texture data
 char     tname[WAD_TEX_NAME + 1];	// Texture name
 
 // Offset for texture we want
@@ -514,7 +538,7 @@ else if (yg_texture_format == YGTF_NORMAL
       dir->wadfile->seek (dir->dir.start);
       dir->wadfile->read_i32 (&numtex);
       // Read in the offsets for texture1 names and info
-      offsets = (i32 *) GetMemory ((long) numtex * 4);
+      offsets = (int32_t *) GetMemory ((long) numtex * 4);
       dir->wadfile->read_i32 (offsets, numtex);
       for (n = 0; n < numtex && !texofs; n++)
 	 {
@@ -534,7 +558,7 @@ else if (yg_texture_format == YGTF_NORMAL
 	 dir->wadfile->seek (dir->dir.start);
 	 dir->wadfile->read_i32 (&numtex);
 	 // Read in the offsets for texture2 names
-	 offsets = (i32 *) GetMemory ((long) numtex * 4);
+	 offsets = (int32_t *) GetMemory ((long) numtex * 4);
 	 dir->wadfile->read_i32 (offsets);
 	 for (n = 0; n < numtex && !texofs; n++)
 	    {

@@ -8,6 +8,7 @@
 
 # FIXME lots of things are missing, some are even wrong.
 
+flat_format     hexen
 level_format    hexen
 level_name      map01
 picture_format  normal 

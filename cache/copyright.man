@@ -1,6 +1,6 @@
 Parts copyright Andrew Apted 2000-2001, GNU GPL v2
 .br
-Parts copyright André Majorel 1997-2003, GNU GPL v2
+Parts copyright André Majorel 1997-2005, GNU GPL v2
 .br
 Parts copyright Matthew W. Miller 2000, GNU GPL v2
 .br

@@ -11,7 +11,7 @@ This file is part of Yadex.
 Yadex incorporates code from DEU 5.21 that was put in the public domain in
 1994 by Raphaël Quinet and Brendon Wyber.
 
-The rest of Yadex is Copyright © 1997-2003 André Majorel and others.
+The rest of Yadex is Copyright © 1997-2005 André Majorel and others.
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -52,7 +52,7 @@ extern const char _bitvec_msg1[];
 class bitvec_c
    {
    public :
-      bitvec_c (size_t n_elements)
+      bitvec_c (size_t n_elements) : _n_elements (0), a (0)
          { 
 	 a = (char *) GetMemory (n_elements / CHAR_BIT + 1);
  	 memset (a, 0, n_elements / CHAR_BIT + 1);
@@ -102,6 +102,8 @@ class bitvec_c
          }
 
    private :
+      bitvec_c (const bitvec_c&);		// Too lazy to implement it
+      bitvec_c& operator= (const bitvec_c&);	// Too lazy to implement it
       size_t _n_elements;
       char *a;
    };

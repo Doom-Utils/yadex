@@ -4,7 +4,7 @@
 #	AYM 2002-09-15
 #
 
-# This file is copyright André Majorel 2002-2003.
+# This file is copyright André Majorel 2002-2005.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of version 2 of the GNU General Public License as published by the
@@ -24,35 +24,70 @@ set -e
 APPNAME=yadex
 VERSION=`cat VERSION`
 
+AWK=awk
 CC=
+CFLAGS=-O
 CXX=
+CXXFLAGS=-O
 HAVE_GETTIMEOFDAY=
+HAVE_INTTYPES=
 HAVE_NANOSLEEP=
 HAVE_SNPRINTF=
 HAVE_USLEEP=
-INTERFACE=x11				# "bgi" or "x11"
-PLATFORM=unix				# "dos" or "unix"
+INTERFACE=x11			# "bgi" or "x11" (only "x11" is maintained)
+INTTYPES=
+LDFLAGS=
+PLATFORM=unix			# "dos" or "unix" (only "unix" is maintained)
 PREFIX=/usr/local
+X11INC=				# If set, need to compile with -I$(X11INC)
+X11LIB=				# If set, need to link with -L$(X11LIB)
+
+tmpdir="$TMPDIR"
+[ -n "$tmpdir" ] || tmpdir=/tmp
+cbasename=${APPNAME}_$$.c
+cxxbasename=${APPNAME}_$$.cc
+obasename=${APPNAME}_$$.o
+ebasename=${APPNAME}_$$
+cout=${APPNAME}_$$.out
+cerr=${APPNAME}_$$.err
 
 
 #
-#	check - perform a test
+#	check - perform a test (given C code compiles and links)
 #
 check () {
-  cdir=/tmp
-  cbasename=${APPNAME}_$$.c
-  cout=${APPNAME}_$$.out
-
-  printf '%s' "$3" >$cdir/$cbasename
+  printf '%s' "$3" >"$tmpdir/$cbasename"
   printf 'checking %s...' "$1"
-  if (cd $cdir && $CC -c $cbasename >$cout 2>&1)
+  if (cd "$tmpdir"
+     "$CC" $CFLAGS -o $obasename -c $cbasename
+     "$CC" $LDFLAGS -o $ebasename $obasename) >"$tmpdir/$cout" 2>&1
   then
     echo " yes"
     eval "$2=1"
     return 0
   else
     echo " no"
-    sed 's/^/> /' $cdir/$cout
+    sed 's/^/> /' "$tmpdir/$cout"
+    eval "$2="
+    return 1
+  fi
+}
+
+
+#
+#	checkxx - perform a test (given C++ code compiles)
+#
+checkxx () {
+  printf '%s' "$3" >"$tmpdir/$cbasename"
+  printf 'checking %s...' "$1"
+  if (cd "$tmpdir" && "$CXX" $CXXFLAGS -c $cbasename >$cout 2>&1)
+  then
+    echo " yes"
+    eval "$2=1"
+    return 0
+  else
+    echo " no"
+    sed 's/^/> /' "$tmpdir/$cout"
     eval "$2="
     return 1
   fi
@@ -82,7 +117,6 @@ genc () {
     sed 's/\\/\\\\/g; s/"/\\"/g; s/^.*/  "&",/;' $BUILDDIR/config.share
     echo '  0'
     echo '};'
-    echo
   ) >$pathname
 }
 
@@ -92,7 +126,7 @@ genc () {
 #
 genbool () {
   name=$1
-  if [ -n "`eval echo \\$HAVE_"$name"`" ]; then
+  if [ -n "`eval echo \\$HAVE_$name`" ]; then
     echo "#define Y_$name"
   else
     echo "//#define Y_$name"
@@ -133,16 +167,26 @@ genh () {
 	exit 1;;
     esac
     genbool GETTIMEOFDAY
+    genbool INTTYPES
     genbool NANOSLEEP
     genbool SNPRINTF
     genbool USLEEP
+    [ -z "$INTTYPES" ] || printf '\n%s\n' "$INTTYPES"
     echo
     echo 'extern const char *yadex_etc_path[];'
     echo 'extern const char *yadex_share_path[];'
-    echo
   ) >$pathname
 }
 
+
+#
+#	fatal - abort with an error message to stderr
+#
+fatal ()
+{
+  printf 'configure: %s\n' "$@" >&2
+  exit 1
+}
 
 
 #
@@ -152,19 +196,21 @@ while [ "$#" -ge 1 ]
 do
   case "$1" in
     --help)
-      echo "Usage:"
-      echo "  configure --help"
-      echo "  configure [--prefix path] [--cc string] [--cxx string]"
+      cat <<EOF
+Usage:
+  configure --help
+  configure [--prefix path]
+	    [--cc string] [--cflags string]
+	    [--cxx string] [--cxxflags string]
+	    [--x-includes path] [--x-libraries path]
+	    [--ldflags strings]
+EOF
       exit 0
       ;;
 
     --cc)
       shift
-      if [ "$#" -lt 1 ]
-      then
-	echo "configure: --cc requires an argument" 1>&2
-	exit 1
-      fi
+      [ "$#" -ge 1 ] || fatal "--cc requires an argument"
       CC="$1"
       ;;
 
@@ -172,13 +218,19 @@ do
       CC=`expr "x$1" : 'x--cc=\(.*\)'`
       ;;
 
+    --cflags)
+      shift
+      [ "$#" -ge 1 ] || fatal "--cflags requires an argument"
+      CFLAGS="$1"
+      ;;
+
+    --cflags=*)
+      CFLAGS=`expr "x$1" : 'x--cflags=\(.*\)'`
+      ;;
+
     --cxx)
       shift
-      if [ "$#" -lt 1 ]
-      then
-	echo "configure: --cxx requires an argument" 1>&2
-	exit 1
-      fi
+      [ "$#" -ge 1 ] || fatal "--cxx requires an argument"
       CXX="$1"
       ;;
 
@@ -186,18 +238,54 @@ do
       CXX=`expr "x$1" : 'x--cxx=\(.*\)'`
       ;;
 
+    --cxxflags)
+      shift
+      [ "$#" -ge 1 ] || fatal "--cxxflags requires an argument"
+      CXXFLAGS="$1"
+      ;;
+
+    --cxxflags=*)
+      CXXFLAGS=`expr "x$1" : 'x--cxxflags=\(.*\)'`
+      ;;
+
+    --ldflags)
+      shift
+      [ "$#" -ge 1 ] || fatal "--ldflags requires an argument"
+      LDFLAGS="$1"
+      ;;
+
+    --ldflags=*)
+      LDFLAGS=`expr "x$1" : 'x--ldflags=\(.*\)'`
+      ;;
+
     --prefix)
       shift
-      if [ "$#" -lt 1 ]
-      then
-	echo "configure: --prefix requires an argument" 1>&2
-	exit 1
-      fi
+      [ "$#" -ge 1 ] || fatal "--prefix requires an argument"
       PREFIX="$1"
       ;;
 
     --prefix=*)
       PREFIX=`expr "x$1" : 'x--prefix=\(.*\)'`
+      ;;
+
+    --x-includes)
+      shift
+      [ "$#" -ge 1 ] || fatal "--x-includes requires an argument"
+      X11INC="$1"
+      ;;
+
+    --x-includes=*)
+      X11INC=`expr "x$1" : 'x--x-includes=\(.*\)'`
+      ;;
+
+    --x-libraries)
+      shift
+      [ "$#" -ge 1 ] || fatal "--x-libraries requires an argument"
+      X11LIB="$1"
+      ;;
+
+    --x-libraries=*)
+      X11LIB=`expr "x$1" : 'x--x-libraries=\(.*\)'`
       ;;
 
     -*)
@@ -243,7 +331,7 @@ else
   CC=gcc
   if type $CC >/dev/null 2>&1
   then
-    :
+    CFLAGS="$CFLAGS -Wall"
   else
     CC=c89
     if type $CC >/dev/null 2>&1
@@ -265,22 +353,24 @@ fi
 echo " $CC"
 
 #
-#	Does the C compiler actually work ?
+#	does the C compiler actually work ?
 #
-cdir=/tmp
-cbasename=${APPNAME}_$$.c
-cout=${APPNAME}_$$.out
 printf "checking whether the C compiler works..."
-echo 'int n;' >$cdir/$cbasename
-if (cd $cdir && $CC -c $cbasename >$cout 2>&1)
-then
-  echo " yes"
-else
-  echo " no"
-  sed 's/^/> /' $cdir/$cout
-  echo "error: looks like the C compiler is not working" 1>&2
-  exit 1
-fi
+(
+  cd "$tmpdir"
+  echo 'main (int argc, char *argv[]) { return 0; }' >$cbasename
+  if ("$CC" $CFLAGS -o $obasename -c $cbasename
+      "$CC" $LDFLAGS -o $ebasename $obasename
+      ./$ebasename) >$cout 2>&1
+  then
+    echo " yes"
+  else
+    echo " no"
+    sed 's/^/> /' $cout
+    echo "error: looks like the C compiler is not working" 1>&2
+    exit 1
+  fi
+)
 
 #
 #	Do we have gettimeofday() ?
@@ -351,7 +441,7 @@ else
   CXX=g++
   if type $CXX >/dev/null 2>&1
   then
-    :
+    CXXFLAGS="$CXXFLAGS -Wall"
   else
     CXX=c++
     if type $CXX >/dev/null 2>&1
@@ -375,26 +465,307 @@ echo " $CXX"
 #
 #	Does the C++ compiler actually work ?
 #
-cdir=/tmp
-cbasename=${APPNAME}_$$.cc
-cout=${APPNAME}_$$.out
 printf "checking whether the C++ compiler works..."
-echo 'int n;' >$cdir/$cbasename
-if (cd $cdir && $CXX -c $cbasename >$cout 2>&1)
+(
+  cd "$tmpdir"
+  echo 'main (int argc, char *argv[]) { return 0; }' >$cbasename
+  if ("$CXX" $CXXFLAGS -o $obasename -c $cbasename
+      "$CXX" $LDFLAGS -o $ebasename $obasename
+      ./$ebasename) >$cout 2>&1
+  then
+    echo " yes"
+  else
+    echo " no"
+    sed 's/^/> /' $cout
+    echo "error: looks like the C++ compiler is not working" 1>&2
+    exit 1
+  fi
+)
+
+#
+#	Do we have inttypes.h ?
+#
+printf 'checking for inttypes.h...'
+if
+(
+  cd "$tmpdir"
+  cat <<\EOF >$cxxbasename
+#include <inttypes.h>
+#include <stdio.h>
+
+#define CHECKSIZE(type, size)						\
+do									\
+{									\
+  printf ("%s %u\n", #type, (unsigned) sizeof (type));			\
+  if (sizeof (type) != (size))						\
+  {									\
+    fflush (stdout);							\
+    fprintf (stderr, "inttypes: size of %s is %u, expected %u\n",	\
+      #type, (unsigned) sizeof (type), (unsigned) (size));		\
+    status = 1;								\
+  }									\
+}									\
+while (0)
+
+int main (int argc, char *argv[])
+{
+  int status = 0;
+
+  CHECKSIZE (int8_t,   1);
+  CHECKSIZE (int16_t,  2);
+  CHECKSIZE (int32_t,  4);
+  CHECKSIZE (uint8_t,  1);
+  CHECKSIZE (uint16_t, 2);
+  CHECKSIZE (uint32_t, 4);
+  return status;
+}
+EOF
+  "$CXX" $CXXFLAGS -o $obasename -c $cxxbasename
+  "$CXX" $LDFLAGS -o $ebasename $obasename
+  ./$ebasename >$cout 2>&1
+)
+then
+  echo " yes"
+  HAVE_INTTYPES=1
+else
+  echo " no"
+fi
+
+#
+#	If we don't have <inttypes.h>, make our own definitions for
+#	{int,uint}{8,16,32}_t
+#
+if [ -z "$HAVE_INTTYPES" ]
+then
+  printf 'guessing at appropriate types for {int,uint}{8,16,32}_t...'
+  if
+  (
+    cd "$tmpdir"
+    cat <<\EOF >$cxxbasename
+#include <assert.h>
+#include <stdio.h>
+
+int main (int argc, char *argv[])
+{
+  assert (sizeof (signed char) == 1);
+  puts ("typedef signed char    int8_t;");
+  assert (sizeof (short) == 2);
+  puts ("typedef signed short   int16_t;");
+  if (sizeof (long) == 4)
+    puts ("typedef long           int32_t;");
+  else if (sizeof (int) == 4)
+    puts ("typedef int            int32_t;");
+  else
+    fprintf (stderr,
+      "no 32-bit signed type (sizeof (long) = %u, sizeof (int) = %u)\n",
+      (unsigned) sizeof (long), (unsigned) sizeof (int));
+
+  assert (sizeof (unsigned char) == 1);
+  puts ("typedef unsigned char  uint8_t;");
+  assert (sizeof (unsigned short) == 2);
+  puts ("typedef signed short   uint16_t;");
+  if (sizeof (unsigned long) == 4)
+    puts ("typedef unsigned long  uint32_t;");
+  else if (sizeof (unsigned int) == 4)
+    puts ("typedef unsigned int   uint32_t;");
+  else
+    fprintf (stderr,
+      "no 32-bit unsigned type (sizeof (unsigned long) = %u, sizeof (unsigned)"
+      " = %u)\n",
+      (unsigned) sizeof (unsigned long), (unsigned) sizeof (unsigned int));
+  return 0;
+}
+EOF
+    "$CXX" $CXXFLAGS -o $obasename -c $cxxbasename
+    "$CXX" $LDFLAGS -o $ebasename $obasename
+    ./$ebasename >$cout 2>$cerr
+  )
+  then
+    echo " success"
+    INTTYPES=`cat "$tmpdir/$cout"`
+  else
+    echo " failure"
+    cat "$tmpdir/$cerr"
+    echo 'Report this bug to the maintainer!'
+    exit 1
+  fi
+fi
+
+#
+#	Locate the X headers
+#
+printf "checking for the X11 headers..."
+if [ -n "$X11INC" ]
+then
+  echo " using user-supplied value: $X11INC"
+else
+  cat <<\EOF >"$tmpdir/$cbasename"
+#include <X11/Xlib.h>
+int main (int argc, char *argv[])
+{
+  return XOpenDisplay (0) == 0 ? 0 : 1;
+}
+EOF
+  if (cd "$tmpdir"; "$CC" $CFLAGS -o $obasename -c $cbasename >$cout 2>&1)
+  then
+    echo " yes"
+    X11INC=
+  else
+    # List lifted from GNU autoconf
+    for dir in				\
+      /usr/include			\
+      /usr/X11/include			\
+      /usr/X11R6/include		\
+      /usr/X11R5/include		\
+      /usr/X11R4/include		\
+					\
+      /usr/include/X11			\
+      /usr/include/X11R6		\
+      /usr/include/X11R5		\
+      /usr/include/X11R4		\
+					\
+      /usr/local/X11/include		\
+      /usr/local/X11R6/include		\
+      /usr/local/X11R5/include		\
+      /usr/local/X11R4/include		\
+					\
+      /usr/local/include/X11		\
+      /usr/local/include/X11R6		\
+      /usr/local/include/X11R5		\
+      /usr/local/include/X11R4		\
+					\
+      /usr/X386/include			\
+      /usr/x386/include			\
+      /usr/XFree86/include/X11		\
+					\
+      /usr/include			\
+      /usr/local/include		\
+      /usr/unsupported/include		\
+      /usr/athena/include		\
+      /usr/local/x11r5/include		\
+      /usr/lpp/Xamples/include		\
+					\
+      /usr/openwin/include		\
+      /usr/openwin/share/include	\
+      ;
+    do
+      [ -f "$dir/X11/Xlib.h" ] || continue
+      echo " yes (in $dir)"
+      X11INC="$dir"
+      break;
+    done
+    if [ -z "$X11INC" ]
+    then
+      echo " no"
+      fatal "X11 headers not found, install them or supply --x-includes"
+    fi
+  fi
+fi
+
+#
+#	Locate the X libraries
+#
+printf "checking for the X11 libraries..."
+if [ -n "$X11LIB" ]
+then
+  echo " using user-supplied value: $X11LIB"
+else
+  cat <<\EOF >"$tmpdir/$cbasename"
+#include <X11/Xlib.h>
+int main (int argc, char *argv[])
+{
+  return XOpenDisplay (0) == 0 ? 0 : 1;
+}
+EOF
+  o=
+  [ -z "$X11INC" ] || o="-I$X11INC"
+  if (cd "$tmpdir"
+      "$CC" $CFLAGS $o -o $obasename -c $cbasename
+      "$CC" $LDFLAGS -o $ebasename $obasename) >"$tmpdir/$cout" 2>&1
+  then
+    echo " yes"
+    X11LIB=
+  else
+    # List lifted from GNU autoconf
+    for dir in			\
+      /usr/X11/lib		\
+      /usr/X11R6/lib		\
+      /usr/X11R5/lib		\
+      /usr/X11R4/lib		\
+				\
+      /usr/lib/X11		\
+      /usr/lib/X11R6		\
+      /usr/lib/X11R5		\
+      /usr/lib/X11R4		\
+				\
+      /usr/local/X11/lib	\
+      /usr/local/X11R6/lib	\
+      /usr/local/X11R5/lib	\
+      /usr/local/X11R4/lib	\
+				\
+      /usr/local/lib/X11	\
+      /usr/local/lib/X11R6	\
+      /usr/local/lib/X11R5	\
+      /usr/local/lib/X11R4	\
+				\
+      /usr/X386/lib		\
+      /usr/x386/lib		\
+      /usr/XFree86/lib/X11	\
+				\
+      /usr/lib			\
+      /usr/local/lib		\
+      /usr/unsupported/lib	\
+      /usr/athena/lib		\
+      /usr/local/x11r5/lib	\
+      /usr/lpp/Xamples/lib	\
+      /lib/usr/lib/X11		\
+				\
+      /usr/openwin/lib		\
+      /usr/openwin/share/lib	\
+      ;
+    do
+      [ -f "$dir/libX11.a"  ] ||
+      [ -f "$dir/libX11.so" ] ||
+      [ -f "$dir/libX11.sl" ] || continue
+      echo " yes (in $dir)"
+      X11LIB="$dir"
+      break;
+    done
+    if [ -z "$X11LIB" ]
+    then
+      echo " no"
+      fatal "X11 libraries not found, install them or supply --x-libraries"
+    fi
+  fi
+fi
+
+#
+#	Locate a POSIX-compatible awk(1)
+#
+printf "checking for a standard-compliant awk..."
+if (cd "$tmpdir"
+    echo a | $AWK '{ print sub(/^a/, "b") $0 }' >$cout 2>&1
+    [ "x`cat $tmpdir/$cout`" = "x1b" ])
 then
   echo " yes"
 else
-  echo " no"
-  sed 's/^/> /' $cdir/$cout
-  echo "error: looks like the C++ compiler is not working" 1>&2
-  exit 1
+  AWK=/usr/xpg4/bin/awk
+  if (cd "$tmpdir"
+      echo a | $AWK '{ print sub(/^a/, "b") $0 }' >$cout 2>&1
+      [ "x`cat $tmpdir/$cout`" = "x1b" ])
+  then
+    echo " yes ($AWK)"
+  else
+    echo " no"
+    fatal "no suitable awk found, is your PATH set right?"
+  fi
 fi
 
 #
 #	Create the directory where the build-specific files go
 #
-SYSTEM_RAW="`uname -n`_`uname -a | cksum`"
-SYSTEM="`echo "$SYSTEM_RAW" | tr -dc '[:alnum:]._-'`"
+SYSTEM_RAW=`uname -n`_`uname -a | cksum`
+SYSTEM=`echo "$SYSTEM_RAW" | tr -dc '[:alnum:]._-'`
 BUILDDIR=obj/$SYSTEM
 echo "build directory is $BUILDDIR"
 mkdir -p $BUILDDIR
@@ -446,20 +817,27 @@ echo generating $BUILDDIR/Makefile.config
 (
   echo "# DO NOT EDIT -- generated by ./configure"
   echo
+  echo "AWK               = $AWK"
   echo "BINDIR            = $BINDIR"
   echo "CC                = $CC"
+  echo "CFLAGS            = $CFLAGS"
   echo "CXX               = $CXX"
+  echo "CXXFLAGS          = $CXXFLAGS"
   echo "ETCDIR            = $ETCDIR" | sed "s/%v/$VERSION/g"
   echo "ETCDIRNV          = $ETCDIRNV"
   echo "HAVE_GETTIMEOFDAY = $HAVE_GETTIMEOFDAY"
+  echo "HAVE_INTTYPES     = $HAVE_INTTYPES"
   echo "HAVE_NANOSLEEP    = $HAVE_NANOSLEEP"
   echo "HAVE_SNPRINTF     = $HAVE_SNPRINTF"
   echo "HAVE_USLEEP       = $HAVE_USLEEP"
   echo "INTERFACE         = $INTERFACE"
+  echo "LDFLAGS           = $LDFLAGS"
   echo "MANDIR            = $MANDIR"
   echo "PLATFORM          = $PLATFORM"
   echo "SHAREDIR          = $SHAREDIR" | sed "s/%v/$VERSION/g"
   echo "SHAREDIRNV        = $SHAREDIRNV"
+  echo "X11INC            = $X11INC"
+  echo "X11LIB            = $X11LIB"
 ) >$BUILDDIR/Makefile.config
 
 #

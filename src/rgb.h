@@ -10,7 +10,7 @@ This file is part of Yadex.
 Yadex incorporates code from DEU 5.21 that was put in the public domain in
 1994 by Raphaël Quinet and Brendon Wyber.
 
-The rest of Yadex is Copyright © 1997-2003 André Majorel and others.
+The rest of Yadex is Copyright © 1997-2005 André Majorel and others.
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -39,14 +39,14 @@ class rgb_c
          }
 
       // Must be defined before rbg_c (r, g, b)
-      void set (u8 red, u8 green, u8 blue)
+      void set (uint8_t red, uint8_t green, uint8_t blue)
          {
          r = red;
          g = green;
          b = blue;
          }
 
-      rgb_c (u8 red, u8 green, u8 blue)
+      rgb_c (uint8_t red, uint8_t green, uint8_t blue)
          {
          set (red, green, blue);
          }
@@ -61,9 +61,9 @@ class rgb_c
          return abs (rgb2.r - r) + abs (rgb2.g - g) + abs (rgb2.b - b);
          }
 
-      u8 r;
-      u8 g;
-      u8 b;
+      uint8_t r;
+      uint8_t g;
+      uint8_t b;
    };
 
 

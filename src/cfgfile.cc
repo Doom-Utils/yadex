@@ -9,7 +9,7 @@ This file is part of Yadex.
 Yadex incorporates code from DEU 5.21 that was put in the public domain in
 1994 by Raphaël Quinet and Brendon Wyber.
 
-The rest of Yadex is Copyright © 1997-2003 André Majorel.
+The rest of Yadex is Copyright © 1997-2005 André Majorel.
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -32,6 +32,7 @@ Place, Suite 330, Boston, MA 02111-1307, USA.
 #include <sys/stat.h>
 
 #include "cfgfile.h"
+#include "game.h"
 #include "gfx.h"
 #include "help1.h"
 #include "levels.h"
@@ -312,6 +313,13 @@ opt_desc_t options[] =		// Description of the command line options
     "Game",
     &Game },
 
+  { 0,
+    "G",
+    OPT_STRINGPTRACC,
+    0,
+    ".ygd search path",
+    &ygd_user_path },
+
   { "grid_max",
     0,
     OPT_INTEGER,
@@ -333,6 +341,13 @@ opt_desc_t options[] =		// Description of the command line options
     "Min grid step (pixels)",
     &grid_pixels_min },
 
+  { "grid_64",
+    0,
+    OPT_BOOLEAN,
+    0,
+    "Highlight the 64-unit grid",
+    &grid_64 },
+
   { "height",
     "h",
     OPT_WINDIM,
@@ -349,7 +364,7 @@ opt_desc_t options[] =		// Description of the command line options
 
   { "idle_sleep_ms",
     0,
-    OPT_INTEGER,
+    OPT_UNSIGNED,
     0,
     "ms to sleep before XPending()",
     &idle_sleep_ms },
@@ -1284,8 +1299,6 @@ void dump_command_line_options (FILE *fd)
 
   for (o = options; o->opt_type != OPT_END; o++)
   {
-    if (! o->short_name)
-      continue;
 #if ! defined Y_BGI
     if (o->flags && strchr (o->flags, 'b'))
       continue;

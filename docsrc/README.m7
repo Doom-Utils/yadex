@@ -19,23 +19,36 @@ PREREQUISITES
     - hypot() and either nanosleep() or usleep().
 
 BUILDING AND INSTALLING
-    To install in /usr/local :
+    To compile with the default options and install in /usr/local :
 
                     ./configure
                     make
                     su -c 'make install'
 
-    To install somewhere else, for example in ~/yadex :
+    To deviate from the defaults, you can pass ./configure one or more
+    of the following options :
 
-                    ./configure --prefix ~/yadex
-                    make
-                    make install
+        --cc           C compiler (default: auto-detected gcc/c89/cc)
+        --cxx          C++ compiler (default: auto-detected g++/c++/cxx)
+        --cflags       C compiler flags (default -O)
+        --cxxflags     C++ compiler flags (default -O)
+        --ldflags      Linker flags (default none)
+        --prefix       Installation path (default /usr/local)
+	--x-includes   Path to the X11 headers (default: auto-detected)
+	--x-libraries  Path to the X11 libraries (default: auto-detected)
 
-    To force the use of a particular C/C++ compiler :
+    For example, to compile in 64-bit mode with GCC 3.3 and install in
+    ~/yadex, you could do something along these lines :
 
-                    ./configure --cc gcc-3.3 --cxx g++-3.3 
-                    make
-                    make install
+                ./configure                            \
+                    --cc       gcc-3.3                 \
+                    --cflags   '-m64 -O2'              \
+                    --cxx      g++-3.3                 \
+                    --cxxflags '-m64 -O2 -fpermissive' \
+                    --ldflags  -m64                    \
+                    --prefix   ~/yadex
+                make
+                make install
 
     Got problems getting Yadex to compile ? See doc/faq.html.
     Got no problem ? Read the FAQ anyway. See doc/faq.html.
@@ -89,12 +102,6 @@ DOCUMENTATION
     If you're upgrading from a previous version of Yadex, please read
     carefully CHANGES.
 
-STATUS
-    Yadex is work in progress. It still lacks important features like a
-    better interface, cut-and-paste, undo/redo, support for Boom and
-    many more. I know. They will come faster if you help. The source
-    code is a horrible mess. I'm not proud of it. Be indulgent.
-
 LEGAL
     1. Yadex
 
@@ -112,7 +119,8 @@ LEGAL
 
     You should have received a copy of the GNU General Public License
     along with this program; if not, write to the Free Software
-    Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+    Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
+    02111-1307, USA.
 
     2. Atclib
 

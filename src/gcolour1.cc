@@ -20,7 +20,7 @@ This file is part of Yadex.
 Yadex incorporates code from DEU 5.21 that was put in the public domain in
 1994 by Raphaël Quinet and Brendon Wyber.
 
-The rest of Yadex is Copyright © 1997-2003 André Majorel and others.
+The rest of Yadex is Copyright © 1997-2005 André Majorel and others.
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -56,7 +56,7 @@ Place, Suite 330, Boston, MA 02111-1307, USA.
 pcolour_t *alloc_game_colours (int playpalnum)
 {
 MDirPtr dir;
-u8	*dpal;
+uint8_t	*dpal;
 pcolour_t *game_colours = 0;
 
 dir = FindMasterDir (MasterDir, "PLAYPAL");
@@ -74,7 +74,7 @@ if (playpalnum < 0 || playpalnum >= playpal_count)
    playpalnum = 0;
    }
 
-dpal = (u8 *) GetFarMemory (3 * DOOM_COLOURS);
+dpal = (uint8_t *) GetFarMemory (3 * DOOM_COLOURS);
 dir->wadfile->seek (dir->dir.start);
 if (dir->wadfile->error ())
    {
@@ -105,9 +105,9 @@ __int__ (0x10);
 rgb_c rgb_values[DOOM_COLOURS];
 for (size_t n = 0; n < DOOM_COLOURS; n++)
    {
-   rgb_values[n].r = (u8) dpal[3 * n];
-   rgb_values[n].g = (u8) dpal[3 * n + 1];
-   rgb_values[n].b = (u8) dpal[3 * n + 2];
+   rgb_values[n].r = (uint8_t) dpal[3 * n];
+   rgb_values[n].g = (uint8_t) dpal[3 * n + 1];
+   rgb_values[n].b = (uint8_t) dpal[3 * n + 2];
    }
 game_colours = alloc_colours (rgb_values, DOOM_COLOURS);
 
@@ -144,50 +144,3 @@ void free_game_colours (pcolour_t *game_colours)
 free_colours (game_colours, DOOM_COLOURS);
 }
 
-
-
-/* This is how I used to calculate
-   the physical colour numbers.
-   Works only on TrueColor/DirectColor visuals. */
-
-#if 0
-/* FIXME this is a gross hack */
-for (n = 0; n < DOOM_COLOURS; n++)
-   {
-   xpv_t r = dpal[3*n];
-   xpv_t g = dpal[3*n+1];
-   xpv_t b = dpal[3*n+2];
-   if (win_vis_class == DirectColor || win_vis_class == TrueColor)
-      {
-      xpv_t r_scaled, g_scaled, b_scaled;
-      if (win_r_ofs + win_r_bits < 8)
-	 r_scaled = r >> (8 - (win_r_ofs + win_r_bits));
-      else
-	 r_scaled = r << (win_r_ofs + win_r_bits - 8) & win_r_mask;
-      if (win_g_ofs + win_g_bits < 8)
-	 g_scaled = g >> (8 - (win_g_ofs + win_g_bits));
-      else
-	 g_scaled = g << (win_g_ofs + win_g_bits - 8) & win_g_mask;
-      if (win_b_ofs + win_b_bits < 8)
-	 b_scaled = b >> (8 - (win_b_ofs + win_b_bits));
-      else
-	 b_scaled = b << (win_b_ofs + win_b_bits - 8) & win_b_mask;
-      game_colour[n] = r_scaled | g_scaled | b_scaled;
-      }
-   else if (win_vis_class== PseudoColor || win_vis_class == StaticColor)
-      game_colour[n] = n;  /* Ugh! */
-   else if (win_vis_class == GrayScale || win_vis_class == StaticGray)
-      {
-      game_colour[n] = (r + g + b) / 3;
-      if (win_depth < 8)
-	 game_colour[n] >>= 8 - win_depth;
-      else
-	 game_colour[n] <<= win_depth - 8;
-      }
-   // printf ("%02X %08lX", n, (unsigned long) game_colour[n]);
-   // if (n % 6 == 5)
-   //    putchar ('\n');
-   // else
-   //    printf ("  ");
-   }
-#endif  /* #if 0 */

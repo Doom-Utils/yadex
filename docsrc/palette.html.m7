@@ -42,7 +42,7 @@ you know, for example&nbsp;:
 <dd>Move cursor to beginning of current line.
 
 <dt>[<kbd>End</kbd>]
-<br>[<kbd>$</kbd>]
+<br>[<kbd>$$</kbd>]
 <dd>Move cursor to end of current line.
 
 <dt>[<kbd>Return</kbd>]

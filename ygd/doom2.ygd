@@ -9,6 +9,7 @@
 # EDGE stuff courtesy of Andrew Apted. Mistakes courtesy of AYM.
 # Boom stuff courtesy of Andrew Apted, 2000-09-20.
 
+flat_format     normal
 level_format    doom
 level_name      map01
 picture_format  normal

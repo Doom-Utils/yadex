@@ -8,6 +8,7 @@
 
 # With help from Barry Mead.
 
+flat_format     heretic
 level_format    doom
 level_name      e1m1
 picture_format  normal
