@@ -533,7 +533,7 @@ distdiff:
 	scripts/process docsrc/README.diff >$(TMPDIFF)/README
 	tar -xzf ../yadex-arc/$(ARCPREV).tar.gz -C $(TMP0)
 	export ARCDIR=$$PWD/$(ARCHIVE); cd $(TMPPREV)\
-	  && diff -c -N -r . $$ARCDIR >$(TMPDIFF)/$(ARCDIFF) || true
+	  && diff -uNr . $$ARCDIR >$(TMPDIFF)/$(ARCDIFF) || true
 	cd $(TMPDIFF)/.. && tar -czf $(ARCDIFF).tar.gz $(ARCDIFF)
 	@echo ">> Verifying the diff"
 	cd $(TMPPREV) && patch -i $(TMPDIFF)/$(ARCDIFF) -p 0
@@ -772,6 +772,24 @@ changes/changes.html: changes/*.log log2html
 changes: changes/changes.html
 	lynx -dump $< >CHANGES
 
+.PHONY: man
+man: doc/yadex.6
+	man -l $^
+
+.PHONY: dvi
+dvi: doc/yadex.dvi
+	xdvi $^ 
+
+doc/yadex.dvi: doc/yadex.6
+	groff -Tdvi -man $^ >$@
+
+.PHONY: ps
+ps: doc/yadex.ps
+	gv $^
+
+doc/yadex.ps: doc/yadex.6
+	groff -Tps -man $^ >$@
+	
 
 # Generate the doc by filtering them through scripts/process
 

@@ -851,14 +851,25 @@ I use the Whitesmiths style with an indent width of 3.
 <li>indent width is 3 spaces,
 <li>line width limited to 80 characters,
 <li>the braces have the same indentation as the text they contain,
+<li>the body of a function is not indented.
+</ul>
+
+Whitespace&nbsp;:
+<ul>
 <li>one space between the name of the function/statement and the "(",
 <li>no space between the "(" and the first argument,
 <li>no space between the end of the argument and the "," or ";",
 <li>one space between the "," or ";" and the next argument,
 <li>no space between the end of the argument and the ")",
 <li>no space between the ")" and the ";",
-<li>the body of a function is not indented.
+<li>no space between the name of a variable and a "<code>[</code>",
+<li>no space between a "<code>[</code>" and the character that follows,
+<li>no space between a "<code>]</code>" and the character that precedes,
+<li>one space on either side of binary operators,
+<li>the dereferencing operator ("<code>*</code>") has a space to the left but
+  no space to the right.
 </ul>
+
 <p>
 Example :
 <p>
@@ -914,11 +925,61 @@ use $c u16, $c i32, etc.
 <li>Prototype functions that take no args with "<code>foo (void);</code>",
  not "<code>foo ();</code>" (author's note : this is C-ish !).
 <li>Try to avoid buffer overruns
-by using $c snprintf() instead of $c sprintf(),
+by using $c y_snprintf() instead of $c sprintf(),
 $c al_scps() instead of $c strcpy(),
 $c al_saps() instead of $c strcat(), etc.
 </ul>
 
+			<h3>Functions to avoid</h3>
+
+<dl>
+  <dt><b><code>sprintf()</code></b>
+  <dd>Prone to buffer overruns. Use <code>y_snprintf()</code> instead, as it
+    uses <code>snprintf()</code> if it's available, and falls back on
+    <code>sprintf()</code> if it isn't.
+
+  <dt><b><code>snprintf()</code></b>
+  <dd>Not supported widely enough yet. Use <code>y_snprintf()</code> instead.
+    If <code>snprintf()</code> is available, it uses it (well, at least that's
+    what it's meant to do). If not, it falls back on <code>sprintf()</code>.
+
+  <dt><b><code>stricmp()</code></b> and <b><code>strcasecmp()</code></b>
+  <dd>Not portable. Use <code>y_stricmp()</code> instead.
+    <code>y_strnicmp()</code> is available as well.
+
+</dl>
+
+			<h3>Use the helpers</h3>
+
+<dl>
+  <dt><b>Converting an ASCII digit into its value</b>
+  <dd>Don't subtract <code>'0'</code>. Use <code>dectoi()</code> or
+    <code>hextoi()</code>.
+
+  <dt><b>Testing whether a value is comprised between two bounds</b>
+  <dd>Instead of <code>v &gt;= min &amp;&amp; v &lt;= max</code> you can use
+    <code>within (v, min, max)</code>. It's inlined. The inverse test is
+    provided by <code>outside()</code>.
+
+  <dt><b>Comparing two file names</b>
+  <dd>If you come from a Unix background, you'll be tempted to use
+    <code>strcmp()</code>. If you come from a DOS background, you'll be tempted
+    to use <code>y_stricmp()</code>. Neither is correct. Use
+    <code>fncmp()</code>. In its current implementation, it's not correct
+    either but it gets you a little bit closer. If only because it helps you
+    to say what you mean.
+
+  <dt><b>Telling whether is file name is absolute</b>
+  <dd>This is not needed in many places. But when it is, use
+    <code>is_absolute()</code>.
+
+  <dt><b>Comparing two lump names</b>
+  <dd>The code is peppered with <code>y_strnicmp(name1, name2,
+    WAD_NAME)</code>. This should of course be replaced by a specialized
+    function. This also applies to comparing flat names, texture names, sprite
+    names, patch names, etc.
+
+</dl>
 
 			<h3>Includes</h3>
 
@@ -936,9 +997,29 @@ use this :
 
 			<h3>File format</h3>
 
-I use the standard Unix text file format (lines separated by LF)
-with the character set ISO 8895-1 a.k.a. Latin-1
-and a tab width of 8.
+<table width="100%" bgcolor="#90a0c0" cellpadding="8">
+  <tr>
+    <td>
+      The format of the source files is&nbsp;:
+      <table cellspacing="0" cellpadding="0">
+        <tr>
+	  <td>
+	    <ul>
+	      <li>Character set&nbsp;
+	      <li>Line length&nbsp;
+	      <li>Line terminator&nbsp;
+	      <li>Tab width&nbsp;
+	    </ul>
+	  </td>
+	  <td>
+	    ISO 8859-1 (a.k.a. Latin1)
+	    <br>80 columns
+	    <br>LF
+	    <br>8
+	  </td>
+	</tr>
+      </table>
+</table>
 
 		<h2>Notes</h2>
 

@@ -219,8 +219,8 @@ void DisplayWallTexture (hookfunc_comm_t *c)
 MDirPtr  dir = 0;	/* main directory pointer to the TEXTURE* entries */
 i32     *offsets;	/* array of offsets to texture names */
 int      n;		/* general counter */
-i16      xsize, ysize;	/* size of the texture */
-i16      fields;	/* number of wall patches used to build this texture */
+i16      width, height;	/* size of the texture */
+i16      npatches;	/* number of wall patches used to build this texture */
 i32      numtex;	/* number of texture names in TEXTURE* list */
 i32      texofs;	/* offset in the wad file to the texture data */
 char     tname[WAD_TEX_NAME + 1];	/* texture name */
@@ -230,6 +230,13 @@ bool     have_dummy_bytes;
 int      header_size;
 int      item_size;
 
+// So that, on failure, the caller clears the display area
+c->disp_x0 = c->x1;
+c->disp_y0 = c->y1;
+c->disp_x1 = c->x0;
+c->disp_y1 = c->y0;
+
+// Iwad-dependant details
 if (yg_texture_format == YGTF_NAMELESS)
    {
    have_dummy_bytes = true;
@@ -251,11 +258,9 @@ else if (yg_texture_format == YGTF_STRIFE11)
 else
    {
    nf_bug ("Bad texture format %d.", (int) yg_texture_format);
-   c->flags = 0;
    return;
    }
 
-c->flags = 0;
 #ifndef Y_X11
 if (have_key ())
    return; /* speedup */
@@ -371,18 +376,18 @@ if (yg_texture_format == YGTF_NAMELESS)
 else
    header_ofs = texofs + WAD_TEX_NAME;
 wad_seek (dir->wadfile, header_ofs + 4);
-wad_read_i16 (dir->wadfile, &xsize);
-wad_read_i16 (dir->wadfile, &ysize);
+wad_read_i16 (dir->wadfile, &width);
+wad_read_i16 (dir->wadfile, &height);
 if (have_dummy_bytes)
    {
    i16 dummy;
    wad_read_i16 (dir->wadfile, &dummy);
    wad_read_i16 (dir->wadfile, &dummy);
    }
-wad_read_i16 (dir->wadfile, &fields);
-c->width    = xsize;
-c->height   = ysize;
-c->npatches = fields;
+wad_read_i16 (dir->wadfile, &npatches);
+c->width    = width;
+c->height   = height;
+c->npatches = npatches;
 c->flags   |= HOOK_SIZE_VALID | HOOK_DISP_SIZE;
 
 #ifndef Y_X11
@@ -390,22 +395,26 @@ if (have_key ())
    return; /* speedup */
 #endif
 
-if (c->x1 - c->x0 > xsize)
-   c->x1 = c->x0 + xsize;
-if (c->y1 - c->y0 > ysize)
-   c->y1 = c->y0 + ysize;
-/* not really necessary, except when xofs or yofs < 0 */
+if (c->x1 - c->x0 > width)
+   c->x1 = c->x0 + width;
+if (c->y1 - c->y0 > height)
+   c->y1 = c->y0 + height;
 #ifdef Y_BGI
+/* not really necessary, except when xofs or yofs < 0 */
 setviewport (c->x0, c->y0, c->x1, c->y1, 1);
 #endif  /* FIXME ! */
 
 /* Compose the texture */
 texbuf =
-   (game_image_pixel_t *) GetMemory ((unsigned long) xsize * ysize);
-/* Fill the buffer with whatever pixel value is to appear through
-   transparent textures. That pixel value is the "transparent colour". */
-clear_game_image (texbuf, xsize, ysize);
-for (n = 0; n < fields; n++)
+   (game_image_pixel_t *) GetMemory ((unsigned long) width * height);
+/* Fill the buffer with whatever pixel value is to appear
+   through transparent textures. That pixel value is the
+   "transparent colour". */
+clear_game_image (texbuf, width, height);
+
+/* Paste onto the buffer all the patches that the texture is
+   made of. */
+for (n = 0; n < npatches; n++)
    {
    hookfunc_comm_t subc;
    i16 xofs, yofs;	// offset in texture space for the patch
@@ -466,28 +475,32 @@ for (n = 0; n < fields; n++)
 #endif
    subc.name = picname;
 
-   if (LoadPicture (texbuf, xsize, ysize, picname, loc, xofs, yofs, 0, 0))
+   if (LoadPicture (texbuf, width, height, picname, loc, xofs, yofs, 0, 0))
       warn ("texture \"%.*s\": patch \"%.*s\" not found.\n",
 	  WAD_TEX_NAME, tname, WAD_PIC_NAME, picname);
    }
 
 /* Display the texture */
-display_game_image (texbuf, xsize, ysize, c->x0, c->y0,
+display_game_image (texbuf, width, height, c->x0, c->y0,
    c->x1 + 1 - c->x0, c->y1 + 1 - c->y0);
+c->flags |= HOOK_DRAWN;
+c->disp_x0 = c->x0 + c->xofs;
+c->disp_y0 = c->y0 + c->yofs;
+c->disp_x1 = c->disp_x0 + width - 1;
+c->disp_y1 = c->disp_y0 + height - 1;
 free (texbuf);
 
 /* restore the normal viewport */
 #ifdef Y_BGI
 setviewport (0, 0, ScrMaxX, ScrMaxY, 1);
 #endif  /* FIXME ! */
-c->flags |= HOOK_DRAWN;
 }
 
 
 /*
    Function to get the size of a wall texture
 */
-void GetWallTextureSize (i16 *xsize_r, i16 *ysize_r, const char *texname)
+void GetWallTextureSize (i16 *width, i16 *height, const char *texname)
 {
 MDirPtr  dir = 0;	/* pointer in main directory to texname */
 i32    *offsets;	/* array of offsets to texture names */
@@ -585,14 +598,14 @@ if (texofs != 0)
       wad_seek (dir->wadfile, texofs + 4L);
    else
       wad_seek (dir->wadfile, texofs + 12L);
-   wad_read_i16 (dir->wadfile, xsize_r);
-   wad_read_i16 (dir->wadfile, ysize_r);
+   wad_read_i16 (dir->wadfile, width);
+   wad_read_i16 (dir->wadfile, height);
    }
 else
    {
    /* texture data not found */
-   *xsize_r = -1;
-   *ysize_r = -1;
+   *width  = -1;
+   *height = -1;
    }
 }
 
@@ -613,7 +626,7 @@ if (GfxMode > -2)
    x0 = 0;
    y0 = -1;
    }
-InputNameFromListWithFunc (x0, y0, prompt, listsize, list, 11, name,
+InputNameFromListWithFunc (x0, y0, prompt, listsize, list, 9, name,
   256, 128, DisplayWallTexture);
 SwitchToVGA16 ();
 

@@ -274,6 +274,7 @@ else
  */
 win = XCreateSimpleWindow (dpy, DefaultRootWindow (dpy),
    10, 10, width, height, 0, 0, 0);
+//win = DefaultRootWindow (dpy);
 {
 XWindowAttributes wa;
 XVisualInfo model;
@@ -1068,6 +1069,9 @@ drw_mods++;
 
 /*
    draw a filled in box on the screen from screen coords
+   (scrx1, scry1) is the top left corner
+   (scrx2, scry2) is the bottom right corner
+   If scrx2 < scrx1 or scry2 < scry1, the function does nothing.
 */
 
 void DrawScreenBox (int scrx1, int scry1, int scrx2, int scry2)
@@ -1076,6 +1080,8 @@ void DrawScreenBox (int scrx1, int scry1, int scrx2, int scry2)
 setfillstyle (1, getcolor ());
 bar (scrx1, scry1, scrx2, scry2);
 #elif defined Y_X11
+if (scrx2 < scrx1 || scry2 < scry1)
+  return;
 /* FIXME missing gc fill_style */
 XFillRectangle (dpy, drw, gc, scrx1, scry1,
   scrx2 - scrx1 + 1, scry2 - scry1 + 1);

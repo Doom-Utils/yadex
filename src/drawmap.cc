@@ -271,13 +271,22 @@ if (e->obj_type == OBJ_VERTICES)
       }
    if (e->show_object_numbers && e->obj_type == OBJ_VERTICES)
       {
-      set_colour (CYAN);
       for (n = 0; n < NumVertices; n++)
          {
 	 int mapx = Vertices[n].x;
 	 int mapy = Vertices[n].y;
 	 if (mapx >= mapx0 && mapx <= mapx9 && mapy >= mapy0 && mapy <= mapy9)
-            DrawScreenText (SCREENX (mapx) + 2*r, SCREENY (mapy) + 2, "%d", n);
+	    {
+	    int x = SCREENX (mapx) + 2 * r;
+	    int y = SCREENY (mapy) + 2;
+	    set_colour (BLACK);
+            DrawScreenText (x + 1, y,     "%d", n);
+            DrawScreenText (x - 1, y,     "%d", n);
+            DrawScreenText (x,     y + 1, "%d", n);
+            DrawScreenText (x,     y - 1, "%d", n);
+	    set_colour (CYAN);
+            DrawScreenText (x,     y,     "%d", n);
+	    }
          }
       }
    }
@@ -365,14 +374,21 @@ for (n = 0; n < NumThings; n++)
 /* Draw the things numbers */
 if (e->show_object_numbers && e->obj_type == OBJ_THINGS)
    {
-   set_colour (CYAN);
    for (n = 0; n < NumThings; n++)
       {
       int mapx = Things[n].xpos;
       int mapy = Things[n].ypos;
       if (mapx < mapx0 || mapx > mapx9 || mapy < mapy0 || mapy > mapy9)
 	continue;
-      DrawScreenText (SCREENX (mapx) + 10, SCREENY (mapy) + 2, "%d", n);
+      int x = SCREENX (mapx) + 10;
+      int y = SCREENY (mapy) + 2;
+      set_colour (BLACK);
+      DrawScreenText (x + 1, y,     "%d", n);
+      DrawScreenText (x - 1, y,     "%d", n);
+      DrawScreenText (x,     y + 1, "%d", n);
+      DrawScreenText (x,     y - 1, "%d", n);
+      set_colour (CYAN);
+      DrawScreenText (x, y, "%d", n);
       }
    }
 }

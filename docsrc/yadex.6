@@ -1,4 +1,11 @@
 .TH YADEX 6 $SOURCE_DATE "Yadex $VERSION" \" -*- nroff -*-
+.\" .OP - synopsis of an option
+.\"   $1: short name
+.\"   $2: long name
+.\"   $3: argument
+.de OP
+\\fB\-\\$1\\fP, \\fB\-\\$2\\fP \\fI\\$3\\fP
+..
 .SH NAME
 yadex \- Doom/Doom II/Heretic level (wad) editor for X
 .SH SYNOPSIS
@@ -8,17 +15,225 @@ yadex \- Doom/Doom II/Heretic level (wad) editor for X
 .br
 \fByadex\fP [\fIoptions\fP] [\fIfile\fP ...]
 .SH DESCRIPTION
-Yadex can be used to view, create and modify levels for \fBDoom
-alpha\fP, \fBDoom press release pre beta\fP, \fBDoom\fP, \fBDoom
-II\fP, \fBUltimate Doom\fP, \fBFinal Doom\fP and \fBHeretic\fP.
-It also supports, to a lesser extent, \fBHexen\fP and
-\fBStrife\fP.
+Yadex can be used to view, create and modify levels for
+\fBDoom\fP, \fBUltimate Doom\fP, \fBDoom II\fP, \fBFinal
+Doom\fP, \fBDoom press release pre beta\fP and \fBHeretic\fP.
+It also supports, to a lesser extent, \fBDoom alpha\fP,
+\fBHexen\fP, \fBStrife\fP and \fBWolfenstein 3D\fP.
 
 See \fBREADME\fP for a quick start.
 .br
 To know what's new in this release, see \fBCHANGES\fP.
 .br
 The rest of documentation is in \fBdoc/index.html\fP (HTML format).
+.SH OPTIONS
+Boolean options can be negated by using \fB+\fP instead of
+\fB\-\fP.  For example, \fB+v\fP would disable verbose mode even
+if \fBverbose\fP is set to 1 in the configuration file. For non
+boolean options, \fB+\fP is equivalent to \fB\-\fP (note: the
+fact that a misimplementation is documented should not be
+construed as an incitement to make use of it).
+
+For options that take a parameter, the option and the parameter
+must be in separate command\-line arguments, i.e. you
+\fIcannot\fP write \fB\-gdoom\fP.
+
+It is \fInot\fP possible to run options together, i.e. you can't
+use \fB\-ev\fP as short for \fB\-e\fP \fB\-v\fP.
+
+The \fB\-\-\fP convention is not supported.
+.TP
+.BR \-? , \ \-help , \ \-\-help
+Print usage summary to stdout and exit successfully.
+.TP
+.OP d debug
+Debug mode.
+This option is equivalent to and overrides the \fBdebug\fP
+directive of the configuration file.
+.TP
+.OP e expert
+Expert mode. Enforces default choices for certain dialogs. As
+those default choices are IMHO not all judicious, I don't
+recommend using this option. Check
+\fBinsert_vertex_split_linedef\fP and
+\fBinsert_vertex_merge_vertices\fP instead.
+This option is equivalent to and overrides the \fBexpert\fP
+directive of the configuration file.
+.TP
+.OP f config_file file
+Use \fIfile\fP as the config file instead of the default.
+.TP
+.OP fc fake_cursor
+(X11 only) Fake cursor. Currently, this option is a no\-op.
+This option is equivalent to and overrides the \fBfake_cursor\fP
+directive of the configuration file.
+.TP
+.OP fn font string
+(X11 only) Use font \fIstring\fP.
+If no font is specified or if the specified font is not
+found, Yadex falls back on the default font of the X server.
+This option is equivalent to and overrides the \fBfont\fP
+directive of the configuration file.
+.TP
+.OP g game string
+Set the game to \fIstring\fP, which can be one of the following:
+.if n \{ .ta 2 12
+.sp \}
+.if t \{ .ta 1.5 7.5
+.sp 0.4 \}
+.nf
+\(bu	\fBdoom\fP	Doom or Ultimate Doom
+\(bu	\fBdoom02\fP	Doom alpha 0.2
+\(bu	\fBdoom04\fP	Doom alpha 0.4
+\(bu	\fBdoom05\fP	Doom alpha 0.5
+\(bu	\fBdoom2\fP	Doom II or Final Doom
+\(bu	\fBdoompr\fP	Doom press release pre-beta
+\(bu	\fBheretic\fP	Heretic
+\(bu	\fBhexen\fP	Hexen
+\(bu	\fBstrife\fP	Strife 1.1 and later
+\(bu	\fBstrife10\fP	Strife 1.0
+\(bu	\fBwolf\fP	Wolfenstein 3D
+.fi
+.if n .sp
+.if t .sp 0.4
+This option is equivalent to and overrides the \fBgame\fP
+directive of the configuration file.
+.TP
+.OP h height integer
+(X11 only) Initial height of the window in pixels.
+This option is equivalent to and overrides the \fBheight\fP
+directive of the configuration file.
+See also \fB\-w\fP.
+.TP
+.OP i1 iwad1 file
+The name of the Doom or Ultimate Doom iwad.
+This option has effect only if the game is \fBdoom\fP.
+This option is equivalent to and overrides the \fBiwad1\fP
+directive of the configuration file.
+.TP
+.OP i2 iwad2 file
+The name of the Doom II or Final Doom iwad.
+This option has effect only if the game is \fBdoom2\fP.
+This option is equivalent to and overrides the \fBiwad2\fP
+directive of the configuration file.
+.TP
+.OP i3 iwad3 file
+The name of the Heretic iwad.
+This option has effect only if the game is \fBheretic\fP.
+This option is equivalent to and overrides the \fBiwad3\fP
+directive of the configuration file.
+.TP
+.OP i4 iwad4 file
+The name of the Hexen iwad.
+This option has effect only if the game is \fBhexen\fP.
+This option is equivalent to and overrides the \fBiwad4\fP
+directive of the configuration file.
+.TP
+.OP i5 iwad5 file
+The name of the Strife iwad.
+This option has effect only if the game is \fBstrife\fP.
+This option is equivalent to and overrides the \fBiwad5\fP
+directive of the configuration file.
+.TP
+.OP i6 iwad6 file
+The name of the Doom alpha 0.2 iwad.
+This option has effect only if the game is \fBdoom02\fP.
+This option is equivalent to and overrides the \fBiwad6\fP
+directive of the configuration file.
+.TP
+.OP i7 iwad7 file
+The name of the Doom alpha 0.4 iwad.
+This option has effect only if the game is \fBdoom04\fP.
+This option is equivalent to and overrides the \fBiwad7\fP
+directive of the configuration file.
+.TP
+.OP i8 iwad8 file
+The name of the Doom alpha 0.5 iwad.
+This option has effect only if the game is \fBdoom05\fP.
+This option is equivalent to and overrides the \fBiwad8\fP
+directive of the configuration file.
+.TP
+.OP i9 iwad9 file
+The name of the Doom press release pre-beta iwad.
+This option has effect only if the game is \fBdoompr\fP.
+This option is equivalent to and overrides the \fBiwad9\fP
+directive of the configuration file.
+.TP
+.OP i10 iwad10 file
+The name of the Strife 1.0 iwad.
+This option has effect only if the game is \fBstrife10\fP.
+This option is equivalent to and overrides the \fBiwad10\fP
+directive of the configuration file.
+.TP
+.OP pw pwad file
+[Deprecated] Load pwad \fIfile\fP. This option is useless since
+pwads can be given as arguments anyway. It's there for backward
+compatibility only.
+This option is equivalent to and overrides the \fBpwad\fP
+directive of the configuration file.
+.TP
+.OP P no_pixmap
+(X11 only) Use no pixmap. Makes Yadex more responsive at the
+cost of a lot of flickering. Off by default.
+This option is equivalent to and overrides the \fBno_pixmap\fP
+directive of the configuration file.
+.TP
+.OP q quiet
+In theory, quiet mode. In practice, has no effect.
+This option is equivalent to and overrides the \fBquiet\fP
+directive of the configuration file.
+.TP
+.OP qq quieter
+Quieter. Makes Yadex completely silent (beepless).
+This option is equivalent to and overrides the \fBquieter\fP
+directive of the configuration file.
+.TP
+.OP s0 select0 
+Select the 0th object automatically whenever the editing mode is
+set.
+This option is equivalent to and overrides the \fBselect0\fP
+directive of the configuration file.
+.TP
+.OP sb swap_buttons 
+Swap mouse buttons. Currently, this option is a no\-op.
+This option is equivalent to and overrides the \fBswap_buttons\fP
+directive of the configuration file.
+.TP
+.OP td text_dot 
+Debug the \fBDrawScreenText\fP() function.
+This option is equivalent to and overrides the \fBtext_dot\fP
+directive of the configuration file.
+.TP
+.OP v verbose
+Verbose mode.
+This option is equivalent to and overrides the \fBverbose\fP
+directive of the configuration file.
+.TP
+.B \-\-version
+Print version information to stdout and exit successfully.
+
+The first line contain three fields, separated by white space,
+with no other punctuation. The first field is the name of the
+program ("\fBYadex\fP"). The second field is the version number
+("\fB$VERSION\fP"). The third field is the release date, between
+parentheses ("\fB($SOURCE_DATE)\fP").
+
+The second line contains the magic string that this version
+requires at the beginning of configuration files.
+
+The third line contains the magic string that this version
+requires at the beginning of game definition files.
+.TP
+.OP w width integer
+(X11 only) Initial width of the window in pixels.
+This option is equivalent to and overrides the \fBwidth\fP
+directive in the configuration file.
+See also \fB\-h\fP.
+.TP
+.OP z zoom integer
+Initial zoom factor.
+This option is equivalent to and overrides the \fBzoom\fP
+directive of the configuration file.
 .SH FILES
 .TP
 .B Configuration file
@@ -69,12 +284,9 @@ None. Yadex does not use the X resources system.
 .br
 \fB>1\fP	Fatal error.
 .SH BUGS
-Command line options that take an argument
-need to have a space between their argument and themselves.
-
 In certain circumstances, exposures are not handled.
 If the Yadex window turns black,
-back out by pressing \fBEsc\fP, several times if necessary.
+back out by pressing [Esc], several times if necessary.
 
 If you edit a level from a file that contains several and save it,
 all the other levels from that file are lost.

@@ -78,14 +78,15 @@ Game and wad support
   badblu35, dmdv (tail 76% unused 45/469), drdeath (unused 69/1382),
   spit e1m2 unused 661/816 tail 0
 - Handle sprites between SS_START and S_END/SS_END (cf. basilica.wad,
-  alitcsf.wad) properly. The problem is that FindMasterDir() searches
-  the master directory from beginning to end, while Doom does the
-  reverse. Therefore, replacement entries never replace old entries,
-  except when OpenPatchWad() has explicitly replaced them, which does
-  not occur for lumps framed by *_START/*_END labels. The problem is not
-  visible for flats because ReadFTextureNames() explicitely merges and
-  sorts all the F*_START/F*_END sequences.  It's a mess. There are
-  several approaches to fix that :
+  alitcsf.wad, strifed1.wad) properly. The problem is that
+  FindMasterDir() searches the master directory from beginning to end,
+  while Doom does the reverse. Therefore, replacement entries never
+  replace old entries, except when OpenPatchWad() has explicitly
+  replaced them, which does not occur for lumps framed by *_START/*_END
+  labels. The problem is not visible for flats because
+  ReadFTextureNames() explicitly merges and sorts all the
+  F*_START/F*_END sequences.  It's a mess. There are several approaches
+  to fix that :
   - (1) Don't try to replace anything, just read the directory from the
     end like Doom does.
   - (2) Fix OpenPatchWad() to replace patch and sprite lumps where
@@ -449,7 +450,6 @@ Flat/sprite/texture viewer
   of an animation. For Hexen, it's much more complicated (3-frame
   switches...).
 - Display number of patches (and posts, and patch list...).
-- Find a way to reduce flicker in the picture box.
 - Show several pictures at a time.
 - Texture viewer: wide textures (such as the SKY in darken2d.wad) are
   not clipped.
@@ -461,6 +461,9 @@ Flat/sprite/texture viewer
   in the list of sprite names is wrong.
 - If the "view" command is given an argument that is the name of an
   inexisting sprite, a random size is displayed.
+- When viewing patches or sprites, the entire 320x200 view window is
+  refreshed even though, in most of the cases, the picture to display is
+  much smaller than that.
 
 X11 port
 - Implement -geometry and -display.

@@ -45,7 +45,7 @@ void SavePic (int x0, int y0, int width, int height, const char *name);
       prompt  : text to be displayed.
       listsize: number of elements in the list.
       list    : list of names (picture names, level names, etc.).
-      listdisp: number of lines that should be displayed.
+      listdisp: minimum number of names that should be displayed.
       name    : what we are editing...
       width   : \ width and height of an optional window where a picture
       height  : / can be displayed (used to display textures, sprites, etc.).
@@ -54,7 +54,6 @@ void SavePic (int x0, int y0, int width, int height, const char *name);
 		 picture must be drawn, name = name of the picture).
 AYM 1998-02-12 : if hookfunc is <> NULL, a message "Press shift-F1 to save
   image to file" is displayed and shift-F1 does just that.
-AYM 1998-08-22 : listdisp is now ignored and overwritten.
 */
 
 void InputNameFromListWithFunc (
@@ -67,7 +66,7 @@ void InputNameFromListWithFunc (
    char *name,
    int width,
    int height,
-   void (*hookfunc)(hookfunc_comm_t *c),
+   void (*hookfunc)(hookfunc_comm_t *),
    char flags_to_pass_to_callback)
 {
 const char *msg1 = "Press Shift-F1 to";
@@ -115,10 +114,7 @@ x1 = l + 8;
 y1 = 10 + 1;
 if (width > 0)
    l += 16 + width;
-if (height > 65)
-   n = height + 20;
-else
-   n = 85;
+n = y_max (height + 20, listdisp * FONTH + 10 + 28);
 if (x0 < 0)
    x0 = (ScrMaxX - l) / 2;
 if (y0 < 0)
@@ -143,7 +139,8 @@ entry_text_y0 = entry_out_y0 + HOLLOW_BORDER + NARROW_VSPACING;
 entry_text_y1 = entry_text_y0 + FONTH - 1;
 entry_out_y1  = entry_text_y1 + HOLLOW_BORDER + NARROW_VSPACING;
 
-listdisp = (n - (entry_out_y0 - y0) - BOX_BORDER - WIDE_VSPACING) / FONTH;
+listdisp = y_max (listdisp,
+  (n - (entry_out_y0 - y0) - BOX_BORDER - WIDE_VSPACING) / FONTH);
 
 /* draw the dialog box */
 DrawScreenBox3D (x0, y0, x0 + l, y0 + n);
@@ -160,6 +157,13 @@ if (hookfunc != NULL)
 if (width > 0)
    DrawScreenBoxHollow (x1 - 1, y1 - 1, x2 + 1, y2 + 1, BLACK);
 firstkey = 1;
+
+// Another way of saying "nothing to rub out"
+int disp_x0 = (x2 + x1) / 2;
+int disp_y0 = (y2 + y1) / 2;
+int disp_x1 = disp_x0 - 1;
+int disp_y1 = disp_y0 - 1;
+
 for (;;)
    {
    hookfunc_comm_t c;
@@ -204,16 +208,32 @@ for (;;)
    // Call the function to display the picture, if any
    if (hookfunc)
       {
-      /* clear the window */
-      set_colour (BLACK);
-      DrawScreenBox (x1, y1, x2, y2);
       /* display the picture "name" */
-      c.x0    = x1;
-      c.y0    = y1;
-      c.x1    = x2;
-      c.y1    = y2;
-      c.name  = name;
-      c.flags = flags_to_pass_to_callback;
+      c.x0      = x1;
+      c.y0      = y1;
+      c.x1      = x2;
+      c.y1      = y2;
+      c.name    = name;
+      c.xofs    = 0;
+      c.yofs    = 0;
+      c.flags   = flags_to_pass_to_callback;
+      const int BAD_VALUE = INT_MAX;
+      c.disp_x0 = BAD_VALUE;  // Catch faulty callbacks
+      c.disp_y0 = BAD_VALUE;  // Catch faulty callbacks
+      c.disp_x1 = BAD_VALUE;  // Catch faulty callbacks
+      c.disp_y1 = BAD_VALUE;  // Catch faulty callbacks
+      if (ok)
+	 {
+	 hookfunc (&c);
+	 }
+      else
+	 {
+	 // No picture. Null width & height. Erase everything.
+	 c.disp_x0 = (x2 + x1) / 2;
+	 c.disp_y0 = (y2 + y1) / 2;
+	 c.disp_x1 = c.disp_x0 - 1;
+	 c.disp_y1 = c.disp_y0 - 1;
+	 }
       if (picture_size_drawn)
 	 {
 	 set_colour (WINBG);
@@ -221,14 +241,37 @@ for (;;)
 	    x0 + 10 + 10 * FONTW - 1, y0 + 50 + FONTH - 1);
 	 picture_size_drawn = 0;
 	 }
-      if (ok)
-	 hookfunc (&c);
       if ((c.flags & HOOK_SIZE_VALID) && (c.flags & HOOK_DISP_SIZE))
 	 {
 	 set_colour (WINFG);
 	 DrawScreenText (x0 + 10, y0 + 50, "%dx%d", c.width, c.height);
 	 picture_size_drawn = 1;
 	 }
+      /* If the new picture does not completely overlay the
+	 previous one, rub out the old pixels. */
+      set_colour (BLACK);
+      if (c.disp_x0 == BAD_VALUE
+	|| c.disp_y0 == BAD_VALUE
+	|| c.disp_x1 == BAD_VALUE
+	|| c.disp_y1 == BAD_VALUE)
+	 nf_bug ("Callback %p did not set disp_", hookfunc);
+      else
+	 {
+	 if (c.disp_x0 > disp_x0)		// Pixels left to the left
+	    DrawScreenBox (disp_x0, disp_y0, c.disp_x0 - 1, disp_y1);
+	 if (c.disp_x1 < disp_x1)		// Pixels left to the right
+	    DrawScreenBox (c.disp_x1 + 1, disp_y0, disp_x1, disp_y1);
+	 if (c.disp_y0 > disp_y0)		// Pixels left at the top
+	    DrawScreenBox (y_max (c.disp_x0, disp_x0), disp_y0,
+			   y_min (c.disp_x1, disp_x1), c.disp_y0 - 1);
+	 if (c.disp_y1 < disp_y1)		// Pixels left at the bottom 
+	    DrawScreenBox (y_max (c.disp_x0, disp_x0), c.disp_y1 + 1,
+			   y_min (c.disp_x1, disp_x1), disp_y1);
+	 }
+      disp_x0 = c.disp_x0;
+      disp_y0 = c.disp_y0;
+      disp_x1 = c.disp_x1;
+      disp_y1 = c.disp_y1;
       }
 
    // Process user input

@@ -110,14 +110,11 @@ WadPtr wadfile = flat->wadfile;
 wad_seek (wadfile, flat->offset);
 
 #if defined Y_X11
-
 pixels = (unsigned char huge *) GetFarMemory (c->width * c->height);
 wad_read_bytes (wadfile, pixels, (long) c->width * c->height);
 display_game_image (pixels, c->width, c->height, c->x0, c->y0,
    c->x1 - c->x0 + 1, c->y1 - c->y0 + 1);
-
 #elif defined Y_BGI
-
 pixels = GetFarMemory (c->width * c->height + 4);
 wad_read_bytes (wadfile, pixels + 4, (long) c->width * c->height);
 if (GfxMode < -1)
@@ -133,8 +130,11 @@ else
    ((unsigned short huge *)pixels)[1] = c->height;
    }
 putimage (c->x0, c->y0, pixels, COPY_PUT);
-
 #endif
+c->disp_x0 = c->x0;
+c->disp_y0 = c->y0;
+c->disp_x1 = c->x1;
+c->disp_y1 = c->y1;
 
 FreeFarMemory (pixels);
 c->flags |= HOOK_DRAWN;

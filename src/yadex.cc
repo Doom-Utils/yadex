@@ -35,10 +35,12 @@ Place, Suite 330, Boston, MA 02111-1307, USA.
 #include "disppic.h"  /* Because of "p" */
 #include "editlev.h"
 #include "endian.h"
+#include "flats.h"
 #include "game.h"
 #include "gfx.h"
 #include "gfx2.h"
 #include "help1.h"
+#include "levels.h"    /* Because of "viewtex" */
 #include "mkpalette.h"
 #include "palview.h"
 #include "patchdir.h"  /* Because of "p" */
@@ -337,6 +339,11 @@ else if (Game != NULL && ! strcmp (Game, "strife10"))
       exit (1);
       }
    MainWad = Iwad10;
+   }
+else if (Game != NULL && ! strcmp (Game, "wolf"))
+   {
+   printf ("April fool ! :-)\n");
+   exit (42);
    }
 else
    {
@@ -707,10 +714,14 @@ for (;;)
               " to list all options and their values\n");
       printf ("v[iew] [<spritename>]             --"
               " to display the sprites\n");
+      printf ("viewflat [<flatname>]             --"
+	      " flat viewer\n");
       printf ("viewpal                           --"
 	      " palette viewer\n");
       printf ("viewpat [<patchname>]             --"
 	      " patch viewer\n");
+      printf ("viewtex [<texname>]               --"
+	      " texture viewer\n");
       printf ("w[ads]                            --"
               " to display the open wads\n");
       printf ("x[tract] <DirEntry> <RawFile>     --"
@@ -970,6 +981,60 @@ for (;;)
 	 DumpDirectoryEntry (stdout, com);
       }
 
+   // "v"/"view" - view the sprites
+   else if (!strcmp (com, "view") || !strcmp (com, "v"))
+      {
+      InitGfx ();
+      init_input_status ();
+      do
+	 get_input_status ();
+      while (is.key != YE_EXPOSE);
+      com = strtok (NULL, " ");
+      force_window_not_pixmap ();  // FIXME quick hack
+      ChooseSprite (-1, -1, "Sprite viewer", com);
+      TermGfx ();
+      }
+
+   // "viewflat" - view the flats
+   else if (! strcmp (com, "viewflat"))
+      {
+      InitGfx ();
+      init_input_status ();
+      do
+	 get_input_status ();
+      while (is.key != YE_EXPOSE);
+      com = strtok (NULL, " ");
+      force_window_not_pixmap ();  // FIXME quick hack
+      char buf[WAD_FLAT_NAME + 1];
+      *buf = '\0';
+      if (com != 0)
+	strncat (buf, com, sizeof buf - 1);
+      ReadFTextureNames ();
+      char **flat_names =
+	(char **) GetMemory (NumFTexture * sizeof *flat_names);
+      for (size_t n = 0; n < NumFTexture; n++)
+	flat_names[n] = flat_list[n].name;
+      ChooseFloorTexture (-1, -1, "Flat viewer",
+	NumFTexture, flat_names, buf);
+      FreeMemory (flat_names);
+      ForgetFTextureNames ();
+      TermGfx ();
+      }
+
+   // "viewpal" - view the palette (PLAYPAL and COLORMAP)
+   else if (! strcmp (com, "viewpal"))
+      {
+      InitGfx ();
+      init_input_status ();
+      do
+	 get_input_status ();
+      while (is.key != YE_EXPOSE);
+      force_window_not_pixmap ();  // FIXME quick hack
+      Palette_viewer pv;
+      pv.run ();
+      TermGfx ();
+      }
+   
    // "viewpat" - view the patches
    else if (! strcmp (com, "viewpat"))
       {
@@ -995,8 +1060,8 @@ for (;;)
       TermGfx ();
       }
 
-   /* user asked to view the sprites */
-   else if (!strcmp (com, "view") || !strcmp (com, "v"))
+   // "viewtex" - view the textures
+   else if (! strcmp (com, "viewtex"))
       {
       InitGfx ();
       init_input_status ();
@@ -1005,24 +1070,20 @@ for (;;)
       while (is.key != YE_EXPOSE);
       com = strtok (NULL, " ");
       force_window_not_pixmap ();  // FIXME quick hack
-      ChooseSprite (-1, -1, "Sprite viewer", com);
+      patch_dir.refresh (MasterDir);
+      {
+	 char buf[WAD_TEX_NAME + 1];
+	 *buf = '\0';
+	 if (com != 0)
+	   strncat (buf, com, sizeof buf - 1);
+	 ReadWTextureNames ();
+	 ChooseWallTexture (-1, -1, "Texture viewer", NumWTexture, WTexture,
+	   buf);
+	 ForgetWTextureNames ();
+      }
       TermGfx ();
       }
 
-   // "viewpal" - view the palette (PLAYPAL and COLORMAP)
-   else if (! strcmp (com, "viewpal"))
-      {
-      InitGfx ();
-      init_input_status ();
-      do
-	 get_input_status ();
-      while (is.key != YE_EXPOSE);
-      force_window_not_pixmap ();  // FIXME quick hack
-      Palette_viewer pv;
-      pv.run ();
-      TermGfx ();
-      }
-   
    /* user asked to save an object to a separate pwad file */
    else if (!strcmp (com, "save") || !strcmp (com, "s"))
       {

@@ -66,6 +66,29 @@ void display_pic (hookfunc_comm_t *c)
       spectrify_game_image (pixels, width, height);
     display_game_image (pixels, width, height, c->x0, c->y0, width, height);
     c->flags |= HOOK_DRAWN;
+
+    /* Alas, drawing the smallest possible rectangle is not implemented
+       yet because the allocation of the game image happens before the
+       size of the picture is known. -- AYM 2000-03-29 */
+#if 0
+    c->disp_x0 = c->x0 + (width - c->width) / 2;
+    c->disp_y0 = c->y0 + (height - c->height) / 2;
+    c->disp_x1 = c->disp_x0 + c->width - 1;
+    c->disp_y1 = c->disp_y0 + c->height - 1;
+#else
+    c->disp_x0 = c->x0;
+    c->disp_y0 = c->y0;
+    c->disp_x1 = c->x1;
+    c->disp_y1 = c->y1;
+#endif
+  }
+  else
+  {
+    // Drew nothing
+    c->disp_x0 = 1;
+    c->disp_y0 = 1;
+    c->disp_x1 = 0;
+    c->disp_y1 = 0;
   }
   FreeMemory (pixels);
 }

@@ -1,6 +1,33 @@
 
                                     Changes
                                        
+Yadex 1.4.0 (2000-04-01)
+
+     * Command-line: The parsing of the command line arguments is now
+       case-sensitive. Yes, that's right, it used to be case-insensitive.
+       I never knew. I just realized it by accident. DOS is not dead.
+     * Doc: The man page now has an "OPTIONS" section.
+     * Doc: Three new makefile targets, man, dvi and ps, for people who
+       hack the doc.
+     * Editing: Made object numbers slightly more legible in crowded
+       areas.
+     * Game/wad: Added support for Wolfenstein 3D (-g wolf).
+     * Misc: The code that parses the configuration file is smarter and
+       its error messages are more informative. Doesn't choke anymore on
+       a line containing just spaces or on comments not starting on
+       column 1. Thanks to "Ras2" for reporting the bug.
+     * Misc: New commands "viewtex" and "viewflat" so that you can browse
+       textures and flats without having to open a level. This is
+       primarily useful to me, for testing purposes.
+     * Misc: More sanitization : the parsing of the configuration file is
+       now case-sensitive when matching option names and values
+       ("yes"/"no", "true"/"false", "on"/"off").
+     * Misc: The flat/patch/sprite/texture viewer does not flicker
+       anymore, and is somewhat faster when viewing textures. The list of
+       names in the flat viewer has grown from 3 to 5 lines.
+     * Misc: The diffs are now in unified format (supposedly just as good
+       and IMHO clearer).
+       
 Yadex 1.3.2 (2000-01-14)
 
      * Build: Oops ! I had forgotten to set CC and CXX back to their

@@ -283,6 +283,10 @@ typedef struct
    int y0;
    int x1;           // [expected] Bottom right corner
    int y1;
+   int disp_x0;      // [returned] Top left corner and bottom right corner
+   int disp_y0;      // of area that was drawn on by callee. This is so that
+   int disp_x1;      // the caller knows what needs to be cleared...
+   int disp_y1;
    int xofs;         // [expected] Top left corner of image in buffer
    int yofs;
    const char *name; // [expected] Name of image to display

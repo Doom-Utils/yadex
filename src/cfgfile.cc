@@ -568,7 +568,7 @@ static const char *confirm_i2e (confirm_t internal);
  *	does not start with a "/"), the standard directories are
  *	searched for a file named <filename>. <filename> may contain
  *	slashes, E.G. if you use "-f foo/bar", the function will search
- *	for "./yadex/foo/bar", "~/.yadex/foo/bar",
+ *	for "./yadex/<version>/foo/bar", "~/.yadex/foo/bar",
  *	"/usr/local/etc/yadex/foo/bar", and so on.
  *
  *	If <filename> is not NULL but is an absolute name, only that
@@ -584,9 +584,6 @@ if (is_absolute)
    {
    printf ("Using config file \"%s\".\n", filename);
    int failure = parse_one_config_file (filename);
-   if (failure)
-      printf ("Can't open config file \"%s\" (%s)\n.",
-         filename, strerror (errno));
    return failure;
    }
 else
@@ -611,9 +608,6 @@ else
 	 trace ("cfgloc", "%s: hit", name);
 	 printf ("Using config file \"%s\".\n", name);
 	 int failure = parse_one_config_file (name);
-	 if (failure)
-	    printf ("Can't open config file \"%s\" (%s)\n.",
-	       name, strerror (errno));
 	 return failure;
 	 }
       trace ("cfgloc", "%s: miss (%s)", name, strerror (errno));
@@ -627,20 +621,25 @@ else
 /*
  *	parse_one_config_file
  *	Try to parse one particular config file.
- *	Returns 0 on success, <>0 on failure.
+ *	Return 0 on success, <>0 on failure.
  */
+#define RETURN_FAILURE do { rc = 1; goto byebye; } while (0)
 int parse_one_config_file (const char *filename)
 {
+int   rc = 0;
 FILE *cfgfile;
 char  line[1024];
 char *value;
-char *option;
 char *p;
 const opt_desc_t *o;
 
 cfgfile = fopen (filename, "r");
 if (cfgfile == NULL)
-   return 1;
+   {
+   report_error ("Can't open config file \"%s\" (%s)\n.",
+      filename, strerror (errno));
+   RETURN_FAILURE;
+   }
 
 /* The first line of the configuration file must
    contain exactly config_file_magic. */
@@ -651,59 +650,72 @@ if (fgets (line, sizeof line, cfgfile) == NULL
    {
    report_error ("%s is not a valid Yadex configuration file", filename);
    report_error ("Perhaps a leftover from a previous version of Yadex ?");
-   return 1;
+   RETURN_FAILURE;
    }
 
-while (fgets (line, sizeof line, cfgfile) != NULL)
+for (unsigned lnum = 2; fgets (line, sizeof line, cfgfile) != NULL; lnum++)
    {
-   if (line[0] == '#' || strlen (line) < 2)
-      continue;
-   if (line[strlen (line) - 1] == '\n')
-      line[strlen (line) - 1] = '\0';
-   /* skip blanks before the option name */
-   option = line;
+   /* Skip leading whitespace */
+   char *option = line;
    while (isspace (*option))
       option++;
-   /* skip the option name */
+
+   /* Skip comments */
+   if (*option == '#')
+      continue;
+
+   /* Remove trailing newline */
+   {
+   size_t len = strlen (option);
+   if (len >= 1 && option[len - 1] == '\n')
+      option[len - 1] = '\0';
+   }
+
+   /* Skip empty lines */
+   if (! *option)
+      continue;
+
+   /* Skip the option name */
    value = option;
-   while (value[0] && value[0] != '=' && !isspace (value[0]))
+   while (*value && *value != '=' && !isspace ((unsigned char) *value))
       value++;
-   if (!value[0])
+   if (! *value)
       {
-      report_error ("invalid line in %s (ends prematurely)", filename);
-      return 1;
+      report_error ("%s(%u): line ends prematurely", filename, lnum);
+      RETURN_FAILURE;
       }
-   if (value[0] == '=')
+   if (*value == '=')
       {
       /* mark the end of the option name */
-      value[0] = '\0';
+      *value = '\0';
       }
    else
       {
       /* mark the end of the option name */
-      value[0] = '\0';
+      *value = '\0';
       value++;
       /* skip blanks after the option name */
-      while (isspace (value[0]))
+      while (isspace ((unsigned char) *value))
 	 value++;
-      if (value[0] != '=')
+      if (*value != '=')
          {
-	 report_error ("invalid line in %s (no '=')", filename);
-         return 1;
+	 report_error ("%s(%u,%d): expected an \"=\"",
+	    filename, lnum, (int) (value - line) + 1);
+	 RETURN_FAILURE;
          }
       }
    value++;
    /* skip blanks after the equal sign */
-   while (isspace (value[0]))
+   while (isspace ((unsigned char) *value))
       value++;
    for (o = options + 1; ; o++)
       {
       if (o->opt_type == OPT_END)
          {
-         report_error ("Invalid option in %s: \"%s\"", filename, option);
-         return 1;
+         report_error ("%s(%u): invalid option \"%s\"", filename, lnum, option);
+	 RETURN_FAILURE;
          }
-      if (!y_stricmp (option, o->long_name))
+      if (! strcmp (option, o->long_name))
 	 {
 	 if (o->flags != NULL && strchr (o->flags, '1'))
 	    break;
@@ -718,23 +730,23 @@ while (fgets (line, sizeof line, cfgfile) != NULL)
 	 switch (o->opt_type)
 	    {
 	    case OPT_BOOLEAN:
-	       if (!y_stricmp (value, "yes") || !y_stricmp (value, "true")
-	        || !y_stricmp (value, "on") || !y_stricmp (value, "1"))
+	       if (! strcmp (value, "yes") || ! strcmp (value, "true")
+	        || ! strcmp (value, "on") || ! strcmp (value, "1"))
 		  {
 		  if (o->data_ptr)
 		     *((Bool *) (o->data_ptr)) = 1;
 		  }
-	       else if (!y_stricmp (value, "no") || !y_stricmp (value, "false")
-	             || !y_stricmp (value, "off") || !y_stricmp (value, "0"))
+	       else if (! strcmp (value, "no") || ! strcmp (value, "false")
+	             || ! strcmp (value, "off") || ! strcmp (value, "0"))
 		  {
 		  if (o->data_ptr)
 		     *((Bool *) (o->data_ptr)) = 0;
 		  }
 	       else
                   {
-		  report_error ("invalid value for option %s: \"%s\"",
-		    option, value);
-                  return 1;
+		  report_error ("%s(%u): invalid value for option %s: \"%s\"",
+		    filename, lnum, option, value);
+		  RETURN_FAILURE;
                   }
 	       break;
             case OPT_CONFIRM:
@@ -765,7 +777,7 @@ while (fgets (line, sizeof line, cfgfile) != NULL)
 	       while (value[0])
 		  {
 		  option = value;
-		  while (option[0] && !isspace (option[0]))
+		  while (option[0] && !isspace ((unsigned char) option[0]))
 		     option++;
 		  option[0] = '\0';
 		  option++;
@@ -780,16 +792,20 @@ while (fgets (line, sizeof line, cfgfile) != NULL)
 	       break;
 	    default:
                {
-               report_error ("unknown option type (BUG!)");
-               return 1;
+               report_error ("%s(%u): unknown option type %d (BUG!)",
+	         filename, lnum, (int) o->opt_type);
+	       RETURN_FAILURE;
                }
 	    }
 	 break;
 	 }
       }
    }
-fclose (cfgfile);
-return 0;
+
+byebye:
+if (cfgfile != 0)
+   fclose (cfgfile);
+return rc;
 }
 
 
@@ -824,8 +840,8 @@ while (argc > 0)
 	    report_error ("invalid option: \"%s\"", argv[0]);
 	    return 1;
 	    }
-	 if (o->short_name != NULL && ! y_stricmp (argv[0]+1, o->short_name)
-	  || o->long_name  != NULL && ! y_stricmp (argv[0]+1, o->long_name))
+	 if (o->short_name != NULL && ! strcmp (argv[0]+1, o->short_name)
+	  || o->long_name  != NULL && ! strcmp (argv[0]+1, o->long_name))
             break;
          }
 

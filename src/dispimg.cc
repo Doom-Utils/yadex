@@ -132,6 +132,7 @@ if (image->byte_order == LSBFirst && ! x_server_big_endian
 else
    warn ("image byte_order %d doesn't match X server endianness\n",
 	 image->byte_order);
+//printf ("XImage.bits_per_pixel: %d\n", (int) image->bits_per_pixel);  // DEBUG
 XPutImage (dpy, win, gc, image, 0, 0,
    screen_x, screen_y, image_width, image_height);
 XDestroyImage (image);  /* Also frees buf. */
