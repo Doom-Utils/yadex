@@ -11,7 +11,7 @@ This file is part of Yadex.
 Yadex incorporates code from DEU 5.21 that was put in the public domain in
 1994 by Raphaël Quinet and Brendon Wyber.
 
-The rest of Yadex is Copyright © 1997-2000 André Majorel.
+The rest of Yadex is Copyright © 1997-2003 André Majorel and others.
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -28,26 +28,27 @@ Place, Suite 330, Boston, MA 02111-1307, USA.
 */
 
 
+typedef unsigned short inpev_t;
 typedef struct
   {
-  /* Window events */
-  int  width;		/* New window width */
-  int  height;		/* New window height */
-  /* Mouse events */
-  char in_window;	/* <>0 iff mouse pointer is in window */
-  char butl;		/* <>0 iff left mouse button is depressed */
-  char butm;		/* <>0 iff middle mouse button is depressed */
-  char butr;		/* <>0 iff right mouse button is depressed */
-  int  x;		/* Mouse pointer position */
-  int  y;
-  /* Keyboard */
-  char shift;		/* <>0 iff either [Shift] is pressed */
-  char ctrl;		/* <>0 iff either [Ctrl] is pressed */
-  char alt;		/* <>0 iff either [Alt]/[Meta] is pressed */
-  char scroll_lock;	/* Always 0 for the moment */
-  /* General */
-  int  key;             /* Code of key just pressed (ASCII + YK_*) */
-  unsigned long time;	/* Date of event in ms (1) */
+  // Window events
+  int  width;		// New window width
+  int  height;		// New window height
+  // Mouse events
+  char in_window;	// <>0 iff mouse pointer is in window
+  char butl;		// <>0 iff left mouse button is depressed
+  char butm;		// <>0 iff middle mouse button is depressed
+  char butr;		// <>0 iff right mouse button is depressed
+  int x;		// Mouse pointer position
+  int y;
+  // Keyboard
+  char shift;		// <>0 iff either [Shift] is pressed
+  char ctrl;		// <>0 iff either [Ctrl] is pressed
+  char alt;		// <>0 iff either [Alt]/[Meta] is pressed
+  char scroll_lock;	// Always 0 for the moment
+  // General
+  inpev_t key;		// Code of last event (key, mouse, resize, expose...)
+  unsigned long time;	// Date of event in ms (1)
   } input_status_t;
 
 /* Notes:
@@ -55,59 +56,60 @@ typedef struct
     enter and leave.
 */
 
-/* Event and key codes */
-enum
-  {
-  YK_BACKSPACE	= '\b',
-  YK_TAB	= '\t',
-  YK_RETURN	= '\r',
-  YK_ESC	= 0x1b,
-  YK_DEL	= 0x7f,
-  YK_		= 256,
-  YK_BACKTAB,
-  YK_DOWN,
-  YK_END,
-  YK_F1,
-  YK_F2,
-  YK_F3,
-  YK_F4,
-  YK_F5,
-  YK_F6,
-  YK_F7,
-  YK_F8,
-  YK_F9,
-  YK_F10,
-  YK_HOME,
-  YK_INS,
-  YK_LEFT,
-  YK_PU,
-  YK_PD,
-  YK_RIGHT,
-  YK_UP,
-  YK__LAST,  // Marks the end of key events
-  // Those are not key numbers but window events
-  YE_RESIZE,
-  YE_EXPOSE,
-  // Those are not key numbers but mouse events
-  YE_BUTL_PRESS,
-  YE_BUTL_RELEASE,
-  YE_BUTM_PRESS,
-  YE_BUTM_RELEASE,
-  YE_BUTR_PRESS,
-  YE_BUTR_RELEASE,
-  YE_WHEEL_UP,		// Negative movement, normally bound to button 4
-  YE_WHEEL_DOWN,	// Positive movement, normally bound to button 5
-  YE_ENTER,
-  YE_LEAVE,
-  YE_MOTION,
-  // Those are not key numbers but application
-  //  events (i.e. generated internally)
-  YE_ZOOM_CHANGED,
-  // Those are ORed with the other key numbers :
-  YK_SHIFT	= 0x2000,
-  YK_CTRL	= 0X4000, 
-  YK_ALT	= 0x8000
-  };
+/* Events and key codes */
+const inpev_t YK_BACKSPACE	= '\b';
+const inpev_t YK_TAB		= '\t';
+const inpev_t YK_RETURN		= '\r';
+const inpev_t YK_ESC		= 0x1b;
+const inpev_t YK_DEL		= 0x7f;
+const inpev_t YK_		= 256;
+const inpev_t YK_BACKTAB	= 257;
+const inpev_t YK_DOWN		= 258;
+const inpev_t YK_END		= 259;
+const inpev_t YK_F1		= 260;
+const inpev_t YK_F2		= 261;
+const inpev_t YK_F3		= 262;
+const inpev_t YK_F4		= 263;
+const inpev_t YK_F5		= 264;
+const inpev_t YK_F6		= 265;
+const inpev_t YK_F7		= 266;
+const inpev_t YK_F8		= 267;
+const inpev_t YK_F9		= 268;
+const inpev_t YK_F10		= 269;
+const inpev_t YK_HOME		= 270;
+const inpev_t YK_INS		= 271;
+const inpev_t YK_LEFT		= 272;
+const inpev_t YK_PU		= 273;
+const inpev_t YK_PD		= 274;
+const inpev_t YK_RIGHT		= 275;
+const inpev_t YK_UP		= 276;
+const inpev_t YK__LAST		= 277;  // Marks the end of key events
+
+// Those are not key numbers but window events
+const inpev_t YE_RESIZE		= 278;
+const inpev_t YE_EXPOSE		= 279;
+
+// Those are not key numbers but mouse events
+const inpev_t YE_BUTL_PRESS	= 280;
+const inpev_t YE_BUTL_RELEASE	= 281;
+const inpev_t YE_BUTM_PRESS	= 282;
+const inpev_t YE_BUTM_RELEASE	= 283;
+const inpev_t YE_BUTR_PRESS	= 284;
+const inpev_t YE_BUTR_RELEASE	= 285;
+const inpev_t YE_WHEEL_UP	= 286;	// Negative, normally bound to button 4
+const inpev_t YE_WHEEL_DOWN	= 287;	// Positive, normally bound to button 5
+const inpev_t YE_ENTER		= 288;
+const inpev_t YE_LEAVE		= 289;
+const inpev_t YE_MOTION		= 290;
+
+// Those are not key numbers but application events
+// (i.e. generated internally)
+const inpev_t YE_ZOOM_CHANGED	= 291;
+
+// Those are ORed with the other key numbers :
+const inpev_t YK_SHIFT		= 0x2000;
+const inpev_t YK_CTRL		= 0X4000; 
+const inpev_t YK_ALT		= 0x8000;
 
 /* Defined in input.c -- see the comment there */
 extern input_status_t is;
@@ -126,6 +128,6 @@ int  has_input_event ();
 int  have_key ();
 int  get_key ();
 void get_key_or_click ();
-const char *key_to_string (int k);
+const char *key_to_string (inpev_t k);
 
 

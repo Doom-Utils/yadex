@@ -11,7 +11,7 @@ This file is part of Yadex.
 Yadex incorporates code from DEU 5.21 that was put in the public domain in
 1994 by Raphaël Quinet and Brendon Wyber.
 
-The rest of Yadex is Copyright © 1997-2000 André Majorel.
+The rest of Yadex is Copyright © 1997-2003 André Majorel and others.
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -31,6 +31,8 @@ Place, Suite 330, Boston, MA 02111-1307, USA.
 #include "yadex.h"
 #include "game.h"	/* yg_picture_format */
 #include "serialnum.h"
+#include "wadfile.h"
+#include "wadlist.h"
 #include "wads.h"
 #include "wads2.h"
 
@@ -51,24 +53,24 @@ int OpenMainWad (const char *filename)
 {
 MDirPtr lastp, newp;
 long n;
-WadPtr wad;
+Wad_file *wf;
 
 /* open the wad file */
 printf ("Loading iwad: %s...\n", filename);
-wad = BasicWadOpen (filename, yg_picture_format);
-if (! wad)
+wf = BasicWadOpen (filename, yg_picture_format);
+if (wf == 0)
    return 1;
-if (strncmp (wad->type, "IWAD", 4))
+if (strncmp (wf->type, "IWAD", 4))
    warn ("%.128s: is a pwad, not an iwad. Will use it anyway.\n", filename);
 
 /* create the master directory */
 lastp = NULL;
-for (n = 0; n < wad->dirsize; n++)
+for (n = 0; n < wf->dirsize; n++)
    {
    newp = (MDirPtr) GetMemory (sizeof (struct MasterDirectory));
    newp->next = NULL;
-   newp->wadfile = wad;
-   memcpy (&(newp->dir), &(wad->directory[n]), sizeof (struct Directory));
+   newp->wadfile = wf;
+   memcpy (&(newp->dir), &(wf->directory[n]), sizeof (struct Directory));
    if (MasterDir)
       lastp->next = newp;
    else
@@ -109,7 +111,7 @@ return 0;
  */
 int OpenPatchWad (const char *filename)
 {
-WadPtr wad;
+Wad_file * wad;
 MDirPtr mdir = 0;
 long n;
 char entryname[WAD_NAME + 1];
@@ -327,7 +329,7 @@ if (level_list != 0)
       {
       int prev = n > 0           ? levelname2rank (level_list[n - 1]) : INT_MIN;
       int cur  =                   levelname2rank (level_list[n    ]);
-      int next = n < nlevels - 1 ? levelname2rank (level_list[n + 1]) : INT_MAX;
+      int next = n + 1 < nlevels ? levelname2rank (level_list[n + 1]) : INT_MAX;
       if (cur != prev + 1 || cur != next - 1)
          {
          if (cur == prev + 1)
@@ -361,26 +363,15 @@ return levelname2rank ((const char *) p1)
  */
 void CloseWadFiles ()
 {
-WadPtr curw, nextw;
 MDirPtr curd, nextd;
 
-/* close the wad files */
-curw = WadFileList;
-WadFileList = NULL;
-while (curw)
-   {
-   nextw = curw->next;
-   if (curw->fd != NULL)
-      fclose (curw->fd);
-   if (curw->directory != NULL)
-      FreeMemory (curw->directory);
-   if (curw->filename != NULL)
-      FreeMemory (curw->filename);
-   FreeMemory (curw);
-   curw = nextw;
-   }
+// Close the wad files
+Wad_file *wf;
+wad_list.rewind ();
+while (wad_list.get (wf))
+   wad_list.del ();
 
-/* delete the master directory */
+// Delete the master directory
 curd = MasterDir;
 MasterDir = NULL;
 while (curd)
@@ -398,32 +389,16 @@ master_dir_serial.bump ();
  */
 void CloseUnusedWadFiles ()
 {
-WadPtr curw, prevw;
-MDirPtr mdir;
-
-prevw = NULL;
-curw = WadFileList;
-while (curw)
+Wad_file *wf;
+wad_list.rewind ();
+while (wad_list.get (wf))
    {
-   /* check if the wad file is used by a directory entry */
-   mdir = MasterDir;
-   while (mdir && mdir->wadfile != curw)
+   // Check if the wad file is used by a directory entry
+   MDirPtr mdir = MasterDir;
+   while (mdir && mdir->wadfile != wf)
       mdir = mdir->next;
-   if (mdir)
-      prevw = curw;
-   else
-      {
-      /* if this wad file is never used, close it */
-      if (prevw)
-	 prevw->next = curw->next;
-      else
-	 WadFileList = curw->next;
-      fclose (curw->fd);
-      FreeMemory (curw->directory);
-      FreeMemory (curw->filename);
-      FreeMemory (curw);
-      }
-   curw = prevw->next;
+   if (mdir == 0)
+      wad_list.del ();
    }
 }
 
@@ -436,120 +411,91 @@ while (curw)
  *
  *	Return a null pointer on error.
  */
-WadPtr BasicWadOpen (const char *filename, ygpf_t pic_format)
+Wad_file *BasicWadOpen (const char *filename, ygpf_t pic_format)
 {
-bool e;  // Error flag
+bool fail = false;
 
-// Look for the wad in the wad list.
-bool new_wad = true;
-WadPtr curw  = 0;
-WadPtr prevw = WadFileList;
-if (prevw)
-   {
-   curw = prevw->next;
-   while (curw && fncmp (filename, curw->filename))
-      {
-      prevw = curw;
-      curw = prevw->next;
-      }
-   if (curw != 0)
-      new_wad = false;
-   }
+/* If this wad is already open, close it first (it's not always
+   possible to open the same file twice). Also position the
+   wad_list pointer on the old wad (or at the end of the list if
+   this is a new wad) so that the reopening a wad doesn't change
+   it's relative position in the list.
+   
+   FIXME if reopening fails, we're left in the cold. I'm not
+   sure how to avoid that, though. */
+{
+   Wad_file *dummy;
+   wad_list.rewind ();
+   while (wad_list.get (dummy))
+      if (fncmp (filename, dummy->filename) == 0)
+	 {
+	 wad_list.del ();
+	 break;
+	 }
+}
 
-// Doesn't exist. Create a new WadFileInfo structure for it.
-if (new_wad)
-   {
-   curw = (WadPtr) GetMemory (sizeof (struct WadFileInfo));
-   curw->error      = false;
-   curw->pic_format = pic_format;
-   curw->next       = 0;	// NULL
-   curw->directory  = 0;	// NULL
-   curw->filename   = (char *) GetMemory (strlen (filename) + 1);
-   strcpy (curw->filename, filename);
-   }
+// Create a new Wad_file
+Wad_file *wf = new Wad_file;
+wf->pic_format_ = pic_format;
+wf->directory   = 0;
+wf->filename    = (char *) GetMemory (strlen (filename) + 1);
+strcpy (wf->filename, filename);
 
 // Open the wad and read its header.
-FILE *new_fd = fopen (filename, "rb");
-if (new_fd == NULL)
+wf->fp = fopen (filename, "rb");
+if (wf->fp == 0)
    {
-   printf ("%.128s: can't open (%s)\n", filename, strerror (errno));
-   if (new_wad)
-      {
-      FreeMemory (curw->filename);
-      FreeMemory (curw);
-      }
-   return 0;
+   printf ("%.128s: %s\n", filename, strerror (errno));
+   fail = true;
+   goto byebye;
    }
-e  = file_read_bytes (new_fd, curw->type, 4);
-e |= file_read_i32   (new_fd, &curw->dirsize);
-e |= file_read_i32   (new_fd, &curw->dirstart);
-if (e || strncmp (curw->type, "IWAD", 4) && strncmp (curw->type, "PWAD", 4))
+{
+bool e = file_read_bytes (wf->fp, wf->type, 4);
+e     |= file_read_i32   (wf->fp, &wf->dirsize);
+e     |= file_read_i32   (wf->fp, &wf->dirstart);
+if (e || memcmp (wf->type, "IWAD", 4) != 0 && memcmp (wf->type, "PWAD", 4) != 0)
    {
    printf ("%.128s: not a wad (bad header)\n", filename);
-   fclose (new_fd);
-   if (new_wad)
-      {
-      FreeMemory (curw->filename);
-      FreeMemory (curw);
-      }
-   return 0;
+   fail = true;
+   goto byebye;
    }
+}
 verbmsg ("  Type %.4s, directory has %ld entries at offset %08lXh\n",
-   curw->type, (long) curw->dirsize, (long) curw->dirstart);
+   wf->type, (long) wf->dirsize, (long) wf->dirstart);
 
 // Load the directory of the wad
-curw->directory = (DirPtr) GetMemory ((long) sizeof (struct Directory)
-   * curw->dirsize);
-e = fseek (new_fd, curw->dirstart, SEEK_SET);
-if (e)
+wf->directory = (DirPtr) GetMemory ((long) sizeof (struct Directory)
+   * wf->dirsize);
+if (fseek (wf->fp, wf->dirstart, SEEK_SET) != 0)
    {
    printf ("%.128s: can't seek to directory at %08lXh\n",
-      filename, curw->dirstart);
-   fclose (new_fd);
-   if (new_wad)
-      {
-      FreeMemory (curw->filename);
-      FreeMemory (curw);
-      }
-   return 0;
+      filename, wf->dirstart);
+   fail = true;
+   goto byebye;
    }
-DirPtr d = curw->directory;
-for (i32 n = 0; n < curw->dirsize; n++)
+for (i32 n = 0; n < wf->dirsize; n++)
    {
-   e  = file_read_i32   (new_fd, &d->start);
-   e |= file_read_i32   (new_fd, &d->size );
-   e |= file_read_bytes (new_fd, d->name, WAD_NAME);
+   bool e  = file_read_i32   (wf->fp, &wf->directory[n].start);
+   e      |= file_read_i32   (wf->fp, &wf->directory[n].size);
+   e      |= file_read_bytes (wf->fp, wf->directory[n].name, WAD_NAME);
    if (e)
       {
       printf ("%.128s: read error on directory entry %ld\n", filename, (long)n);
-      fclose (new_fd);
-      if (new_wad)
-	 {
-	 FreeMemory (curw->filename);
-	 FreeMemory (curw);
-	 }
-      return 0;
+      fail = true;
+      goto byebye;
       }
-   d++;
    }
 
-// Successfully opened. Append the WadFileInfo struct to WadFileList.
-if (new_wad)
-   {
-   if (prevw == NULL)
-      WadFileList = curw;
-   else
-      prevw->next = curw;
-   }
-if (! new_wad)
-   {
-   if (curw->fd == 0)
-      nf_bug ("BasicWadOpen: null old fp");
-   else
-      fclose (curw->fd);
-   }
-curw->fd = new_fd;
-return curw;
+// Insert the new wad in the list
+wad_list.insert (wf);
+
+byebye:
+if (fail)
+  {
+  delete wf;
+  return 0;
+  }
+return wf;
 }
 
 
@@ -572,7 +518,8 @@ for (dir = MasterDir; dir; dir = dir->next)
    {
    strncpy (dataname, dir->dir.name, WAD_NAME);
    fprintf (file, "%-*s  %-50s  %6ld  x%08lx\n",
-    WAD_NAME, dataname, dir->wadfile->filename, dir->dir.size, dir->dir.start);
+    WAD_NAME, dataname, dir->wadfile->pathname (),
+    dir->dir.size, dir->dir.start);
    if (file == stdout && lines++ > screen_lines - 4)
       {
       lines = 0;
@@ -592,7 +539,7 @@ for (dir = MasterDir; dir; dir = dir->next)
 /*
  *	ListFileDirectory - list the directory of a wad
  */
-void ListFileDirectory (FILE *file, WadPtr wad)
+void ListFileDirectory (FILE *file, const Wad_file *wad)
 {
 char dataname[WAD_NAME + 1];
 char key;
@@ -602,7 +549,7 @@ long n;
 dataname[WAD_NAME] = '\0';
 fprintf (file, "Wad File Directory\n");
 fprintf (file, "==================\n\n");
-fprintf (file, "Wad File: %s\n\n", wad->filename);
+fprintf (file, "Wad File: %s\n\n", wad->pathname ());
 fprintf (file, "NAME____  SIZE__  START____  END______\n");
 for (n = 0; n < wad->dirsize; n++)
    {
@@ -666,14 +613,20 @@ file_write_i32 (file, 0xdeadbeef);      /* put true value in later */
 file_write_i32 (file, 0xdeadbeef);      /* put true value in later */
 
 /* output the directory data chunks */
+const Wad_file *iwad = 0;	// FIXME unreliable way of knowing the iwad
+wad_list.rewind ();		// got to look into this
+wad_list.get (iwad);
 for (cur = MasterDir; cur; cur = cur->next)
    {
-   if (patchonly && cur->wadfile == WadFileList)
+   if (patchonly && cur->wadfile == iwad)
       continue;
    size = cur->dir.size;
    counter += size;
-   wad_seek (cur->wadfile, cur->dir.start);
-   CopyBytes (file, cur->wadfile->fd, size);
+   cur->wadfile->seek (cur->dir.start);
+   if (cur->wadfile->error ())
+      ;  // FIXME
+   if (copy_bytes (file, cur->wadfile->fp, size) != 0)
+      ;  // FIXME
    printf ("Size: %luK\r", counter / 1024);
    }
 
@@ -683,7 +636,7 @@ counter = 12;
 dirnum = 0;
 for (cur = MasterDir; cur; cur = cur->next)
    {
-   if (patchonly && cur->wadfile == WadFileList)
+   if (patchonly && cur->wadfile == iwad)
       continue;
    if (dirnum % 100 == 0)
       printf ("Outputting directory %04ld...\r", dirnum);
@@ -716,7 +669,6 @@ fclose (file);
  */
 void DumpDirectoryEntry (FILE *file, const char *entryname)
 {
-MDirPtr entry;
 char dataname[WAD_NAME + 1];
 char key;
 int lines = 5;
@@ -724,69 +676,70 @@ long n = 0;
 unsigned char buf[16];
 const int bytes_per_line = 16;
 
-entry = MasterDir;
-while (entry)
+for (MDirPtr entry = MasterDir; entry != 0; entry = entry->next)
    {
-   if (!y_strnicmp (entry->dir.name, entryname, WAD_NAME))
+   if (y_strnicmp (entry->dir.name, entryname, WAD_NAME) != 0)
+      continue;
+   strncpy (dataname, entry->dir.name, WAD_NAME);
+   dataname[WAD_NAME] = '\0';
+   fprintf (file, "Contents of entry %s (size = %ld bytes):\n",
+      dataname, entry->dir.size);
+   const Wad_file *wf = entry->wadfile;
+   wf->seek (entry->dir.start);
+   for (n = 0; n < entry->dir.size;)
       {
-      strncpy (dataname, entry->dir.name, WAD_NAME);
-      dataname[WAD_NAME] = '\0';
-      fprintf (file, "Contents of entry %s (size = %ld bytes):\n", dataname, entry->dir.size);
-      wad_seek (entry->wadfile, entry->dir.start);
-      for (n = 0; n < entry->dir.size;)
+      int i;
+      fprintf (file, "%04lX: ", n);
+
+      // Nb of bytes to read for this line
+      long bytes_to_read = entry->dir.size - n;
+      if (bytes_to_read > bytes_per_line)
+	 bytes_to_read = bytes_per_line;
+      long nbytes = wf->read_vbytes (buf, bytes_to_read);
+      if (wf->error ())
+	 break;
+      n += nbytes;
+
+      for (i = 0; i < nbytes; i++)
+	 fprintf (file, " %02X", buf[i]);
+      for (; i < bytes_per_line; i++)
+	 fputs ("   ", file);
+      fprintf (file, "   ");
+
+      for (i = 0; i < nbytes; i++)
 	 {
-	 int i;
-	 fprintf (file, "%04lX: ", n);
-
-         // Nb of bytes to read for this line
-	 long bytes_to_read = entry->dir.size - n;
-	 if (bytes_to_read > bytes_per_line)
-	    bytes_to_read = bytes_per_line;
-	 long nbytes = wad_read_vbytes (entry->wadfile, buf, bytes_to_read);
-	 n += nbytes;
-
-	 for (i = 0; i < nbytes; i++)
-	    fprintf (file, " %02X", buf[i]);
-	 for (; i < bytes_per_line; i++)
-	    fputs ("   ", file);
-	 fprintf (file, "   ");
-
-	 for (i = 0; i < nbytes; i++)
-	    {
-	    if (buf[i] >= 0x20
-               && buf[i] != 0x7f
+	 if (buf[i] >= 0x20
+	    && buf[i] != 0x7f
 #ifdef Y_UNIX
-               && ! (buf[i] >= 0x80 && buf[i] <= 0xa0)  // ISO 8859-1
+	    && ! (buf[i] >= 0x80 && buf[i] <= 0xa0)  // ISO 8859-1
 #endif
-               )
-	       putc (buf[i], file);
-	    else
-	       putc ('.', file);
-	    }
-	 putc ('\n', file);
+	    )
+	    putc (buf[i], file);
+	 else
+	    putc ('.', file);
+	 }
+      putc ('\n', file);
 
-	 if (file == stdout && lines++ > screen_lines - 4)
+      if (file == stdout && lines++ > screen_lines - 4)
+	 {
+	 lines = 0;
+	 printf ("[%d%% - Q + Return to abort,"
+	     " S + Return to skip this entry,"
+	     " Return to continue]", (int) (n * 100 / entry->dir.size));
+	 key = getchar ();
+	 printf ("\r%68s\r", "");
+	 if (key == 'S' || key == 's')
 	    {
-	    lines = 0;
-	    printf ("[%d%% - Q + Return to abort,"
-		" S + Return to skip this entry,"
-		" Return to continue]", (int) (n * 100 / entry->dir.size));
-	    key = getchar ();
-	    printf ("\r%68s\r", "");
-	    if (key == 'S' || key == 's')
-               {
-               getchar ();  // Read the '\n'
-	       break;
-               }
-	    if (key == 'Q' || key == 'q')
-               {
-               getchar ();  // Read the '\n'
-	       return;
-               }
+	    getchar ();  // Read the '\n'
+	    break;
+	    }
+	 if (key == 'Q' || key == 'q')
+	    {
+	    getchar ();  // Read the '\n'
+	    return;
 	    }
 	 }
       }
-   entry = entry->next;
    }
 if (! n)
    {
@@ -822,8 +775,23 @@ if (entry)
    file_write_name (file, entry->dir.name);	// Name of first entry
 
    // Write the lump data
-   wad_seek (entry->wadfile, entry->dir.start);
-   CopyBytes (file, entry->wadfile->fd, entry->dir.size);
+   entry->wadfile->seek (entry->dir.start);
+   if (entry->wadfile->error ())
+      {
+      err ("%s: seek error", entryname);
+      return;
+      }
+   int r = copy_bytes (file, entry->wadfile->fp, entry->dir.size);
+   if (r != 0)
+      {
+      if (r == 1)
+	err ("%s: error reading from source wad", entryname);
+      else if (r == 2)
+	err ("%s: error writing to destination wad", entryname);
+      else
+	nf_bug ("%s: copy_bytes() returned %d", entryname, r);
+      return;
+      }
    }
 else
    {
@@ -849,8 +817,23 @@ if (entry)
    {
    verbmsg ("Writing %ld bytes starting from offset %lX...\n",
       (long) entry->dir.size, (unsigned long) entry->dir.start);
-   wad_seek (entry->wadfile, entry->dir.start);
-   CopyBytes (file, entry->wadfile->fd, entry->dir.size);
+   entry->wadfile->seek (entry->dir.start);
+   if (entry->wadfile->error ())
+      {
+      err ("%s: seek error", entryname);
+      return;
+      }
+   int r = copy_bytes (file, entry->wadfile->fp, entry->dir.size);
+   if (r != 0)
+      {
+      if (r == 1)
+	err ("%s: error reading from source wad", entryname);
+      else if (r == 2)
+	err ("%s: error writing to destination file", entryname);
+      else
+	nf_bug ("%s: copy_bytes() returned %d", entryname, r);
+      return;
+      }
    }
 else
    {
@@ -892,7 +875,17 @@ strncpy (name8, entryname, WAD_NAME);
 file_write_name (file, name8);		// Name of first entry
 
 // Write the lump data
-CopyBytes (file, raw, size);
+int r = copy_bytes (file, raw, size);
+if (r != 0)
+   {
+   if (r == 1)
+     err ("%s: error reading from source file", entryname);
+   else if (r == 2)
+     err ("%s: error writing to destination wad", entryname);
+   else
+     nf_bug ("%s: copy_bytes() returned %d", entryname, r);
+   return;
+   }
 }
 
 

@@ -11,7 +11,7 @@ This file is part of Yadex.
 Yadex incorporates code from DEU 5.21 that was put in the public domain in
 1994 by Raphaël Quinet and Brendon Wyber.
 
-The rest of Yadex is Copyright © 1997-2000 André Majorel.
+The rest of Yadex is Copyright © 1997-2003 André Majorel and others.
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -31,12 +31,7 @@ Place, Suite 330, Boston, MA 02111-1307, USA.
 #include "yadex.h"
 #include "gfx.h"
 #include "lists.h"
-
-
-#ifdef SHIFT_F1
-// FIXME move this somewhere else
-void SavePic (int x0, int y0, int width, int height, const char *name);
-#endif
+#include "wadfile.h"
 
 
 // FIXME Move this in a more public place
@@ -50,7 +45,7 @@ void lump_loc_string (char *buf, size_t buf_size, const Lump_loc& lump_loc)
     *buf = '\0';
     return;
   }
-  y_filename (buf, len + 1, lump_loc.wad->filename);
+  y_filename (buf, len + 1, lump_loc.wad->pathname ());
   sprintf (buf + strlen (buf), "(%08lXh)",
     (unsigned long) lump_loc.ofs & 0xffffffff);
 }
@@ -76,7 +71,9 @@ AYM 1998-02-12 : if hookfunc is <> NULL, a message "Press shift-F1 to save
   image to file" is displayed and shift-F1 does just that.
 */
 
+#ifdef DEBUG
 static bool disp_lump_loc = false;
+#endif
 
 void InputNameFromListWithFunc (
    int x0,
@@ -84,17 +81,15 @@ void InputNameFromListWithFunc (
    const char *prompt,
    size_t listsize,
    const char *const *list,
-   int listdisp,
+   size_t listdisp,
    char *name,
    int width,
    int height,
    void (*hookfunc)(hookfunc_comm_t *),
    char flags_to_pass_to_callback)
 {
-#ifdef SHIFT_F1
 const char *msg1 = "Press Shift-F1 to";
 const char *msg2 = "save image to file";
-#endif
 int    key;
 size_t n;
 size_t win_height;
@@ -105,7 +100,9 @@ int    x1, y1, x2, y2;
 size_t maxlen;
 int    xlist;
 bool   picture_size_drawn = false;
+#ifdef DEBUG
 bool   lump_loc_drawn = false;
+#endif
 bool   ok, firstkey;
 int    entry_out_x0;	/* Edge of name entry widget including border */
 int    entry_out_y0;
@@ -116,6 +113,18 @@ int    entry_text_y0;
 int    entry_text_x1;
 int    entry_text_y1;
 
+// Sanity
+if (width < 0)
+{
+  nf_bug ("inflwf1");
+  width = 0;
+}
+if (height < 0)
+{
+  nf_bug ("inflwf2");
+  height = 0;
+}
+
 // Compute maxlen, the length of the longest item in the list
 maxlen = 1;
 for (n = 0; n < listsize; n++)
@@ -123,10 +132,11 @@ for (n = 0; n < listsize; n++)
       maxlen = strlen (list[n]);
 for (n = strlen (name) + 1; n <= maxlen; n++)
    name[n] = '\0';
+char *namedisp = new char[maxlen + 1];
+memset (namedisp, '\xff', maxlen + 1);  // Always != from name
 
 // Compute the minimum width of the dialog box
 l0 = 12;
-#ifdef SHIFT_F1
 if (hookfunc != NULL)
    {
    if ((int) (strlen (msg1) + 2) > l0)  // (int) to prevent GCC warning
@@ -134,7 +144,6 @@ if (hookfunc != NULL)
    if ((int) (strlen (msg2) + 2) > l0)  // (int) to prevent GCC warning
       l0 = strlen (msg2) + 2;
    }
-#endif
 xlist = 10 + l0 * FONTW;
 win_columns = l0 + maxlen;
 if ((int) (strlen (prompt)) > win_columns)  // (int) to prevent GCC warning
@@ -144,7 +153,8 @@ x1 = win_width + 8;
 y1 = 10 + 1;
 if (width > 0)
    win_width += 16 + width;
-win_height = y_max (height + 20, listdisp * FONTH + 10 + 28);
+// (int) to prevent GCC warning
+win_height = y_max (height + 20, (int) (listdisp * FONTH + 10 + 28));
 if (x0 < 0)
    x0 = (ScrMaxX - win_width) / 2;
 if (y0 < 0)
@@ -179,7 +189,6 @@ DrawScreenBoxHollow (entry_out_x0, entry_out_y0, entry_out_x1, entry_out_y1,
 set_colour (YELLOW);
 DrawScreenText (x0 + 10, y0 + 8, prompt);
 set_colour (WINFG);
-#ifdef SHIFT_F1
 if (hookfunc != NULL)
    {
    DrawScreenText (x0 + 10,
@@ -189,7 +198,6 @@ if (hookfunc != NULL)
 		   y0 + win_height - BOX_BORDER - WIDE_VSPACING - FONTH,
 		   msg2);
    }
-#endif
 if (width > 0)
    DrawScreenBoxHollow (x1 - 1, y1 - 1, x2 + 1, y2 + 1, BLACK);
 firstkey = true;
@@ -200,10 +208,16 @@ int disp_y0 = (y2 + y1) / 2;
 int disp_x1 = disp_x0 - 1;
 int disp_y1 = disp_y0 - 1;
 
+int maxpatches = 0;
+
 // The event loop
 for (;;)
    {
    hookfunc_comm_t c;
+
+   // Reset maxpatches every time when change texture
+   if (strcmp (name, namedisp) != 0)
+     maxpatches = 0;
 
    // Is "name" in the list ?
    for (n = 0; n < listsize; n++)
@@ -215,7 +229,7 @@ for (;;)
 
    // Display the <listdisp> next items in the list
    {
-   int l;				// Current line
+   size_t l;				// Current line
    int y = entry_out_y0;		// Y-coord of current line
    int xmin = x0 + xlist;
    int xmax = xmin + FONTW * maxlen - 1;
@@ -253,19 +267,20 @@ for (;;)
    if (hookfunc)
       {
       // Display the picture name
-      c.x0      = x1;
-      c.y0      = y1;
-      c.x1      = x2;
-      c.y1      = y2;
-      c.name    = name;
-      c.xofs    = 0;
-      c.yofs    = 0;
-      c.flags   = flags_to_pass_to_callback;
+      c.x0         = x1;
+      c.y0         = y1;
+      c.x1         = x2;
+      c.y1         = y2;
+      c.name       = name;
+      c.xofs       = 0;
+      c.yofs       = 0;
+      c.flags      = flags_to_pass_to_callback;
       const int BAD_VALUE = INT_MAX;
-      c.disp_x0 = BAD_VALUE;  // Catch faulty callbacks
-      c.disp_y0 = BAD_VALUE;  // Catch faulty callbacks
-      c.disp_x1 = BAD_VALUE;  // Catch faulty callbacks
-      c.disp_y1 = BAD_VALUE;  // Catch faulty callbacks
+      c.disp_x0    = BAD_VALUE;  // Catch faulty callbacks
+      c.disp_y0    = BAD_VALUE;  // Catch faulty callbacks
+      c.disp_x1    = BAD_VALUE;  // Catch faulty callbacks
+      c.disp_y1    = BAD_VALUE;  // Catch faulty callbacks
+      c.maxpatches = maxpatches;
       if (ok)
 	 {
 	 hookfunc (&c);
@@ -278,6 +293,7 @@ for (;;)
 	 c.disp_x1 = c.disp_x0 - 1;
 	 c.disp_y1 = c.disp_y0 - 1;
 	 }
+      strcpy (namedisp, name);
 
       // Display the (unclipped) size of the picture
       {
@@ -428,7 +444,7 @@ shortcut:
       }
    else if ((key == YK_PU || key == 2) && n > 0)	// [Pgup], ^B
       {
-      if ((int) n > listdisp)
+      if (n > listdisp)
 	 strcpy (name, list[n - listdisp]);
       else
 	 strcpy (name, list[0]);
@@ -485,21 +501,50 @@ shortcut:
 	 }
       strcpy (name, list[0]);
       }
+   else if (key == YK_TAB)				// [Tab]
+      strcpy (name, list[n]);
    else if (key == YK_F1 && c.flags & HOOK_LOC_VALID)	// [F1]: print location
       {
       printf ("%.8s: %s(%08lXh)\n",
-	 name, c.lump_loc.wad->filename, (unsigned long) c.lump_loc.ofs);
+	 name, c.lump_loc.wad->pathname (), (unsigned long) c.lump_loc.ofs);
       }
-#ifdef SHIFT_F1
    else if (key == YK_F1 + YK_SHIFT	// [Shift][F1] : dump image to file
     && hookfunc != NULL
     && (c.flags & HOOK_DRAWN))
       {
-      SavePic (c.x0, c.y0, c.width, c.height, c.name); // FIXME use the buffer!
+      const size_t size = strlen (name) + 4 + 1;
+      char *filename = new char[size];
+      al_scpslower (filename, name,   size - 1);
+      al_saps      (filename, ".ppm", size - 1);
+      if (c.img.save (filename) != 0)
+	 {
+	 if (errno == ECHILD)
+	    err ("Error loading PLAYPAL");
+	 else
+	    err ("%s: %s", filename, strerror (errno));
+	 }
+      else
+	 {
+	 printf ("Saved %s as %s\n", name, filename);
+	 }
+      delete[] filename;
       }
-#endif
-   else if (key == YK_TAB)				// [Tab]
-      strcpy (name, list[n]);
+   else if (key == 1)					// ^A: more patches
+      {
+      if (maxpatches + 1 < c.npatches)
+	maxpatches++;
+      else
+	maxpatches = 0;
+      printf ("maxpatches %d\n", maxpatches);
+      }
+   else if (key == 24)					// ^X: less patches
+      {
+      if (maxpatches == 0)
+	maxpatches = c.npatches - 1;
+      else
+	maxpatches--;
+      printf ("maxpatches %d\n", maxpatches);
+      }
    else if (ok && key == YK_RETURN)			// [Return]
       break; /* return "name" */
    else if (key == YK_ESC)				// [Esc]
@@ -512,6 +557,7 @@ shortcut:
 done_with_event:
    ;
    }
+delete[] namedisp;
 }
 
 

@@ -10,7 +10,7 @@ This file is part of Yadex.
 Yadex incorporates code from DEU 5.21 that was put in the public domain in
 1994 by Raphaël Quinet and Brendon Wyber.
 
-The rest of Yadex is Copyright © 1997-2000 André Majorel.
+The rest of Yadex is Copyright © 1997-2003 André Majorel and others.
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -29,6 +29,7 @@ Place, Suite 330, Boston, MA 02111-1307, USA.
 
 #include "yadex.h"
 #include "game.h"
+#include "objid.h"
 
 
 /*
@@ -38,16 +39,16 @@ const char *GetObjectTypeName (int objtype)
 {
 switch (objtype)
    {
-   case OBJ_THINGS:   return "Thing";
-   case OBJ_LINEDEFS: return "Linedef";
-   case OBJ_SIDEDEFS: return "Sidedef";
-   case OBJ_VERTICES: return "Vertex";
-   case OBJ_SEGS:     return "Segment";
-   case OBJ_SSECTORS: return "SSector";
-   case OBJ_NODES:    return "Node";
-   case OBJ_SECTORS:  return "Sector";
-   case OBJ_REJECT:   return "Reject";
-   case OBJ_BLOCKMAP: return "Blockmap";
+   case OBJ_THINGS:   return "thing";
+   case OBJ_LINEDEFS: return "linedef";
+   case OBJ_SIDEDEFS: return "sidedef";
+   case OBJ_VERTICES: return "vertex";
+   case OBJ_SEGS:     return "segment";
+   case OBJ_SSECTORS: return "ssector";
+   case OBJ_NODES:    return "node";
+   case OBJ_SECTORS:  return "sector";
+   case OBJ_REJECT:   return "reject";
+   case OBJ_BLOCKMAP: return "blockmap";
    }
 return "< Bug! >";
 }

@@ -12,7 +12,7 @@ This file is part of Yadex.
 Yadex incorporates code from DEU 5.21 that was put in the public domain in
 1994 by Raphaël Quinet and Brendon Wyber.
 
-The rest of Yadex is Copyright © 1997-2000 André Majorel.
+The rest of Yadex is Copyright © 1997-2003 André Majorel and others.
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -95,4 +95,39 @@ void bad_sector_number (SelPtr *list)
   }
 }
 
+
+/*
+ *	A stopgap to please IvL
+ */
+void list_tagged_sectors (int tag)
+{
+  printf ("tag %d:", tag);
+  int count = 0;
+
+  for (int n = 0; n < NumSectors; n++)
+    if (Sectors[n].tag == tag)
+    {
+      printf (" %d", n);
+      count++;
+    }
+  printf (" (total %d)\n", count);
+}
+
+
+/*
+ *	A stopgap to please IvL
+ */
+void list_tagged_linedefs (int tag)
+{
+  printf ("tag %d:", tag);
+  int count = 0;
+
+  for (int n = 0; n < NumLineDefs; n++)
+    if (LineDefs[n].tag == tag)
+    {
+      printf (" %d", n);
+      count++;
+    }
+  printf (" (total %d)\n", count);
+}
 

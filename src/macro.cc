@@ -11,7 +11,7 @@ This file is part of Yadex.
 Yadex incorporates code from DEU 5.21 that was put in the public domain in
 1994 by Raphaël Quinet and Brendon Wyber.
 
-The rest of Yadex is Copyright © 1997-2000 André Majorel.
+The rest of Yadex is Copyright © 1997-2003 André Majorel and others.
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -85,9 +85,16 @@ int vmacro_expand (char *buf, size_t size, const char *fmt, va_list list)
   // This is awful, but who cares ?
   while (*fmt)
   {
-    va_list l = list;
+    va_list l;
     const char *macro_name = 0;
     const char *macro_value = 0;
+
+#ifdef __va_copy
+    __va_copy(l, list);
+#else
+    l = list;
+#endif
+
     while (macro_name = va_arg (l, const char *))
     {
       macro_value = va_arg (l, const char *);
@@ -96,7 +103,7 @@ int vmacro_expand (char *buf, size_t size, const char *fmt, va_list list)
       if (len1 >= len2 && ! memcmp (fmt, macro_name, len2))
 	break;
     }
-    if (macro_name)
+    if (macro_name != 0)
     {
       macro_no++;
       if (macro_value == 0)
@@ -118,3 +125,140 @@ int vmacro_expand (char *buf, size_t size, const char *fmt, va_list list)
 }
 
 
+/*
+ *	macro_expand - expand macro references in a string
+ *
+ *	Copies the NUL-terminated string in <fmt> into the
+ *	buffer <buf>, replacing certain strings by other
+ *	strings. <buf> must be at least (<size> + 1) characters
+ *	long.
+ *
+ *	The macro definitions are obtained by scanning the
+ *	iterator range <macdef_begin> through <macdef_end>. The
+ *	only constraints on these iterators are that they must
+ *	be input iterators and iterator->name and
+ *	iterator->value must be defined and point to
+ *	NUL-terminated strings.
+ *
+ *	Matching is case-sensitive. If several names would
+ *	match, the first one is used.  For example,
+ *
+ *	  struct macdef
+ *	  {
+ *	    const char *name;
+ *	    const char *value;
+ *	    macdef (const char *name, const char *value) :
+ *	      name (name), value (value);
+ *	  };
+ *	  std::list<macdef> macdefs;
+ *	  macdefs.push_back (macdef ("%b", "1"));
+ *	  macdefs.push_back (macdef ("%bc", "2"));
+ *	  macro_expand (buf, 99, "a%bcd", macdefs.begin (), macdefs.end ());
+ *
+ *	puts "a1cd" in buf, not "a2d".
+ *
+ *	If the value of a macro to expand is a null pointer, the
+ *	macro expands to an empty string.
+ *
+ *	If <fmt> expands to more than <size> characters, only
+ *	the first <size> characters of the expansion are stored
+ *	in <buf>. After the function returns, <buf> is
+ *	guaranteed to be NUL-terminated.
+ *
+ *	Return 0 if successful, non-zero if one of the macros
+ *	could not be expanded (value was a null pointer). In
+ *	that case, the actual number returned is the number of
+ *	the first macro that could not be expanded, starting
+ *	from 1.
+ */
+template <typename const_iterator>
+int macro_expand (char *buf, size_t size, const char *fmt,
+  const_iterator macdef_begin, const_iterator macdef_end)
+{
+  int rc = 0;
+  int macro_no = 0;
+
+  *buf = '\0';
+  size_t fmt_len = strlen (fmt);
+  while (*fmt != '\0')
+  {
+    const char *macro_name     = 0;
+    const char *macro_value    = 0;
+    size_t      macro_name_len = 0;
+    bool        match          = false;
+    for (const_iterator i = macdef_begin; i != macdef_end; ++i)
+    {
+      macro_name     = i->name;
+      macro_value    = i->value;
+      macro_name_len = strlen (macro_name);
+      if (macro_name_len <= fmt_len
+	  && memcmp (fmt, macro_name, macro_name_len) == 0)
+      {
+	match = true;
+	break;
+      }
+    }
+    if (match)
+    {
+      macro_no++;
+      if (macro_value == 0)
+      {
+	if (rc == 0)
+	  rc = macro_no;
+      }
+      else
+        al_saps (buf, macro_value, size);
+      fmt     += macro_name_len;
+      fmt_len -= macro_name_len;
+    }
+    else
+    {
+      al_sapc (buf, *fmt, size);
+      fmt++;
+      fmt_len--;
+    }
+  }
+  return rc;
+}
+
+
+#ifdef TEST
+/*
+  make CXXFLAGS='-DTEST -DY_UNIX -DY_X11'
+    LDFLAGS=../obj/0/atclib/al_saps.o\ ../obj/0/atclib/al_sapc.o
+    macro
+*/
+
+#include <list>
+#include <algorithm>
+
+
+struct macdef
+{
+  const char *name;
+  const char *value;
+  macdef (const char *name, const char *value) :
+    name (name), value (value) { }
+};
+
+
+void dump (const macdef& m)
+{
+  fprintf (stderr, "%s=%s\n", m.name, m.value);
+}
+
+
+int main ()
+{
+  char buf[100];
+  std::list<macdef> macdefs;
+  macdefs.push_back (macdef ("%b", "1"));
+  macdefs.push_back (macdef ("%bc", "2"));
+  std::for_each (macdefs.begin (), macdefs.end (), dump);
+  macro_expand (buf, sizeof buf - 1, "a%bcd", macdefs.begin (), macdefs.end ());
+  puts (buf);
+  return 0;
+}
+
+
+#endif

@@ -59,12 +59,12 @@ FHS (filesystem hierarchy standard)</a>.
 The installation procedure will try to copy files in the following
 directories, creating the directories if they don't exist ;
 <ul>
+<li><code>/etc/yadex/$VERSION</code>
 <li><code>/usr/local/bin</code>
-<li><code>/usr/local/etc/yadex</code>
-<li><code>/usr/local/share/games/yadex</code>
+<li><code>/usr/local/share/games/yadex/$VERSION</code>
 </ul>
 <p>So make sure you have the necessary rights before installing
-(or change the makefile).
+(or install in a different location).
 
 		<h4>Display</h4>
 
@@ -99,9 +99,11 @@ See <a href="README"><code>README</code></a>.
 <p>Don't forget to tell Yadex where your iwads are by changing
 the lines "<code>iwad1&nbsp;=</code>",
 "<code>iwad2&nbsp;=</code>" etc. in
-<code>/usr/local/etc/<var>version</var>/yadex.cfg</code>. If
-there is an iwad you don't have, you can just comment out the
-corresponding line.
+<code>~/.yadex/yadex.cfg</code> or
+<code>/etc/yadex/$VERSION/yadex.cfg</code> (the actual location
+might be different if you compiled with another prefix than the
+default). If there is an iwad you don't have, you can just
+comment out the corresponding line.
 
 	<h2><a name="quick_start">
 	2. Quick start</a></h2>
@@ -324,13 +326,14 @@ through a nodes builder.</strong> If you don't, you'll get
 strange results or you'll crash the game.
 
 <p>There are several nodes builders around. One of the best is
-BSP 2.3. Lee Killough kindly allowed me to include it with the
-Yadex distribution. To build the nodes on your level with BSP
-and then test it with Doom, type something along the lines
-of&nbsp;:
+BSP, which you can download from <a
+href="http://doombsp.sourceforge.net/"><code
+>http://doombsp.sourceforge.net/</code></a>. To build the nodes
+on your level with BSP and then test it with Doom, type
+something along the lines of&nbsp;:
 
 <p><pre>
-$ ybsp mywad.wad -o final.wad
+$ bsp -o final.wad mywad.wad
 $ doom -file final.wad
 </pre>
 

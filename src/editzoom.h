@@ -4,6 +4,17 @@
  */
 
 
+/* zoom factors for the digit keys
+ */
+extern double digit_zoom_factors[10];
+
+
+/*
+ *      edit_zoom_init - initialise
+ */
+void edit_zoom_init (void);
+
+
 /*
  *	edit_zoom_in - zoom_in
  *

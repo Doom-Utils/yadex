@@ -6,4 +6,3 @@
 
 void frob_things_flags (SelPtr list, int op, int operand);
 
-

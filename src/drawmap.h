@@ -4,8 +4,16 @@
  */
 
 
+#ifndef YH_DRAWMAP
+#define YH_DRAWMAP
+
 #include "_edit.h"
 
-void draw_map (edit_t *e); /* SWAP! */
+
+int vertex_radius (double scale);
+
+void draw_map (edit_t *e);
 void draw_infobar (const edit_t *e);
 
+
+#endif

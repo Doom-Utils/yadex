@@ -11,7 +11,7 @@ This file is part of Yadex.
 Yadex incorporates code from DEU 5.21 that was put in the public domain in
 1994 by Raphaël Quinet and Brendon Wyber.
 
-The rest of Yadex is Copyright © 1997-2000 André Majorel.
+The rest of Yadex is Copyright © 1997-2003 André Majorel and others.
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -35,6 +35,8 @@ Place, Suite 330, Boston, MA 02111-1307, USA.
 #include "gfx.h"
 #include "gotoobj.h"
 #include "levels.h"
+#include "objects.h"
+#include "objid.h"
 #include "oldmenus.h"
 #include "selectn.h"
 
@@ -60,12 +62,12 @@ if (Registered)
    */
       line5 = "Check texture names";
    }
-switch (DisplayMenu (x0, y0, "Check level consistency",
-                     "Number of objects",
-                     "Check if all Sectors are closed",
-                     "Check all cross-references",
-                     "Check for missing textures",
-                     line5,
+switch (vDisplayMenu (x0, y0, "Check level consistency",
+                     "Number of objects",		YK_, 0,
+                     "Check if all Sectors are closed",	YK_, 0,
+                     "Check all cross-references",	YK_, 0,
+                     "Check for missing textures",	YK_, 0,
+                     line5,				YK_, 0,
                      NULL))
    {
    case 1:
@@ -282,7 +284,7 @@ for (s = 0; s < NumSectors; s++)
 	 sprintf (msg2, "There is no sidedef ending at Vertex #%d", n);
 	 if (CheckFailed (-1, -1, msg1, msg2, 0, first_time))
 	    {
-	    GoToObject (OBJ_VERTICES, n);
+	    GoToObject (Objid (OBJ_VERTICES, n));
 	    return;
 	    }
 	 }
@@ -292,7 +294,7 @@ for (s = 0; s < NumSectors; s++)
 	 sprintf (msg2, "There is no sidedef starting at Vertex #%d", n);
 	 if (CheckFailed (-1, -1, msg1, msg2, 0, first_time))
 	    {
-	    GoToObject (OBJ_VERTICES, n);
+	    GoToObject (Objid (OBJ_VERTICES, n));
 	    return;
 	    }
 	 }
@@ -341,7 +343,7 @@ for (n = 0; n < NumLineDefs; n++)
 	    }
 	 if (CheckFailed (-1, -1, msg1, msg2, 0, first_time))
 	    {
-	    GoToObject (OBJ_LINEDEFS, n);
+	    GoToObject (Objid (OBJ_LINEDEFS, n));
 	    return;
 	    }
 	 }
@@ -368,7 +370,7 @@ for (n = 0; n < NumLineDefs; n++)
 	    }
 	 if (CheckFailed (-1, -1, msg1, msg2, 0, first_time))
 	    {
-	    GoToObject (OBJ_LINEDEFS, n);
+	    GoToObject (Objid (OBJ_LINEDEFS, n));
 	    return;
 	    }
 	 }
@@ -398,7 +400,7 @@ for (n = 0; n < NumLineDefs; n++)
       {
       sprintf (msg, "ERROR: linedef #%d has no first sidedef!", n);
       CheckFailed (-1, -1, msg, 0, 1, first_time);
-      GoToObject (OBJ_LINEDEFS, n);
+      GoToObject (Objid (OBJ_LINEDEFS, n));
       return;
       }
 
@@ -410,7 +412,7 @@ for (n = 0; n < NumLineDefs; n++)
       sprintf (msg, "ERROR: linedef #%d uses the same sidedef twice (#%d)",
 	n, LineDefs[n].sidedef1);
       CheckFailed (-1, -1, msg, 0, 1, first_time);
-      GoToObject (OBJ_LINEDEFS, n);
+      GoToObject (Objid (OBJ_LINEDEFS, n));
       return;
       }
 #endif
@@ -421,7 +423,7 @@ for (n = 0; n < NumLineDefs; n++)
       sprintf (msg, "ERROR: linedef #%d uses the same vertex twice (#%d)",
 	n, LineDefs[n].start);
       CheckFailed (-1, -1, msg, 0, 1, first_time);
-      GoToObject (OBJ_LINEDEFS, n);
+      GoToObject (Objid (OBJ_LINEDEFS, n));
       return;
       }
    }
@@ -611,7 +613,7 @@ for (n = 0; n < NumSectors; n++)
       sprintf (msg1, "Error: sector #%d has no ceiling texture", n);
       sprintf (msg2, "You probably used a brain-damaged editor to do that...");
       CheckFailed (-1, -1, msg1, msg2, 1, first_time);
-      GoToObject (OBJ_SECTORS, n);
+      GoToObject (Objid (OBJ_SECTORS, n));
       return;
       }
    if (strcmp (Sectors[n].floort, "-") == 0
@@ -621,7 +623,7 @@ for (n = 0; n < NumSectors; n++)
       sprintf (msg1, "Error: sector #%d has no floor texture", n);
       sprintf (msg2, "You probably used a brain-damaged editor to do that...");
       CheckFailed (-1, -1, msg1, msg2, 1, first_time);
-      GoToObject (OBJ_SECTORS, n);
+      GoToObject (Objid (OBJ_SECTORS, n));
       return;
       }
    if (Sectors[n].ceilh < Sectors[n].floorh)
@@ -631,7 +633,7 @@ for (n = 0; n < NumSectors; n++)
       sprintf (msg2,
 	"The textures will never be displayed if you cannot go there");
       CheckFailed (-1, -1, msg1, msg2, 1, first_time);
-      GoToObject (OBJ_SECTORS, n);
+      GoToObject (Objid (OBJ_SECTORS, n));
       return;
       }
 #if 0  /* AYM 2000-08-13 */
@@ -640,7 +642,7 @@ for (n = 0; n < NumSectors; n++)
       sprintf (msg1, "Error: sector #%d has its ceiling too high", n);
       sprintf (msg2, "The maximum difference allowed is 1023 (ceiling - floor)");
       CheckFailed (-1, -1, msg1, msg2, 1, first_time);
-      GoToObject (OBJ_SECTORS, n);
+      GoToObject (Objid (OBJ_SECTORS, n));
       return;
       }
 #endif
@@ -670,7 +672,7 @@ for (n = 0; n < NumLineDefs; n++)
 	   " and continue?", default_middle_texture);
 	 if (CheckFailed (-1, -1, msg1, msg2, 0, first_time))
 	    {
-	    GoToObject (OBJ_LINEDEFS, n);
+	    GoToObject (Objid (OBJ_LINEDEFS, n));
 	    return;
 	    }
 	 strncpy (SideDefs[sd1].tex3, default_middle_texture, WAD_TEX_NAME);
@@ -689,7 +691,7 @@ for (n = 0; n < NumLineDefs; n++)
 	   " and continue?", default_upper_texture);
 	 if (CheckFailed (-1, -1, msg1, msg2, 0, first_time))
 	    {
-	    GoToObject (OBJ_LINEDEFS, n);
+	    GoToObject (Objid (OBJ_LINEDEFS, n));
 	    return;
 	    }
 	 strncpy (SideDefs[sd1].tex1, default_upper_texture, WAD_TEX_NAME);
@@ -707,7 +709,7 @@ for (n = 0; n < NumLineDefs; n++)
 	   " and continue?", default_lower_texture);
 	 if (CheckFailed (-1, -1, msg1, msg2, 0, first_time))
 	    {
-	    GoToObject (OBJ_LINEDEFS, n);
+	    GoToObject (Objid (OBJ_LINEDEFS, n));
 	    return;
 	    }
 	 strncpy (SideDefs[sd1].tex2, default_lower_texture, WAD_TEX_NAME);
@@ -726,7 +728,7 @@ for (n = 0; n < NumLineDefs; n++)
 	   " and continue?", default_upper_texture);
 	 if (CheckFailed (-1, -1, msg1, msg2, 0, first_time))
 	    {
-	    GoToObject (OBJ_LINEDEFS, n);
+	    GoToObject (Objid (OBJ_LINEDEFS, n));
 	    return;
 	    }
 	 strncpy (SideDefs[sd2].tex1, default_upper_texture, WAD_TEX_NAME);
@@ -744,7 +746,7 @@ for (n = 0; n < NumLineDefs; n++)
 	   " and continue?", default_lower_texture);
 	 if (CheckFailed (-1, -1, msg1, msg2, 0, first_time))
 	    {
-	    GoToObject (OBJ_LINEDEFS, n);
+	    GoToObject (Objid (OBJ_LINEDEFS, n));
 	    return;
 	    }
 	 strncpy (SideDefs[sd2].tex2, default_lower_texture, WAD_TEX_NAME);
@@ -798,7 +800,7 @@ for (n = 0; n < NumSectors; n++)
 	(int) WAD_FLAT_NAME, Sectors[n].ceilt);
       if (CheckFailed (-1, -1, msg1, msg2, 0, first_time))
 	 {
-	 GoToObject (OBJ_SECTORS, n);
+	 GoToObject (Objid (OBJ_SECTORS, n));
 	 return;
 	 }
       CheckingObjects ();
@@ -810,7 +812,7 @@ for (n = 0; n < NumSectors; n++)
 	(int) WAD_FLAT_NAME, Sectors[n].floort);
       if (CheckFailed (-1, -1, msg1, msg2, 0, first_time))
 	 {
-	 GoToObject (OBJ_SECTORS, n);
+	 GoToObject (Objid (OBJ_SECTORS, n));
 	 return;
 	 }
       CheckingObjects ();
@@ -826,7 +828,7 @@ for (n = 0; n < NumSideDefs; n++)
 	(int) WAD_TEX_NAME, SideDefs[n].tex1);
       if (CheckFailed (-1, -1, msg1, msg2, 0, first_time))
 	 {
-	 GoToObject (OBJ_SIDEDEFS, n);
+	 GoToObject (Objid (OBJ_SIDEDEFS, n));
 	 return;
 	 }
       CheckingObjects ();
@@ -838,7 +840,7 @@ for (n = 0; n < NumSideDefs; n++)
 	(int) WAD_TEX_NAME, SideDefs[n].tex2);
       if (CheckFailed (-1, -1, msg1, msg2, 0, first_time))
 	 {
-	 GoToObject (OBJ_SIDEDEFS, n);
+	 GoToObject (Objid (OBJ_SIDEDEFS, n));
 	 return;
 	 }
       CheckingObjects ();
@@ -850,7 +852,7 @@ for (n = 0; n < NumSideDefs; n++)
 	(int) WAD_TEX_NAME, SideDefs[n].tex3);
       if (CheckFailed (-1, -1, msg1, msg2, 0, first_time))
 	 {
-	 GoToObject (OBJ_SIDEDEFS, n);
+	 GoToObject (Objid (OBJ_SIDEDEFS, n));
 	 return;
 	 }
       CheckingObjects ();

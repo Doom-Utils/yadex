@@ -5,19 +5,20 @@
  */
 
 
-#ifndef YH_SELECTN
+#ifndef YH_SELECTN  /* DO NOT INSERT ANYTHING BEFORE THIS LINE */
 #define YH_SELECTN
+
 
 class bitvec_c;
 
 
-/* The selection list is used when more than one object is selected. */
+// The selection list is used when more than one object is selected.
 typedef struct SelectionList *SelPtr;
 struct SelectionList
-   {
-   SelPtr next;			/* next in list */
-   int objnum;			/* object number */
-   };
+{
+  SelPtr next;				// Next in list
+  int objnum;				// Object number
+};
 
 bool IsSelected (SelPtr, int);
 void DumpSelection (SelPtr list);
@@ -28,5 +29,5 @@ void ForgetSelection (SelPtr *);
 bitvec_c *list_to_bitvec (SelPtr list, size_t bitvec_size);
 SelPtr bitvec_to_list (const bitvec_c &b);
 
-#endif
 
+#endif  /* DO NOT ADD ANYTHING AFTER THIS LINE */

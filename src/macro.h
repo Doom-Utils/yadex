@@ -11,7 +11,7 @@ This file is part of Yadex.
 Yadex incorporates code from DEU 5.21 that was put in the public domain in
 1994 by Raphaël Quinet and Brendon Wyber.
 
-The rest of Yadex is Copyright © 1997-2000 André Majorel.
+The rest of Yadex is Copyright © 1997-2003 André Majorel and others.
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -28,7 +28,15 @@ Place, Suite 330, Boston, MA 02111-1307, USA.
 */
 
 
+typedef struct
+{
+  const char *name;
+  const char *value;
+} macdef_t;
+
+
 int macro_expand (char *buf, size_t size, const char *fmt, ...);
+int macro_expand (char *buf, size_t size, const char *fmt, const macdef_t *def);
 int vmacro_expand (char *buf, size_t size, const char *fmt, va_list list);
 
 

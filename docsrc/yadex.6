@@ -227,8 +227,8 @@ program ("\fBYadex\fP"). The second field is the version number
 ("\fB$VERSION\fP"). The third field is the release date, between
 parentheses ("\fB($SOURCE_DATE)\fP").
 
-The second line contains the magic string that this version
-requires at the beginning of configuration files.
+The second line contains a configuration file magic string (not
+used).
 
 The third line contains the magic string that this version
 requires at the beginning of game definition files.
@@ -250,49 +250,30 @@ the window.
 This option is equivalent to and overrides the \fBzoom_default\fP
 directive of the configuration file.
 .SH FILES
-.TP
-.B Configuration file
-.B ./yadex.cfg
+.SS Configuration files
+.nf
+$FILES_ETC
+.fi
+.SS Game definition files
+.nf
+$FILES_SHARE
+.fi
+.SS Swap files
+.B $TMPDIR/yadexswp??????
 .br
-.B ~/.yadex/$VERSION/yadex.cfg
-.br
-.B ~/.yadex/yadex.cfg
-.br
-.IB install_dir /yadex.cfg
-.br
-.B /usr/local/etc/yadex/$VERSION/yadex.cfg
-.br
-.B /usr/local/etc/yadex/yadex.cfg
-.br
-.B /etc/yadex/$VERSION/yadex.cfg
-.br
-.B /etc/yadex/yadex.cfg
-.TP
-.B Game definition file
-.BI ./ game .ygd
-.br
-.BI ~/.yadex/$VERSION/ game .ygd
-.br
-.IB install_dir / game .ygd
-.br
-.BI /usr/local/share/games/yadex/$VERSION/ game .ygd
-.br
-.BI /usr/share/games/yadex/$VERSION/ game .ygd
-.br
-.BI /usr/local/share/games/yadex/ game .ygd
-.br
-.BI /usr/share/games/yadex/ game .ygd
+.B /tmp/yadexswp??????
 .SH ENVIRONMENT VARIABLES
 .IP \fBDISPLAY\fP
 X11 only. The name of the X display that Yadex will try to
 connect to.
+.IP \fBHOME\fP
+Used to expand \fB~\fP when locating configuration and game
+definition files.
 .IP \fBLINES\fP
 If set, Yadex assumes the tty has that many lines instead of 24.
 The value must be an unsigned, non-zero decimal integer.
-.IP \fBYADEX_DIR\fP
-Unix only. Where Yadex is installed. Can be used to look for the
-configuration file and friends. For testing purposes only. Not
-needed in normal use.
+.IP \fBTMPDIR\fP
+If set, swap files are created there. Otherwise, in \fB/tmp\fP.
 .IP \fBYADEX_GAME\fP
 Indicates the game to use. Overrides the \fBgame\fP parameter in
 the config file, is overridden by the \fB\-g\fP command line
@@ -316,17 +297,23 @@ all the other levels from that file are lost.
 
 And many more. See \fBTODO\fP.
 .SH AUTHOR
-André Majorel <amajorel@teaser.fr>.
+André Majorel (http://www.teaser.fr/~amajorel/)
+
+.nf
+Contributors:
+Andrew J. Apted (http://www.netspace.net.au/~ajapted/)
+Matthew W. Miller (mwmiller@columbus.rr.com)
+.fi
 
 Yadex is derived from DEU 5.21 that was written by Raphaël Quinet,
 Brendon Wyber and others.
 
 See the HTML documentation for detailed credits.
 .SH LEGAL
-Yadex incorporates code from DEU 5.21 that was put in the public
-domain in 1994 by Raphaël Quinet and Brendon Wyber.
-
-The rest of Yadex is Copyright © 1997-2000 André Majorel.
+.SS Yadex
+.nf
+$COPYRIGHT_MAN
+.fi
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -342,20 +329,46 @@ You should have received a copy of the GNU Library General Public
 License along with this library; if not, write to the Free
 Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 02111-1307, USA.
+.SS Atclib
+The Yadex distribution includes a subset of Atclib.
 
-All trademarks are the propriety of their owners.
+Atclib is copyright André Majorel 1995-1999 and distributed under the terms of
+version 2 of the GNU Library General Public License.
+
+This library is free software; you can redistribute it and/or
+modify it under the terms of version 2 of the GNU Library General Public
+License as published by the Free Software Foundation.
+
+This library is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+Library General Public License for more details.
+
+You should have received a copy of the GNU Library General Public
+License along with this library; if not, write to the Free
+Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
+MA 02111-1307, USA
+.SS Boost
+The Yadex distribution includes a subset of Boost 1.25.0.
+
+Boost 1.25.0 is copyright various authors and released under the following
+terms\ : Permission to copy, use, modify, sell and distribute this software is
+granted provided this copyright notice appears in all copies.
+This software is provided "as is" without express or implied warranty, and with
+no claim as to its suitability for any purpose.
 .SH SEE ALSO
 .BR bsp (6),
 .BR idbsp (6),
 .BR tkwadcad (6),
 .BR warm (6),
-.BR xwadtools (6),
-.BR ybsp (6)
+.BR xwadtools (6)
 .IP LDE
-http://www-unix.oit.umass.edu/~tetron/lde/
+http://interreality.org/~tetron/technology/lde/
 .IP PFME
 http://www.purplefrog.com/~thoth/purplefrog/editor.html
+.IP Why
+http://www.hut.fi/~jpakkane/why/
 .IP "Xwad (part of Dumb)"
 http://stekt.oulu.fi/~tosi/dumb/dumb.html
 .IP Xwadtools
-ftp://ftp.cdrom.com/pub/idgames/source/
+ftp://3darchives.in-span.net/pub/idgames/source/

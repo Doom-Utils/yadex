@@ -10,5 +10,7 @@ void xref_sidedef ();
 void secret_sectors ();
 void unknown_linedef_type (SelPtr *list);
 void bad_sector_number (SelPtr *list);
+void list_tagged_sectors (int tag);
+void list_tagged_linedefs (int tag);
 
 

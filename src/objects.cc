@@ -11,7 +11,7 @@ This file is part of Yadex.
 Yadex incorporates code from DEU 5.21 that was put in the public domain in
 1994 by Raphaël Quinet and Brendon Wyber.
 
-The rest of Yadex is Copyright © 1997-2000 André Majorel.
+The rest of Yadex is Copyright © 1997-2003 André Majorel and others.
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -29,10 +29,12 @@ Place, Suite 330, Boston, MA 02111-1307, USA.
 
 
 #include "yadex.h"
-#include <math.h>
+#include "drawmap.h"
 #include "gfx.h"
 #include "l_vertices.h"
 #include "levels.h"
+#include "objects.h"
+#include "objid.h"
 #include "s_vertices.h"
 #include "selectn.h"
 #include "things.h"
@@ -41,7 +43,6 @@ Place, Suite 330, Boston, MA 02111-1307, USA.
 /*
    highlight the selected objects
 */
-
 void HighlightSelection (int objtype, SelPtr list) /* SWAP! */
 {
 SelPtr cur;
@@ -55,7 +56,7 @@ for (cur = list; cur; cur = cur->next)
 
 
 /*
-   get the number of objets of a given type minus one
+   get the number of objects of a given type minus one
 */
 obj_no_t GetMaxObjectNum (int objtype)
 {
@@ -77,238 +78,8 @@ return -1;
 
 
 /*
- *	GetCurObject
- *
- *	This function returns the number of the object under the
- *	pointer. Formally, it returns "the number of the object that
- *	is closest to (x,y) and within <radius> of that point".
- *
- *	It's optimized for speed because it is called very often (every
- *	time the pointer moves). There's nothing very complicated here
- *	except getting the current sector and linedef. But see the
- *	comments below.
- *
- *	If <objtype> is OBJ_SECTORS, <radius> is unused.
- */
-int GetCurObject (int objtype, int x, int y, int radius) /* SWAP! */
-{
-int n, m, curx;
-int xmin = x - radius;
-int xmax = x + radius;
-int ymin = y - radius;
-int ymax = y + radius;
-int best_match = -1;
-int shortest_dist = INT_MAX;
-int dist;
-
-radius = abs (radius);  // Fool proof
-
-switch (objtype)
-   {
-   case OBJ_THINGS:
-      {
-      int max_radius = get_max_thing_radius () * thing_fudge / 100;
-      xmin = x - max_radius;
-      xmax = x + max_radius;
-      ymin = y - max_radius;
-      ymax = y + max_radius;
-      }
-      ObjectsNeeded (OBJ_THINGS, 0);
-      for (n = 0; n < NumThings; n++)
-	 {
-	 // Filter out things that are farther than <max_radius> units away.
-	 if (Things[n].xpos < xmin
-	  || Things[n].xpos > xmax
-	  || Things[n].ypos < ymin
-	  || Things[n].ypos > ymax)
-	    continue;
-
-         // So how far is that thing exactly ?
-#ifdef ROUND_THINGS
-	 dist = (int) hypot (x - Things[n].xpos, y - Things[n].ypos);
-	 if (dist < shortest_dist
-          && dist <= get_thing_radius (Things[n].type) * thing_fudge / 100)
-	    {
-	    best_match = n;
-	    shortest_dist = dist;
-	    }
-#else
-         {
-         int thing_radius =
-            get_thing_radius (Things[n].type) * thing_fudge / 100;
-         if (x >= Things[n].xpos - thing_radius
-          && x <= Things[n].xpos + thing_radius
-          && y >= Things[n].ypos - thing_radius
-          && y <= Things[n].ypos + thing_radius)
-            {
-	    dist = (int) hypot (x - Things[n].xpos, y - Things[n].ypos);
-	    if (dist < shortest_dist)
-	       {
-	       best_match = n;
-	       shortest_dist = dist;
-	       }
-            }
-         }
-#endif
-	 }
-      break;
-
-   case OBJ_VERTICES:
-      ObjectsNeeded (OBJ_VERTICES, 0);
-      for (n = 0; n < NumVertices; n++)
-	 {
-	 /* Filter out objects that are farther than <radius> units away. */
-	 if (Vertices[n].x < xmin
-	  || Vertices[n].x > xmax
-	  || Vertices[n].y < ymin
-	  || Vertices[n].y > ymax)
-	    continue;
-	 dist = (int) hypot (x - Vertices[n].x, y - Vertices[n].y);
-	 if (dist < shortest_dist && dist <= radius)
-	    {
-	    best_match = n;
-	    shortest_dist = dist;
-	    }
-	 }
-      break;
-
-   case OBJ_LINEDEFS:
-      {
-      ObjectsNeeded (OBJ_LINEDEFS, OBJ_VERTICES, 0);
-      for (n = 0; n < NumLineDefs; n++)
-	 {
-	 int x0 = Vertices[LineDefs[n].start].x;
-	 int y0 = Vertices[LineDefs[n].start].y;
-	 int x1 = Vertices[LineDefs[n].end].x;
-	 int y1 = Vertices[LineDefs[n].end].y;
-	 int dx;
-	 int dy;
-
-	 /* Skip all lines of which all points are more than <radius>
-	    units away from (x,y). In a typical level, this test will
-	    filter out all the linedefs but a handful. */
-	 if (x0 < xmin && x1 < xmin
-	  || x0 > xmax && x1 > xmax
-	  || y0 < ymin && y1 < ymin
-	  || y0 > ymax && y1 > ymax)
-	    continue;
-
-	 /* AYM 1998-06-29
-	    This is where it gets ugly. We're trying to calculate the
-	    distance between the pointer (x,y) and the linedef. Doing that
-	    rigorously involves doing an orthogonal projection. I use
-	    something simpler (for me).
-
-	    If the pointer is not within the ends of the linedef, I calculate
-	    the distance between the pointer and the closest end.
-
-	    If the pointer is within the ends of the linedef, I calculate
-	    what the ordinate would be for a point of the linedef that had
-	    the same abscissa as the pointer. Then I calculate the difference
-	    between that and the actual ordinate of the pointer and I call
-	    that the distance. It's a gross approximation but, in practice,
-	    it gives quite satisfactory results. Of course, for lines where
-	    dy > dx, the abscissa is y and the ordinate is x. */
-	 dx = x1 - x0;
-	 dy = y1 - y0;
-	 /* The linedef is rather horizontal */
-	 if (abs (dx) > abs (dy))
-	    {
-	    /* Are we to the left of the leftmost end or to the right of the
-	       rightmost end or between the two ? */
-	    if (x < (dx > 0 ? x0 : x1))
-	       dist = (int) hypot (x - (dx > 0 ? x0 : x1),
-                                   y - (dx > 0 ? y0 : y1));
-	    else if (x > (dx > 0 ? x1 : x0))
-	       dist = (int) hypot (x - (dx > 0 ? x1 : x0),
-                                   y - (dx > 0 ? y1 : y0));
-	    else
-	       dist = abs ((int) (y0 + ((double) dy)/dx * (x - x0) - y));
-	    }
-	 /* The linedef is rather vertical */
-	 else
-	    {
-	    /* Are we above the high end or below the low end or in between ? */
-	    if (y < (dy > 0 ? y0 : y1))
-	       dist = (int) hypot (x - (dy > 0 ? x0 : x1),
-                                   y - (dy > 0 ? y0 : y1));
-	    else if (y > (dy > 0 ? y1 : y0))
-	       dist = (int) hypot (x - (dy > 0 ? x1 : x0),
-                                   y - (dy > 0 ? y1 : y0));
-	    else
-	       dist = abs ((int) (x0 + ((double) dx)/dy * (y - y0) - x));
-	    }
-	 if (dist < shortest_dist && dist <= radius)
-	    {
-	    best_match = n;
-	    shortest_dist = dist;
-	    }
-	 }
-      break;
-      }
-   case OBJ_SECTORS:
-      /* hack, hack...  I look for the first LineDef crossing
-	 an horizontal half-line drawn from the cursor */
-      /* AYM 1998-06-29
-	 RQ & BW have been very smart here. Their method works remarkably
-	 well for normal sectors. However, self-referencing sectors are
-	 frequently unclosed. If your SRS has only horizontal linedefs, this
-	 methods fails miserably. I suppose that the solution would be to look
-	 for intersections in BOTH directions and pick the closest. Remind me
-	 to look into it one of these days :-). */
-      /* AYM 1999-03-18
-         Initializing curx to 32767 instead of MapMaxX + 1. Fixes the old
-	 DEU bug where sometimes you couldn't select a newly created sector
-	 to the west of the level until you saved. (MapMaxX got out of date
-	 and SaveLevelData() refreshed it.) */
-      ObjectsNeeded (OBJ_LINEDEFS, OBJ_VERTICES, 0);
-      curx = 32767;  // Oh yes, one more hard-coded constant!
-      for (n = 0; n < NumLineDefs; n++)
-	 if ((Vertices[LineDefs[n].start].y > y)
-	  != (Vertices[LineDefs[n].end].y > y))
-	    {
-	    int lx0 = Vertices[LineDefs[n].start].x;
-	    int ly0 = Vertices[LineDefs[n].start].y;
-	    int lx1 = Vertices[LineDefs[n].end].x;
-	    int ly1 = Vertices[LineDefs[n].end].y;
-	    m = lx0 + (int) ((long) (y - ly0) * (long) (lx1 - lx0)
-					      / (long) (ly1 - ly0));
-	    if (m >= x && m < curx)
-	       {
-	       curx = m;
-	       best_match = n;
-	       }
-	    }
-      /* now look if this linedef has a sidedef bound to one sector */
-      if (best_match >= 0)
-	 {
-	 if (Vertices[LineDefs[best_match].start].y
-	   > Vertices[LineDefs[best_match].end].y)
-	    best_match = LineDefs[best_match].sidedef1;
-	 else
-	    best_match = LineDefs[best_match].sidedef2;
-	 if (best_match >= 0)
-	    {
-	    ObjectsNeeded (OBJ_SIDEDEFS, 0);
-	    best_match = SideDefs[best_match].sector;
-	    }
-	 else
-	    best_match = -1;
-	 }
-      else
-	 best_match = -1;
-      break;
-   }
-
-return best_match;
-}
-
-
-
-/*
    highlight the selected object
 */
-
 void HighlightObject (int objtype, int objnum, int colour) /* SWAP! */
 {
 int  n, m;
@@ -332,6 +103,7 @@ switch (objtype)
       DrawMapArrow (Things[objnum].xpos, Things[objnum].ypos,
 		    Things[objnum].angle * 182);
       break;
+
    case OBJ_LINEDEFS:
       ObjectsNeeded (OBJ_LINEDEFS, OBJ_VERTICES, 0);
       n = (Vertices[LineDefs[objnum].start].x
@@ -355,10 +127,11 @@ switch (objtype)
 	 }
       SetLineThickness (0);
       break;
+
    case OBJ_VERTICES:
       ObjectsNeeded (OBJ_VERTICES, 0);
       {
-      int r = (int) (2 * OBJSIZE * y_min (Scale, 1));
+      int r = vertex_radius (Scale) * 3 / 2;
       int scrx0 = SCREENX (Vertices[objnum].x) - r;
       int scrx9 = SCREENX (Vertices[objnum].x) + r;
       int scry0 = SCREENY (Vertices[objnum].y) - r;
@@ -369,18 +142,30 @@ switch (objtype)
       DrawScreenLine (scrx0, scry9, scrx0, scry0);
       }
       break;
+
    case OBJ_SECTORS:
+      {
       ObjectsNeeded (OBJ_LINEDEFS, OBJ_SIDEDEFS, OBJ_VERTICES, 0);
       SetLineThickness (1);
+      const int mapx0 = MAPX (0);
+      const int mapy0 = MAPY (ScrMaxY);
+      const int mapx1 = MAPX (ScrMaxX);
+      const int mapy1 = MAPY (0);
       for (n = 0; n < NumLineDefs; n++)
 	 if (LineDefs[n].sidedef1 != -1
 	     && SideDefs[LineDefs[n].sidedef1].sector == objnum
 	  || LineDefs[n].sidedef2 != -1
 	     && SideDefs[LineDefs[n].sidedef2].sector == objnum)
-	    DrawMapLine (Vertices[LineDefs[n].start].x,
-			 Vertices[LineDefs[n].start].y,
-			 Vertices[LineDefs[n].end].x,
-			 Vertices[LineDefs[n].end].y);
+	 {
+	    const struct Vertex *v1 = Vertices + LineDefs[n].start;
+	    const struct Vertex *v2 = Vertices + LineDefs[n].end;
+	    if (v1->x < mapx0 && v2->x < mapx0
+	     || v1->x > mapx1 && v2->x > mapx1
+	     || v1->y < mapy0 && v2->y < mapy0
+	     || v1->y > mapy1 && v2->y > mapy1)
+	       continue;  // Off-screen
+	    DrawMapLine (v1->x, v1->y, v2->x, v2->y);
+	 }
       if (colour != LIGHTRED && Sectors[objnum].tag > 0)
 	 {
 	 for (m = 0; m < NumLineDefs; m++)
@@ -388,6 +173,7 @@ switch (objtype)
 	       HighlightObject (OBJ_LINEDEFS, m, LIGHTRED);
 	 }
       SetLineThickness (0);
+      }
       break;
    }
 /* restore normal write mode */
@@ -399,14 +185,13 @@ SetDrawingMode (0);
 /*
    delete an object
 */
-
-void DeleteObject (int objtype, int objnum) /* SWAP! */
+void DeleteObject (const Objid& obj) /* SWAP! */
 {
 SelPtr list;
 
 list = 0;
-SelectObject (&list, objnum);
-DeleteObjects (objtype, &list);
+SelectObject (&list, obj.num);
+DeleteObjects (obj.type, &list);
 }
 
 
@@ -414,7 +199,6 @@ DeleteObjects (objtype, &list);
 /*
    delete a group of objects (*recursive*)
 */
-
 void DeleteObjects (int objtype, SelPtr *list) /* SWAP! */
 {
 int    n, objnum;
@@ -476,7 +260,7 @@ switch (objtype)
 	 for (n = 0; n < NumLineDefs; n++)
 	    {
 	    if (LineDefs[n].start == objnum || LineDefs[n].end == objnum)
-	       DeleteObject (OBJ_LINEDEFS, n--);
+	       DeleteObject (Objid (OBJ_LINEDEFS, n--));
 	    else
 	       {
 	       if (LineDefs[n].start >= objnum)
@@ -510,10 +294,10 @@ switch (objtype)
 
    case OBJ_LINEDEFS:
       /* In DEU, deleting a linedef was not considered to be a
-      map change. Deleting a _sidedef_ was. In Yadex, sidedefs
-      are not automatically deleted when the linedef is
-      because some sidedefs are shared by more than one
-      linedef. So we need to set MadeMapChanges here. */
+	 map change. Deleting a _sidedef_ was. In Yadex,
+	 sidedefs are not automatically deleted when the linedef
+	 is because some sidedefs are shared by more than one
+	 linedef. So we need to set MadeMapChanges here. */
       if (*list)
          MadeMapChanges = 1;
       /* AYM 19980203 I've removed the deletion of sidedefs
@@ -611,7 +395,7 @@ switch (objtype)
 	ObjectsNeeded (OBJ_SIDEDEFS, 0);
 	for (n = 0; n < NumSideDefs; n++)
 	   if (SideDefs[n].sector == objnum)
-	      DeleteObject (OBJ_SIDEDEFS, n--);
+	      DeleteObject (Objid (OBJ_SIDEDEFS, n--));
 	   else if (SideDefs[n].sector >= objnum)
 	      SideDefs[n].sector--;
 	/* delete the sector */
@@ -656,7 +440,8 @@ switch (objtype)
  *	The object is inserted at the exact coordinates given.
  *	No snapping to grid is done.
  */
-void InsertObject (int objtype, int copyfrom, int xpos, int ypos) /* SWAP! */
+void InsertObject (obj_type_t objtype, obj_no_t copyfrom, int xpos, int ypos)
+								/* SWAP! */
 {
 int last;
 
@@ -803,7 +588,6 @@ switch (objtype)
 /*
    check if a (part of a) LineDef is inside a given block
 */
-
 bool IsLineDefInside (int ldnum, int x0, int y0, int x1, int y1) /* SWAP - needs Vertices & LineDefs */
 {
 int lx0 = Vertices[LineDefs[ldnum].start].x;
@@ -850,7 +634,6 @@ return false;
    get the sector number of the sidedef opposite to this sidedef
    (returns -1 if it cannot be found)
 */
-
 int GetOppositeSector (int ld1, bool firstside) /* SWAP! */
 {
 int x0, y0, dx0, dy0;
@@ -1017,7 +800,6 @@ return SideDefs[x0].sector;
 /*
    copy a group of objects to a new position
 */
-
 void CopyObjects (int objtype, SelPtr obj) /* SWAP! */
 {
 int        n, m;
@@ -1252,6 +1034,7 @@ switch (objtype)
       refy = newy;
       MadeChanges = 1;
       break;
+
    case OBJ_VERTICES:
       for (cur = obj; cur; cur = cur->next)
 	 {
@@ -1263,11 +1046,13 @@ switch (objtype)
       MadeChanges = 1;
       MadeMapChanges = 1;
       break;
+
    case OBJ_LINEDEFS:
       vertices = list_vertices_of_linedefs (obj);
       MoveObjectsToCoords (OBJ_VERTICES, vertices, newx, newy, grid);
       ForgetSelection (&vertices);
       break;
+
    case OBJ_SECTORS:
       ObjectsNeeded (OBJ_LINEDEFS, OBJ_SIDEDEFS, 0);
       vertices = list_vertices_of_sectors (obj);
@@ -1283,7 +1068,6 @@ return true;
 /*
    get the coordinates (approx.) of an object
 */
-
 void GetObjectCoords (int objtype, int objnum, int *xpos, int *ypos) /* SWAP! */
 {
 int  n, v1, v2, sd1, sd2;
@@ -1292,16 +1076,39 @@ long accx, accy, num;
 switch (objtype)
    {
    case OBJ_THINGS:
+      if (! is_thing (objnum))		// Can't happen
+	 {
+	 nf_bug ("GetObjectCoords: bad thing# %d", objnum);
+	 *xpos = 0;
+	 *ypos = 0;
+	 return;
+	 }
       ObjectsNeeded (OBJ_THINGS, 0);
       *xpos = Things[objnum].xpos;
       *ypos = Things[objnum].ypos;
       break;
+
    case OBJ_VERTICES:
+      if (! is_vertex (objnum))		// Can't happen
+	 {
+	 nf_bug ("GetObjectCoords: bad vertex# %d", objnum);
+	 *xpos = 0;
+	 *ypos = 0;
+	 return;
+	 }
       ObjectsNeeded (OBJ_VERTICES, 0);
       *xpos = Vertices[objnum].x;
       *ypos = Vertices[objnum].y;
       break;
+
    case OBJ_LINEDEFS:
+      if (! is_linedef (objnum))	// Can't happen
+	 {
+	 nf_bug ("GetObjectCoords: bad linedef# %d", objnum);
+	 *xpos = 0;
+	 *ypos = 0;
+	 return;
+	 }
       ObjectsNeeded (OBJ_LINEDEFS, 0);
       v1 = LineDefs[objnum].start;
       v2 = LineDefs[objnum].end;
@@ -1309,7 +1116,15 @@ switch (objtype)
       *xpos = (Vertices[v1].x + Vertices[v2].x) / 2;
       *ypos = (Vertices[v1].y + Vertices[v2].y) / 2;
       break;
+
    case OBJ_SIDEDEFS:
+      if (! is_sidedef (objnum))	// Can't happen
+	 {
+	 nf_bug ("GetObjectCoords: bad sidedef# %d", objnum);
+	 *xpos = 0;
+	 *ypos = 0;
+	 return;
+	 }
       ObjectsNeeded (OBJ_LINEDEFS, 0);
       for (n = 0; n < NumLineDefs; n++)
 	 if (LineDefs[n].sidedef1 == objnum || LineDefs[n].sidedef2 == objnum)
@@ -1323,7 +1138,16 @@ switch (objtype)
 	    }
       *xpos = (MapMinX + MapMaxX) / 2;
       *ypos = (MapMinY + MapMaxY) / 2;
+      // FIXME is the fall through intentional ? -- AYM 2000-11-08
+
    case OBJ_SECTORS:
+      if (! is_sector (objnum))		// Can't happen
+	 {
+	 nf_bug ("GetObjectCoords: bad sector# %d", objnum);
+	 *xpos = 0;
+	 *ypos = 0;
+	 return;
+	 }
       accx = 0L;
       accy = 0L;
       num = 0L;
@@ -1359,6 +1183,11 @@ switch (objtype)
 	 *ypos = (MapMinY + MapMaxY) / 2;
 	 }
       break;
+
+   default:
+      nf_bug ("GetObjectCoords: bad objtype %d", objtype);  // Can't happen
+      *xpos = 0;
+      *ypos = 0;
    }
 }
 
@@ -1367,7 +1196,6 @@ switch (objtype)
 /*
    find a free tag number
 */
-
 int FindFreeTag () /* SWAP! */
 {
 int  tag, n;

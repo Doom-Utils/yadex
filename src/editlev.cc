@@ -10,7 +10,7 @@ This file is part of Yadex.
 Yadex incorporates code from DEU 5.21 that was put in the public domain in
 1994 by Raphaël Quinet and Brendon Wyber.
 
-The rest of Yadex is Copyright © 1997-2000 André Majorel.
+The rest of Yadex is Copyright © 1997-2003 André Majorel and others.
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -39,6 +39,7 @@ Place, Suite 330, Boston, MA 02111-1307, USA.
 #include "gfx.h"
 #include "levels.h"
 #include "patchdir.h"
+#include "wadfile.h"
 
 
 static void WriteYadexLog (const char *file, const char *level,
@@ -233,7 +234,7 @@ LogMessage (": Finished editing %s...\n", levelname ? levelname : "new level");
 if (Level && Level->wadfile)
    {
    const char *const file_name =
-      Level->wadfile ? Level->wadfile->filename : "(New level)";
+      Level->wadfile ? Level->wadfile->pathname () : "(New level)";
    WriteYadexLog (file_name, levelname, &t0, &t1);
    }
 }

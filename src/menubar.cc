@@ -10,7 +10,7 @@ This file is part of Yadex.
 Yadex incorporates code from DEU 5.21 that was put in the public domain in
 1994 by Raphaël Quinet and Brendon Wyber.
 
-The rest of Yadex is Copyright © 1997-2000 André Majorel.
+The rest of Yadex is Copyright © 1997-2003 André Majorel and others.
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -117,7 +117,7 @@ stale_x0_x1 = 1;
  *	Returns the number of the newly created item.
  */
 int menubar_c::add_item (const char *text, int shortcut_index,
-   int right_aligned, menu_c *menu)
+   int right_aligned, Menu *menu)
 {
 if (nitems >= MAX_ITEMS)
    fatal_error ("Too many items on menu bar");
@@ -137,7 +137,7 @@ return nitems - 1;
  *	set_menu
  *	Change the menu for an existing menu bar item.
  */
-void menubar_c::set_menu (int number, menu_c *menu)
+void menubar_c::set_menu (int number, Menu *menu)
 {
 if (number >= nitems)
    fatal_error ("set_menu: bad mbi#");
@@ -153,7 +153,7 @@ if (number == pulled_down_no)
  *	get_menu
  *	Return a pointer on the menu for an existing menu bar item.
  */
-menu_c *menubar_c::get_menu (int number)
+Menu *menubar_c::get_menu (int number)
 {
 if (number >= nitems)
    fatal_error ("set_menu: bad mbi#");

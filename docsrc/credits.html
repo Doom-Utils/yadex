@@ -153,16 +153,20 @@ not kindly released the source code, Yadex wouldn't exist.
 <p>As for Yadex per se, the contributors are&nbsp;:
 
 <p><dl>
-  <dt><a href="http://www.netspace.net.au/~ajapted/">Andrew Apted</a>
-  <dd>Wrote the ygd for EDGE. Final Doom testing.
+  <dt><a href="http://www.netspace.net.au/~ajapted/">Andrew J. Apted</a> (AJA)
+  <dd>Wrote the ygd for Boom and EDGE. Variables <code>digit_zoom_base</code>,
+    <code>digit_zoom_step</code> and <code>blindly_swap_sidedefs</code>. Final
+    Doom testing.
 
   <br><br><dt>Jean Forget (JF)
   <dd>Provided the base of the "<code>youngest</code>" perl script.
 
   <br><br><dt><a href="http://my.ohio.voyager.net/~mattm/">Matthew W. Miller</a>
+    (MWM)
+
   <dd>Wrote most of <code>strife.ygd</code>.
 
-  <br><br><dt><a href="http://www.teaser.fr/~amajorel/">André Majorel (AYM)</a>
+  <br><br><dt><a href="http://www.teaser.fr/~amajorel/">André Majorel</a> (AYM)
   <dd>Did the rest ;-).
 
 </dl>
@@ -173,13 +177,7 @@ not kindly released the source code, Yadex wouldn't exist.
 include, by alphabetical order&nbsp;:
 
 <p><dl>
-  <br><br><dt>Pierre Baillargeon <code>&lt;pb@artquest.net&gt;</code>
-  <dd>C++ help.
-
-  <br><br><dt>Carl Barron <code>&lt;cbarron3@ix.netcom.com&gt;</code>
-  <dd>C++ help.
-
-  <br><br><dt>Joseph Carter <code>&lt;knghtbrd@debian.org&gt;</code>
+  <dt>Joseph Carter <code>&lt;knghtbrd@debian.org&gt;</code>
   <dd>Debian package. Convinced me to support
     <code>/usr/local/share/man/</code>. Put up with my sick makefiles.
 
@@ -187,8 +185,8 @@ include, by alphabetical order&nbsp;:
   <dd>A post by him and another one by Nathan Lucas in r.g.c.d.e. led to the
     development of the "save image to a file" feature. Gave thorough reports.
 
-  <br><br><dt>David Ferguson <code>&lt;DavidFerguson@NOcsiSPAM.com&gt;</code>
-  <dd>C++ help.
+  <br><br><dt><a href="http://go.to/conmen/">Max Heijndijk</a>
+  <dd>RPM package.
 
   <br><br><dt>Joe Koperski <code>&lt;joekoperski@hotmail.com&gt;</code> (JK)
   <dd>Encouragements.
@@ -196,32 +194,35 @@ include, by alphabetical order&nbsp;:
   <br><br><dt>Oliver Kraus <code>&lt;lrs.e-technik.uni-erlangen.de&gt;</code>
   <dd>Helped with Solaris port.
 
+  <br><br><dt>Ingo van Lil
+  <dd>Bug reports and suggestions.
+
   <br><br><dt>Udo Munk <code>&lt;um@compuserve.com&gt;</code> (UM)
   <dd>Requested scrolling with arrow keys and possibility to disable the
     autoscrolling. Helped a lot with Final Doom compatibility and porting
-    issues. Wrote <a href="ftp://ftp.cdrom.com/pub/idgames/source/">XDoom</a>
-    and <a href="ftp://ftp.cdrom.com/pub/idgames/source/">Xwadtools</a>.
+    issues. Wrote <a
+    href="ftp://3darchives.in-span.net/pub/idgames/source/">XDoom</a> and <a
+    href="ftp://3darchives.in-span.net/pub/idgames/source/">Xwadtools</a>.
 
   <br><br><dt>Kim "Sparky" Parrott <code>&lt;kelm@eisa.net.au&gt;</code>
   <dd>Indirect bug report.
 
   <br><br><dt><a href="http://members.xoom.com/colin_phipps/">Colin Phipps </a>
-  <dd>Encouragements. Wrote the <a
+  <dd>FreeBSD testing. Wrote the <a
     href="http://lxdoom.linuxgames.com/notes.html#bsp">fix</a> for <a
     href="http://www.teaser.fr/~amajorel/doom/bsp23bug.zip">two bugs</a> in
-    BSP&nbsp;2.3. Wrote <a href="http://lxdoom.linuxgames.com/">LxDoom</a>.
+    BSP&nbsp;2.3. Wrote <a href="http://lxdoom.linuxgames.com/">LxDoom</a>. Now
+    maintains <a href="http://doombsp.sourceforge.net/">BSP</a>.
 
   <br><br><dt><a href="http://www.crosswinds.net/~thearchon/">Len Pitre</a>
   <dd>Helped with Strife support.
 
-  <br><br><dt>John Potter <code>&lt;jpotter@falcon.lhup.edu&gt;</code>
-  <dd>C++ help.
+  <br><br><dt>Jérôme Raciazek
+  <dd>Let me play with his QNX machine.
 
   <br><br><dt><a href="http://hjem.get2net.dk/RasII/">"Ras2"</a>
-  <dd>More bug reports than everybody else combined.
-
-  <br><br><dt>Atgeirr F. Rasmussen <code>&lt;atgeirr@sintef.no&gt;</code>
-  <dd>C++ help.
+  <dd>More bug reports than everybody else combined. Provides a mirror of the
+    web page.
 
   <br><br><dt>Josh R. Ray <code>&lt;joshray@prodigy.net&gt;</code> (JRR)
   <dd>Encouragements.
@@ -239,9 +240,6 @@ include, by alphabetical order&nbsp;:
     splitting, single-key linedefs of sector splitting and scrolling with arrow
     keys.
 
-  <br><br><dt>Ivan Vecerina <code>&lt;ivec@mail.com&gt;</code>
-  <dd>C++ help.
-
   <br><br><dt>The Wildman
   <dd>Encouragements.
 
@@ -249,6 +247,19 @@ include, by alphabetical order&nbsp;:
   <dd>Figured out the picture format for the Doom alpha and press release
     versions and told us about it on rgcde. Without him, Yadex probably
     wouldn't support them.
+
+  <br><br><dt>Pierre Baillargeon <code>&lt;pb@artquest.net&gt;</code>
+  <dt>Carl Barron <code>&lt;cbarron3@ix.netcom.com&gt;</code>
+  <dt>David Ferguson <code>&lt;DavidFerguson@NOcsiSPAM.com&gt;</code>
+  <dt>John Potter <code>&lt;jpotter@falcon.lhup.edu&gt;</code>
+  <dt>Atgeirr F. Rasmussen <code>&lt;atgeirr@sintef.no&gt;</code>
+  <dt>Ivan Vecerina <code>&lt;ivec@mail.com&gt;</code>
+  <dd>C++ help.
+
+  <br><br><dt>Benjamin Bayart
+  <dt>Ouafae Kotby
+  <dd><code>diff</code> consulting.
+
 </dl></p>
 
 <p>If I'm forgetting you, pardon my mistake and please send me a
@@ -277,7 +288,7 @@ specs and tutorials from which I learned.
 The rgcders for their interesting answers and questions.
 The level designers who have made all the wonderful levels
 and graphics I've been admiring.
-Linuxgames for providing the mailing list.
+Linuxgames and <code>freelists.org</code> for providing the mailing lists.
 The makers of the internet for connecting us all.
 All the other people who help making this world bearable.
 

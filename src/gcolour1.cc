@@ -20,7 +20,7 @@ This file is part of Yadex.
 Yadex incorporates code from DEU 5.21 that was put in the public domain in
 1994 by Raphaël Quinet and Brendon Wyber.
 
-The rest of Yadex is Copyright © 1997-2000 André Majorel.
+The rest of Yadex is Copyright © 1997-2003 André Majorel and others.
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -41,7 +41,9 @@ Place, Suite 330, Boston, MA 02111-1307, USA.
 #include "gcolour1.h"
 #include "gcolour2.h"
 #include "gfx.h"
+#include "img.h"	/* IMG_TRANSP */
 #include "rgb.h"
+#include "wadfile.h"
 #include "wads.h"
 
 
@@ -73,9 +75,22 @@ if (playpalnum < 0 || playpalnum >= playpal_count)
    }
 
 dpal = (u8 *) GetFarMemory (3 * DOOM_COLOURS);
-wad_seek (dir->wadfile, dir->dir.start);
+dir->wadfile->seek (dir->dir.start);
+if (dir->wadfile->error ())
+   {
+   warn ("%s: can't seek to %lXh\n",
+       dir->wadfile->pathname (), (unsigned long) dir->dir.start);
+   warn ("PLAYPAL: seek error\n");
+   }
 for (int n = 0; n <= playpalnum; n++)
-   wad_read_bytes (dir->wadfile, dpal, 3 * DOOM_COLOURS);
+   {
+   dir->wadfile->read_bytes (dpal, 3 * DOOM_COLOURS);
+   if (dir->wadfile->error ())
+      {
+      warn ("%s: read error\n", dir->wadfile->where ());
+      warn ("PLAYPAL: error reading entry #%d\n", n);
+      }
+   }
 #if defined Y_BGI
 for (int n = 0; n < 3 * DOOM_COLOURS; n++)
    dpal[n] /= 4;
@@ -96,21 +111,22 @@ for (size_t n = 0; n < DOOM_COLOURS; n++)
    }
 game_colours = alloc_colours (rgb_values, DOOM_COLOURS);
 
-// Find the colour closest to colour 0
+// Find the colour closest to IMG_TRANSP
 {
-  colour0 = 0;
+  colour0 = IMG_TRANSP;
   int smallest_delta = INT_MAX;
 
   for (size_t n = 1; n < DOOM_COLOURS; n++)
   {
-    int delta = rgb_values[0] - rgb_values[n];
+    int delta = rgb_values[IMG_TRANSP] - rgb_values[n];
     if (delta < smallest_delta)
     {
       colour0 = n;
       smallest_delta = delta;
     }
   }
-  verbmsg ("Colour 0 remapped to %d (delta %d)\n", colour0, smallest_delta);
+  verbmsg ("colours: colour %d remapped to %d (delta %d)\n",
+    IMG_TRANSP, colour0, smallest_delta);
 }
 
 #endif

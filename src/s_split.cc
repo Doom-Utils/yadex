@@ -11,7 +11,7 @@ This file is part of Yadex.
 Yadex incorporates code from DEU 5.21 that was put in the public domain in
 1994 by Raphaël Quinet and Brendon Wyber.
 
-The rest of Yadex is Copyright © 1997-2000 André Majorel.
+The rest of Yadex is Copyright © 1997-2003 André Majorel and others.
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -31,8 +31,11 @@ Place, Suite 330, Boston, MA 02111-1307, USA.
 #include "yadex.h"
 #include "dialog.h"
 #include "levels.h"
+#include "objects.h"
+#include "objid.h"
 #include "s_linedefs.h"
 #include "selectn.h"
+#include "x_hover.h"
 
 
 /*
@@ -49,10 +52,11 @@ char   msg1[80], msg2[80];
    if the sector contains subsectors. I should ask Jim (Flynn),
    he did something about that in DETH. */
 /* Check if there is a sector between the two vertices (in the middle) */
-s = GetCurObject (OBJ_SECTORS,
-                  (Vertices[vertex1].x + Vertices[vertex2].x) / 2,
-                  (Vertices[vertex1].y + Vertices[vertex2].y) / 2,
-                  0);
+Objid o;
+GetCurObject (o, OBJ_SECTORS,
+	      (Vertices[vertex1].x + Vertices[vertex2].x) / 2,
+	      (Vertices[vertex1].y + Vertices[vertex2].y) / 2);
+s = o.num;
 if (s < 0)
    {
    Beep ();
@@ -77,6 +81,7 @@ llist = NULL;
 curv = vertex1;
 while (curv != vertex2)
    {
+   printf ("%d\n", curv);
    int n;
    for (n = 0; n < nlinedefs; n++)
       {

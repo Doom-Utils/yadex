@@ -20,7 +20,10 @@ class Win_dim
      int set (const char *string);
      int pixels (int ref_pixels);
      void string (char *buf, size_t buf_size);
+
    private:
+     Win_dim (const Win_dim&);			// Too lazy to implement it
+     Win_dim& operator= (const Win_dim&);	// Too lazy to implement it
      struct Win_dim_priv* p;
 };
 

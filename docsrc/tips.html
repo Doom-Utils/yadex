@@ -32,21 +32,20 @@ files are created&nbsp;:
 
 <ul>
   <li><code>/usr/local/bin/yadex-<b>x.y.z</b></code>
-  <li><code>/usr/local/bin/ybsp-<b>x.y.z</b></code>
   <li><code>/usr/local/share/games/yadex/<b>x.y.z</b>/*.ygd</code>
-  <li><code>/usr/local/etc/<b>x.y.z</b>/yadex.cfg</code>
-  <li><code>/usr/local/man/man6/yadex.6</code>
-  <li><code>/usr/local/man/man6/ybsp.6</code>
+  <li><code>/etc/yadex/<b>x.y.z</b>/yadex.cfg</code>
+  <li><code>/usr/local/man/man6/yadex-<b>x.y.z.</b>.6</code>
 </ul>
 
-With the exception of the man pages, all these files have the version number
-somewhere in their name. Therefore, when you install a new version, the
-previous version(s) is/are not clobbered.
+All these files have the version number somewhere in their name. Therefore,
+when you install a new version, the previous version(s) is/are not clobbered.
 
 <p>In addition, the installation creates <code>/usr/local/bin/yadex</code> as a
 symlink to <code>/usr/local/bin/yadex-x.y.z</code>, so that you can still
 invoke Yadex by typing just "<code>yadex</code>". To invoke older versions,
 type the long name ("<code>yadex-x.y.z</code>").
+
+<p>Same thing for the man page.
 
 </p><hr>AYM $SELF_DATE
 

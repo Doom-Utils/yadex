@@ -9,13 +9,16 @@
 #define YH_WADS2
 
 
+class Wad_file;
+
+
 int OpenMainWad (const char *);
 int OpenPatchWad (const char *);
 void CloseWadFiles (void);
 void CloseUnusedWadFiles (void);
-WadPtr BasicWadOpen (const char *, ygpf_t pic_format);
+Wad_file *BasicWadOpen (const char *, ygpf_t pic_format);
 void ListMasterDirectory (FILE *);
-void ListFileDirectory (FILE *, WadPtr);
+void ListFileDirectory (FILE *, const Wad_file *);
 void BuildNewMainWad (const char *, bool);
 void DumpDirectoryEntry (FILE *, const char *);
 void SaveDirectoryEntry (FILE *, const char *);

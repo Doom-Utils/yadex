@@ -10,7 +10,7 @@ This file is part of Yadex.
 Yadex incorporates code from DEU 5.21 that was put in the public domain in
 1994 by Raphaël Quinet and Brendon Wyber.
 
-The rest of Yadex is Copyright © 1997-2000 André Majorel.
+The rest of Yadex is Copyright © 1997-2003 André Majorel and others.
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -52,10 +52,56 @@ Place, Suite 330, Boston, MA 02111-1307, USA.
 #include "wadres.h"
 
 
-void draw_grid (edit_t *e);
+static void draw_grid (edit_t *e);
+static void draw_vertices (edit_t *e);
+static void draw_linedefs (edit_t *e);
 static void draw_things_squares (edit_t *e);
 static void draw_things_sprites (edit_t *e);
 static void draw_obj_no (int x, int y, int obj_no, acolour_t c);
+
+
+/*
+ *	vertex_radius - apparent radius of a vertex, in pixels
+ *
+ *	Try this in Gnuplot :
+ *
+ *	  plot [0:10] x                                          
+ *	  replot log(x+1.46)/log(1.5)-log(2.46)/log(1.5)+1
+ */
+int vertex_radius (double scale)
+{
+#if 0
+  static double last_scale = 0;
+  static int    last_result = 0;
+
+  if (scale == last_scale)
+    return last_result;
+
+  const int    VERTEX_PIXELS  = 5;
+
+  // The scale past which we switch from linear to logarithmic.
+  const double crossover      = 0.1;
+
+  // The base of the log. The higher, the stronger the effect.
+  const double base           = 1.4;
+
+  /* The point at which the derivative of log{base}(x) is 1.
+     This is where we want the crossover to occur. */
+  const double knee_x         = 1 / log (base);
+  const double knee_y         = log (knee_x) / log (base);
+
+  double factor;
+  if (scale <= crossover)
+    factor = scale;
+  else
+    factor = crossover + log (scale -crossover + knee_x) / log (base) - knee_y;
+  last_result = (int) (VERTEX_PIXELS * factor + 0.5);
+  return last_result;
+#else
+  const int VERTEX_PIXELS = 6;
+  return (int) (VERTEX_PIXELS * (0.2 + scale / 2));
+#endif
+}
 
 
 /*
@@ -74,205 +120,31 @@ void draw_map (edit_t *e) /* SWAP! */
   // Draw the grid first since it's in the background
   draw_grid (e);
 
-  // Then the things "reminders"
-  if (e->obj_type != OBJ_THINGS)
-    draw_things_squares (e);
-
-  /* Draw the linedefs to form the map.
-     Optimization: off-screen lines are not drawn
-     and set_colour is not called unnecessarily. */
-  switch (e->obj_type)
+  if (e->global)
   {
-    case OBJ_THINGS:
-    {
-      int current_colour = INT_MIN;  /* Some impossible colour no. */
-      int new_colour;
-      
-      ObjectsNeeded (OBJ_LINEDEFS, OBJ_VERTICES, 0);
-      for (n = 0; n < NumLineDefs; n++)
-      {
-	register int x1 = Vertices[LineDefs[n].start].x;
-	register int x2 = Vertices[LineDefs[n].end  ].x;
-	register int y1 = Vertices[LineDefs[n].start].y;
-	register int y2 = Vertices[LineDefs[n].end  ].y;
-	if (x1 < mapx0 && x2 < mapx0
-	 || x1 > mapx9 && x2 > mapx9
-	 || y1 < mapy0 && y2 < mapy0
-	 || y1 > mapy9 && y2 > mapy9)
-	  continue;
-	if (LineDefs[n].flags & 1)
-	  new_colour = WHITE;
-	else
-	  new_colour = LIGHTGRAY;
-	if (new_colour != current_colour)
-	  set_colour (current_colour = new_colour);
-	DrawMapLine (x1, y1, x2, y2);
-      }
-      break;
-    }
-
-    case OBJ_VERTICES:
-      ObjectsNeeded (OBJ_LINEDEFS, OBJ_VERTICES, 0);
-      set_colour (LIGHTGRAY);
-      for (n = 0; n < NumLineDefs; n++)
-      {
-	register int x1 = Vertices[LineDefs[n].start].x;
-	register int x2 = Vertices[LineDefs[n].end  ].x;
-	register int y1 = Vertices[LineDefs[n].start].y;
-	register int y2 = Vertices[LineDefs[n].end  ].y;
-	if (x1 < mapx0 && x2 < mapx0
-	 || x1 > mapx9 && x2 > mapx9
-	 || y1 < mapy0 && y2 < mapy0
-	 || y1 > mapy9 && y2 > mapy9)
-	  continue;
-	DrawMapVector (x1, y1, x2, y2);
-      }
-      break;
-
-    case OBJ_LINEDEFS:
-    {
-      int current_colour = INT_MIN;  /* Some impossible colour no. */
-      int new_colour;
-
-      ObjectsNeeded (OBJ_LINEDEFS, OBJ_VERTICES, 0);
-      for (n = 0; n < NumLineDefs; n++)
-      {
-	register int x1 = Vertices[LineDefs[n].start].x;
-	register int x2 = Vertices[LineDefs[n].end  ].x;
-	register int y1 = Vertices[LineDefs[n].start].y;
-	register int y2 = Vertices[LineDefs[n].end  ].y;
-	if (x1 < mapx0 && x2 < mapx0
-	 || x1 > mapx9 && x2 > mapx9
-	 || y1 < mapy0 && y2 < mapy0
-	 || y1 > mapy9 && y2 > mapy9)
-	  continue;
-	if (LineDefs[n].type != 0)  /* AYM 19980207: was "> 0" */
-	{
-	  if (LineDefs[n].tag != 0)  /* AYM 19980207: was "> 0" */
-	    new_colour = LIGHTMAGENTA;
-	  else
-	    new_colour = LIGHTGREEN;
-	}
-	else if (LineDefs[n].tag != 0)  /* AYM 19980207: was "> 0" */
-	  new_colour = LIGHTRED;
-	else if (LineDefs[n].flags & 1)
-	  new_colour = WHITE;
-	else
-	  new_colour = LIGHTGRAY;
-	if (new_colour != current_colour)
-	  set_colour (current_colour = new_colour);
-	DrawMapLine (x1, y1, x2, y2);
-
-	if (e->show_object_numbers)
-	{
-	  int scnx0       = SCREENX (x1);
-	  int scnx1       = SCREENX (x2);
-	  int scny0       = SCREENY (y1);
-	  int scny1       = SCREENY (y2);
-	  int label_width = ((int) log10 (n) + 1) * FONTW;
-	  if (abs (scnx1 - scnx0) > label_width + 4
-	   || abs (scny1 - scny0) > label_width + 4)
-	  {
-	    int scnx = (scnx0 + scnx1) / 2 - label_width / 2;
-	    int scny = (scny0 + scny1) / 2 - FONTH / 2;
-	    draw_obj_no (scnx, scny, n, LINEDEF_NO);
-	  }
-	}
-      }
-      break;
-    }
-
-    case OBJ_SECTORS:
-    {
-      int current_colour = INT_MIN;  /* Some impossible colour no. */
-      int new_colour;
-
-      ObjectsNeeded (OBJ_LINEDEFS, OBJ_SIDEDEFS, 0);
-      for (n = 0; n < NumLineDefs; n++)
-      {
-	register int x1 = Vertices[LineDefs[n].start].x;
-	register int x2 = Vertices[LineDefs[n].end  ].x;
-	register int y1 = Vertices[LineDefs[n].start].y;
-	register int y2 = Vertices[LineDefs[n].end  ].y;
-	if (x1 < mapx0 && x2 < mapx0
-	 || x1 > mapx9 && x2 > mapx9
-	 || y1 < mapy0 && y2 < mapy0
-	 || y1 > mapy9 && y2 > mapy9)
-	  continue;
-	int m;
-	if ((m = LineDefs[n].sidedef1) < 0 || (m = SideDefs[m].sector) < 0)
-	  new_colour = LIGHTRED;
-	else
-	{
-	  if (Sectors[m].tag != 0)  /* AYM 19980207: was "> 0" */
-	    new_colour = LIGHTGREEN;
-	  else if (Sectors[m].special > 0)
-	    new_colour = LIGHTCYAN;
-	  else if (LineDefs[n].flags & 1)
-	    new_colour = WHITE;
-	  else
-	    new_colour = LIGHTGRAY;
-	  if ((m = LineDefs[n].sidedef2) >= 0)
-	  {
-	    if ((m = SideDefs[m].sector) < 0)
-	      new_colour = LIGHTRED;
-	    else if (Sectors[m].tag != 0)  /* AYM 19980207: was "> 0" */
-	      new_colour = LIGHTGREEN;
-	    else if (Sectors[m].special > 0)
-	      new_colour = LIGHTCYAN;
-	  }
-	}
-	ObjectsNeeded (OBJ_LINEDEFS, OBJ_VERTICES, 0);
-	if (new_colour != current_colour)
-	  set_colour (current_colour = new_colour);
-	DrawMapLine (x1, y1, x2, y2);
-      }
-      break;
-    }
-  }
-
-  /* Draw in the vertices.
-     Optimization: off-screen vertices are not drawn. */
-  if (e->obj_type == OBJ_VERTICES)
-  {
-    int r = (int) (OBJSIZE * y_min (Scale, 1));
-    set_colour (LIGHTGREEN);
-    for (n = 0; n < NumVertices; n++)
-    {
-      int mapx = Vertices[n].x;
-      int mapy = Vertices[n].y;
-      if (mapx >= mapx0 && mapx <= mapx9 && mapy >= mapy0 && mapy <= mapy9)
-      {
-	register int scrx = SCREENX (mapx);
-	register int scry = SCREENY (mapy);
-	DrawScreenLine (scrx - r, scry - r, scrx + r, scry + r);
-	DrawScreenLine (scrx + r, scry - r, scrx - r, scry + r);
-      }
-    }
-    if (e->show_object_numbers && e->obj_type == OBJ_VERTICES)
-    {
-      for (n = 0; n < NumVertices; n++)
-      {
-	int mapx = Vertices[n].x;
-	int mapy = Vertices[n].y;
-	if (mapx >= mapx0 && mapx <= mapx9 && mapy >= mapy0 && mapy <= mapy9)
-	{
-	  int x = (int) (SCREENX (mapx) + 2 * VERTEXSIZE);
-	  int y = SCREENY (mapy) + 2;
-	  draw_obj_no (x, y, n, VERTEX_NO);
-	}
-      }
-    }
-  }
-
-  // Draw the things in things mode
-  if (e->obj_type == OBJ_THINGS)
-  {
+    draw_linedefs (e);
     if (e->show_things_sprites)
       draw_things_sprites (e);
     else
       draw_things_squares (e);
+    draw_vertices (e);
   }
+  else
+  {
+    if (e->obj_type != OBJ_THINGS)
+      draw_things_squares (e);
+    draw_linedefs (e);
+    if (e->obj_type == OBJ_VERTICES)
+      draw_vertices (e);
+    if (e->obj_type == OBJ_THINGS)
+    {
+      if (e->show_things_sprites)
+	draw_things_sprites (e);
+      else
+	draw_things_squares (e);
+    }
+  }
+
 
   // Draw the things numbers
   if (e->obj_type == OBJ_THINGS && e->show_object_numbers)
@@ -290,15 +162,18 @@ void draw_map (edit_t *e) /* SWAP! */
   // Draw the sector numbers
   if (e->obj_type == OBJ_SECTORS && e->show_object_numbers)
   {
+    int xoffset = - FONTW / 2;
+
     for (n = 0; n < NumSectors; n++)
     {
       int mapx;
       int mapy;
       centre_of_sector (n, &mapx, &mapy);
-      if (mapx < mapx0 || mapx > mapx9 || mapy < mapy0 || mapy > mapy9)
-	continue;
-      draw_obj_no (SCREENX (mapx) - FONTW, SCREENY (mapy) - FONTH / 2, n,
-	SECTOR_NO);
+      if (mapx >= mapx0 && mapx <= mapx9 && mapy >= mapy0 && mapy <= mapy9)
+	draw_obj_no (SCREENX (mapx) + xoffset, SCREENY (mapy) - FONTH / 2, n,
+	  SECTOR_NO);
+      if (n == 10 || n == 100 || n == 1000 || n == 10000)
+	xoffset -= FONTW / 2;
     }
   }
 }
@@ -307,11 +182,11 @@ void draw_map (edit_t *e) /* SWAP! */
 /*
  *	draw_grid - draw the grid in the background of the edit window
  */
-void draw_grid (edit_t *e)
+static void draw_grid (edit_t *e)
 {
   if (! e->grid_shown)
     return;
-
+  
   int mapx0   = MAPX (0);
   int mapx1   = MAPX (ScrMaxX);
   int mapy0   = MAPY (ScrMaxY);
@@ -433,6 +308,235 @@ void draw_grid (edit_t *e)
 
 
 /*
+ *	draw_vertices - draw the vertices, and possibly their numbers
+ */
+static void draw_vertices (edit_t *e)
+{
+  int mapx0 = MAPX (0);
+  int mapx9 = MAPX (ScrMaxX);
+  int mapy0 = MAPY (ScrMaxY);
+  int mapy9 = MAPY (0);
+  const int r = vertex_radius (Scale);
+
+  push_colour (LIGHTGREEN);
+  for (int n = 0; n < NumVertices; n++)
+  {
+    int mapx = Vertices[n].x;
+    int mapy = Vertices[n].y;
+    if (mapx >= mapx0 && mapx <= mapx9 && mapy >= mapy0 && mapy <= mapy9)
+    {
+      register int scrx = SCREENX (mapx);
+      register int scry = SCREENY (mapy);
+      DrawScreenLine (scrx - r, scry - r, scrx + r, scry + r);
+      DrawScreenLine (scrx + r, scry - r, scrx - r, scry + r);
+    }
+  }
+  if (e->show_object_numbers)
+  {
+    for (int n = 0; n < NumVertices; n++)
+    {
+      int mapx = Vertices[n].x;
+      int mapy = Vertices[n].y;
+      if (mapx >= mapx0 && mapx <= mapx9 && mapy >= mapy0 && mapy <= mapy9)
+      {
+	int x = (int) (SCREENX (mapx) + 2 * r);
+	int y = SCREENY (mapy) + 2;
+	draw_obj_no (x, y, n, VERTEX_NO);
+      }
+    }
+  }
+  pop_colour ();
+}
+
+
+/*
+ *	draw_linedefs - draw the linedefs
+ */
+static void draw_linedefs (edit_t *e)
+{
+  int mapx0 = MAPX (0);
+  int mapx9 = MAPX (ScrMaxX);
+  int mapy0 = MAPY (ScrMaxY);
+  int mapy9 = MAPY (0);
+
+  switch (e->obj_type)
+  {
+    case OBJ_THINGS:
+    {
+      int current_colour = INT_MIN;  /* Some impossible colour no. */
+      int new_colour;
+      
+      ObjectsNeeded (OBJ_LINEDEFS, OBJ_VERTICES, 0);
+      for (int n = 0; n < NumLineDefs; n++)
+      {
+	register int x1 = Vertices[LineDefs[n].start].x;
+	register int x2 = Vertices[LineDefs[n].end  ].x;
+	register int y1 = Vertices[LineDefs[n].start].y;
+	register int y2 = Vertices[LineDefs[n].end  ].y;
+	if (x1 < mapx0 && x2 < mapx0
+	 || x1 > mapx9 && x2 > mapx9
+	 || y1 < mapy0 && y2 < mapy0
+	 || y1 > mapy9 && y2 > mapy9)
+	  continue;
+	if (LineDefs[n].flags & 1)
+	  new_colour = WHITE;
+	else
+	  new_colour = LIGHTGREY;
+	if (new_colour != current_colour)
+	  set_colour (current_colour = new_colour);
+	DrawMapLine (x1, y1, x2, y2);
+      }
+      break;
+    }
+
+    case OBJ_VERTICES:
+      ObjectsNeeded (OBJ_LINEDEFS, OBJ_VERTICES, 0);
+      set_colour (LIGHTGREY);
+      for (int n = 0; n < NumLineDefs; n++)
+      {
+	register int x1 = Vertices[LineDefs[n].start].x;
+	register int x2 = Vertices[LineDefs[n].end  ].x;
+	register int y1 = Vertices[LineDefs[n].start].y;
+	register int y2 = Vertices[LineDefs[n].end  ].y;
+	if (x1 < mapx0 && x2 < mapx0
+	 || x1 > mapx9 && x2 > mapx9
+	 || y1 < mapy0 && y2 < mapy0
+	 || y1 > mapy9 && y2 > mapy9)
+	  continue;
+	DrawMapVector (x1, y1, x2, y2);
+      }
+      break;
+
+    case OBJ_LINEDEFS:
+    {
+      int current_colour = INT_MIN;  /* Some impossible colour no. */
+      int new_colour;
+
+      ObjectsNeeded (OBJ_LINEDEFS, OBJ_VERTICES, 0);
+      for (int n = 0; n < NumLineDefs; n++)
+      {
+	register int x1 = Vertices[LineDefs[n].start].x;
+	register int x2 = Vertices[LineDefs[n].end  ].x;
+	register int y1 = Vertices[LineDefs[n].start].y;
+	register int y2 = Vertices[LineDefs[n].end  ].y;
+	if (x1 < mapx0 && x2 < mapx0
+	 || x1 > mapx9 && x2 > mapx9
+	 || y1 < mapy0 && y2 < mapy0
+	 || y1 > mapy9 && y2 > mapy9)
+	  continue;
+	if (LineDefs[n].type != 0)  /* AYM 19980207: was "> 0" */
+	{
+	  if (LineDefs[n].tag != 0)  /* AYM 19980207: was "> 0" */
+	    new_colour = LIGHTMAGENTA;
+	  else
+	    new_colour = LIGHTGREEN;
+	}
+	else if (LineDefs[n].flags & 1)
+	  new_colour = WHITE;
+	else
+	  new_colour = LIGHTGREY;
+
+	// Signal errors by drawing the linedef in red. Needs work.
+	// Tag on a typeless linedef
+	if (LineDefs[n].type == 0 && LineDefs[n].tag != 0)
+	  new_colour = LIGHTRED;
+	// No first sidedef
+	if (! is_sidedef (LineDefs[n].sidedef1))
+	  new_colour = LIGHTRED;
+	// Bad second sidedef
+	if (! is_sidedef (LineDefs[n].sidedef2) && LineDefs[n].sidedef2 != -1)
+	  new_colour = LIGHTRED;
+
+	if (new_colour != current_colour)
+	  set_colour (current_colour = new_colour);
+	DrawMapLine (x1, y1, x2, y2);
+
+	if (e->show_object_numbers)
+	{
+	  int scnx0       = SCREENX (x1);
+	  int scnx1       = SCREENX (x2);
+	  int scny0       = SCREENY (y1);
+	  int scny1       = SCREENY (y2);
+	  int label_width = ((int) log10 (n) + 1) * FONTW;
+	  if (abs (scnx1 - scnx0) > label_width + 4
+	   || abs (scny1 - scny0) > label_width + 4)
+	  {
+	    int scnx = (scnx0 + scnx1) / 2 - label_width / 2;
+	    int scny = (scny0 + scny1) / 2 - FONTH / 2;
+	    draw_obj_no (scnx, scny, n, LINEDEF_NO);
+	  }
+	}
+      }
+      break;
+    }
+
+    case OBJ_SECTORS:
+    {
+      int current_colour = INT_MIN;  /* Some impossible colour no. */
+      int new_colour;
+
+      for (int n = 0; n < NumLineDefs; n++)
+      {
+	register int x1 = Vertices[LineDefs[n].start].x;
+	register int x2 = Vertices[LineDefs[n].end  ].x;
+	register int y1 = Vertices[LineDefs[n].start].y;
+	register int y2 = Vertices[LineDefs[n].end  ].y;
+	if (x1 < mapx0 && x2 < mapx0
+	 || x1 > mapx9 && x2 > mapx9
+	 || y1 < mapy0 && y2 < mapy0
+	 || y1 > mapy9 && y2 > mapy9)
+	  continue;
+	int sd1 = OBJ_NO_NONE;
+	int sd2 = OBJ_NO_NONE;
+	int s1  = OBJ_NO_NONE;
+	int s2  = OBJ_NO_NONE;
+	// FIXME should flag negative sidedef numbers as errors
+	// FIXME should flag unused tag as errors
+	if ((sd1 = LineDefs[n].sidedef1) < 0 || sd1 >= NumSideDefs
+	  || (s1 = SideDefs[sd1].sector) < 0 || s1 >= NumSectors
+	  || (sd2 = LineDefs[n].sidedef2) >= NumSideDefs
+	  || sd2 >= 0 && ((s2 = SideDefs[sd2].sector) < 0
+			|| s2 >= NumSectors))
+	{
+	  new_colour = LIGHTRED;
+	}
+	else
+	{
+	  bool have_tag  = false;
+	  bool have_type = false;
+	  if (Sectors[s1].tag != 0)
+	    have_tag = true;
+	  if (Sectors[s1].special != 0)
+	    have_type = true;
+	  if (sd2 >= 0)
+	  {
+	    if (Sectors[s2].tag != 0)
+	      have_tag = true;
+	    if (Sectors[s2].special != 0)
+	      have_type = true;
+	  }
+	  if (have_tag && have_type)
+	    new_colour = SECTOR_TAGTYPE;
+	  else if (have_tag)
+	    new_colour = SECTOR_TAG;
+	  else if (have_type)
+	    new_colour = SECTOR_TYPE;
+	  else if (LineDefs[n].flags & 1)
+	    new_colour = WHITE;
+	  else
+	    new_colour = LIGHTGREY;
+	}
+	if (new_colour != current_colour)
+	  set_colour (current_colour = new_colour);
+	DrawMapLine (x1, y1, x2, y2);
+      }
+      break;
+    }
+  }
+}
+
+
+/*
  *	draw_things_squares - the obvious
  */
 static void draw_things_squares (edit_t *e)
@@ -440,9 +544,9 @@ static void draw_things_squares (edit_t *e)
   // The radius of the largest thing.
   int max_radius = get_max_thing_radius ();
 
-  // A thing is guaranteed to be totally off-screen
-  // if its centre is more than <max_radius> units
-  // beyond the edge of the screen.
+  /* A thing is guaranteed to be totally off-screen
+     if its centre is more than <max_radius> units
+     beyond the edge of the screen. */
   int mapx0      = MAPX (0)       - max_radius;
   int mapx9      = MAPX (ScrMaxX) + max_radius;
   int mapy0      = MAPY (ScrMaxY) - max_radius;
@@ -694,27 +798,28 @@ static void draw_things_sprites (edit_t *e)
 
 
 /*
- *	draw_obj_no
- *	Draw a number at screen coordinates (x, y)
+ *	draw_obj_no - draw a number at screen coordinates (x, y)
+ *
+ *	FIXME too slow.
  */
 static void draw_obj_no (int x, int y, int obj_no, acolour_t c)
 {
-push_colour (BLACK);
+  push_colour (BLACK);
 #if 1
-DrawScreenText (x - 2, y,     "%d", obj_no);
-DrawScreenText (x - 1, y,     "%d", obj_no);
-DrawScreenText (x + 1, y,     "%d", obj_no);
-DrawScreenText (x + 2, y,     "%d", obj_no);
-DrawScreenText (x,     y + 1, "%d", obj_no);
-DrawScreenText (x,     y - 1, "%d", obj_no);
+  DrawScreenText (x - 2, y,     "%d", obj_no);
+  DrawScreenText (x - 1, y,     "%d", obj_no);
+  DrawScreenText (x + 1, y,     "%d", obj_no);
+  DrawScreenText (x + 2, y,     "%d", obj_no);
+  DrawScreenText (x,     y + 1, "%d", obj_no);
+  DrawScreenText (x,     y - 1, "%d", obj_no);
 #else
-DrawScreenText (x + 1, y + 1, "%d", obj_no);
-DrawScreenText (x + 1, y - 1, "%d", obj_no);
-DrawScreenText (x - 1, y + 1, "%d", obj_no);
-DrawScreenText (x - 1, y - 1, "%d", obj_no);
+  DrawScreenText (x + 1, y + 1, "%d", obj_no);
+  DrawScreenText (x + 1, y - 1, "%d", obj_no);
+  DrawScreenText (x - 1, y + 1, "%d", obj_no);
+  DrawScreenText (x - 1, y - 1, "%d", obj_no);
 #endif
-set_colour (c);
-DrawScreenText (x,     y,     "%d", obj_no);
-pop_colour ();
+  set_colour (c);
+  DrawScreenText (x,     y,     "%d", obj_no);
+  pop_colour ();
 }
 

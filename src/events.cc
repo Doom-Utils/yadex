@@ -11,7 +11,7 @@ This file is part of Yadex.
 Yadex incorporates code from DEU 5.21 that was put in the public domain in
 1994 by Raphaël Quinet and Brendon Wyber.
 
-The rest of Yadex is Copyright © 1997-2000 André Majorel.
+The rest of Yadex is Copyright © 1997-2003 André Majorel and others.
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -63,8 +63,8 @@ static int events_in_queue = 0;
  */
 void init_event ()
 {
-head = 0;
-events_in_queue = 0;
+  head = 0;
+  events_in_queue = 0;
 }
 
 
@@ -73,10 +73,10 @@ events_in_queue = 0;
  */
 void send_event (int event)
 {
-if (events_in_queue == Y_EVENT_QUEUE)
-   fatal_error ("Event buffer full");
-event_queue[(head + events_in_queue) % Y_EVENT_QUEUE] = event;
-events_in_queue++;
+  if (events_in_queue == Y_EVENT_QUEUE)
+    fatal_error ("Event buffer full");
+  event_queue[(head + events_in_queue) % Y_EVENT_QUEUE] = event;
+  events_in_queue++;
 }
 
 
@@ -86,7 +86,7 @@ events_in_queue++;
  */
 int has_event ()
 {
-return events_in_queue != 0;
+  return events_in_queue != 0;
 }
 
 
@@ -96,8 +96,8 @@ return events_in_queue != 0;
  */
 int has_event (int event)
 {
-return events_in_queue != 0
-   && event_queue[head] == event;
+  return events_in_queue != 0
+    && event_queue[head] == event;
 }
 
 
@@ -108,9 +108,9 @@ return events_in_queue != 0
  */
 int has_key_press_event ()
 {
-return events_in_queue != 0
-   && event_queue[head]
-   && (event_queue[head] & ~ (YK_ALT | YK_CTRL | YK_SHIFT)) < YK__LAST;
+  return events_in_queue != 0
+    && event_queue[head]
+    && (event_queue[head] & ~ (YK_ALT | YK_CTRL | YK_SHIFT)) < YK__LAST;
 }
 
 
@@ -120,15 +120,15 @@ return events_in_queue != 0
  */
 int get_event ()
 {
-if (events_in_queue == 0)  // The buffer is empty
-   return 0;
+  if (events_in_queue == 0)  // The buffer is empty
+    return 0;
 
-int e = event_queue[head];
-events_in_queue--;
-head++;
-if (head == Y_EVENT_QUEUE)
-   head = 0;
-return e;
+  int e = event_queue[head];
+  events_in_queue--;
+  head++;
+  if (head == Y_EVENT_QUEUE)
+    head = 0;
+  return e;
 }
 
 

@@ -1,0 +1,125 @@
+
+                                 Fancy logo
+                          Yadex 1.6.0 (2001-06-27)
+                                      
+                                 Yadex FAQ
+                                      
+Compilation problems
+
+   warning: comparison between signed and unsigned
+          Not a problem. GCC is over-sensitive to signedness mismatches.
+          
+   In sanity.cc,
+          warning: decimal integer constant is so large that it is
+          unsigned 
+          Not a problem. It's a bug in GCC.
+          
+   c++: command not found
+          Are you sure you have a C++ compiler ? If not, install one. If
+          you do have one, find out how it's called and change the "CXX
+          =" line in GNUmakefile accordingly.
+          
+   X11/Xlib.h: No such file or directory
+          Are you sure you have the Xlib headers ? If not, install them.
+          If you already have them, then find out where they are and
+          change the "X11INCLUDEDIR =" line in GNUmakefile accordingly.
+          
+   The compiler chokes on the Xlib headers
+          This happens on Solaris 2.6 with GCC 2.95.2. Oliver Kraus says
+          that the solution is to add "-fpermissive" to "CXXFLAGS =" in
+          GNUmakefile.
+          
+   /usr/X11R6/lib/libX11.so: undefined reference to `recv'
+          /usr/X11R6/lib/libX11.so: undefined reference to `connect'
+          /usr/X11R6/lib/libX11.so: undefined reference to `socket'
+          /usr/X11R6/lib/libX11.so: undefined reference to `setsockopt'
+          /usr/X11R6/lib/libX11.so: undefined reference to `shutdown'
+          /usr/X11R6/lib/libX11.so: undefined reference to
+          `gethostbyname'
+          /usr/X11R6/lib/libX11.so: undefined reference to
+          `getservbyname'
+          /usr/X11R6/lib/libX11.so: undefined reference to `getpeername'
+          /usr/X11R6/lib/libX11.so: undefined reference to `getsockname'
+          This happens with QNX 6 and other Unices. Add "-lsocket" to
+          "LDFLAGS =" in GNUmakefile.
+          
+   I have GCC 3.0 and Yadex 1.5.1 doesn't compile
+          Get Yadex 1.5.2 or later.
+          
+   I have GCC 2.96 and Yadex 1.5.0 doesn't compile
+          Get Yadex 1.5.1 or later.
+          
+   I have GCC 2.7 and I get lots of errors
+          GCC 2.7 is a very old compiler, it does not implement the
+          current C++ standard and I don't support it. If you must, try
+          applying patch/gcc-2.7.diff that's included in the archive but
+          don't complain to me if it doesn't work.
+          
+   I have EGCS 1.1.2 / SuSE 6.2 and I get
+          "no matching function for call to `menu_c::menu_c (...)'"
+          Apparently, there is a bug in certain EGCS 1.1.2 installations
+          that makes them choke on src/editloop.cc. I know no workaround.
+          I'd suggest that you try to get a fix from your distributor or
+          use another compiler. EGCS 1.0.3, EGCS 1.1.1 and GCC 2.95.2 are
+          known to work.
+          
+   Yadex 1.3.1 doesn't compile
+          There's a thinko in the makefile. It's fixed in version 1.3.2.
+          
+   Yadex 1.1.0 doesn't compile
+          In src/infobar.cc, lines 48 and 49, replace
+          
+  const char infobar_c::FILE_NAME_UNSET[1];  // A special pointer value 
+  const char infobar_c::LEVEL_NAME_UNSET[1];  // A special pointer value
+
+          by
+          
+  const char infobar_c::FILE_NAME_UNSET[1] = { ' ' };
+  const char infobar_c::LEVEL_NAME_UNSET[1] = { ' ' };
+
+   Yadex 1.0.1 doesn't compile
+          In src/vector.h, delete line 44 ("return this;") and compile
+          again.
+          
+Misc.
+
+   I don't have an iwad
+          You can download certain iwads for free ;
+          
+          + [1]Doom 1.8 shareware iwad
+          + [2]Heretic shareware version
+          + [3]Hexen demo
+          + [4]Strife demo
+            
+   What about a 3D preview ?
+          Unless I suddenly become interested in 3D graphics, that is not
+          going to happen. Besides, I suspect that a better and easier
+          way to achieve what you're after might be to implement a
+          reload-level in your favourite Doom port.
+          
+   Yadex is slow, particularly when dragging objects
+          Yes. I plan to replace the current implementation (pixmap) by
+          drawing directly to the window. The difficulty lies in making
+          that without generating a lot of flicker. In the meantime, try
+          the -P option.
+          
+   How many people use Yadex ?
+          I don't know for sure. Each new release gets a few hundred
+          downloads.
+          
+   Why didn't you use <insert speaker's favourite toolkit> ?
+          I used plain Xlib and not a toolkit for several reasons.
+          Firstly, I wanted to learn Xlib. Secondly, I reckoned it would
+          be easier to translate the existing BGI calls to Xlib than to
+          some higher level toolkit. Thirdly, I feared that depending on
+          a toolkit would hurt portability.
+     _________________________________________________________________
+   
+   AYM 2001-06-29
+
+References
+
+   1. ftp://ftp.idsoftware.com/idstuff/doom/doom-1.8.wad.gz
+   2. ftp://ftp.idsoftware.com/idstuff/heretic/htic_v12.zip
+   3. ftp://ftp.idsoftware.com/idstuff/hexen/hexndemo.zip
+   4. http://www.rogue-ent.com/sfiles.html

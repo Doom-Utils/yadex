@@ -11,7 +11,7 @@ This file is part of Yadex.
 Yadex incorporates code from DEU 5.21 that was put in the public domain in
 1994 by Raphaël Quinet and Brendon Wyber.
 
-The rest of Yadex is Copyright © 1997-2000 André Majorel.
+The rest of Yadex is Copyright © 1997-2003 André Majorel and others.
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -28,8 +28,8 @@ Place, Suite 330, Boston, MA 02111-1307, USA.
 */
 
 
-#ifdef Y_X11
 #include "yadex.h"
+#ifdef Y_X11
 #include <time.h>	// nanosleep ()
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>  // XLookupString
@@ -84,15 +84,15 @@ input_status_t is;
  */
 void init_input_status ()
 {
-is.in_window = 0;
-is.width     = -1;
-is.height    = 0;
-is.butl      = 0;
-is.butm      = 0;
-is.butr      = 0;
-is.shift     = 0;
-is.ctrl      = 0;
-is.alt       = 0;
+is.in_window   = 0;
+is.width       = -1;
+is.height      = 0;
+is.butl        = 0;
+is.butm        = 0;
+is.butr        = 0;
+is.shift       = 0;
+is.ctrl        = 0;
+is.alt         = 0;
 is.scroll_lock = 0;
 }
 
@@ -104,7 +104,7 @@ is.scroll_lock = 0;
 typedef struct
    {
    KeySym ks;
-   int    key;
+   inpev_t key;
    } key_info_t;
 static const key_info_t key_info[] =
    {
@@ -130,8 +130,12 @@ static const key_info_t key_info[] =
    { XK_Insert,		YK_INS,		},
    { XK_Left,		YK_LEFT,	},
    { XK_Linefeed,	YK_RETURN,	},
+#ifdef XK_Page_Down	/* HP-UX 10 doesn't have XK_Page_Down */
    { XK_Page_Down,	YK_PD,		},
+#endif
+#ifdef XK_Page_Up	/* HP-UX 10 doesn't have XK_Page_Up */
    { XK_Page_Up,	YK_PU,		},
+#endif
    { XK_Return,		YK_RETURN,	},
    { XK_Right,		YK_RIGHT,	},
    { XK_Tab,		YK_TAB,		},
@@ -213,8 +217,11 @@ switch (ev.type)
       is.key       = YE_ENTER;
       is.time      = ev.xcrossing.time;
       is.in_window = 1;
-      is.x         = ev.xcrossing.x;
-      is.y         = ev.xcrossing.y;
+      // Sanity
+      if (ev.xcrossing.x < 0) nf_bug ("xcrossing.x < 0");  // Paranoia
+      if (ev.xcrossing.y < 0) nf_bug ("xcrossing.y < 0");  // Paranoia
+      is.x = ev.xcrossing.x;
+      is.y = ev.xcrossing.y;
       break;
    case LeaveNotify :
       is.key       = YE_LEAVE;
@@ -225,8 +232,10 @@ switch (ev.type)
    case MotionNotify :
       is.key  = YE_MOTION;
       is.time = ev.xmotion.time;
-      is.x    = ev.xmotion.x;
-      is.y    = ev.xmotion.y;
+      if (ev.xmotion.x < 0) nf_bug ("xmotion.x < 0");  // Paranoia
+      if (ev.xmotion.y < 0) nf_bug ("xmotion.y < 0");  // Paranoia
+      is.x = ev.xmotion.x;
+      is.y = ev.xmotion.y;
 #ifdef DEBUG
       {
 	static bool first_time = true;
@@ -378,7 +387,7 @@ switch (ev.type)
 #if 0
       if (ev.type == KeyPress)
 	 {
-	 printf ("key=%04Xh", is.key);
+	 printf ("key=%04hXh", is.key);
 	 if (is.key >= 0 && is.key <= UCHAR_MAX && isprint (is.key))
 	    printf (" (%c)", (char) is.key);
 	 putchar ('\n');
@@ -458,7 +467,7 @@ is.key = 0;  // FIXME Shouldn't have to do that but EditorLoop() is broken
  */
 typedef struct
    {
-   int key;
+   inpev_t key;
    const char *string;
    } key_string_t;
 static const key_string_t key_string[] =
@@ -491,7 +500,7 @@ static const key_string_t key_string[] =
    { YK_UP,		"Up"		},
    };
 
-const char *key_to_string (int k)
+const char *key_to_string (inpev_t k)
 {
 static char buf[51];
 
@@ -503,12 +512,12 @@ for (n = 0; n < nmax; n++)
       break;
 
 *buf = '\0';
-if (k & YK_CTRL || (n == nmax && k >= 0 && k <= 31))
+if (k & YK_CTRL || (n == nmax && k <= 31))
    {
    al_saps (buf, "Ctrl-", sizeof buf - 1);
    if (k & YK_CTRL)
       k ^= YK_CTRL;
-   if (k >= 0 && k <= 31)
+   if (k <= 31)
       k += 96;  // Heavy ASCII-ism : 01h (^A) -> 61h ("a")
    }
 if (k & YK_ALT)
@@ -523,7 +532,7 @@ if (k & YK_SHIFT)
    }
 
 if (n == nmax)
-   if (k >= 0 && k <= UCHAR_MAX && isprint (k))
+   if (k <= UCHAR_MAX && isprint (k))
       al_sapc (buf, k, sizeof buf - 1);
    else
       {

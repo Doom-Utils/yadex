@@ -16,6 +16,14 @@
 	<h2>Compilation problems</h2>
 
 <dl>
+  <p><dt><strong>warning: comparison between signed and unsigned</strong>
+  <dd>Not a problem. GCC is over-sensitive to signedness mismatches.
+
+  <p><dt><strong>In <code>sanity.cc</code>,
+    <br>warning: decimal integer constant is so large that it is unsigned
+    </strong>
+  <dd>Not a problem. It's a bug in GCC.
+
   <p><dt><strong>c++: command not found</strong>
   <dd>Are you sure you have a C++ compiler&nbsp;? If not, install one. If you
     do have one, find out how it's called and change the "<code>CXX =</code>"
@@ -26,6 +34,29 @@
     you already have them, then find out where they are and change the
     "<code>X11INCLUDEDIR =</code>" line in <code>GNUmakefile</code>
     accordingly.
+
+  <p><dt><strong>The compiler chokes on the Xlib headers</strong>
+  <dd>This happens on Solaris 2.6 with GCC 2.95.2. Oliver Kraus says
+    that the solution is to add "<code>-fpermissive</code>" to
+    "<code>CXXFLAGS =</code>" in <code>GNUmakefile</code>.
+
+  <p><dt><strong>/usr/X11R6/lib/libX11.so: undefined reference to `recv'
+    <br>/usr/X11R6/lib/libX11.so: undefined reference to `connect'
+    <br>/usr/X11R6/lib/libX11.so: undefined reference to `socket'
+    <br>/usr/X11R6/lib/libX11.so: undefined reference to `setsockopt'
+    <br>/usr/X11R6/lib/libX11.so: undefined reference to `shutdown'
+    <br>/usr/X11R6/lib/libX11.so: undefined reference to `gethostbyname'
+    <br>/usr/X11R6/lib/libX11.so: undefined reference to `getservbyname'
+    <br>/usr/X11R6/lib/libX11.so: undefined reference to `getpeername'
+    <br>/usr/X11R6/lib/libX11.so: undefined reference to `getsockname'</strong>
+  <dd>This happens with QNX 6 and other Unices. Add "<code>-lsocket</code>" to
+    "<code>LDFLAGS =</code>" in <code>GNUmakefile</code>.  
+
+  <p><dt><strong>I have GCC 3.0 and Yadex 1.5.1 doesn't compile</strong>
+  <dd>Get Yadex 1.5.2 or later.
+
+  <p><dt><strong>I have GCC 2.96 and Yadex 1.5.0 doesn't compile</strong>
+  <dd>Get Yadex 1.5.1 or later.
 
   <p><dt><strong>I have GCC 2.7 and I get lots of errors</strong>
   <dd>GCC 2.7 is a very old compiler, it does not implement the current C++
@@ -38,7 +69,7 @@
   <dd>Apparently, there is a bug in certain EGCS 1.1.2 installations that makes
     them choke on <code>src/editloop.cc</code>. I know no workaround. I'd
     suggest that you try to get a fix from your distributor or use another
-    compiler.  EGCS&nbsp;1.0.3, EGCS&nbsp;1.1.1 and GCC&nbsp;2.95.2 are known
+    compiler. EGCS&nbsp;1.0.3, EGCS&nbsp;1.1.1 and GCC&nbsp;2.95.2 are known
     to work. 
 
   <p><dt><strong>Yadex 1.3.1 doesn't compile</strong>
@@ -47,13 +78,13 @@
   <p><dt><strong>Yadex 1.1.0 doesn't compile</strong>
   <dd>In <code>src/infobar.cc</code>, lines 48 and 49, replace
 
-<pre>  const char infobar_c::FILE_NAME_UNSET[1];  // A special pointer value 
-  const char infobar_c::LEVEL_NAME_UNSET[1];  // A special pointer value</pre>
+<p><pre>  const char infobar_c::FILE_NAME_UNSET[1];  // A special pointer value 
+  const char infobar_c::LEVEL_NAME_UNSET[1];  // A special pointer value</pre></p>
 
-by
+  <p>by</p>
 
-<pre>  const char infobar_c::FILE_NAME_UNSET[1] = { ' ' };
-  const char infobar_c::LEVEL_NAME_UNSET[1] = { ' ' };</pre> 
+<p><pre>  const char infobar_c::FILE_NAME_UNSET[1] = { ' ' };
+  const char infobar_c::LEVEL_NAME_UNSET[1] = { ' ' };</pre> </p>
 
   <dt><strong>Yadex 1.0.1 doesn't compile</strong>
   <dd>In <code>src/vector.h</code>, delete line 44 ("<code>return
@@ -76,15 +107,27 @@ by
       >Strife demo</a>
     </ul>
 
+  <p><dt><strong>What about a 3D preview&nbsp;?</strong>
+  <dd>Unless I suddenly become interested in 3D graphics, that is not going to
+    happen. Besides, I suspect that a better and easier way to achieve what
+    you're after might be to implement a reload-level in your favourite Doom
+    port.
+
+  <p><dt><strong>Yadex is slow, particularly when dragging objects</strong>
+  <dd>Yes. I plan to replace the current implementation (pixmap) by drawing
+    directly to the window. The difficulty lies in making that without
+    generating a lot of flicker. In the meantime, try the <code>-P</code>
+    option.
+
   <p><dt><strong>How many people use Yadex&nbsp;?</strong>
   <dd>I don't know for sure. Each new release gets a few hundred downloads.
 
   <p><dt><strong>Why didn't you use &lt;insert speaker's favourite
     toolkit&gt;&nbsp;?</strong>
   <dd>I used plain Xlib and not a toolkit for several reasons. Firstly, I
-    wanted to learn Xlib. Secondly, I reckoned that it would be easier to
-    translate the existing BGI calls to Xlib than to some higher level toolkit.
-    Thirdly, I feared that depending on a toolkit would hurt portability.
+    wanted to learn Xlib. Secondly, I reckoned it would be easier to translate
+    the existing BGI calls to Xlib than to some higher level toolkit. Thirdly,
+    I feared that depending on a toolkit would hurt portability.
 </dl>
 
 <p><hr>AYM $SELF_DATE

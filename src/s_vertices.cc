@@ -10,7 +10,7 @@ This file is part of Yadex.
 Yadex incorporates code from DEU 5.21 that was put in the public domain in
 1994 by Raphaël Quinet and Brendon Wyber.
 
-The rest of Yadex is Copyright © 1997-2000 André Majorel.
+The rest of Yadex is Copyright © 1997-2003 André Majorel and others.
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -31,6 +31,7 @@ Place, Suite 330, Boston, MA 02111-1307, USA.
 #include "bitvec.h"
 #include "l_vertices.h"
 #include "levels.h"
+#include "objid.h"
 #include "s_linedefs.h"
 #include "s_vertices.h"
 
@@ -42,10 +43,10 @@ Place, Suite 330, Boston, MA 02111-1307, USA.
  */
 bitvec_c *bv_vertices_of_sector (obj_no_t s)
 {
-bitvec_c *linedefs = linedefs_of_sector (s);
-bitvec_c *vertices = bv_vertices_of_linedefs (linedefs);
-delete linedefs;
-return vertices;
+  bitvec_c *linedefs = linedefs_of_sector (s);
+  bitvec_c *vertices = bv_vertices_of_linedefs (linedefs);
+  delete linedefs;
+  return vertices;
 }
 
 
@@ -56,13 +57,13 @@ return vertices;
  */
 bitvec_c *bv_vertices_of_sectors (SelPtr list)
 {
-bitvec_c *linedefs;  // Linedefs used by the sectors
-bitvec_c *vertices;  // Vertices used by the linedefs
+  bitvec_c *linedefs;  // Linedefs used by the sectors
+  bitvec_c *vertices;  // Vertices used by the linedefs
 
-linedefs = linedefs_of_sectors (list);
-vertices = bv_vertices_of_linedefs (linedefs);
-delete linedefs;
-return vertices;
+  linedefs = linedefs_of_sectors (list);
+  vertices = bv_vertices_of_linedefs (linedefs);
+  delete linedefs;
+  return vertices;
 }
 
 
@@ -73,18 +74,18 @@ return vertices;
  */
 SelPtr list_vertices_of_sectors (SelPtr list)
 {
-bitvec_c *vertices_bitvec;
-SelPtr vertices_list = 0;
-size_t n;
+  bitvec_c *vertices_bitvec;
+  SelPtr vertices_list = 0;
+  size_t n;
 
-vertices_bitvec = bv_vertices_of_sectors (list);
-for (n = 0; n < vertices_bitvec->nelements (); n++)
-   {
-   if (vertices_bitvec->get (n))
+  vertices_bitvec = bv_vertices_of_sectors (list);
+  for (n = 0; n < vertices_bitvec->nelements (); n++)
+  {
+    if (vertices_bitvec->get (n))
       SelectObject (&vertices_list, n);
-   }
-delete vertices_bitvec;
-return vertices_list;
+  }
+  delete vertices_bitvec;
+  return vertices_list;
 }
 
 

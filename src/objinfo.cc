@@ -10,7 +10,7 @@ This file is part of Yadex.
 Yadex incorporates code from DEU 5.21 that was put in the public domain in
 1994 by Raphaël Quinet and Brendon Wyber.
 
-The rest of Yadex is Copyright © 1997-2000 André Majorel.
+The rest of Yadex is Copyright © 1997-2003 André Majorel and others.
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -39,6 +39,7 @@ Place, Suite 330, Boston, MA 02111-1307, USA.
 #include "img.h"
 #include "imgspect.h"
 #include "levels.h"
+#include "objid.h"
 #include "objinfo.h"
 #include "pic2img.h"
 #include "sticker.h"
@@ -62,6 +63,7 @@ class Extraf
       memcpy (this->tex, &tex, sizeof this->tex);
       this->height = height;
     }
+
     bool operator< (const Extraf& other) const
     {
       if (height < other.height)
@@ -70,6 +72,7 @@ class Extraf
 	return true;
       return false;
     }
+
     wad_z_t height;	// To sort by increasing floor height
     obj_no_t sector;	// Sector# (for heights, flats and light level)
     wad_tex_name_t tex;	// Texture (middle tex of first sidedef)
@@ -81,7 +84,7 @@ static void get_extrafloors (std::vector<Extraf>& list, wad_tag_t tag);
 
 objinfo_c::objinfo_c ()
 {
-  for (int n = 0; n < MAX_BOXES; n++)
+  for (size_t n = 0; n < MAX_BOXES; n++)
     box_disp[n] = false;
   obj_no      = OBJ_NO_NONE;
   obj_no_disp = OBJ_NO_NONE;
@@ -92,7 +95,7 @@ objinfo_c::objinfo_c ()
 
 void objinfo_c::draw ()
 {
-  int  tag, n;
+  int  n;
   int  sd1 = OBJ_NO_NONE;
   int  sd2 = OBJ_NO_NONE;
   int  s1 = OBJ_NO_NONE;
@@ -151,23 +154,23 @@ void objinfo_c::draw ()
       const bool invalid_type = ! is_thing_type (Things[obj_no].type);
       set_colour (WINFG);
       DrawScreenText (-1, iy0 + (int) (1.5 * FONTH), 0);
-      DrawScreenText (-1, -1, "Coords: (%d, %d)",
+      DrawScreenText (-1, -1, "\1Coords:\2 (%d, %d)",
 	Things[obj_no].xpos, Things[obj_no].ypos);
-      DrawScreenString (-1, -1, "Type:   ");
+      DrawScreenString (-1, -1, "\1Type:   ");
       if (invalid_type)
 	push_colour (CLR_ERROR);
       DrawScreenText (-2, -2, "%d", Things[obj_no].type);
       if (invalid_type)
 	pop_colour ();
-      DrawScreenString (-1, -1, "Desc:   ");
+      DrawScreenString (-1, -1, "\1Desc:   ");
       if (invalid_type)
 	push_colour (CLR_ERROR);
       DrawScreenText (-2, -2, "%.19s", get_thing_name (Things[obj_no].type));
       if (invalid_type)
 	pop_colour ();
-      DrawScreenText (-1, -1, "Angle:  %s",
+      DrawScreenText (-1, -1, "\1Angle:\2  %s",
 	GetAngleName (Things[obj_no].angle));
-      DrawScreenText (-1, -1, "Flags:  %s",
+      DrawScreenText (-1, -1, "\1Flags:\2  %s",
 	GetWhenName (Things[obj_no].when));
 
       // Show the corresponding sprite
@@ -198,7 +201,7 @@ void objinfo_c::draw ()
 	else
 	{
 	  Lump_loc loc;
-	  Img img (sprite_width, sprite_height);
+	  Img img (sprite_width, sprite_height, false);
 	  Sticker sticker;
 	  wad_res.sprites.loc_by_root (sprite_root, loc);
 	  if (loc.wad == 0
@@ -228,212 +231,224 @@ void objinfo_c::draw ()
 	}
       }
     }
-       break;
+    break;
 
     case OBJ_LINEDEFS:
-       width  = 2 * BOX_BORDER + 2 * WIDE_HSPACING + 29 * FONTW;
-       height = 2 * BOX_BORDER + 2 * WIDE_VSPACING + (int) (8.5 * FONTH);
-       x0 = 0;
-       y0 = out_y1 - height + 1;
-       ix0 = x0 + BOX_BORDER + WIDE_HSPACING;
-       iy0 = y0 + BOX_BORDER + WIDE_VSPACING;
-       // Ignore box_disp -- always redraw the whole box
-       DrawScreenBox3D (x0, y0, x0 + width - 1, y0 + height - 1);
-       if (obj_no >= 0)
-       {
-	 set_colour (YELLOW);
-	 DrawScreenText (ix0, iy0, "Linedef #%d", obj_no);
-	 set_colour (WINFG);
-	 DrawScreenText (-1, iy0 + (int) (1.5 * FONTH),
-			 "Flags:    %.19s",
-			 GetLineDefFlagsName (LineDefs[obj_no].flags));
-	 DrawScreenText (-1, -1, "Type: %3d %.19s",
-			 LineDefs[obj_no].type,
-			 GetLineDefTypeName (LineDefs[obj_no].type));
-	 sd1 = LineDefs[obj_no].sidedef1;
-	 sd2 = LineDefs[obj_no].sidedef2;
-	 tag = LineDefs[obj_no].tag;
-	 s1 = LineDefs[obj_no].start;
-	 s2 = LineDefs[obj_no].end;
-	 ObjectsNeeded (OBJ_SIDEDEFS, OBJ_SECTORS, 0);
-	 if (tag > 0)
-	 {
-	   for (n = 0; n < NumSectors; n++)
-	     if (Sectors[n].tag == tag)
-	       break;
-	 }
-	 else
-	   n = NumSectors;
-	 if (n < NumSectors)
-	   DrawScreenText (-1, -1, "Tag:      %d (#%d)", tag, n);
-	 else
-	   DrawScreenText (-1, -1, "Tag:      %d (none)", tag);
-	 DrawScreenText (-1, -1, "Vertices: (#%d, #%d)", s1, s2);
-	 ObjectsNeeded (OBJ_VERTICES, 0);
-	 n = ComputeDist (Vertices[s2].x - Vertices[s1].x,
-			  Vertices[s2].y - Vertices[s1].y);
-	 DrawScreenText (-1, -1, "Length:   %d", n);
-	 DrawScreenText (-1, -1, "1st sd:   #%d", sd1);
-	 DrawScreenText (-1, -1, "2nd sd:   #%d", sd2);
-	 if (sd1 >= 0)
-	   s1 = SideDefs[sd1].sector;
-	 else
-	   s1 = -1;
-	 if (sd2 >= 0)
-	   s2 = SideDefs[sd2].sector;
-	 else
-	   s2 = -1;
-       }
-       else
-       {
-	 const char *message = "(no linedef selected)";
-	 set_colour (WINFG_DIM);
-	 DrawScreenText (x0 + (width - FONTW * strlen (message)) / 2,
-	   y0 + (height - FONTH) / 2, message);
-       }
+      width  = 2 * BOX_BORDER + 2 * WIDE_HSPACING + 29 * FONTW;
+      height = 2 * BOX_BORDER + 2 * WIDE_VSPACING + (int) (8.5 * FONTH);
+      x0 = 0;
+      y0 = out_y1 - height + 1;
+      ix0 = x0 + BOX_BORDER + WIDE_HSPACING;
+      iy0 = y0 + BOX_BORDER + WIDE_VSPACING;
+      // Ignore box_disp -- always redraw the whole box
+      DrawScreenBox3D (x0, y0, x0 + width - 1, y0 + height - 1);
+      if (obj_no >= 0)
+      {
+	set_colour (YELLOW);
+	DrawScreenText (ix0, iy0, "Linedef #%d", obj_no);
+	set_colour (WINFG);
+	DrawScreenText (-1, iy0 + (int) (1.5 * FONTH),
+			"\1Flags:\2    %.19s",
+			GetLineDefFlagsName (LineDefs[obj_no].flags));
+	DrawScreenText (-1, -1, "\1Type:\2 %3d %.19s",
+			LineDefs[obj_no].type,
+			GetLineDefTypeName (LineDefs[obj_no].type));
+	ObjectsNeeded (OBJ_SIDEDEFS, OBJ_SECTORS, 0);
+	{
+	  int tag           = LineDefs[obj_no].tag;
+	  int first_sector  = NumSectors;
+	  int second_sector = NumSectors;
+	  if (tag != 0)
+	  {
+	    for (int n = 0; n < NumSectors; n++)
+	      if (Sectors[n].tag == tag)
+	      {
+		if (first_sector >= NumSectors)
+		  first_sector = n;
+		else
+		{
+		  second_sector = n;
+		  break;
+		}
+	      }
+	  }
+	  if (first_sector < NumSectors && second_sector < NumSectors)
+	    DrawScreenText (-1, -1, "\1Tag:\2      %d (#%d+)", tag, first_sector);
+	  else if (first_sector < NumSectors)
+	    DrawScreenText (-1, -1, "\1Tag:\2      %d (#%d)", tag, first_sector);
+	  else
+	    DrawScreenText (-1, -1, "\1Tag:\2      %d (none)", tag);
+	}
+	s1 = LineDefs[obj_no].start;
+	s2 = LineDefs[obj_no].end;
+	DrawScreenText (-1, -1, "\1Vertices:\2 (#%d, #%d)", s1, s2);
+	ObjectsNeeded (OBJ_VERTICES, 0);
+	n = ComputeDist (Vertices[s2].x - Vertices[s1].x,
+			 Vertices[s2].y - Vertices[s1].y);
+	DrawScreenText (-1, -1, "\1Length:\2   %d", n);
+	sd1 = LineDefs[obj_no].sidedef1;
+	sd2 = LineDefs[obj_no].sidedef2;
+	DrawScreenText (-1, -1, "\1" "1st sd:\2   #%d", sd1);
+	DrawScreenText (-1, -1, "\1" "2nd sd:\2   #%d", sd2);
+	if (sd1 >= 0)
+	  s1 = SideDefs[sd1].sector;
+	else
+	  s1 = -1;
+	if (sd2 >= 0)
+	  s2 = SideDefs[sd2].sector;
+	else
+	  s2 = -1;
+      }
+      else
+      {
+	const char *message = "(no linedef selected)";
+	set_colour (WINFG_DIM);
+	DrawScreenText (x0 + (width - FONTW * strlen (message)) / 2,
+	  y0 + (height - FONTH) / 2, message);
+      }
 
-       x0 += width;
-       width  = 2 * BOX_BORDER + 2 * WIDE_HSPACING + 16 * FONTW;
-       ix0 = x0 + BOX_BORDER + WIDE_HSPACING;
-       y0 = out_y1 - height + 1;
-       // Ignore box_disp -- always redraw the whole box
-       DrawScreenBox3D (x0, y0, x0 + width - 1, y0 + height - 1);
-       if (obj_no >= 0 && sd1 >= 0)
-       {
-	 set_colour (YELLOW);
-	 DrawScreenText (ix0, iy0, "Sidedef1 #%d", sd1);
+      x0 += width;
+      width  = 2 * BOX_BORDER + 2 * WIDE_HSPACING + 16 * FONTW;
+      ix0 = x0 + BOX_BORDER + WIDE_HSPACING;
+      y0 = out_y1 - height + 1;
+      // Ignore box_disp -- always redraw the whole box
+      DrawScreenBox3D (x0, y0, x0 + width - 1, y0 + height - 1);
+      if (obj_no >= 0 && sd1 >= 0)
+      {
+	set_colour (YELLOW);
+	DrawScreenText (ix0, iy0, "Sidedef1 #%d", sd1);
 
-	 if (s1 >= 0 && s2 >= 0 && Sectors[s1].ceilh > Sectors[s2].ceilh
-	   && ! (is_sky (Sectors[s1].ceilt) && is_sky (Sectors[s2].ceilt)))
-	 {
-	   if (SideDefs[sd1].tex1[0] == '-' && SideDefs[sd1].tex1[1] == '\0')
-	     set_colour (CLR_ERROR);
-	   else
-	     set_colour (WINFG);
-	 }
-	 else
-	   set_colour (WINFG_DIM);
-	 DrawScreenText (-1, iy0 + (int) (1.5 * FONTH), "Upper:  %.*s",
-	     WAD_TEX_NAME, SideDefs[sd1].tex1);
+	if (s1 >= 0 && s2 >= 0 && Sectors[s1].ceilh > Sectors[s2].ceilh
+	  && ! (is_sky (Sectors[s1].ceilt) && is_sky (Sectors[s2].ceilt)))
+	{
+	  if (SideDefs[sd1].tex1[0] == '-' && SideDefs[sd1].tex1[1] == '\0')
+	    set_colour (CLR_ERROR);
+	  else
+	    set_colour (WINFG);
+	}
+	else
+	  set_colour (WINFG_DIM);
+	DrawScreenText (-1, iy0 + (int) (1.5 * FONTH), "\1Upper:\2  %.*s",
+	    WAD_TEX_NAME, SideDefs[sd1].tex1);
 
-	 if (sd2 < 0
-	   && SideDefs[sd1].tex3[0] == '-' && SideDefs[sd1].tex3[1] == '\0')
-	   set_colour (CLR_ERROR);
-	 else
-	   set_colour (WINFG);
-	 DrawScreenText (-1, -1,
-	   "Middle: %.*s", WAD_TEX_NAME, SideDefs[sd1].tex3);
+	if (sd2 < 0
+	  && SideDefs[sd1].tex3[0] == '-' && SideDefs[sd1].tex3[1] == '\0')
+	  set_colour (CLR_ERROR);
+	else
+	  set_colour (WINFG);
+	DrawScreenText (-1, -1,
+	  "\1Middle:\2 %.*s", WAD_TEX_NAME, SideDefs[sd1].tex3);
 
-	 if (s1 >= 0 && s2 >= 0 && Sectors[s1].floorh < Sectors[s2].floorh
-	   && ! (is_sky (Sectors[s1].floort) && is_sky (Sectors[s2].floort)))
-	 {
-	   if (SideDefs[sd1].tex2[0] == '-' && SideDefs[sd1].tex2[1] == '\0')
-	     set_colour (CLR_ERROR);
-	   else
-	     set_colour (WINFG);
-	 }
-	 else
-	   set_colour (WINFG_DIM);
-	 DrawScreenText (-1, -1, "Lower:  %.*s",
-	   WAD_TEX_NAME, SideDefs[sd1].tex2);
+	if (s1 >= 0 && s2 >= 0 && Sectors[s1].floorh < Sectors[s2].floorh
+	  && ! (is_sky (Sectors[s1].floort) && is_sky (Sectors[s2].floort)))
+	{
+	  if (SideDefs[sd1].tex2[0] == '-' && SideDefs[sd1].tex2[1] == '\0')
+	    set_colour (CLR_ERROR);
+	  else
+	    set_colour (WINFG);
+	}
+	else
+	  set_colour (WINFG_DIM);
+	DrawScreenText (-1, -1, "\1Lower:\2  %.*s",
+	  WAD_TEX_NAME, SideDefs[sd1].tex2);
 
-	 set_colour (WINFG);
-	 DrawScreenText (-1, -1, "X-ofs:  %d", SideDefs[sd1].xoff);
-	 DrawScreenText (-1, -1, "Y-ofs:  %d", SideDefs[sd1].yoff);
-	 DrawScreenText (-1, -1, "Sector: #%d", s1);
-       }
-       else
-       {
-	 const char *message = "(no 1st sidedef)";
-	 set_colour (CLR_ERROR);
-	 DrawScreenText (x0 + (width - FONTW * strlen (message)) / 2,
-	   y0 + (height - FONTH) / 2, message);
-       }
-       x0 += width;
-       ix0 = x0 + BOX_BORDER + WIDE_HSPACING;
-       y0 = out_y1 - height + 1;
-       // Ignore box_disp -- always redraw the whole box
-       DrawScreenBox3D (x0, y0, x0 + width - 1, y0 + height - 1);
-       if (obj_no >= 0 && sd2 >= 0)
-       {
-	 set_colour (YELLOW);
-	 DrawScreenText (ix0, iy0, "Sidedef2 #%d", sd2);
-	 set_colour (WINFG);
-	 const char *tex_name;
+	set_colour (WINFG);
+	DrawScreenText (-1, -1, "\1X-ofs:\2  %d", SideDefs[sd1].xoff);
+	DrawScreenText (-1, -1, "\1Y-ofs:\2  %d", SideDefs[sd1].yoff);
+	DrawScreenText (-1, -1, "\1Sector:\2 #%d", s1);
+      }
+      else
+      {
+	const char *message = "(no 1st sidedef)";
+	set_colour (CLR_ERROR);
+	DrawScreenText (x0 + (width - FONTW * strlen (message)) / 2,
+	  y0 + (height - FONTH) / 2, message);
+      }
+      x0 += width;
+      ix0 = x0 + BOX_BORDER + WIDE_HSPACING;
+      y0 = out_y1 - height + 1;
+      // Ignore box_disp -- always redraw the whole box
+      DrawScreenBox3D (x0, y0, x0 + width - 1, y0 + height - 1);
+      if (obj_no >= 0 && sd2 >= 0)
+      {
+	set_colour (YELLOW);
+	DrawScreenText (ix0, iy0, "Sidedef2 #%d", sd2);
+	set_colour (WINFG);
+	const char *tex_name;
 
-	 tex_name = SideDefs[sd2].tex1;  // Upper texture
-	 if (s1 >= 0 && s2 >= 0 && Sectors[s2].ceilh > Sectors[s1].ceilh
-	   && ! (is_sky (Sectors[s1].ceilt) && is_sky (Sectors[s2].ceilt)))
-	 {
-	   if (tex_name[0] == '-' && tex_name[1] == '\0')
-	     set_colour (CLR_ERROR);
-	   else
-	     set_colour (WINFG);
-	 }
-	 else
-	   set_colour (WINFG_DIM);
-	 DrawScreenText (-1, iy0 + (int) (1.5 * FONTH),
-	   "Upper:  %.*s", WAD_TEX_NAME, tex_name);
+	tex_name = SideDefs[sd2].tex1;  // Upper texture
+	if (s1 >= 0 && s2 >= 0 && Sectors[s2].ceilh > Sectors[s1].ceilh
+	  && ! (is_sky (Sectors[s1].ceilt) && is_sky (Sectors[s2].ceilt)))
+	{
+	  if (tex_name[0] == '-' && tex_name[1] == '\0')
+	    set_colour (CLR_ERROR);
+	  else
+	    set_colour (WINFG);
+	}
+	else
+	  set_colour (WINFG_DIM);
+	DrawScreenText (-1, iy0 + (int) (1.5 * FONTH),
+	  "\1Upper:\2  %.*s", WAD_TEX_NAME, tex_name);
 
-	 tex_name = SideDefs[sd2].tex3;  // Middle texture
-	 set_colour (WINFG);
-	 DrawScreenText (-1, -1,
-	   "Middle: %.*s", WAD_TEX_NAME, tex_name);
+	tex_name = SideDefs[sd2].tex3;  // Middle texture
+	set_colour (WINFG);
+	DrawScreenText (-1, -1,
+	  "\1Middle:\2 %.*s", WAD_TEX_NAME, tex_name);
 
-	 tex_name = SideDefs[sd2].tex2;  // Lower texture
-	 if (s1 >= 0 && s2 >= 0 && Sectors[s2].floorh < Sectors[s1].floorh
-	   && ! (is_sky (Sectors[s1].floort) && is_sky (Sectors[s2].floort)))
-	 {
-	   if (tex_name[0] == '-' && tex_name[1] == '\0')
-	     set_colour (CLR_ERROR);
-	   else
-	     set_colour (WINFG);
-	 }
-	 else
-	   set_colour (WINFG_DIM);
-	 DrawScreenText (-1, -1, "Lower:  %.*s", WAD_TEX_NAME, tex_name);
+	tex_name = SideDefs[sd2].tex2;  // Lower texture
+	if (s1 >= 0 && s2 >= 0 && Sectors[s2].floorh < Sectors[s1].floorh
+	  && ! (is_sky (Sectors[s1].floort) && is_sky (Sectors[s2].floort)))
+	{
+	  if (tex_name[0] == '-' && tex_name[1] == '\0')
+	    set_colour (CLR_ERROR);
+	  else
+	    set_colour (WINFG);
+	}
+	else
+	  set_colour (WINFG_DIM);
+	DrawScreenText (-1, -1, "\1Lower:\2  %.*s", WAD_TEX_NAME, tex_name);
 
-	 set_colour (WINFG);
-	 DrawScreenText (-1, -1, "X-ofs:  %d", SideDefs[sd2].xoff);
-	 DrawScreenText (-1, -1, "Y-ofs:  %d", SideDefs[sd2].yoff);
-	 DrawScreenText (-1, -1, "Sector: #%d", s2);
-       }
-       else
-       {
-	 const char *message = "(no 2nd sidedef)";
-	 // If the "2" flag is set, there must be a second sidedef
-	 if (LineDefs[obj_no].flags & 0x04)  // FIXME hard-coded
-	   set_colour (CLR_ERROR);
-	 else
-	   set_colour (WINFG_DIM);
-	 DrawScreenText (x0 + (width - FONTW * strlen (message)) / 2,
-	   y0 + (height - FONTH) / 2, message);
-       }
-       break;
+	set_colour (WINFG);
+	DrawScreenText (-1, -1, "\1X-ofs:\2  %d", SideDefs[sd2].xoff);
+	DrawScreenText (-1, -1, "\1Y-ofs:\2  %d", SideDefs[sd2].yoff);
+	DrawScreenText (-1, -1, "\1Sector:\2 #%d", s2);
+      }
+      else
+      {
+	const char *message = "(no 2nd sidedef)";
+	// If the "2" flag is set, there must be a second sidedef
+	if (LineDefs[obj_no].flags & 0x04)  // FIXME hard-coded
+	  set_colour (CLR_ERROR);
+	else
+	  set_colour (WINFG_DIM);
+	DrawScreenText (x0 + (width - FONTW * strlen (message)) / 2,
+	  y0 + (height - FONTH) / 2, message);
+      }
+      break;
 
     case OBJ_VERTICES:
-       width  = 2 * BOX_BORDER + 2 * WIDE_HSPACING + 29 * FONTW;
-       height = 2 * BOX_BORDER + 2 * WIDE_VSPACING + (int) (2.5 * FONTH);
-       x0 = 0;
-       y0 = out_y1 - height + 1;
-       ix0 = x0 + BOX_BORDER + WIDE_HSPACING;
-       iy0 = y0 + BOX_BORDER + WIDE_VSPACING;
-       // Ignore box_disp -- always redraw the whole box
-       DrawScreenBox3D (x0, y0, x0 + width - 1, y0 + height - 1);
-       if (obj_no < 0)
-       {
-	 const char *message = "(no vertex selected)";
-	 set_colour (WINFG_DIM);
-	 DrawScreenText (x0 + (width - FONTW * strlen (message)) / 2,
-	   y0 + (height - FONTH) / 2, message);
-	 break;
-       }
-       set_colour (YELLOW);
-       DrawScreenText (ix0, iy0, "Vertex #%d", obj_no);
-       set_colour (WINFG);
-       DrawScreenText (-1, iy0 + (int) (1.5 * FONTH),
-	 "Coordinates: (%d, %d)", Vertices[obj_no].x, Vertices[obj_no].y);
-       break;
+      width  = 2 * BOX_BORDER + 2 * WIDE_HSPACING + 29 * FONTW;
+      height = 2 * BOX_BORDER + 2 * WIDE_VSPACING + (int) (2.5 * FONTH);
+      x0 = 0;
+      y0 = out_y1 - height + 1;
+      ix0 = x0 + BOX_BORDER + WIDE_HSPACING;
+      iy0 = y0 + BOX_BORDER + WIDE_VSPACING;
+      // Ignore box_disp -- always redraw the whole box
+      DrawScreenBox3D (x0, y0, x0 + width - 1, y0 + height - 1);
+      if (obj_no < 0)
+      {
+	const char *message = "(no vertex selected)";
+	set_colour (WINFG_DIM);
+	DrawScreenText (x0 + (width - FONTW * strlen (message)) / 2,
+	  y0 + (height - FONTH) / 2, message);
+	break;
+      }
+      set_colour (YELLOW);
+      DrawScreenText (ix0, iy0, "Vertex #%d", obj_no);
+      set_colour (WINFG);
+      DrawScreenText (-1, iy0 + (int) (1.5 * FONTH),
+	"\1Coordinates:\2 (%d, %d)", Vertices[obj_no].x, Vertices[obj_no].y);
+      break;
 
     case OBJ_SECTORS:
     {
@@ -451,7 +466,7 @@ void objinfo_c::draw ()
 	     + BOX_BORDER;
       height = 2 * BOX_BORDER
 	     + 2 * WIDE_VSPACING
-	     + y_max ((int) (9.5 * FONTH),
+	     + y_max ((unsigned) (9.5 * FONTH),
 		    WIDE_HSPACING + 4 * HOLLOW_BORDER + 2 * DOOM_FLAT_HEIGHT);
       x0 = 0;
       y0 = out_y1 - height + 1;
@@ -484,39 +499,56 @@ void objinfo_c::draw ()
       if (prev_sector >= 0 && prev_sector != obj_no)
       {
 	DrawScreenText (-1, iy0 + (int) (1.5 * FONTH),
-	  "Floor:    %d (%+d)",
+	  "\1Floor:\2    %d (%+d)",
 	  sec->floorh, sec->floorh - prev_floorh);
-	DrawScreenText (-1, -1, "Ceiling:  %d (%+d)",
+	DrawScreenText (-1, -1, "\1Ceiling:\2  %d (%+d)",
 	  sec->ceilh, sec->ceilh - prev_ceilh);
       }
       else
       {
 	DrawScreenText (-1, iy0 + (int) (1.5 * FONTH),
-	  "Floor:    %d",   sec->floorh);
-        DrawScreenText (-1, -1, "Ceiling:  %d",  sec->ceilh);
+	  "\1Floor:\2    %d",   sec->floorh);
+        DrawScreenText (-1, -1, "\1Ceiling:\2  %d",  sec->ceilh);
       }
-      DrawScreenText (-1, -1, "Headroom: %d",   sec->ceilh - sec->floorh);
-      DrawScreenText (-1, -1, "Floor:    %.*s", WAD_FLAT_NAME, sec->floort);
-      DrawScreenText (-1, -1, "Ceiling:  %.*s", WAD_FLAT_NAME, sec->ceilt);
-      DrawScreenText (-1, -1, "Light:    %d",   sec->light);
-      DrawScreenText (-1, -1, "Type: %3d %.14s",
+      DrawScreenText (-1, -1, "\1Headroom:\2 %d",   sec->ceilh - sec->floorh);
+      DrawScreenText (-1, -1, "\1Floor:\2    %.*s", WAD_FLAT_NAME, sec->floort);
+      DrawScreenText (-1, -1, "\1Ceiling:\2  %.*s", WAD_FLAT_NAME, sec->ceilt);
+      DrawScreenText (-1, -1, "\1Light:\2    %d",   sec->light);
+      DrawScreenText (-1, -1, "\1Type:\2 %3d %.14s",
 	sec->special, GetSectorTypeName (sec->special));
-      tag = sec->tag;
-      ObjectsNeeded (OBJ_LINEDEFS, 0);
-      if (tag == 0)
-	 n = NumLineDefs;
-      else
-	 for (n = 0; n < NumLineDefs; n++)
+      {
+	int tag       = sec->tag;
+	int first_ld  = NumLineDefs;
+	int second_ld = NumLineDefs;
+
+	ObjectsNeeded (OBJ_LINEDEFS, 0);
+	if (tag != 0)
+	{
+	  for (n = 0; n < NumLineDefs; n++)
 	    if (LineDefs[n].tag == tag)
-	       break;
-      if (n < NumLineDefs)
-	 DrawScreenText (-1, -1, "Tag:      %d (#%d)", tag, n);
-      else if (tag == 99 || tag == 999)
-	 DrawScreenText (-1, -1, "Tag:      %d (stairs?)", tag);
-      else if (tag == 666)
-	 DrawScreenText (-1, -1, "Tag:      %d (lower@end)", tag);
-      else
-	 DrawScreenText (-1, -1, "Tag:      %d (none)", tag);
+	    {
+	      if (first_ld >= NumLineDefs)
+		first_ld = n;
+	      else
+	      {
+		second_ld = n;
+		break;
+	      }
+	    }
+	}
+	if (first_ld < NumLineDefs && second_ld < NumLineDefs)
+	   DrawScreenText (-1, -1, "\1Tag:\2      %d (#%d+)", tag, first_ld);
+	else if (first_ld < NumLineDefs)
+	   DrawScreenText (-1, -1, "\1Tag:\2      %d (#%d)", tag, first_ld);
+	else if (tag == 99 || tag == 999)
+	   DrawScreenText (-1, -1, "\1Tag:\2      %d (stairs?)", tag);
+	else if (tag == 666)
+	   DrawScreenText (-1, -1, "\1Tag:\2      %d (lower@end)", tag);
+	else if (tag == 667)
+	   DrawScreenText (-1, -1, "\1Tag:\2      %d (raise@end)", tag);
+	else
+	   DrawScreenText (-1, -1, "\1Tag:\2      %d (none)", tag);
+      }
       {
 	hookfunc_comm_t block;
 
@@ -549,13 +581,13 @@ void objinfo_c::draw ()
 			   + WIDE_HSPACING
 			   + BOX_BORDER;
 	std::vector<Extraf> v;
-	get_extrafloors (v, tag);
-	int e;
+	get_extrafloors (v, sec->tag);
+	size_t e;
 	for (e = 0; e < v.size () && e + 1 < MAX_BOXES; e++, x0 += width2)
 	{
-	  const Extraf *i = &(v[e]);
-	  obj_no_t dsecno = i->sector;
-	  bool thick = (*i->tex != '\0');
+	  const Extraf& i = v[e];
+	  obj_no_t dsecno = i.sector;
+	  bool thick = (*i.tex != '\0');
 	  const struct Sector *dsec = Sectors + dsecno;
 	  x1 = x0 + width2 - 1;
 	  y1 = y0 + height - 1;
@@ -585,24 +617,23 @@ void objinfo_c::draw ()
 	  if (thick)
 	  {
 	    DrawScreenText (-1, iy0 + (int) (1.5 * FONTH),
-				    "Bottom: %d",   dsec->floorh);
-	    DrawScreenText (-1, -1, "Top:    %d",   dsec->ceilh);
-	    DrawScreenText (-1, -1, "Thick:  %d",   dsec->ceilh - dsec->floorh);
-	    DrawScreenText (-1, -1, "Bottom: %.*s", WAD_FLAT_NAME,dsec->floort);
-	    DrawScreenText (-1, -1, "Top:    %.*s", WAD_FLAT_NAME, dsec->ceilt);
+				    "\1Bottom:\2 %d",   dsec->floorh);
+	    DrawScreenText (-1, -1, "\1Top:\2    %d",   dsec->ceilh);
+	    DrawScreenText (-1, -1, "\1Thick:\2  %d",   dsec->ceilh - dsec->floorh);
+	    DrawScreenText (-1, -1, "\1Bottom:\2 %.*s", WAD_FLAT_NAME,dsec->floort);
+	    DrawScreenText (-1, -1, "\1Top:\2    %.*s", WAD_FLAT_NAME, dsec->ceilt);
 	  }
 	  else
 	  {
 	    DrawScreenText (-1, iy0 + (int) (1.5 * FONTH),
-				    "Height: %d",   dsec->floorh);
-	    DrawScreenText (-1, -1, "Flat:   %.*s", WAD_FLAT_NAME,dsec->floort);
+				    "\1Height:\2 %d",   dsec->floorh);
+	    DrawScreenText (-1, -1, "\1Flat:\2   %.*s", WAD_FLAT_NAME,dsec->floort);
 	  }
-	  DrawScreenText (-1, -1, "Shadow: %d",   dsec->light);
-	  DrawScreenText (-1, -1, "Type:   %d",   dsec->special);
-	  tag = dsec->tag;
+	  DrawScreenText (-1, -1, "\1Shadow:\2 %d",   dsec->light);
+	  DrawScreenText (-1, -1, "\1Type:\2   %d",   dsec->special);
 	  ObjectsNeeded (OBJ_LINEDEFS, 0);
 	  if (thick)
-	    DrawScreenText (-1, -1, "Side:   %.*s", WAD_TEX_NAME, i->tex);
+	    DrawScreenText (-1, -1, "\1Side:\2   %.*s", WAD_TEX_NAME, i.tex);
 	  {
 	    hookfunc_comm_t block;
 

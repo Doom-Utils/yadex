@@ -23,18 +23,21 @@ class Img
 {
   public :
     Img ();
-    Img (img_dim_t width, img_dim_t height);
+    Img (img_dim_t width, img_dim_t height, bool opaque);
     ~Img ();
-    bool is_null () const;  // Is it a null image ?
-    img_dim_t width () const;  // Return the width
-    img_dim_t height () const;  // Return the height
-    const img_pixel_t *buf () const;  // Return pointer on buffer
-    img_pixel_t *wbuf ();  // Return pointer on buffer
-    // Set the width and height
-    void clear ();
-    void resize (img_dim_t width, img_dim_t height);
+    bool               is_null    () const;	// Is it a null image ?
+    img_dim_t          width      () const;	// Return the width
+    img_dim_t          height     () const;	// Return the height
+    const img_pixel_t *buf        () const;	// Return pointer on buffer
+    img_pixel_t       *wbuf       ();		// Return pointer on buffer
+    void               clear      ();
+    void               set_opaque (bool opaque);
+    void               resize     (img_dim_t width, img_dim_t height);
+    int                save       (const char *filename) const;
     
   private :
+    Img            (const Img&);	// Too lazy to implement it
+    Img& operator= (const Img&);	// Too lazy to implement it
     Img_priv *p;
 };
 

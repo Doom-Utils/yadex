@@ -10,7 +10,7 @@ This file is part of Yadex.
 Yadex incorporates code from DEU 5.21 that was put in the public domain in
 1994 by Raphaël Quinet and Brendon Wyber.
 
-The rest of Yadex is Copyright © 1997-2000 André Majorel.
+The rest of Yadex is Copyright © 1997-2003 André Majorel and others.
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -31,6 +31,9 @@ Place, Suite 330, Boston, MA 02111-1307, USA.
 #include "gfx.h"
 #include "gotoobj.h"
 #include "levels.h"
+#include "objects.h"
+#include "objid.h"
+#include "x_hover.h"
 
 
 /*
@@ -70,7 +73,9 @@ OrigY = y - (MAPY (is.y) - OrigY);
  */
 inline int sector_under_pointer ()
 {
-   return GetCurObject (OBJ_SECTORS, MAPX (is.x), MAPY (is.y), 1);
+Objid o;
+GetCurObject (o, OBJ_SECTORS, MAPX (is.x), MAPY (is.y));
+return o.num;
 }
 
 
@@ -78,14 +83,14 @@ inline int sector_under_pointer ()
   centre the map around the object and zoom in if necessary
 */
 
-void GoToObject (int objtype, int objnum) /* SWAP! */
+void GoToObject (const Objid& objid) /* SWAP! */
 {
 int   xpos, ypos;
 int   xpos2, ypos2;
 int   sd1, sd2;
 float oldscale;
 
-GetObjectCoords (objtype, objnum, &xpos, &ypos);
+GetObjectCoords (objid.type, objid.num, &xpos, &ypos);
 focus_on_map_coords (xpos, ypos);
 oldscale = Scale;
 
@@ -96,7 +101,7 @@ oldscale = Scale;
 #if 0
 /* zoom in until the object can be selected */
 while (Scale < 8.0
-   && GetCurObject (objtype, MAPX (is.x), MAPY (is.y), 4) != objnum)
+   && GetCurObject (objid.type, MAPX (is.x), MAPY (is.y)) != objid.num)
    {
    if (Scale < 1.0)
       Scale = 1.0 / ((1.0 / Scale) - 1.0);
@@ -116,7 +121,7 @@ while (Scale < 8.0
    most well-constituted sectors. It does not work so well for
    unclosed sectors, though (but it's partly GetCurObject()'s
    fault). */
-if (objtype == OBJ_SECTORS && sector_under_pointer () != objnum)
+if (objid.type == OBJ_SECTORS && sector_under_pointer () != objid.num)
    {
    /* restore the Scale */
    Scale = oldscale;
@@ -126,8 +131,8 @@ if (objtype == OBJ_SECTORS && sector_under_pointer () != objnum)
       sd1 = LineDefs[n].sidedef1;
       sd2 = LineDefs[n].sidedef2;
       ObjectsNeeded (OBJ_SIDEDEFS, 0);
-      if (sd1 >= 0 && SideDefs[sd1].sector == objnum
-	|| sd2 >= 0 && SideDefs[sd2].sector == objnum)
+      if (sd1 >= 0 && SideDefs[sd1].sector == objid.num
+	|| sd2 >= 0 && SideDefs[sd2].sector == objid.num)
 	 {
 	 GetObjectCoords (OBJ_LINEDEFS, n, &xpos2, &ypos2);
 	 int d = ComputeDist (abs (xpos - xpos2), abs (ypos - ypos2)) / 7;
@@ -136,7 +141,7 @@ if (objtype == OBJ_SECTORS && sector_under_pointer () != objnum)
 	 xpos = xpos2 + (xpos - xpos2) / d;
 	 ypos = ypos2 + (ypos - ypos2) / d;
 	 focus_on_map_coords (xpos, ypos);
-	 if (sector_under_pointer () == objnum)
+	 if (sector_under_pointer () == objid.num)
 	    break;
 	 }
       }

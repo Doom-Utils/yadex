@@ -10,7 +10,7 @@ This file is part of Yadex.
 Yadex incorporates code from DEU 5.21 that was put in the public domain in
 1994 by Raphaël Quinet and Brendon Wyber.
 
-The rest of Yadex is Copyright © 1997-2000 André Majorel.
+The rest of Yadex is Copyright © 1997-2003 André Majorel and others.
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -34,35 +34,36 @@ Place, Suite 330, Boston, MA 02111-1307, USA.
 
 
 /*
- *	frob_things_flags
+ *	frob_things_flags - set/reset/toggle things flags
+ *
  *	For all the things in <list>, apply the operator <op>
  *	with the operand <operand> on the flags field.
  */
 void frob_things_flags (SelPtr list, int op, int operand)
 {
-SelPtr cur;
-i16 mask;
+  SelPtr cur;
+  i16 mask;
 
-if (op == YO_CLEAR || op == YO_SET || op == YO_TOGGLE)
-   mask = 1 << operand;
-else
-   mask = operand;
+  if (op == YO_CLEAR || op == YO_SET || op == YO_TOGGLE)
+    mask = 1 << operand;
+  else
+    mask = operand;
 
-for (cur = list; cur; cur = cur->next)
-   {
-   if (op == YO_CLEAR)
+  for (cur = list; cur; cur = cur->next)
+  {
+    if (op == YO_CLEAR)
       Things[cur->objnum].when &= ~mask;
-   else if (op == YO_SET)
+    else if (op == YO_SET)
       Things[cur->objnum].when |= mask;
-   else if (op == YO_TOGGLE)
+    else if (op == YO_TOGGLE)
       Things[cur->objnum].when ^= mask;
-   else
-      {
+    else
+    {
       nf_bug ("frob_things_flags: op=%02X", op);
       return;
-      }
-   }
-MadeChanges = 1;
+    }
+  }
+  MadeChanges = 1;
 }
 
 

@@ -11,7 +11,7 @@ This file is part of Yadex.
 Yadex incorporates code from DEU 5.21 that was put in the public domain in
 1994 by Raphaël Quinet and Brendon Wyber.
 
-The rest of Yadex is Copyright © 1997-2000 André Majorel.
+The rest of Yadex is Copyright © 1997-2003 André Majorel and others.
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -93,9 +93,63 @@ inline int hextoi (char c)
   else if (c >= 'a' && c <= 'f')
     return c - 'a' + 10;
   else if (c >= 'A' && c <= 'F')
-    return c = 'A' + 10;
+    return c - 'A' + 10;
   else
     return -1;
+}
+
+
+/*
+ *	b36toi
+ *	If <c> is a base 36 digit ("[0-9A-Za-z]"), return its value.
+ *	Else, return a negative number.
+ */
+inline int b36toi (char c)
+{
+  if (isdigit ((unsigned char) c))
+    return c - '0';
+  else if (islower (c))
+    return c - 'a' + 10;
+  else if (isupper (c))
+    return c - 'A' + 10;
+  else
+    return -1;
+}
+
+
+/*
+ *	y_isident - return true iff <c> is one of a-z, A-Z, 0-9 or "_".
+ *
+ *	Intentionally not using isalpha() and co. because I
+ *	don't want the results to depend on the locale.
+ */
+inline bool y_isident (char c)
+{
+  switch (c)
+  {
+    case 'a': case 'b': case 'c': case 'd': case 'e': case 'f':
+    case 'g': case 'h': case 'i': case 'j': case 'k': case 'l':
+    case 'm': case 'n': case 'o': case 'p': case 'q': case 'r':
+    case 's': case 't': case 'u': case 'v': case 'w': case 'x':
+    case 'y': case 'z':
+
+    case 'A': case 'B': case 'C': case 'D': case 'E': case 'F':
+    case 'G': case 'H': case 'I': case 'J': case 'K': case 'L':
+    case 'M': case 'N': case 'O': case 'P': case 'Q': case 'R':
+    case 'S': case 'T': case 'U': case 'V': case 'W': case 'X':
+    case 'Y': case 'Z':
+
+    case '0': case '1': case '2': case '3': case '4': case '5':
+    case '6': case '7': case '8': case '9':
+
+    case '_':
+
+      return true;
+
+    default:
+
+      return false;
+  }
 }
 
 
@@ -110,7 +164,7 @@ inline int fnewline (FILE *fd)
 #ifdef Y_UNIX
   return putc ('\n', fd);
 #else
-  return putc ('\n', fd), putc ('\r', fd);
+  return putc ('\r', fd), putc ('\n', fd);
 #endif
 }
 

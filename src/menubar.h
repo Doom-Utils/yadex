@@ -11,7 +11,7 @@ This file is part of Yadex.
 Yadex incorporates code from DEU 5.21 that was put in the public domain in
 1994 by Raphaël Quinet and Brendon Wyber.
 
-The rest of Yadex is Copyright © 1997-2000 André Majorel.
+The rest of Yadex is Copyright © 1997-2003 André Majorel and others.
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -42,7 +42,7 @@ The menubar widget keeps the following state information ;
 
 
 #include "edwidget.h"
-class menu_c;
+class Menu;
 
 
 static const int MAX_ITEMS = 10;
@@ -54,9 +54,9 @@ class menubar_c : public edwidget_c
       menubar_c ();
 
       int add_item (const char *text, int shortcut_index, int right_aligned,
-         menu_c *menu);
-      void set_menu (int number, menu_c *menu);
-      menu_c *get_menu (int number);
+         Menu *menu);
+      void set_menu (int number, Menu *menu);
+      Menu *get_menu (int number);
       void compute_menubar_coords (int scrx0, int scrx1, int scry0, int scry1);
       void highlight (int number);
       void pull_down (int number);
@@ -105,7 +105,7 @@ class menubar_c : public edwidget_c
       const char *item_text[MAX_ITEMS];	// Definition of items
       int item_shortcut_index[MAX_ITEMS];
       int item_right_aligned[MAX_ITEMS];
-      menu_c *item_menu[MAX_ITEMS];
+      Menu *item_menu[MAX_ITEMS];
        
       int stale_x0_x1;         		// Should item_x? be recalculated ?
       int item_x0[MAX_ITEMS];		// Left edge of items, includ. spacing
@@ -117,8 +117,8 @@ class menubar_c : public edwidget_c
       int highlighted_no_disp;		// # of the item that is actually h.l.
       int pulled_down_no;		// # of menu that should be p.d.
       int pulled_down_no_disp;		// # of menu that is actually p.d.
-      menu_c *pulled_down_menu;		// Menu that should be p.d.
-      menu_c *pulled_down_menu_disp;	// Menu that is actually p.d.
+      Menu *pulled_down_menu;		// Menu that should be p.d.
+      Menu *pulled_down_menu_disp;	// Menu that is actually p.d.
    };
 
 

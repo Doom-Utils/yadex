@@ -11,7 +11,7 @@ This file is part of Yadex.
 Yadex incorporates code from DEU 5.21 that was put in the public domain in
 1994 by Raphaël Quinet and Brendon Wyber.
 
-The rest of Yadex is Copyright © 1997-2000 André Majorel.
+The rest of Yadex is Copyright © 1997-2003 André Majorel and others.
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -32,22 +32,9 @@ Place, Suite 330, Boston, MA 02111-1307, USA.
 #include "acolours.h"
 #include "game.h"
 #include "gamesky.h"
-#include "macro.h"
+#include "locate.h"
 #include "things.h"
 #include "trace.h"
-
-
-static const char *standard_directories[] =
-   {
-   "./%b",
-   "~/.yadex/%v/%b",
-   "%i/%b",
-   "/usr/local/share/games/yadex/%v/%b",
-   "/usr/share/games/yadex/%v/%b",
-   "/usr/local/share/games/yadex/%b",
-   "/usr/share/games/yadex/%b",
-   0
-   };
 
 
 const char ygd_file_magic[] = "# Yadex game definition file version 4";
@@ -80,46 +67,27 @@ FILE *ygdfile = 0;		/* YGD file descriptor */
 char readbuf[YGD_BUF];		/* buffer the line is read into */
 #define MAX_TOKENS 10		/* tokens per line */
 int lineno;			/* current line of file */
-const char **dirname;
-char filename[257];
-char basename[13];
+char filename[1025];
+char basename[256];
 
 al_scps (basename, game,   sizeof basename - 1);
 al_saps (basename, ".ygd", sizeof basename - 1);
 
 /* Locate the game definition file. */
 {
-   const char *home = getenv ("HOME");
-
-   for (dirname = standard_directories; *dirname; dirname++)
-      {
-      int r = macro_expand (filename, sizeof filename - 1, *dirname,
-	  "%b", basename,
-	  "%g", game,
-	  "%i", install_dir,
-	  "%v", yadex_version,
-	  "~",  home,
-	  (const char *) 0);
-      if (r)
-      {
-	trace ("ygdloc", "%s: Could not expand macro #%d", *dirname, r);
-	continue;
-      }
-      ygdfile = fopen (filename, "r");
-      if (ygdfile)
-	 {
-	 trace ("ygdloc", "%s: hit", filename);
-	 break;
-	 }
-      trace ("ygcloc", "%s: miss (%s)", filename, strerror (errno));
-      }
-
-   if (! ygdfile)
-      fatal_error ("Game definition file \"%s\" not found (%s)",
-	 basename, strerror (errno));
-   else
-      printf ("Using game definition file \"%s\".\n", filename);
+   Locate locate (yadex_share_path, basename, false);
+   const char *pathname = locate.get_next ();
+   if (pathname == NULL)
+      fatal_error ("Game definition file \"%s\" not found", basename);
+   if (strlen (pathname) > sizeof filename - 1)
+      fatal_error ("%s: file name too long");
+   strcpy (filename, pathname);
+   printf ("Reading game definition file \"%s\".\n", filename);
 }
+
+ygdfile = fopen (filename, "r");
+if (ygdfile == NULL)
+   fatal_error ("%s: %s", filename, strerror (errno));
 
 /* The first line of the ygd file must
    contain exactly ygd_file_magic. */
@@ -128,7 +96,7 @@ if (fgets (readbuf, sizeof readbuf, ygdfile) == NULL
    || readbuf[sizeof ygd_file_magic - 1] != '\n'
    || readbuf[sizeof ygd_file_magic] != '\0')
    {
-   report_error ("%s is not a valid Yadex game definition file", filename);
+   err ("%s is not a valid Yadex game definition file", filename);
    fatal_error ("Perhaps a leftover from a previous version of Yadex ?");
    }
 
@@ -368,12 +336,12 @@ fclose (ygdfile);
 bool abort = false;
 if (yg_level_format == YGLF__)
    {
-   report_error ("%s: Missing \"level_format\" directive.", filename);
+   err ("%s: Missing \"level_format\" directive.", filename);
    abort = true;
    }
 if (yg_level_name == YGLN__)
    {
-   report_error ("%s: Missing \"level_name\" directive.", filename);
+   err ("%s: Missing \"level_name\" directive.", filename);
    abort = true;
    }
 // FIXME perhaps print a warning message if picture_format
@@ -382,6 +350,10 @@ if (yg_level_name == YGLN__)
 if (abort)
    exit (2);
 }
+
+#if 0
+
+#endif
 
 /*
  *	Second pass

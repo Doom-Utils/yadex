@@ -16,7 +16,7 @@ class edisplay_c
       ~edisplay_c ();
       void refresh ();
       void need_refresh ();
-      void highlight_object (int obj_no);
+      void highlight_object (Objid& obj);
       void forget_highlight ();
 
    private :

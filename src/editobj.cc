@@ -11,7 +11,7 @@ This file is part of Yadex.
 Yadex incorporates code from DEU 5.21 that was put in the public domain in
 1994 by Raphaël Quinet and Brendon Wyber.
 
-The rest of Yadex is Copyright © 1997-2000 André Majorel.
+The rest of Yadex is Copyright © 1997-2003 André Majorel and others.
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -37,7 +37,10 @@ Place, Suite 330, Boston, MA 02111-1307, USA.
 #include "game.h"
 #include "gfx.h"
 #include "levels.h"
+#include "objects.h"
+#include "objid.h"
 #include "oldmenus.h"
+#include "s_slice.h"
 #include "s_swapf.h"
 #include "selectn.h"
 #include "t_spin.h"
@@ -56,7 +59,8 @@ int val, key;
 char prompt[80];
 
 HideMousePointer ();
-sprintf (prompt, "Enter a %s number between 0 and %d:", GetObjectTypeName (objtype), GetMaxObjectNum (objtype));
+sprintf (prompt, "Enter a %s number between 0 and %d:",
+   GetObjectTypeName (objtype), GetMaxObjectNum (objtype));
 if (x0 < 0)
    x0 = (ScrMaxX - 25 - 8 * strlen (prompt)) / 2;
 if (y0 < 0)
@@ -74,6 +78,48 @@ return val;
 }
 
 
+/*
+ *	input_objid - ask for an object number of the specified	type
+ *
+ *	If the user hit [Return], set objid.type to init.type
+ *	and objid.num to whatever number the user entered. If
+ *	the user hit [Esc], call nil() on objid.
+ */
+void input_objid (Objid& objid, const Objid& init, int x0, int y0)
+{
+char prompt[80];
+
+HideMousePointer ();
+sprintf (prompt, "Enter a %s number between 0 and %d:",
+   GetObjectTypeName (init.type), GetMaxObjectNum (init.type));
+if (x0 < 0)
+   x0 = (ScrMaxX - 25 - 8 * strlen (prompt)) / 2;
+if (y0 < 0)
+   y0 = (ScrMaxY - 55) / 2;
+DrawScreenBox3D (x0, y0, x0 + 25 + 8 * strlen (prompt), y0 + 55);
+set_colour (WHITE);
+DrawScreenText (x0 + 10, y0 + 8, prompt);
+int  num = init.num;
+int  key;
+while ((key
+       = InputInteger (x0 + 10, y0 + 28, &num, 0, GetMaxObjectNum (init.type)))
+       != YK_RETURN && key != YK_ESC)
+   Beep ();
+if (key == YK_ESC)
+   objid.nil ();
+else if (key == YK_RETURN)
+   {
+   objid.type = init.type;
+   objid.num  = num;
+   }
+else
+   {
+   nf_bug ("input_objid: bad key %d", (int) key);  // Can't happen
+   objid.nil ();
+   }
+ShowMousePointer ();
+}
+
 
 /*
    ask for an object number and display a warning message
@@ -81,33 +127,60 @@ return val;
 
 int InputObjectXRef (int x0, int y0, int objtype, bool allownone, int curobj)
 {
-int val, key;
+const char *const msg1 = "Warning: modifying the cross-references";
+const char *const msg2 = "between some objects may crash the game.";
 char prompt[80];
+size_t maxlen = 0;
+size_t nlines = 0;
+int width;
+int height;
+
+// Dimensions
+sprintf (prompt, "Enter a %s number between 0 and %d%c",
+  GetObjectTypeName (objtype),
+  GetMaxObjectNum (objtype), allownone ? ',' : ':');
+maxlen = 40;				// Why 40 ? -- AYM 2002-04-17
+if (strlen (prompt) > maxlen);
+   maxlen = strlen (prompt);
+if (strlen (msg1) > maxlen)
+   maxlen = strlen (msg1);
+if (strlen (msg2) > maxlen)
+   maxlen = strlen (msg2);
+int ya = 0 + BOX_BORDER + WIDE_VSPACING;
+int yb = ya;
+if (allownone)
+  yb += FONTH;
+int yc = yb + FONTH + WIDE_VSPACING;
+// FIXME should query InputInteger() instead
+int yd = yc + 2 * HOLLOW_BORDER + 2 * NARROW_VSPACING + FONTH + WIDE_VSPACING;
+int ye = yd + FONTH;
+int yf = ye + FONTH + WIDE_VSPACING + BOX_BORDER;
+width  = 2 * BOX_BORDER + 2 * WIDE_HSPACING + maxlen * FONTW;
+height = yf - 0;
+
+// Position
+if (x0 < 0)
+   x0 = (ScrMaxX - width) / 2;
+if (y0 < 0)
+   y0 = (ScrMaxY - height) / 2;
 
 HideMousePointer ();
-sprintf (prompt, "Enter a %s number between 0 and %d%c",
- GetObjectTypeName (objtype),
- GetMaxObjectNum (objtype), allownone ? ',' : ':');
-val = strlen (prompt);
-if (val < 40)
-   val = 40;
-if (x0 < 0)
-   x0 = (ScrMaxX - 25 - 8 * val) / 2;
-if (y0 < 0)
-   y0 = (ScrMaxY - (allownone ? 85 : 75)) / 2;
-DrawScreenBox3D (x0, y0, x0 + 25 + 8 * val, y0 + (allownone ? 85 : 75));
+DrawScreenBox3D (x0, y0, x0 + width, y0 + height);
 set_colour (WHITE);
-DrawScreenText (x0 + 10, y0 + 8, prompt);
+int x = x0 + BOX_BORDER + WIDE_HSPACING;
+DrawScreenText (x, y0 + ya, prompt);
 if (allownone)
-   DrawScreenText (x0 + 10, y0 + 18, "or -1 for none:");
+   DrawScreenText (x, y0 + yb, "or -1 for none:");
 set_colour (LIGHTRED);
-DrawScreenText (x0 + 10, y0 + (allownone ? 60 : 50),
- "Warning: modifying the cross-references");
-DrawScreenText (x0 + 10, y0 + (allownone ? 70 : 60),
- "between some objects may crash the game.");
-val = curobj;
-while ((key = InputInteger (x0 + 10, y0 + (allownone ? 38 : 28), &val,
- allownone ? -1 : 0, GetMaxObjectNum (objtype))) != YK_RETURN && key != YK_ESC)
+DrawScreenText (x, y0 + yd, msg1);
+DrawScreenText (x, y0 + ye, msg2);
+
+int val = curobj;
+int key;
+int min = allownone ? -1 : 0;
+int max = GetMaxObjectNum (objtype);
+while (key = InputInteger (x, y0 + yc, &val, min, max),
+       key != YK_RETURN && key != YK_ESC)
    Beep ();
 ShowMousePointer ();
 return val;
@@ -169,13 +242,13 @@ for (;;)
    {
    DrawScreenBoxHollow (entry1_x0, entry1_y0,
       entry1_x0 + entry_width - 1, entry1_y0 + entry_height - 1, BLACK);
-   set_colour (first ? WHITE : DARKGRAY);
+   set_colour (first ? WHITE : DARKGREY);
    DrawScreenText (entry1_x0 + HOLLOW_BORDER + NARROW_HSPACING,
       entry1_y0 + HOLLOW_BORDER + NARROW_VSPACING, "%d", *v1);
 
    DrawScreenBoxHollow (entry2_x0, entry2_y0,
       entry2_x0 + entry_width - 1, entry2_y0 + entry_height - 1, BLACK);
-   set_colour (! first ? WHITE : DARKGRAY);
+   set_colour (! first ? WHITE : DARKGREY);
    DrawScreenText (entry2_x0 + HOLLOW_BORDER + NARROW_HSPACING,
       entry2_y0 + HOLLOW_BORDER + NARROW_VSPACING, "%d", *v2);
 
@@ -234,8 +307,15 @@ switch (objtype)
          Vertices[obj->objnum].x);
       sprintf (menustr[1], "Change Y position (Current: %d)",
          Vertices[obj->objnum].y);
+#ifdef OLDMEN
       val = DisplayMenuArray (0, y0,
          menustr[2], 2, NULL, menustr, NULL, NULL, NULL);
+#else
+      val = vDisplayMenu (0, y0, menustr[2],
+         menustr[0], YK_, 0,
+         menustr[1], YK_, 0,
+	 NULL);
+#endif
       for (n = 0; n < 3; n++)
 	 FreeMemory (menustr[n]);
       subwin_y0 = y0 + BOX_BORDER + (2 + val) * FONTH;
@@ -351,21 +431,21 @@ for (;;)
       entry1_out_x1, entry1_out_y1, BLACK);
    if (*v1 < 0 || *v1 > v1max)
       {
-      set_colour (DARKGRAY);
+      set_colour (DARKGREY);
       ok = false;
       }
    else
-      set_colour (LIGHTGRAY);
+      set_colour (LIGHTGREY);
    DrawScreenText (entry1_text_x0, entry1_text_y0, "%d", *v1);
    DrawScreenBoxHollow (entry2_out_x0, entry2_out_y0,
       entry2_out_x1, entry2_out_y1, BLACK);
    if (*v2 < 0 || *v2 > v2max)
       {
-      set_colour (DARKGRAY);
+      set_colour (DARKGREY);
       ok = false;
       }
    else
-      set_colour (LIGHTGRAY);
+      set_colour (LIGHTGREY);
    DrawScreenText (entry2_text_x0, entry2_text_y0, "%d", *v2);
    if (first)
       key = InputInteger (entry1_out_x0, entry1_out_y0, v1, 0, v1max);
@@ -408,7 +488,9 @@ HideMousePointer ();
 DrawPointer (1);
 ShowMousePointer ();
 /* are we inside a Sector? */
-sector = GetCurObject (OBJ_SECTORS, xpos, ypos, 1);
+Objid o;
+GetCurObject (o, OBJ_SECTORS, xpos, ypos);
+sector = o.num;
 
 /* !!!! Should also check for overlapping objects (sectors) !!!! */
 switch (choice)
@@ -580,6 +662,9 @@ if (val > 1 && ! *list)
    Notify (-1, -1, msg, 0);
    return;
    }
+
+/* I think this switch statement deserves a prize for "worst
+   gratuitous obfuscation" or something. -- AYM 2000-11-07 */
 switch (val)
    {
    case 1:
@@ -587,6 +672,7 @@ switch (val)
       sprintf (msg, "First free tag number: %d", FindFreeTag ());
       Notify (-1, -1, msg, 0);
       break;
+
    case 2:
       // * -> Rotate and scale
       if ((objtype == OBJ_THINGS
@@ -605,6 +691,7 @@ switch (val)
 	 RotateAndScaleObjects (objtype, *list, (double) angle * 0.0174533,
             (double) scale * 0.01);
       break;
+
    case 3:
       // Linedef -> Split
       if (objtype == OBJ_LINEDEFS)
@@ -636,6 +723,7 @@ switch (val)
 	 ForgetSelection (list);
 	 }
       break;
+
    case 4:
       // Linedef -> Split linedefs and sector
       if (objtype == OBJ_LINEDEFS)
@@ -673,6 +761,7 @@ switch (val)
 	 MergeVertices (list);
 	 }
       break;
+
    case 5:
       // Linedef -> Delete linedefs and join sectors
       if (objtype == OBJ_LINEDEFS)
@@ -712,6 +801,7 @@ switch (val)
 	    }
 	 }
       break;
+
    case 6:
       // Linedef -> Flip
       if (objtype == OBJ_LINEDEFS)
@@ -742,11 +832,13 @@ switch (val)
 	 flip_mirror (*list, OBJ_VERTICES, 'm');
 	 }
       break;
+
    case 7:
       // Linedefs -> Swap sidedefs
       if (objtype == OBJ_LINEDEFS)
 	 {
 	 if (Expert
+            || blindly_swap_sidedefs
             || Confirm (-1, -1,
                "Warning: the sector references are also swapped",
                "You may get strange results if you don't know what you are doing..."))
@@ -763,6 +855,7 @@ switch (val)
 	 flip_mirror (*list, OBJ_VERTICES, 'f');
 	 }
       break;
+
    case 8:
       // Linedef ->  Align textures vertically
       if (objtype == OBJ_LINEDEFS)
@@ -788,6 +881,7 @@ switch (val)
 	 BrightenOrDarkenSectors (*list);
 	 }
       break;
+
    case 9:
       // Linedef -> Align texture horizontally
       if (objtype == OBJ_LINEDEFS)
@@ -823,9 +917,18 @@ switch (val)
 	 ObjectsNeeded (OBJ_LINEDEFS, 0);
 	 for (cur = *list; cur; cur = cur->next)
 	    {
-	    LineDefs[cur->objnum].sidedef2 = -1;  /* remove ref. to 2nd SD */
-	    LineDefs[cur->objnum].flags &= ~0x04; /* clear "2S" bit */
-	    LineDefs[cur->objnum].flags |= 0x01;  /* set "Im" bit */
+	    struct LineDef *l = LineDefs + cur->objnum;
+	    l->sidedef2 = -1;  /* remove ref. to 2nd SD */
+	    l->flags &= ~0x04; /* clear "2S" bit */
+	    l->flags |= 0x01;  /* set "Im" bit */
+
+	    if (is_sidedef (l->sidedef1))
+	       {
+	       struct SideDef *s = SideDefs + l->sidedef1;
+	       strcpy (s->tex1, "-");
+	       strcpy (s->tex2, "-");
+	       strcpy (s->tex3, default_middle_texture);
+	       }
 	    /* Don't delete the 2nd sidedef, it could be used
                by another linedef. And if it isn't, the next
                cross-references check will delete it anyway. */
@@ -902,6 +1005,22 @@ switch (val)
       flip_mirror (*list, OBJ_LINEDEFS, 'f');
       break;
 
+   case 19 :
+      // Linedef -> Cut a slice out of a sector
+      if (objtype == OBJ_LINEDEFS)
+	 {
+	 if (! (*list)->next || (*list)->next->next)
+	    {
+	    Beep ();
+	    Notify (-1, -1, "You must select exactly two linedefs", 0);
+	    }
+	 else
+	    {
+	    sector_slice ((*list)->next->objnum, (*list)->objnum);
+	    ForgetSelection (list);
+	    }
+	 }
+      break;
    }
 }
 

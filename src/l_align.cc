@@ -11,7 +11,7 @@ This file is part of Yadex.
 Yadex incorporates code from DEU 5.21 that was put in the public domain in
 1994 by Raphaël Quinet and Brendon Wyber.
 
-The rest of Yadex is Copyright © 1997-2000 André Majorel.
+The rest of Yadex is Copyright © 1997-2003 André Majorel and others.
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -33,6 +33,7 @@ Place, Suite 330, Boston, MA 02111-1307, USA.
 #include "entry.h"
 #include "gfx.h"
 #include "levels.h"
+#include "objid.h"
 #include "oldmenus.h"
 #include "selectn.h"
 #include "textures.h"
@@ -172,17 +173,17 @@ texlength  = 0;
 xoffset    = 0;
 useroffset = 0;
 
-switch (DisplayMenu (250, 110, "Aligning textures 'X' menu:",
+switch (vDisplayMenu (250, 110, "Aligning textures (X offset) :",
 
-	" Sidedef 1,  Check for identical textures.     ",
-	" Sidedef 1,  As above, but with inital offset. ",
-	" Sidedef 1,  No texture checking.              ",
-	" Sidedef 1,  As above, but with inital offset. ",
+	" Sidedef 1, Check for identical textures.     ", YK_, 0,
+	" Sidedef 1, As above, but with inital offset. ", YK_, 0,
+	" Sidedef 1, No texture checking.              ", YK_, 0,
+	" Sidedef 1, As above, but with inital offset. ", YK_, 0,
 
-	" Sidedef 2, Check for identical textures.     ",
-	" Sidedef 2, As above, but with inital offset. ",
-	" Sidedef 2, No texture checking.              ",
-	" Sidedef 2, As above, but with inital offset. ",
+	" Sidedef 2, Check for identical textures.     ", YK_, 0,
+	" Sidedef 2, As above, but with inital offset. ", YK_, 0,
+	" Sidedef 2, No texture checking.              ", YK_, 0,
+	" Sidedef 2, As above, but with inital offset. ", YK_, 0,
 	NULL))
   {
   case 1:       /* Sidedef 1 with checking for same textures   */

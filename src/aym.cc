@@ -11,7 +11,7 @@ This file is part of Yadex.
 Yadex incorporates code from DEU 5.21 that was put in the public domain in
 1994 by Raphaël Quinet and Brendon Wyber.
 
-The rest of Yadex is Copyright © 1997-2000 André Majorel.
+The rest of Yadex is Copyright © 1997-2003 André Majorel and others.
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -44,33 +44,33 @@ Place, Suite 330, Boston, MA 02111-1307, USA.
  */
 int levelname2levelno (const char *name)
 {
-const unsigned char *s = (const unsigned char *) name;
-if (toupper (s[0]) == 'E'
- && isdigit (s[1])
- && s[1] != '0'
- && toupper (s[2]) == 'M'
- && isdigit (s[3])
- && s[3] != '0'
- && s[4] == '\0')
-   return 10 * dectoi (s[1]) + dectoi (s[3]);
-if (yg_level_name == YGLN_E1M10
- && toupper (s[0]) == 'E'
- && isdigit (s[1])
- && s[1] != '0'
- && toupper (s[2]) == 'M'
- && isdigit (s[3])
- && s[3] != '0'
- && isdigit (s[4])
- && s[5] == '\0')
-   return 100 * dectoi (s[1]) + 10 * dectoi (s[3]) + dectoi (s[4]);
-if (toupper (s[0]) == 'M'
- && toupper (s[1]) == 'A'
- && toupper (s[2]) == 'P'
- && isdigit (s[3])
- && isdigit (s[4])
- && s[5] == '\0')
-   return 1000 + 10 * dectoi (s[3]) + dectoi (s[4]);
-return 0;
+  const unsigned char *s = (const unsigned char *) name;
+  if (toupper (s[0]) == 'E'
+   && isdigit (s[1])
+   && s[1] != '0'
+   && toupper (s[2]) == 'M'
+   && isdigit (s[3])
+   && s[3] != '0'
+   && s[4] == '\0')
+    return 10 * dectoi (s[1]) + dectoi (s[3]);
+  if (yg_level_name == YGLN_E1M10
+   && toupper (s[0]) == 'E'
+   && isdigit (s[1])
+   && s[1] != '0'
+   && toupper (s[2]) == 'M'
+   && isdigit (s[3])
+   && s[3] != '0'
+   && isdigit (s[4])
+   && s[5] == '\0')
+    return 100 * dectoi (s[1]) + 10 * dectoi (s[3]) + dectoi (s[4]);
+  if (toupper (s[0]) == 'M'
+   && toupper (s[1]) == 'A'
+   && toupper (s[2]) == 'P'
+   && isdigit (s[3])
+   && isdigit (s[4])
+   && s[5] == '\0')
+    return 1000 + 10 * dectoi (s[3]) + dectoi (s[4]);
+  return 0;
 }
 
 
@@ -87,33 +87,33 @@ return 0;
  */
 int levelname2rank (const char *name)
 {
-const unsigned char *s = (const unsigned char *) name;
-if (toupper (s[0]) == 'E'
- && isdigit (s[1])
- && s[1] != '0'
- && toupper (s[2]) == 'M'
- && isdigit (s[3])
- && s[3] != '0'
- && s[4] == '\0')
-   return 100 * dectoi (s[1]) + dectoi (s[3]);
-if (yg_level_name == YGLN_E1M10
- && toupper (s[0]) == 'E'
- && isdigit (s[1])
- && s[1] != '0'
- && toupper (s[2]) == 'M'
- && isdigit (s[3])
- && s[3] != '0'
- && isdigit (s[4])
- && s[5] == '\0')
-   return 100 * dectoi (s[1]) + 10 * dectoi (s[3]) + dectoi (s[4]);
-if (toupper (s[0]) == 'M'
- && toupper (s[1]) == 'A'
- && toupper (s[2]) == 'P'
- && isdigit (s[3])
- && isdigit (s[4])
- && s[5] == '\0')
-   return 1000 + 10 * dectoi (s[3]) + dectoi (s[4]);
-return 0;
+  const unsigned char *s = (const unsigned char *) name;
+  if (toupper (s[0]) == 'E'
+   && isdigit (s[1])
+   && s[1] != '0'
+   && toupper (s[2]) == 'M'
+   && isdigit (s[3])
+   && s[3] != '0'
+   && s[4] == '\0')
+    return 100 * dectoi (s[1]) + dectoi (s[3]);
+  if (yg_level_name == YGLN_E1M10
+   && toupper (s[0]) == 'E'
+   && isdigit (s[1])
+   && s[1] != '0'
+   && toupper (s[2]) == 'M'
+   && isdigit (s[3])
+   && s[3] != '0'
+   && isdigit (s[4])
+   && s[5] == '\0')
+    return 100 * dectoi (s[1]) + 10 * dectoi (s[3]) + dectoi (s[4]);
+  if (toupper (s[0]) == 'M'
+   && toupper (s[1]) == 'A'
+   && toupper (s[2]) == 'P'
+   && isdigit (s[3])
+   && isdigit (s[4])
+   && s[5] == '\0')
+    return 1000 + 10 * dectoi (s[3]) + dectoi (s[4]);
+  return 0;
 }
 
 
@@ -123,15 +123,15 @@ return 0;
  */
 const char *spec_path (const char *spec)
 {
-static char path[Y_PATH + 1];
-size_t n;
+  static char path[Y_PATH + 1];
+  size_t n;
 
-*path = '\0';
-strncat (path, spec, sizeof path - 1);
-for (n = strlen (path); n > 0 && ! al_fisps (path[n-1]); n--)
-   ;
-path[n] = '\0';
-return path;
+  *path = '\0';
+  strncat (path, spec, sizeof path - 1);
+  for (n = strlen (path); n > 0 && ! al_fisps (path[n-1]); n--)
+    ;
+  path[n] = '\0';
+  return path;
 }
 
 
@@ -145,22 +145,22 @@ return path;
 int fncmp (const char *name1, const char *name2)
 {
 #if defined Y_DOS
-char c1, c2;
-for (;;)
-   {
-   c1 = tolower ((unsigned char) *name1++);
-   c2 = tolower ((unsigned char) *name2++);
-   if (c1=='\\')
+  char c1, c2;
+  for (;;)
+  {
+    c1 = tolower ((unsigned char) *name1++);
+    c2 = tolower ((unsigned char) *name2++);
+    if (c1=='\\')
       c1 = '/';
-   if (c2=='\\')
+    if (c2=='\\')
       c2 = '/';
-   if (c1 != c2)
+    if (c1 != c2)
       return c1-c2;
-   if (!c1)
+    if (!c1)
       return 0;
-   }
+  }
 #elif defined Y_UNIX
-return strcmp (name1, name2);
+  return strcmp (name1, name2);
 #endif
 }
 
@@ -307,16 +307,16 @@ int is_one_of (const char *needle, ...)
 /*
  *	file_exists
  *	Check whether a file exists and is readable.
- *	Returns non-zero if it is, 0 if it isn't.
+ *	Returns true if it is, false if it isn't.
  */
 bool file_exists (const char *filename)
 {
-FILE *test;
+  FILE *test;
 
-if ((test = fopen (filename, "rb")) == NULL)
-   return 0;
-fclose (test);
-return 1;
+  if ((test = fopen (filename, "rb")) == NULL)
+    return 0;
+  fclose (test);
+  return 1;
 }
 
 
@@ -374,4 +374,5 @@ void y_filename (char *buf, size_t size, const char *filename)
   }
   *p++ = '\0';
 }
+ 
 

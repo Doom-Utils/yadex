@@ -13,7 +13,7 @@ This file is part of Yadex.
 Yadex incorporates code from DEU 5.21 that was put in the public domain in
 1994 by Raphaël Quinet and Brendon Wyber.
 
-The rest of Yadex is Copyright © 1997-2000 André Majorel.
+The rest of Yadex is Copyright © 1997-2003 André Majorel and others.
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -73,7 +73,13 @@ sprintf (menustr[3], "Change X position    (Current: %d)",
          Things[obj->objnum].xpos);
 sprintf (menustr[4], "Change Y position    (Current: %d)",
          Things[obj->objnum].ypos);
-val = DisplayMenuArray (x0, y0, menustr[5], 5, NULL, menustr, NULL, NULL, NULL);
+val = vDisplayMenu (x0, y0, menustr[5],
+   menustr[0], YK_, 0,
+   menustr[1], YK_, 0,
+   menustr[2], YK_, 0,
+   menustr[3], YK_, 0,
+   menustr[4], YK_, 0,
+   NULL);
 for (n = 0; n < 6; n++)
    FreeMemory (menustr[n]);
 subwin_y0 = y0 + BOX_BORDER + (2 + val) * FONTH;
@@ -90,15 +96,15 @@ switch (val)
      break;
 
   case 2:
-     switch (DisplayMenu (x0 + 42, subwin_y0, "Select angle",
-			  "North",
-			  "NorthEast",
-			  "East",
-			  "SouthEast",
-			  "South",
-			  "SouthWest",
-			  "West",
-			  "NorthWest",
+     switch (vDisplayMenu (x0 + 42, subwin_y0, "Select angle",
+			  "North",	YK_, 0,
+			  "NorthEast",	YK_, 0,
+			  "East",	YK_, 0,
+			  "SouthEast",	YK_, 0,
+			  "South",	YK_, 0,
+			  "SouthWest",	YK_, 0,
+			  "West",	YK_, 0,
+			  "NorthWest",	YK_, 0,
 			  NULL))
 	{
 	case 1:
@@ -107,42 +113,49 @@ switch (val)
 	   things_angles++;
 	   MadeChanges = 1;
 	   break;
+
 	case 2:
 	   for (cur = obj; cur; cur = cur->next)
 	      Things[cur->objnum].angle = 45;
 	   things_angles++;
 	   MadeChanges = 1;
 	   break;
+
 	case 3:
 	   for (cur = obj; cur; cur = cur->next)
 	      Things[cur->objnum].angle = 0;
 	   things_angles++;
 	   MadeChanges = 1;
 	   break;
+
 	case 4:
 	   for (cur = obj; cur; cur = cur->next)
 	      Things[cur->objnum].angle = 315;
 	   things_angles++;
 	   MadeChanges = 1;
 	   break;
+
 	case 5:
 	   for (cur = obj; cur; cur = cur->next)
 	      Things[cur->objnum].angle = 270;
 	   things_angles++;
 	   MadeChanges = 1;
 	   break;
+
 	case 6:
 	   for (cur = obj; cur; cur = cur->next)
 	      Things[cur->objnum].angle = 225;
 	   things_angles++;
 	   MadeChanges = 1;
 	   break;
+
 	case 7:
 	   for (cur = obj; cur; cur = cur->next)
 	      Things[cur->objnum].angle = 180;
 	   things_angles++;
 	   MadeChanges = 1;
 	   break;
+
 	case 8:
 	   for (cur = obj; cur; cur = cur->next)
 	      Things[cur->objnum].angle = 135;
@@ -153,17 +166,17 @@ switch (val)
      break;
 
   case 3:
-     val = DisplayMenu (x0 + 42, subwin_y0, "Choose the difficulty level(s)",
-			"D12          (Easy only)",
-			"D3           (Medium only)",
-			"D12, D3      (Easy and Medium)",
-			"D45          (Hard only)",
-			"D12, D45     (Easy and Hard)",
-			"D3, D45      (Medium and Hard)",
-			"D12, D3, D45 (Easy, Medium, Hard)",
-			"Toggle \"Deaf/Ambush\" bit",
-			"Toggle \"Multi-player only\" bit",
-			"(Enter a decimal value)",
+     val = vDisplayMenu (x0 + 42, subwin_y0, "Choose the difficulty level(s)",
+			"D12          (Easy only)",		YK_, 0,
+			"D3           (Medium only)",		YK_, 0,
+			"D12, D3      (Easy and Medium)",	YK_, 0,
+			"D45          (Hard only)",		YK_, 0,
+			"D12, D45     (Easy and Hard)",		YK_, 0,
+			"D3, D45      (Medium and Hard)",	YK_, 0,
+			"D12, D3, D45 (Easy, Medium, Hard)",	YK_, 0,
+			"Toggle \"Deaf/Ambush\" bit",		YK_, 0,
+			"Toggle \"Multi-player only\" bit",	YK_, 0,
+			"(Enter number)",			YK_, 0,
 			NULL);
      switch (val)
 	{
@@ -178,19 +191,22 @@ switch (val)
 	      Things[cur->objnum].when = (Things[cur->objnum].when & 0x18) | val;
 	   MadeChanges = 1;
 	   break;
+
 	case 8:
 	   for (cur = obj; cur; cur = cur->next)
 	      Things[cur->objnum].when ^= 0x08;
 	   MadeChanges = 1;
 	   break;
+
 	case 9:
 	   for (cur = obj; cur; cur = cur->next)
 	      Things[cur->objnum].when ^= 0x10;
 	   MadeChanges = 1;
 	   break;
+
 	case 10:
 	   val = InputIntegerValue (x0 + 84,
-              subwin_y0 + BOX_BORDER + (3 + val) * FONTH, 1, 31,
+              subwin_y0 + BOX_BORDER + (3 + val) * FONTH, 0, 65535,
 	      Things[obj->objnum].when);
 	   if (val != IIV_CANCEL)
 	      {

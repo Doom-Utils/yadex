@@ -14,8 +14,8 @@
    font, FONTW was 8 and FONTH was 10. DrawScreenText() is supposed
    to draw characters properly _centered_ within that space, taking
    into account the optional underscoring. */
-extern int FONTW;
-extern int FONTH;
+extern unsigned FONTW;
+extern unsigned FONTH;
 extern int font_xofs;
 extern int font_yofs;
 
@@ -88,7 +88,6 @@ void SetWindowSize (int width, int height);
 void ClearScreen (void);
 void update_display ();
 void force_window_not_pixmap ();
-void set_colour (acolour_t);
 void SetLineThickness (int thick);
 void SetDrawingMode (int _xor);
 void DrawMapCircle (int, int, int);
@@ -106,6 +105,7 @@ void draw_box_border (int x, int y, int width, int height,
    int thickness, int raised);
 void DrawScreenText (int, int, const char *, ...);
 void DrawScreenString (int, int, const char *);
+void DrawScreenChar (int x, int y, char c);
 void DrawPointer (bool);
 void DrawScreenMeter (int, int, int, int, float);
 void DrawScreenLineLen (int x, int y, int width, int height);
@@ -118,6 +118,8 @@ void SetHWCursorMap (char *);
 #ifdef PCOLOUR_NONE
 void set_pcolour (pcolour_t colour);
 #endif
+acolour_t get_colour ();
+void set_colour (acolour_t);
 void push_colour (acolour_t colour);
 void pop_colour (void);
 void draw_point (int x, int y);

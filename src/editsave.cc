@@ -11,7 +11,7 @@ This file is part of Yadex.
 Yadex incorporates code from DEU 5.21 that was put in the public domain in
 1994 by Raphaël Quinet and Brendon Wyber.
 
-The rest of Yadex is Copyright © 1997-2000 André Majorel.
+The rest of Yadex is Copyright © 1997-2003 André Majorel and others.
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -29,10 +29,13 @@ Place, Suite 330, Boston, MA 02111-1307, USA.
 
 
 #include "yadex.h"
+#include "dialog.h"
 #include "editsave.h"
 #include "entry.h"
 #include "game.h"
 #include "levels.h"
+#include "wadfile.h"
+#include "wadlist.h"
 
 
 #ifndef NEW_SAVE_METHOD
@@ -167,66 +170,104 @@ try_again :
 char *GetWadFileName (const char *levelname)
 {
 #define BUFSZ 79
-char *outfile = (char *) GetMemory (BUFSZ + 1);
-WadPtr wad;
+  char *outfile = (char *) GetMemory (BUFSZ + 1);
 
-/* get the file name */
-// If no name, find a default one
-if (! levelname)
-   {
-   if (yg_level_name == YGLN_E1M1 || yg_level_name == YGLN_E1M10)
+  /* get the file name */
+  // If no name, find a default one
+  if (! levelname)
+  {
+    if (yg_level_name == YGLN_E1M1 || yg_level_name == YGLN_E1M10)
       levelname = "E1M1";
-   else if (yg_level_name == YGLN_MAP01)
+    else if (yg_level_name == YGLN_MAP01)
       levelname = "MAP01";
-   else
-      {
+    else
+    {
       nf_bug ("Bad ygd_level_name %d, using E1M1.", (int) yg_level_name);
       levelname = "E1M1";
-      }
-   }
+    }
+  }
 
-if (! Level || ! Level->wadfile || ! fncmp (Level->wadfile->filename, MainWad))
-   {
-   al_scpslower (outfile, levelname, BUFSZ);
-   al_saps (outfile, ".wad", BUFSZ);
-   }
-else
-   strcpy (outfile, Level->wadfile->filename);
-do
-   InputFileName (-1, -1, "Name of the new wad file:", BUFSZ, outfile);
-while (! fncmp (outfile, MainWad));
-/* escape */
-if (outfile[0] == '\0')
-   {
-   FreeMemory (outfile);
-   return 0;
-   }
-/* if the wad file already exists, rename it to "*.bak" */
-for (wad = WadFileList; wad; wad = wad->next)
-   if (! fncmp (outfile, wad->filename))
-   {
-   al_fdrv_t drv;
-   al_fpath_t path;
-   al_fbase_t base;
+  if (! Level
+    || ! Level->wadfile
+    || ! fncmp (Level->wadfile->filename, MainWad))
+  {
+    al_scpslower (outfile, levelname, BUFSZ);
+    al_saps (outfile, ".wad", BUFSZ);
+  }
+  else
+    strcpy (outfile, Level->wadfile->filename);
+  do
+    InputFileName (-1, -1, "Name of the new wad file:", BUFSZ, outfile);
+  while (! fncmp (outfile, MainWad));
+  /* escape */
+  if (outfile[0] == '\0')
+  {
+    FreeMemory (outfile);
+    return 0;
+  }
+  /* if the wad file already exists, rename it to "*.bak" */
+  Wad_file *wf;
+  for (wad_list.rewind (); wad_list.get (wf);)
+    if (fncmp (outfile, wf->filename) == 0)
+    {
+      verbmsg ("wf->filename: %s\n", wf->filename);	// DEBUG
+      verbmsg ("wf->fp        %p\n", wf->fp);		// DEBUG
+      verbmsg ("outfile       %s\n", outfile);		// DEBUG
+      al_fdrv_t drv;
+      al_fpath_t path;
+      al_fbase_t base;
 
-   al_fana (wad->filename, drv, path, base, 0);
-   sprintf (wad->filename, "%s%s%s.bak", drv, path, base);
-   /* Need to close, then reopen: problems with SHARE.EXE */
-   fclose (wad->fd);
-   if (rename (outfile, wad->filename) < 0)
+      al_fana (wf->filename, drv, path, base, 0);
+      sprintf (wf->filename, "%s%s%s.bak", drv, path, base);
+      verbmsg ("setting wf->filename to %s\n", wf->filename);  // DEBUG
+      /* Need to close, then reopen: problems with SHARE.EXE */
+      verbmsg ("closing %p\n", wf->fp);				// DEBUG
+      fclose (wf->fp);
+      verbmsg ("renaming %s -> %s\n", outfile, wf->filename);	// DEBUG
+      if (rename (outfile, wf->filename) != 0)
       {
-      if (remove (wad->filename))
-	 fatal_error ("could not delete file \"%s\"", wad->filename);
-      if (rename (outfile, wad->filename))
-	 fatal_error ("could not rename \"%s\" to \"%s\"", outfile,
-            wad->filename);
+	verbmsg ("removing %s\n", wf->filename);  // DEBUG
+	if (remove (wf->filename) != 0 && errno != ENOENT)
+	{
+	  char buf1[81];
+	  char buf2[81];
+	  y_snprintf (buf1, sizeof buf1, "Could not delete \"%.64s\"",
+	    wf->filename);
+	  y_snprintf (buf2, sizeof buf2, "(%.64s)", strerror (errno));
+	  Notify (-1, -1, buf1, buf2);
+	  return 0;
+	}
+	verbmsg ("renaming %s -> %s\n", outfile, wf->filename);  // DEBUG
+	if (rename (outfile, wf->filename))
+	{
+	  char buf1[81];
+	  char buf2[81];
+	  y_snprintf (buf1, sizeof buf1, "Could not rename \"%.64s\"",
+	    outfile);
+	  y_snprintf (buf2, sizeof buf2, "as \"%.64s\" (%.64s)",
+	    wf->filename, strerror (errno));
+	  Notify (-1, -1, buf1, buf2);
+	  return 0;
+	}
       }
-   wad->fd = fopen (wad->filename, "rb");
-   if (! wad->fd)
-      fatal_error ("could not reopen file \"%s\"", wad->filename);
-   break;
-   }
-return outfile;
+      verbmsg ("opening %s\n", wf->filename); // DEBUG
+      wf->fp = fopen (wf->filename, "rb");
+      if (wf->fp == 0)
+      {
+	char buf1[81];
+	char buf2[81];
+	y_snprintf (buf1, sizeof buf1, "Could not reopen \"%.64s\"",
+	  wf->filename);
+	y_snprintf (buf2, sizeof buf2, "(%.64s)", strerror (errno));
+	Notify (-1, -1, buf1, buf2);
+	return 0;
+      }
+      verbmsg ("wf->filename: %s\n", wf->filename);	// DEBUG
+      verbmsg ("wf->fp        %p\n", wf->fp);		// DEBUG
+      verbmsg ("outfile       %s\n", outfile);		// DEBUG
+      break;
+    }
+  return outfile;
 }
 #endif
 

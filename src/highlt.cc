@@ -10,7 +10,7 @@ This file is part of Yadex.
 Yadex incorporates code from DEU 5.21 that was put in the public domain in
 1994 by Raphaël Quinet and Brendon Wyber.
 
-The rest of Yadex is Copyright © 1997-2000 André Majorel.
+The rest of Yadex is Copyright © 1997-2003 André Majorel and others.
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -29,33 +29,33 @@ Place, Suite 330, Boston, MA 02111-1307, USA.
 
 #include "yadex.h"
 #include "highlt.h"
+#include "objects.h"
+#include "objid.h"
 
 
 highlight_c::highlight_c (void)
 {
-obj_no      = OBJ_NO_NONE;
-obj_no_disp = OBJ_NO_NONE;
+obj.nil ();
+obj_disp.nil ();
 }
 
 
 void highlight_c::draw (void)
 {
-if (! is_obj (obj_no_disp) && is_obj (obj_no))
+if (! obj_disp () && obj ())
    {
-   HighlightObject (obj_type, obj_no, YELLOW);
-   obj_no_disp   = obj_no;
-   obj_type_disp = obj_type;
+   HighlightObject (obj.type, obj.num, YELLOW);
+   obj_disp = obj;
    }
 }
 
 
 void highlight_c::undraw (void)
 {
-if (is_obj (obj_no_disp)
-   && (obj_no_disp != obj_no || obj_type_disp != obj_type))
+if (obj_disp () && ! (obj_disp == obj))
    {
-   HighlightObject (obj_type_disp, obj_no_disp, YELLOW);
-   obj_no_disp = OBJ_NO_NONE;
+   HighlightObject (obj_disp.type, obj_disp.num, YELLOW);
+   obj_disp.nil ();
    }
 }
 

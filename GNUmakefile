@@ -1,6 +1,6 @@
 #
 #	Makefile for Yadex
-#	Copyright © André Majorel 1998-2000.
+#	Copyright © André Majorel 1998-2003.
 #	AYM 1998-06-10
 #
 
@@ -8,10 +8,41 @@
 # rules, addprefix, addsuffix, etc. It's not named "GNUmakefile"
 # for nothing.
 
-# Don't change these lines.
-DEFINES =
-VERSION := $(shell cat VERSION)
-VERPREV := $(shell test -f VERSION~ && cat VERSION~)
+########################################################################
+#
+#	Definitions that only hackers
+#	might want to change
+#
+########################################################################
+
+# The name of the directory where objects and
+# binaries are put. I include the output of
+# "uname -a" to make it easier for me to build
+# Yadex for different platforms from the same
+# source tree.
+SYSTEM := $(shell echo `uname -n`_`uname -a | cksum` | tr -dc '[:alnum:]._-')
+OBJDIR             = obj/0
+DOBJDIR            = dobj/0
+OBJPHYSDIR         = obj/$(SYSTEM)
+DOBJPHYSDIR        = dobj/$(SYSTEM)
+OBJDIR_ATCLIB      = $(OBJDIR)/atclib
+DOBJDIR_ATCLIB     = $(DOBJDIR)/atclib
+OBJPHYSDIR_ATCLIB  = $(OBJPHYSDIR)/atclib
+DOBJPHYSDIR_ATCLIB = $(DOBJPHYSDIR)/atclib
+
+# Create all directories and make symlinks to
+# config.cc and config.h. Doing it at the start
+# makes things much simpler later on.
+DUMMY := $(shell							\
+	mkdir -p $(OBJPHYSDIR)  $(OBJPHYSDIR_ATCLIB);			\
+	mkdir -p $(DOBJPHYSDIR) $(DOBJPHYSDIR_ATCLIB);			\
+	[ ! -h $(OBJDIR)  ] || rm $(OBJDIR);				\
+	[ ! -h $(DOBJDIR) ] || rm $(DOBJDIR);				\
+	ln -s $(SYSTEM) $(OBJDIR);					\
+	ln -s $(SYSTEM) $(DOBJDIR);					\
+	)
+
+include $(OBJDIR)/Makefile.config
 
 ########################################################################
 #
@@ -20,40 +51,8 @@ VERPREV := $(shell test -f VERSION~ && cat VERSION~)
 #
 ########################################################################
 
-# Where you want "make install" to put things.
-# Typical values : "/usr", "/usr/local" and "/opt".
-PREFIX = /usr/local
-
 # Which OS ?
 OS := $(shell uname -s | tr A-Z a-z)
-
-# Can we use GCC to compile BSP ?
-HAVE_GCC := $(shell if gcc --version; then echo OK; fi)
-
-# Is that /usr/man or /usr/share/man ?
-FHS_MAN := $(shell if [ -d $(PREFIX)/share/man ]; then echo OK; fi)
-
-# Does your system have gettimeofday() ?
-# Current rule: all systems have it.
-HAVE_GETTIMEOFDAY = 1
-
-# Does your system have nanosleep() ?
-# Current rule: only Linux has it.
-ifneq (,$(findstring $(OS), linux))
-  HAVE_NANOSLEEP = 1
-endif
-
-# Does your system have snprintf() ?
-# Current rule: only Linux has it.
-ifneq (,$(findstring $(OS), linux))
-  HAVE_SNPRINTF = 1
-endif
-
-# Does your system have usleep() ?
-# Current rule: all unices have it.
-ifdef OS
-  HAVE_USLEEP = 1
-endif
 
 # Where your X11 libraries and headers reside.
 # Current rule:
@@ -73,25 +72,25 @@ else
   endif
 endif
 
-# Your C and C++ compilers.
-CC = cc
-CXX = c++
+# C and C++ compiler
+#CC  = cc
+#CXX = c++
 
 # Options used when compiling Atclib.
 CFLAGS = -O
 
 # Options used when compiling and linking Yadex.
-# ld is invoked through the C++ compiler
-# so LDFLAGS should not contain options that mean
+# ld is invoked through the C++ compiler so
+# LDFLAGS should not contain options that mean
 # something to the C++ compiler.
-CXXFLAGS = -O -I$(X11INCLUDEDIR)
-LDFLAGS  =
+CXXFLAGS = -O
+#LDFLAGS  =
 
 # Options used to compile and link the debugging
 # targets. Not used by normal end-user targets.
 # Unlike CFLAGS, CXXFLAGS and LDFLAGS, assume
 # GCC/EGCS.
-DCFLAGS		= -g -O -I$(X11INCLUDEDIR)
+DCFLAGS		= -g -O
 DCFLAGS		+= -Wall			# GCC warnings
 DCFLAGS		+= -pedantic			# GCC warnings
 DCFLAGS		+= -Wno-parentheses		# GCC warnings
@@ -104,7 +103,7 @@ DCFLAGS		+= -Wmissing-prototypes		# GCC warnings
 DCFLAGS		+= -Winline			# GCC warnings
 DCFLAGS		+= -pg				# Profiling
 
-DCXXFLAGS	= -g -O -I$(X11INCLUDEDIR)
+DCXXFLAGS	= -g -O
 DCXXFLAGS	+= -Wall			# GCC warnings
 DCXXFLAGS	+= -pedantic			# GCC warnings
 DCXXFLAGS	+= -Wno-parentheses		# GCC warnings
@@ -130,13 +129,15 @@ DLDFLAGS	+= -pg				# Profiling
 ########################################################################
 
 MAKEFILE = GNUmakefile
+VERSION := $(shell cat VERSION)
+VERPREV := $(shell test -f VERPREV && cat VERPREV)
 
 # All the modules of Yadex without path or extension.
-MODULES_YADEX =\
+MODULES_YADEX =								\
 	acolours	aym		bench		bitvec		\
-	cfgfile		checks		colour1				\
-	colour2		colour3		colour4		dependcy	\
-	dialog		disppic		drawmap				\
+	cfgfile		checks		colour1		colour2		\
+	colour3		colour4		config		credits		\
+	dependcy	dialog		disppic		drawmap		\
 	edisplay	editgrid	editlev		editloop	\
 	editobj		editsave	endian		editzoom	\
 	entry		entry2		events		flats		\
@@ -146,28 +147,27 @@ MODULES_YADEX =\
 	img		imgscale	imgspect	infobar		\
 	input		l_align		l_centre	l_flags		\
 	l_misc		l_prop		l_unlink	l_vertices	\
-	levels		lists		lumpdir		macro		\
-	memory		menubar		menu		mkpalette	\
-	mouse		names		nop		objects		\
-	objinfo		oldmenus	palview		patchdir	\
-	pic2img		prefer		s_centre	s_door		\
-	s_lift		s_linedefs	s_merge		s_misc		\
-	s_prop		s_split		s_swapf		s_vertices	\
-	sanity								\
-	savepic		scrnshot	selbox		selectn		\
-	selpath		selrect		serialnum	spritdir	\
-	sticker		swapmem		t_centre	t_flags		\
-	t_prop								\
-	t_spin		textures	things		trace		\
-	v_centre	v_merge		v_polyg		vectext		\
-	verbmsg								\
-	version		wadnamec	wadres		wads		\
-	wads2		warn		windim		x_centre	\
-	x_exchng	x_mirror	x_rotate	x11		\
-	xref		yadex		ytime
+	levels		lists		locate		lumpdir		\
+	macro		memory		menubar		menu		\
+	mkpalette	mouse		names		nop		\
+	objects		objinfo		oldmenus	palview		\
+	patchdir	pic2img		prefer		s_centre	\
+	s_door		s_lift		s_linedefs	s_merge		\
+	s_misc		s_prop		s_slice		s_split		\
+	s_swapf		s_vertices	sanity		scrnshot	\
+	selbox		selectn		selpath		selrect		\
+	serialnum	spritdir	sticker		swapmem		\
+	t_centre	t_flags		t_prop		t_spin		\
+	textures	things		trace		v_centre	\
+	v_merge		v_polyg		vectext		verbmsg		\
+	version		wadfile		wadlist		wadnamec	\
+	wadres		wads		wads2		warn		\
+	windim		x_centre	x_exchng	x_hover		\
+	x_mirror	x_rotate	x11		xref		\
+	yadex		ytime
 
 # All the modules of Atclib without path or extension.
-MODULES_ATCLIB =\
+MODULES_ATCLIB =							\
 	al_adigits	al_aerrno	al_astrerror	al_fana		\
 	al_fnature	al_lateol	al_lcount	al_lcreate	\
 	al_ldelete	al_ldiscard	al_lgetpos	al_linsert	\
@@ -178,68 +178,32 @@ MODULES_ATCLIB =\
 	al_sapc		al_saps		al_scps		al_scpslower	\
 	al_sdup		al_sisnum	al_strolc
 
-# All the modules of BSP without path or extension.
-MODULES_BSP =\
-	bsp		funcs		makenode	picknode
-
-# The source files of Yadex, Atclib and BSP
+# The source files of Yadex and Atclib
 SRC_YADEX  = $(addprefix src/,     $(addsuffix .cc, $(MODULES_YADEX)))
 SRC_ATCLIB = $(addprefix atclib/,  $(addsuffix .c,  $(MODULES_ATCLIB)))
-SRC_BSP    = $(addprefix bsp-2.3/, $(addsuffix .c,  $(MODULES_BSP)))
 
-# The headers of Yadex, Atclib and BSP
+# The headers of Yadex and Atclib
 HEADERS_YADEX  := $(wildcard src/*.h)
 HEADERS_ATCLIB =  atclib/atclib.h
-HEADERS_BSP    =  bsp-2.3/bsp.h bsp-2.3/structs.h
 
 # All the source files, including the headers.
-SRC = $(SRC_YADEX)  $(HEADERS_YADEX)\
-      $(SRC_ATCLIB) $(HEADERS_ATCLIB)\
-      $(SRC_BSP)    $(HEADERS_BSP)
+SRC = $(filter-out src/config.cc, $(SRC_YADEX))				\
+      $(filter-out src/config.h, $(HEADERS_YADEX))			\
+      $(SRC_ATCLIB) $(HEADERS_ATCLIB)
 
 # The files on which youngest is run.
-SRC_NON_GEN = $(filter-out src/version.cc, $(SRC))
+SRC_NON_GEN = $(filter-out src/credits.cc src/prefix.cc src/version.cc, $(SRC))
 
-# Defines used when compiling Yadex.
-# If you change Y_UNIX for Y_DOS or Y_X11 for Y_BGI,
-# don't even expect it to compile. As of this release,
-# the DOS/BGI version is _broken_.
-DEFINES += -DY_UNIX -DY_X11
-#DEFINES += -DY_ALPHA
-#DEFINES += -DY_BETA
-ifdef HAVE_GETTIMEOFDAY
-  DEFINES += -DY_GETTIMEOFDAY
-endif
-ifdef HAVE_NANOSLEEP
-  DEFINES += -DY_NANOSLEEP
-endif
-ifdef HAVE_SNPRINTF
-  DEFINES += -DY_SNPRINTF
-endif
-ifdef HAVE_USLEEP
-  DEFINES += -DY_USLEEP
-endif
-
-# The name of the directory where objects and binaries
-# are put. I include the output of "uname -a" to make
-# it easier for me to build Yadex for different platforms
-# from the same source tree.
-OBJSUBDIR          := $(shell uname -a | tr -c "[:alnum:]._-" "[_*]")
-OBJDIR             = obj/0
-DOBJDIR            = dobj/0
-OBJPHYSDIR         = obj/$(OBJSUBDIR)
-DOBJPHYSDIR        = dobj/$(OBJSUBDIR)
-OBJDIR_ATCLIB      = $(OBJDIR)/atclib
-DOBJDIR_ATCLIB     = $(DOBJDIR)/atclib
-OBJPHYSDIR_ATCLIB  = $(OBJPHYSDIR)/atclib
-DOBJPHYSDIR_ATCLIB = $(DOBJPHYSDIR)/atclib
+# The object files
+OBJ_CONFIG  =# $(OBJDIR)/config.o
+DOBJ_CONFIG =# $(DOBJDIR)/config.o
 OBJ_YADEX   = $(addprefix $(OBJDIR)/,  $(addsuffix .o, $(MODULES_YADEX)))
 DOBJ_YADEX  = $(addprefix $(DOBJDIR)/, $(addsuffix .o, $(MODULES_YADEX)))
-OBJ_ATCLIB  = $(addprefix $(OBJDIR_ATCLIB)/,  $(addsuffix .o, $(MODULES_ATCLIB)))
-DOBJ_ATCLIB = $(addprefix $(DOBJDIR_ATCLIB)/, $(addsuffix .o, $(MODULES_ATCLIB)))
+OBJ_ATCLIB  = $(addprefix $(OBJDIR_ATCLIB)/,  $(addsuffix .o,$(MODULES_ATCLIB)))
+DOBJ_ATCLIB = $(addprefix $(DOBJDIR_ATCLIB)/, $(addsuffix .o,$(MODULES_ATCLIB)))
 
 # The game definition files.
-YGD = $(addprefix ygd/,\
+YGD = $(addprefix ygd/,							\
 	doom.ygd	doom02.ygd	doom04.ygd	doom05.ygd	\
 	doom2.ygd	doompr.ygd	heretic.ygd	hexen.ygd	\
 	strife.ygd	strife10.ygd)
@@ -247,14 +211,14 @@ YGD = $(addprefix ygd/,\
 # Files that are used with scripts/process to
 # generate files that are included in the
 # distribution archive.
-DOC1_SRC =\
+DOC1_SRC =				\
 	docsrc/README			\
 	docsrc/README.doc
 
 # Files that are used with scripts/process to
 # generate files that go in the doc/ directory
 # and are NOT included in the archive.
-DOC2_SRC_HTML =\
+DOC2_SRC_HTML =				\
 	docsrc/advanced.html		\
 	docsrc/contact.html		\
 	docsrc/credits.html		\
@@ -268,6 +232,7 @@ DOC2_SRC_HTML =\
 	docsrc/index.html		\
 	docsrc/keeping_up.html		\
 	docsrc/legal.html		\
+	docsrc/packagers_guide.html	\
 	docsrc/palette.html		\
 	docsrc/reporting.html		\
 	docsrc/tips.html		\
@@ -277,15 +242,14 @@ DOC2_SRC_HTML =\
 	docsrc/wad_specs.html		\
 	docsrc/ygd.html
 
-DOC2_SRC_MISC =\
-	bsp-2.3/ybsp.6			\
+DOC2_SRC_MISC =				\
 	docsrc/yadex.6			\
 #	docsrc/yadex.lsm\
 
 # Files that must be put in the distribution
 # archive. Most (but not all) are generated from
 # $(DOC1_SRC_*) into the base directory.
-DOC1 = README doc/README
+DOC1 = FAQ README doc/README
 
 # Files that go in the doc/ directory and must
 # NOT be put in the distribution archive. Most
@@ -295,49 +259,94 @@ DOC2 = $(addprefix doc/, $(PIX) $(notdir $(DOC2_SRC_HTML) $(DOC2_SRC_MISC)))
 
 # Misc. other files that must be put in the
 # distribution archive.
-MISC_FILES =\
-	src/.srcdate		\
-	src/.uptodate		\
-	CHANGES			\
-	COPYING			\
-	COPYING.LIB		\
-	GNUmakefile		\
-	Makefile		\
-	TODO			\
-	VERSION			\
-	bsp-2.3/bsp23x.txt	\
-	bsp-2.3/transdor.wad	\
-	docsrc/.pixlist		\
-	yadex.cfg		\
+MISC_FILES =								\
+	boost/boost/config.hpp						\
+	boost/boost/config/compiler/borland.hpp				\
+	boost/boost/config/compiler/comeau.hpp				\
+	boost/boost/config/compiler/common_edg.hpp			\
+	boost/boost/config/compiler/compaq_cxx.hpp			\
+	boost/boost/config/compiler/gcc.hpp				\
+	boost/boost/config/compiler/greenhills.hpp			\
+	boost/boost/config/compiler/hp_acc.hpp				\
+	boost/boost/config/compiler/intel.hpp				\
+	boost/boost/config/compiler/kai.hpp				\
+	boost/boost/config/compiler/metrowerks.hpp			\
+	boost/boost/config/compiler/mpw.hpp				\
+	boost/boost/config/compiler/sgi_mipspro.hpp			\
+	boost/boost/config/compiler/sunpro_cc.hpp			\
+	boost/boost/config/compiler/vacpp.hpp				\
+	boost/boost/config/compiler/visualc.hpp				\
+	boost/boost/config/platform/aix.hpp				\
+	boost/boost/config/platform/beos.hpp				\
+	boost/boost/config/platform/bsd.hpp				\
+	boost/boost/config/platform/cygwin.hpp				\
+	boost/boost/config/platform/hpux.hpp				\
+	boost/boost/config/platform/irix.hpp				\
+	boost/boost/config/platform/linux.hpp				\
+	boost/boost/config/platform/macos.hpp				\
+	boost/boost/config/platform/solaris.hpp				\
+	boost/boost/config/platform/win32.hpp				\
+	boost/boost/config/posix_features.hpp				\
+	boost/boost/config/select_compiler_config.hpp			\
+	boost/boost/config/select_platform_config.hpp			\
+	boost/boost/config/select_stdlib_config.hpp			\
+	boost/boost/config/stdlib/dinkumware.hpp			\
+	boost/boost/config/stdlib/libstdcpp3.hpp			\
+	boost/boost/config/stdlib/modena.hpp				\
+	boost/boost/config/stdlib/msl.hpp				\
+	boost/boost/config/stdlib/roguewave.hpp				\
+	boost/boost/config/stdlib/sgi.hpp				\
+	boost/boost/config/stdlib/stlport.hpp				\
+	boost/boost/config/stdlib/vacpp.hpp				\
+	boost/boost/config/suffix.hpp					\
+	boost/boost/config/user.hpp					\
+	boost/boost/smart_ptr.hpp					\
+	boost/boost/static_assert.hpp					\
+	boost/boost/utility.hpp						\
+	boost/boost/utility/base_from_member.hpp			\
+	boost/boost/utility_fwd.hpp					\
+	cache/copyright.man						\
+	cache/copyright.txt						\
+	cache/pixlist							\
+	cache/srcdate							\
+	cache/uptodate							\
+	configure							\
+	docsrc/copyright						\
+	CHANGES								\
+	COPYING								\
+	COPYING.LIB							\
+	GNUmakefile							\
+	Makefile							\
+	TODO								\
+	VERSION								\
+	yadex.cfg							\
 	yadex.dep
 
 # The images used in the HTML doc. FIXME: "<img"
 # and "src=" have to be on the same line. These
 # are symlinked into doc/ when $(DOC2) is made.
-PIX = $(shell cat docsrc/.pixlist)
+PIX = $(shell cat cache/pixlist)
 
 # The script files.
-SCRIPTS = $(addprefix scripts/,\
-	ftime.1		\
-	ftime.c		\
-	mkinstalldirs	\
-	process		\
+SCRIPTS = $(addprefix scripts/,	\
+	copyright		\
+	ftime.1			\
+	ftime.c			\
+	install.c		\
+	mkinstalldirs		\
+	notexist.c		\
+	process			\
 	youngest)
 
 # The patches
-PATCHES = $(addprefix patch/,\
-	README		\
-	gcc-2.7.diff)
+PATCHES = $(addprefix patches/,	\
+	README			\
+	1.5.0_gcc27.diff)
 
 # All files that must be put in the distribution archive.
 ARC_FILES = $(sort $(DOC1) $(DOC1_SRC) $(DOC2_SRC_HTML) $(DOC2_SRC_MISC)\
 	$(MISC_FILES) $(addprefix docsrc/, $(PIX)) $(SCRIPTS) $(SRC) $(YGD)\
 	$(PATCHES))
-
-# Where the normal and debugging binaries are
-# put. Don't change this or you'll break things.
-BINDIR  = $(OBJDIR)
-DBINDIR = $(DOBJDIR)
 
 # The "root" directory of the archives. The
 # basename of the archives is also based on this.
@@ -345,19 +354,13 @@ ARCHIVE := yadex-$(VERSION)
 ARCPREV := yadex-$(VERPREV)
 ARCDIFF := yadex-$(VERSION).diff
 
-# Where "make install" puts things.
-INST_BINDIR = $(PREFIX)/bin
-ifeq ($(PREFIX), /usr)	# Special case: not /usr/etc but /etc
-  INST_CFGDIR = /etc/yadex/$(VERSION)
-else
-  INST_CFGDIR = $(PREFIX)/etc/yadex/$(VERSION)
-endif
-INST_YGDDIR = $(PREFIX)/share/games/yadex/$(VERSION)
-ifdef FHS_MAN
-  INST_MANDIR = $(PREFIX)/share/man/man6
-else
-  INST_MANDIR = $(PREFIX)/man/man6
-endif
+# Cosmetic
+CFLAGS    := $(strip $(CFLAGS))
+DCFLAGS   := $(strip $(DCFLAGS))
+CXXFLAGS  := $(strip $(CXXFLAGS))
+DCXXFLAGS := $(strip $(DCXXFLAGS))
+LDFLAGS   := $(strip $(LDFLAGS))
+DLDFLAGS  := $(strip $(DLDFLAGS))
 
 
 ########################################################################
@@ -368,95 +371,82 @@ endif
 ########################################################################
 
 .PHONY: all
-all: doc yadex.dep dirs yadex ybsp $(YGD)
+all: doc yadex.dep yadex $(YGD)
 
 .PHONY: yadex
-yadex: $(BINDIR)/yadex
+yadex: $(OBJDIR)/yadex
 
-$(BINDIR)/yadex: $(OBJ_YADEX) $(OBJ_ATCLIB) $(MAKEFILE)
-	@echo
-	@echo Linking Yadex
-	@$(CXX) $(OBJ_YADEX) $(OBJ_ATCLIB) -o $@\
-	  -L$(X11LIBDIR) -lc -lm -lX11 $(LDFLAGS) 2>&1
-
-.PHONY: ybsp
-ybsp: $(BINDIR)/ybsp
-
-$(BINDIR)/ybsp: $(SRC_BSP) $(HEADERS_BSP) $(MAKEFILE)
-	@echo
-ifdef HAVE_GCC
-	@echo Compiling and linking BSP with gcc
-	@gcc bsp-2.3/bsp.c -DYADEX_VERSION=\"$(VERSION)\" \
-		-O2 -Wall -Winline -finline-functions -ffast-math -lm -o $@
-else
-	@echo Compiling and linking BSP with cc
-	@$(CC) bsp-2.3/bsp.c -DYADEX_VERSION=\"$(VERSION)\" -O2 -lm -o $@
-endif
+$(OBJDIR)/yadex: $(OBJ_CONFIG) $(OBJ_YADEX) $(OBJ_ATCLIB) $(MAKEFILE)
+	@echo "** Linking Yadex"
+	$(CXX) $(OBJ_CONFIG) $(OBJ_YADEX) $(OBJ_ATCLIB) -o $@		\
+	  -L$(X11LIBDIR) -lX11 -lm -lc $(LDFLAGS)
 
 .PHONY: test
 test:
-	$(BINDIR)/yadex $(A)
+	$(OBJDIR)/yadex $(A)
 
 .PHONY: install
-install:
-	@echo
-	@scripts/mkinstalldirs $(INST_BINDIR)
-	@scripts/mkinstalldirs $(INST_CFGDIR)
-	@scripts/mkinstalldirs $(INST_MANDIR)
-	@scripts/mkinstalldirs $(INST_YGDDIR)
-	@echo Installing yadex and ybsp in $(INST_BINDIR)
-	cp -p $(BINDIR)/yadex	$(INST_BINDIR)/yadex-$(VERSION)	2>&1
-	ln -sf yadex-$(VERSION)	$(INST_BINDIR)/yadex		2>&1
-	cp -p $(BINDIR)/ybsp	$(INST_BINDIR)/ybsp-$(VERSION)	2>&1
-	ln -sf ybsp-$(VERSION)	$(INST_BINDIR)/ybsp		2>&1
-	@echo Installing man pages in $(INST_MANDIR)
-	cp -p doc/yadex.6	$(INST_MANDIR)	2>&1
-	cp -p doc/ybsp.6	$(INST_MANDIR)	2>&1
-	@echo Installing game definition files in $(INST_YGDDIR)
-	cp -p $(YGD) 		$(INST_YGDDIR)	2>&1
-	@echo Installing configuration file in $(INST_CFGDIR)
-	cp -p yadex.cfg	$(INST_CFGDIR)		2>&1
-	chmod a+w $(INST_CFGDIR)/yadex.cfg	2>&1
+install: $(OBJDIR)/install
+	@scripts/mkinstalldirs $(BINDIR)
+	@scripts/mkinstalldirs $(ETCDIR)
+	@scripts/mkinstalldirs $(MANDIR)
+	@scripts/mkinstalldirs $(MANDIR)/man6
+	@scripts/mkinstalldirs $(SHAREDIR)
+	$(OBJDIR)/install -m 755 $(OBJDIR)/yadex $(BINDIR)/yadex-$(VERSION)
+	rm -f $(BINDIR)/yadex
+	ln -s yadex-$(VERSION) $(BINDIR)/yadex
+	$(OBJDIR)/install -m 644 doc/yadex.6 $(MANDIR)/man6/yadex-$(VERSION).6
+	rm -f $(MANDIR)/man6/yadex.6
+	ln -s yadex-$(VERSION).6 $(MANDIR)/man6/yadex.6
+	$(OBJDIR)/install -m 644 -d $(SHAREDIR) $(YGD)
+	$(OBJDIR)/install -m 644 -d $(ETCDIR) yadex.cfg
 	@echo "---------------------------------------------------------------"
 	@echo "  Yadex is now installed."
 	@echo
 	@echo "  Before you run it, enter the paths to your iwads in"
-	@echo "  $(INST_CFGDIR)/yadex.cfg."
+	@echo "  $(ETCDIR)/yadex.cfg or ~/.yadex/yadex.cfg."
 	@echo "  When you're done, type \"yadex\" to start."
-	@echo "  If you're confused, take a look at index.html."
+	@echo "  If you're confused, take a look at doc/index.html."
 	@echo
-	@echo "  Good editing !"
+	@echo "  Happy editing !"
 	@echo "---------------------------------------------------------------"
 
 .PHONY: clean
 clean:
-	rm -r $(OBJPHYSDIR)
+	rm -f $(OBJ_CONFIG) $(OBJ_YADEX) $(OBJ_ATCLIB) $(OBJDIR)/yadex
+	rm -f $(DOBJ_CONFIG) $(DOBJ_YADEX) $(DOBJ_ATCLIB) $(DOBJDIR)/yadex
+	rm -f $(OBJDIR)/ftime
+	rm -f $(OBJDIR)/install
+	rm -f $(OBJDIR)/notexist
+	rm -f $(OBJDIR)
+	rm -f $(DOBJDIR)
+	rm -rf doc
 
 .PHONY: dclean
 dclean:
-	rm -r $(DOBJPHYSDIR)
+	rm -rf $(DOBJPHYSDIR)
+	rm -f $(DOBJDIR)
 
 .PHONY: doc
-doc: docsrc/.pixlist docdirs $(DOC1) doc2
+doc: cache/pixlist docdirs $(DOC1) doc2
 
 # Have to put it separately because evaluation
-# of $(DOC2) requires docsrc/.pixlist to exist.
+# of $(DOC2) requires cache/pixlist to exist.
 .PHONY: doc2
 doc2: $(DOC2)
 
 .PHONY: help
 help:
 	@echo User targets:
-	@echo "make [all]                 Build Yadex and BSP"
-	@echo "make yadex                 Build Yadex"
-	@echo "make ybsp                  Build BSP"
-	@echo "make test [A=args]         Test Yadex"
-	@echo "make install [PREFIX=dir]  Install Yadex and BSP"
+	@echo "make [all]           Build everything"
+	@echo "make yadex           Build Yadex"
+	@echo "make test [A=args]   Test Yadex"
+	@echo "make install         Install everything"
+	@echo "make showconf        Show current configuration"
 	@echo
 	@echo Hacker targets:
-	@echo "make dall            Build debug version of Yadex and BSP"
+	@echo "make dall            Build debug version of everything"
 	@echo "make dyadex          Build debug version of Yadex"
-	@echo "make dybsp           Build debug version of BSP"
 	@echo "make dtest [A=args]  Test debug version of Yadex"
 	@echo "make dg              Run debug version of Yadex through gdb"
 	@echo "make dd              Run debug version of Yadex through ddd"
@@ -466,7 +456,6 @@ help:
 	@echo "make ps              View man page with gv"
 	@echo "make dist            Create distribution archive"
 	@echo "make save            Create backup archive"
-	@echo "make showconf        Show current configuration"
 
 
 ########################################################################
@@ -482,142 +471,130 @@ d: dyadex dtest
 
 .PHONY: save
 save:
-	tar -zcvf yadex-$$(date '+%Y%m%d').tgz\
-		--exclude "*.wad"\
-		--exclude "*.zip"\
-		--exclude "core"\
-		--exclude "dos/*"\
-		--exclude "obj"\
-		--exclude "dobj"\
-		--exclude "old/*"\
-		--exclude "*~"\
-		--exclude "*.bak"\
-		--exclude "web/arc"\
-		--exclude yadex-$$(date '+%Y%m%d').tgz\
+	tar -Icvf yadex-$$(date '+%Y%m%d').tar.bz2			\
+		--exclude "*.wad"					\
+		--exclude "*.zip"					\
+		--exclude "core"					\
+		--exclude "dos/*"					\
+		--exclude "obj"						\
+		--exclude "dobj"					\
+		--exclude "old/*"					\
+		--exclude "*~"						\
+		--exclude "*.bak"					\
+		--exclude "web/arc"					\
+		--exclude yadex-$$(date '+%Y%m%d').tar.bz2		\
 		.
 
 .PHONY: dall
-dall: yadex.dep ddirs dyadex dybsp $(YGD)
+dall: yadex.dep dyadex $(YGD)
 
 .PHONY: dyadex
-dyadex: ddirs $(DBINDIR)/yadex
+dyadex: $(DOBJDIR)/yadex
 	
-$(DBINDIR)/yadex: $(DOBJ_YADEX) $(DOBJ_ATCLIB) $(MAKEFILE)
-	@echo
-	@echo Linking Yadex
-	@$(CXX) $(DOBJ_YADEX) $(DOBJ_ATCLIB) -o $@\
-	  -L$(X11LIBDIR) -lc -lm -lX11 $(DLDFLAGS) 2>&1
-
-.PHONY: dybsp
-dybsp: ddirs $(DBINDIR)/ybsp
-
-$(DBINDIR)/ybsp: $(SRC_BSP) $(HEADERS_BSP) $(MAKEFILE)
-	@echo
-	@echo Compiling and linking BSP
-	@$(CC) bsp-2.3/bsp.c -Wall -Winline -O2 -finline-functions\
-		-ffast-math -lm -o $@
+$(DOBJDIR)/yadex: $(DOBJ_CONFIG) $(DOBJ_YADEX) $(DOBJ_ATCLIB) $(MAKEFILE)
+	@echo "** Linking Yadex"
+	$(CXX) $(DOBJ_CONFIG) $(DOBJ_YADEX) $(DOBJ_ATCLIB) -o $@	\
+	  -L$(X11LIBDIR) -lX11 -lm -lc $(DLDFLAGS)
 
 .PHONY: dtest
 dtest:
-	$(DBINDIR)/yadex $(A)
-	gprof $(DBINDIR)/yadex >gprof.out
+	$(DOBJDIR)/yadex $(A)
+	gprof $(DOBJDIR)/yadex >gprof.out
 
 .PHONY: dg
 dg:
-	gdb $(DBINDIR)/yadex
+	gdb $(DOBJDIR)/yadex
 	
 .PHONY: dd
 dd:
-	ddd $(DBINDIR)/yadex
+	ddd $(DOBJDIR)/yadex
+
+.PHONY: asm
+asm: $(addprefix $(OBJDIR)/, $(addsuffix .S, $(MODULES_YADEX)))
 
 # Generate the distribution archives. Requires GNU tar,
-# GNU cp, gzip and optionally bzip2. bzip2 is cool but,
-# in this case, it's 900% slower than gzip while being
-# only 15% more efficient. That's why the creation
-# of the .tar.bz2 archive is commented out.
+# GNU cp, gzip and optionally bzip2 (if distbz2 is
+# uncommented).
 .PHONY: dist
 dist: changes distimage distgz distdiff #distbz2
-	@echo "> Removing distribution image tree $(ARCHIVE)"
+	@echo "** Removing distribution image tree $(ARCHIVE)"
 	rm -r $(ARCHIVE)
 
 .PHONY: distimage
 distimage: all $(ARC_FILES)
-	@echo "> Creating distribution image tree $(ARCHIVE)"
-	@[ ! -e $(ARCHIVE) ] || (echo "Error: $(ARCHIVE) already exists"; false)
+	@echo "** Creating distribution image tree $(ARCHIVE)"
+	rm -rf $(ARCHIVE)
 	scripts/mkinstalldirs $(ARCHIVE)
 	@tar -cf - $(ARC_FILES) | (cd $(ARCHIVE); tar -xf -)
 
 .PHONY: distgz
 distgz: distimage
-	@echo "> Creating gzipped distribution"
+	@echo "** Creating tar.gz distribution"
 	tar -czf $(ARCHIVE).tar.gz $(ARCHIVE)
 
 .PHONY: distbz2
 distbz2: distimage
-	@echo "> Creating bzip2'd distribution"
+	@echo "** Creating .tar.bz2 distribution"
 	tar -cIf $(ARCHIVE).tar.bz2 $(ARCHIVE)
 
 .PHONY: distdiff
 TMP0    = $$HOME/tmp
 TMPPREV = $(TMP0)/$(ARCPREV)
 TMPCURR = $(TMP0)/$(ARCHIVE)
-TMPDIFF = $(TMP0)/$(ARCDIFF)
-DIFF    = $(TMP0)/$(ARCDIFF)/$(ARCDIFF)
 distdiff:
-	@echo "> Building the diff distribution"
-	@echo ">> Creating the diff"
-	@[ ! -e $(TMPPREV) ] || (echo "Error: $(TMPPREV) already exists"; false)
-	@[ ! -e $(TMPCURR) ] || (echo "Error: $(TMPCURR) already exists"; false)
-	@[ ! -e $(TMPDIFF) ] || (echo "Error: $(TMPDIFF) already exists"; false)
-	tar -xzf              $(ARCHIVE).tar.gz -C $(TMP0)
+	@echo "** Building the diff distribution"
+	@echo "Creating the diff"
+	rm -rf $(TMPPREV) $(TMPCURR) $(TMPDIFF)
+	mkdir -p $(TMP0)
+	tar -xzf                  $(ARCHIVE).tar.gz -C $(TMP0)
 	tar -xzf ../yadex-arc/pub/$(ARCPREV).tar.gz -C $(TMP0)
-	mkdir -p $(TMPDIFF)
-	cd $(TMP0) && (diff -uNr $(ARCPREV) $(ARCHIVE) >$(DIFF) || true)
-	#! grep "Binary files y.* and .* differ" $(DIFF)
-	scripts/process docsrc/README.diff >$(TMPDIFF)/README
-	cd $(TMP0) && tar -czf $(ARCDIFF).tar.gz $(ARCDIFF)
-	cd $(TMPO) && rm -rf $(ARCDIFF)
-	cd $(TMP0) && tar -xzf $(ARCDIFF).tar.gz
-	@echo ">> Verifying the diff"
-	cd $(TMPPREV) && patch -p1 <../$(ARCDIFF)/$(ARCDIFF)
-	cd $(TMP0) && diff -r $(ARCPREV) $(ARCHIVE)
-	mv $(TMPDIFF).tar.gz .
-	@echo ">> Cleaning up"
+	scripts/process docsrc/README.diff >$(TMP0)/$(ARCDIFF)
+	echo >>$(TMP0)/$(ARCDIFF)
+	cd $(TMP0) && (diff -uaNr $(ARCPREV) $(ARCHIVE) >>$(ARCDIFF) || true)
+	@# KLUDGE - On my system, just "! grep" makes make choke
+	true; ! grep "^Binary files .* and .* differ" $(TMP0)/$(ARCDIFF)
+	gzip -f $(TMP0)/$(ARCDIFF)
+	@echo "Verifying the diff"
+	cd $(TMPPREV) && gzip -d <../$(ARCDIFF).gz | patch -p1
+	@# FIXME remove -N after 1.6 is done, it's there because
+	@# uptodate has been moved between 1.5 and 1.6 and since
+	@# it's empty it remains in $(ARCPREV).
+	cd $(TMP0) && diff -rP $(ARCHIVE) $(ARCPREV)
+	mv $(TMP0)/$(ARCDIFF).gz .
+	@echo "Cleaning up"
 	cd $(TMP0) && rm -rf $(ARCPREV)
 	cd $(TMP0) && rm -rf $(ARCHIVE)
-	cd $(TMP0) && rm -rf $(ARCDIFF)
 
 .PHONY: showconf
 showconf:
 	@echo "ARCHIVE            \"$(ARCHIVE)\""
+	@echo "BINDIR             \"$(BINDIR)\""
 	@echo "CC                 \"$(CC)\""
 	@echo "CFLAGS             \"$(CFLAGS)\""
 	@echo "CXX                \"$(CXX)\""
 	@echo "CXXFLAGS           \"$(CXXFLAGS)\""
 	@echo "DCFLAGS            \"$(DCFLAGS)\""
 	@echo "DCXXFLAGS          \"$(DCXXFLAGS)\""
-	@echo "DEFINES            \"$(DEFINES)\""
 	@echo "DLDFLAGS           \"$(DLDFLAGS)\""
-	@echo "FHS_MAN            \"$(FHS_MAN)\""
-	@echo "HAVE_GCC           \"$(HAVE_GCC)\""
+	@echo "ETCDIR             \"$(ETCDIR)\""
+	@echo "ETCDIRNV           \"$(ETCDIRNV)\""
 	@echo "HAVE_GETTIMEOFDAY  \"$(HAVE_GETTIMEOFDAY)\""
 	@echo "HAVE_NANOSLEEP     \"$(HAVE_NANOSLEEP)\""
 	@echo "HAVE_SNPRINTF      \"$(HAVE_SNPRINTF)\""
 	@echo "HAVE_USLEEP        \"$(HAVE_USLEEP)\""
-	@echo "INST_BINDIR        \"$(INST_BINDIR)\""
-	@echo "INST_CFGDIR        \"$(INST_CFGDIR)\""
-	@echo "INST_MANDIR        \"$(INST_MANDIR)\""
-	@echo "INST_YGDDIR        \"$(INST_YGDDIR)\""
 	@echo "LDFLAGS            \"$(LDFLAGS)\""
-	@echo "OBJSUBDIR          \"$(OBJSUBDIR)\""
+	@echo "MANDIR             \"$(MANDIR)\""
 	@echo "OS                 \"$(OS)\""
 	@echo "PREFIX             \"$(PREFIX)\""
+	@echo "SHAREDIR           \"$(SHAREDIR)\""
+	@echo "SHAREDIRNV         \"$(SHAREDIRNV)\""
 	@echo "SHELL              \"$(SHELL)\""
+	@echo "SYSTEM             \"$(SYSTEM)\""
 	@echo "VERSION            \"$(VERSION)\""
 	@echo "X11INCLUDEDIR      \"$(X11INCLUDEDIR)\""
 	@echo "X11LIBDIR          \"$(X11LIBDIR)\""
-	@echo "c++ --version      \"`c++ --version`\""
-	@echo "cc --version       \"`cc --version`\""
+	@echo "CXX --version      \"`$(CXX) --version`\""
+	@echo "CC --version       \"`$(CC) --version`\""
 	@echo "shell              \"$$SHELL\""
 	@echo "uname              \"`uname`\""
 
@@ -628,6 +605,17 @@ showconf:
 #	to be invoked directly
 #
 ########################################################################
+
+# If Makefile.config doesn't exist, give a hint...
+$(OBJDIR)/Makefile.config:
+	@echo "Sorry guv'nor, but... did you run ./configure ?" >&2
+	@false
+
+$(OBJDIR)/files_etc.man: $(OBJDIR)/config.etc $(MAKEFILE)
+	sed 's/%v/$(VERSION)/g; s,.*,.B &/yadex.cfg,' $< >$@
+
+$(OBJDIR)/files_share.man: $(OBJDIR)/config.share $(MAKEFILE)
+	sed 's/%v/$(VERSION)/g; s,.*,.BI &/ game .ygd,' $< >$@
 
 # Dependencies of the modules of Yadex
 # -Y is here to prevent the inclusion of dependencies on
@@ -646,162 +634,152 @@ showconf:
 # Note: the modules of Atclib are not scanned as they all
 # depend on $(HEADERS_ATCLIB) and nothing else.
 
-yadex.dep: $(SRC_YADEX)
-	@echo
-	@echo makedepend
-	@makedepend -f- -Y -Iatclib $(DEFINES) $(SRC_YADEX) 2>/dev/null\
-		| awk 'sub (/^src/, "") == 1 {\
-				print "'$(OBJDIR)'" $$0;\
-				print "'$(DOBJDIR)'" $$0;\
-				next;\
+yadex.dep: $(SRC_NON_GEN)
+	@echo "Generating $@"
+	@makedepend -f- -Y -Iatclib $(SRC_NON_GEN) 2>/dev/null	\
+		| awk 'sub (/^src/, "") == 1 {				\
+				print "'$(OBJDIR)'" $$0;		\
+				print "'$(DOBJDIR)'" $$0;		\
+				next;					\
 			}' >$@
+
+cache/copyright.man: $(MAKEFILE) scripts/copyright docsrc/copyright
+	scripts/copyright -m docsrc/copyright >$@
+
+cache/copyright.txt: $(MAKEFILE) scripts/copyright docsrc/copyright
+	scripts/copyright -t docsrc/copyright | sed 's/^./    &/' >$@
 
 # The YYYY-MM-DD date indicated in the parentheses after the
 # version number is the mtime of the most recent source file
 # (where "being a source file" is defined as "being listed in
 # $(SRC_NON_GEN)"). That string is the output of a perl script,
 # scripts/youngest. Since perl is not necessarily installed on
-# all machines, we cache that string in the file src/.srcdate
+# all machines, we cache that string in the file cache/srcdate
 # and include that file in the distribution archive. If we
 # didn't do that, people who don't have perl would be unable to
 # build Yadex.
 #
-# Conceptually, src/.srcdate depends on $(SRC_NON_GEN) and
-# doc/*.html depend on src/.srcdate. However, we can't write the
+# Conceptually, cache/srcdate depends on $(SRC_NON_GEN) and
+# doc/*.html depend on cache/srcdate. However, we can't write the
 # makefile that way because if we did, that would cause two
 # problems. Firstly every time a source file is changed,
 # scripts/youngest would be ran, most of the time for nothing
 # since its output is always the same, unless it's never been
-# run today. Secondly, src/.srcdate being just generated, it's
+# run today. Secondly, cache/srcdate being just generated, it's
 # more recent than the content of the doc/ directory. The result
 # would be that the entire doc/ directory would be rebuilt every
 # time a single source file is changed, which is guaranteed to
 # have an unnerving effect on the hacker at the keyboard.
 #
 # Part of the solution is to systematically force the mtime of
-# src/.srcdate to 00:00, today. Thus, src/.srcdate always looks
+# cache/srcdate to 00:00, today. Thus, cache/srcdate always looks
 # older than the content of the doc/ directory, unless it's not
 # been refreshed yet today.
 #
-# But that's not enough because then src/.srcdate also looks
+# But that's not enough because then cache/srcdate also looks
 # always older than the source files it depends on, and thus
 # make attempts to regenerate it every time make is invoked at
-# all, which would render the very existence of src/.srcdate
-# useless. That's why we have another file, src/.uptodate, that
+# all, which would render the very existence of cache/srcdate
+# useless. That's why we have another file, cache/uptodate, that
 # we touch to keep track of the time when we last generated
-# src/.srcdate.
+# cache/srcdate.
 #
 # If there was a such thing as _date-only_ dependencies, I could
 # get away with just this :
 #
-# src/.srcdate: scripts/youngest
-# src/.srcdate <date_dependency_operator> $(SRC_NON_GEN)
+# cache/srcdate: scripts/youngest
+# cache/srcdate <date_dependency_operator> $(SRC_NON_GEN)
 #         if perl -v >/dev/null 2>&1; then\
 #           scripts/youngest >$@;\
 #         else\
 #           blah...
-# doc/*.html <date_dependency_operator> src/.srcdate
+# doc/*.html <date_dependency_operator> cache/srcdate
 #         blah...
 #
 # That would save two calls to "touch", one intermediary
-# dependency (src/.uptodate) and a lot of obfuscation.
+# dependency (cache/uptodate) and a lot of obfuscation.
+cache/srcdate: cache/uptodate
 
-src/.srcdate: src/.uptodate
-
-src/.uptodate: scripts/youngest $(SRC_NON_GEN)
-	@if perl -v >/dev/null 2>&1; then\
-	  echo Generating src/.srcdate;\
-	  scripts/youngest $(SRC_NON_GEN) >src/.srcdate;\
-	  touch -t `date '+%m%d'`0000 src/.srcdate;\
-	elif [ -f src/.srcdate ]; then\
-	  echo Perl not available. Keeping old src/.srcdate;\
-	else\
-	  echo Perl not available. Creating bogus src/.srcdate;\
-	  date '+%Y-%m-%d' >src/.srcdate;\
+cache/uptodate: scripts/youngest $(SRC_NON_GEN)
+	@mkdir -p cache
+	@if perl -v >/dev/null 2>&1; then				\
+	  echo Generating cache/srcdate;				\
+	  scripts/youngest $(SRC_NON_GEN) >cache/srcdate;		\
+	  touch -t `date '+%m%d'`0000 cache/srcdate;			\
+	elif [ -r cache/srcdate ]; then					\
+	  echo Perl not available. Keeping old cache/srcdate;		\
+	else								\
+	  echo Perl not available. Creating bogus cache/srcdate;	\
+	  date '+%Y-%m-%d' >cache/srcdate;				\
 	fi
 	@touch $@;
 
-# Directories where objects and binaries are put.
-# (normal and debugging versions)
-
-.PHONY: dirs
-dirs:
-	@if [ ! -d $(OBJPHYSDIR)\
-	  -o ! -d $(OBJPHYSDIR_ATCLIB) ];\
-	then\
-	  echo Creating object directories;\
-	  scripts/mkinstalldirs $(OBJPHYSDIR)        2>&1;\
-	  scripts/mkinstalldirs $(OBJPHYSDIR_ATCLIB) 2>&1;\
-	fi
-	@if [ -e $(OBJDIR) ]; then rm $(OBJDIR) 2>&1; fi
-	@ln -sf $(OBJSUBDIR) $(OBJDIR) 2>&1
-
-.PHONY: ddirs
-ddirs:
-	@if [ ! -d $(DOBJPHYSDIR)\
-	  -o ! -d $(DOBJPHYSDIR_ATCLIB) ];\
-	then\
-	  echo Creating object directories;\
-	  scripts/mkinstalldirs $(DOBJPHYSDIR)        2>&1;\
-	  scripts/mkinstalldirs $(DOBJPHYSDIR_ATCLIB) 2>&1;\
-	fi
-	@if [ -e $(DOBJDIR) ]; then rm $(DOBJDIR) 2>&1; fi
-	@ln -sf $(OBJSUBDIR) $(DOBJDIR) 2>&1
-
 # To compile the modules of Yadex
 # (normal and debugging versions)
-
 include yadex.dep
+
+# It's simpler to copy config.cc into src/ than to have a
+# compilation rule for just one file.
+src/config.cc: $(OBJDIR)/config.cc
+	cp -p $< $@
+
+src/config.h: $(OBJDIR)/config.h
+	cp -p $< $@
+
 $(OBJDIR)/%.o: src/%.cc
-	@echo
-	@echo $(CXX) $<
-	@$(CXX) $(CXXFLAGS) -c -Iatclib $(DEFINES) $< -o $@ 2>&1
+	$(CXX) -c -Iatclib -Iboost -I$(X11INCLUDEDIR) $(CXXFLAGS) $< -o $@
 
 $(DOBJDIR)/%.o: src/%.cc
-	@echo
-	@echo $(CXX) $<
-	@$(CXX) $(DCXXFLAGS) -c -Iatclib $(DEFINES) $< -o $@ 2>&1
+	$(CXX) -c -Iatclib -Iboost -I$(X11INCLUDEDIR) $(DCXXFLAGS) $< -o $@
 
 # To compile the modules of Atclib
 # (normal and debugging versions)
-
 $(OBJDIR_ATCLIB)/%.o: atclib/%.c $(HEADERS_ATCLIB)
-	@echo
-	@echo $(CC) $<
-	@$(CC) $(CFLAGS) -c $< -o $@ 2>&1
+	$(CC) -c $(CFLAGS) $< -o $@
 
 $(DOBJDIR_ATCLIB)/%.o: atclib/%.c $(HEADERS_ATCLIB)
-	@echo
-	@echo $(CC) $<
-	@$(CC) $(DCFLAGS) -c $< -o $@ 2>&1
+	$(CC) -c $(DCFLAGS) $< -o $@
+
+# To see the generated assembly code
+# for the modules of Yadex
+$(OBJDIR)/%.S: src/%.cc $(MAKEFILE)
+	$(CXX) $(CXXFLAGS) -S -fverbose-asm -Iatclib -Iboost -I$(X11INCLUDEDIR)\
+	  $< -o $@
+
+# A source file containing the credits
+src/credits.cc: $(MAKEFILE) docsrc/copyright scripts/copyright
+	@echo Generating $@
+	@echo '// DO NOT EDIT -- generated from docsrc/copyright' >$@
+	scripts/copyright -c docsrc/copyright >>$@
 
 # A source file containing just the date of the
 # most recent source file and the version number
-# (found in ./VERSION).
-
-src/version.cc: $(SRC_NON_GEN) VERSION src/.srcdate
-	@echo
+# (found in ./VERSION)
+src/version.cc: $(SRC_NON_GEN) VERSION cache/srcdate $(MAKEFILE)
 	@echo Generating $@
+	@printf '// DO NOT EDIT -- generated from VERSION\n\n' >$@
 	@printf "extern const char *const yadex_source_date = \"%s\";\n" \
-		`cat src/.srcdate` >$@
-	@printf "extern const char *const yadex_version = \"%s\";\n" \
-		$(VERSION) >>$@
+		`cat cache/srcdate` >>$@
+	@printf "extern const char *const yadex_version = \"%s\";\n" 	\
+		"$(VERSION)" >>$@
+
 
 # -------- Doc-related stuff --------
 
 docdirs:
 	@if [ ! -d doc ]; then mkdir doc; fi
 
-docsrc/.pixlist: $(DOC2_SRC_HTML)
+cache/pixlist: $(DOC2_SRC_HTML)
 	@echo Generating $@
-	@if perl -v >/dev/null; then\
-	  perl -ne '@l = m/<img\s[^>]*src="?([^\s">]+)/io;\
-	    print "@l\n" if @l;' $(DOC2_SRC_HTML) | sort | uniq >$@;\
-	elif [ -e $@ ]; then\
-	  echo "Sorry, you need Perl to refresh $@. Keeping old $@.";\
-	else\
-	  echo "Sorry, you need Perl to create $@. Creating empty $@.";\
-	  touch $@;\
+	@mkdir -p cache
+	@if perl -v >/dev/null 2>/dev/null; then			\
+	  perl -ne '@l = m/<img\s[^>]*src="?([^\s">]+)/io;		\
+	    print "@l\n" if @l;' $(DOC2_SRC_HTML) | sort | uniq >$@;	\
+	elif [ -f $@ ]; then						\
+	  echo "Sorry, you need Perl to refresh $@. Keeping old $@.";	\
+	else								\
+	  echo "Sorry, you need Perl to create $@. Creating empty $@.";	\
+	  touch $@;							\
 	fi
 
 events.html: ev evhtml
@@ -810,13 +788,13 @@ events.html: ev evhtml
 events.txt: events.html
 	lynx -dump $< >$@
 
-changes/changes.html: changes/*.log log2html
-	./log2html -- $$(ls -r changes/*.log) >$@
+changes/changes.html: changes/*.log log2html RELEASE
+	./log2html -- -r `cat RELEASE` -- $$(ls -r changes/*.log) >$@
 	
 # changes - update the changelog
 .PHONY: changes
 changes: changes/changes.html
-	lynx -dump $< >CHANGES
+	w3m -dump -cols 72 $< >CHANGES
 
 # cns - view the changelog with Netscape
 .PHONY: cns
@@ -848,6 +826,14 @@ dvi: doc/yadex.dvi
 ps: doc/yadex.ps
 	gv $^
 
+# Use docsrc/faq.html and not directly
+# doc/faq.html because we don't want FAQ to be
+# remade at first build time.
+FAQ: docsrc/faq.html
+	scripts/process $< >cache/faq.html
+	lynx -dump cache/faq.html >$@
+	rm cache/faq.html
+
 doc/yadex.dvi: doc/yadex.6
 	groff -Tdvi -man $^ >$@
 
@@ -856,43 +842,45 @@ doc/yadex.ps: doc/yadex.6
 	
 
 # Generate the doc by filtering them through scripts/process
-
-PROCESS = VERSION src/.srcdate scripts/process scripts/ftime
-
-doc/ybsp.6: bsp-2.3/ybsp.6 $(PROCESS)
-	@echo
-	@echo Generating $@
-	@scripts/process $< >$@
+PROCESS =				\
+	VERSION				\
+	cache/copyright.man		\
+	cache/copyright.txt		\
+	cache/srcdate			\
+	scripts/process			\
+	$(OBJDIR)/ftime			\
+	$(OBJDIR)/files_etc.man		\
+	$(OBJDIR)/files_share.man	\
+	$(OBJDIR)/notexist
 
 doc/yadex.6: docsrc/yadex.6 $(PROCESS)
-	@echo
 	@echo Generating $@
 	@scripts/process $< >$@
 
 doc/README: docsrc/README.doc $(PROCESS)
-	@echo
 	@echo Generating $@
 	@scripts/process $< >$@
 
 %: docsrc/% $(PROCESS)
-	@echo
 	@echo Generating $@
 	@scripts/process $< >$@
 
 doc/%.html: docsrc/%.html $(PROCESS)
-	@echo
 	@echo Generating $@
 	@scripts/process $< >$@
 
 # The images are just symlinked from docsrc/ to doc/
-
 doc/%.png: docsrc/%.png
-	@ln -sf ../$< $@
+	@rm -f $@
+	@ln -s ../$< $@
 
-#scripts/mdate: scripts/mdate.c
-#	$(CC) $< -o $@
+$(OBJDIR)/ftime: scripts/ftime.c
+	$(CC) $< -o $@
 
-scripts/ftime: scripts/ftime.c
+$(OBJDIR)/install: scripts/install.c
+	$(CC) $< -o $@
+
+$(OBJDIR)/notexist: scripts/notexist.c
 	$(CC) $< -o $@
 
 

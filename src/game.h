@@ -15,7 +15,7 @@ extern const char ygd_file_magic[];
  *	Data structures for game definition data
  */
 
-/* ldt <number> <ldtgroup> <shortdesc> <longdesc> */
+// ldt <number> <ldtgroup> <shortdesc> <longdesc>
 typedef struct
    {
    int number;
@@ -24,14 +24,14 @@ typedef struct
    const char *longdesc;
    } ldtdef_t;
 
-/* ldtgroup <ldtgroup> <description> */
+// ldtgroup <ldtgroup> <description>
 typedef struct
    {
    char ldtgroup;
    const char *desc;
    } ldtgroup_t;
 
-/* st <number> <shortdesc> <longdesc> */
+// st <number> <shortdesc> <longdesc>
 typedef struct
    {
    int number;
@@ -39,7 +39,7 @@ typedef struct
    const char *longdesc;
    } stdef_t;
 
-/* thing <number> <thinggroup> <flags> <radius> <description> [<sprite>]*/
+// thing <number> <thinggroup> <flags> <radius> <description> [<sprite>]
 typedef struct
    {
    int number;		// Thing number
@@ -53,7 +53,7 @@ typedef struct
         thinggroup for each thing when drawing things */
 const char THINGDEF_SPECTRAL = 0x01;
 
-/* thinggroup <thinggroup> <colour> <description> */
+// thinggroup <thinggroup> <colour> <description>
 typedef struct
    {
    char thinggroup;	// Thing group
@@ -83,7 +83,7 @@ extern al_llist_t *thingdef;
 extern al_llist_t *thinggroup;
 
 
-/* shorthands to make program more readable */
+// Shorthands to make the code more readable
 #define CUR_LDTDEF     ((ldtdef_t     *)al_lptr (ldtdef    ))
 #define CUR_LDTGROUP   ((ldtgroup_t   *)al_lptr (ldtgroup  ))
 #define CUR_STDEF      ((stdef_t      *)al_lptr (stdef     ))

@@ -11,7 +11,7 @@ This file is part of Yadex.
 Yadex incorporates code from DEU 5.21 that was put in the public domain in
 1994 by Raphaël Quinet and Brendon Wyber.
 
-The rest of Yadex is Copyright © 1997-2000 André Majorel.
+The rest of Yadex is Copyright © 1997-2003 André Majorel and others.
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -35,6 +35,7 @@ Place, Suite 330, Boston, MA 02111-1307, USA.
 #include "gfx.h"
 #include "palview.h"
 #include "rgb.h"
+#include "wadfile.h"
 #include "wads.h"
 #include "ytime.h"
 
@@ -63,59 +64,77 @@ rgb_c    *playpal  = 0;
 // Load the PLAYPAL lump
 do
 {
-  MDirPtr dir = FindMasterDir (MasterDir, "PLAYPAL");
+  playpal = new rgb_c[DOOM_COLOURS];
+  for (size_t n = 0; n < DOOM_COLOURS; n++)
+    playpal[n].set (0, 0, 0);
+  const char *lump_name = "PLAYPAL";
+  MDirPtr dir = FindMasterDir (MasterDir, lump_name);
   if (dir == NULL)
   {
-    warn ("PLAYPAL lump not found.\n");
-    playpal = new rgb_c[DOOM_COLOURS];
-    for (size_t n = 0; n < DOOM_COLOURS; n++)
-      playpal[n].set (0, 0, 0);
+    warn ("%s: lump not found\n", lump_name);
     break;
   }
+  const Wad_file *wf = dir->wadfile;
   if (dir->dir.size % (3 * DOOM_COLOURS) != 0)
   {
-    warn ("PLAYPAL has weird size (%ld, not mult of %d). Ignoring tail.\n",
-      (long) dir->dir.size, (int) (DOOM_COLOURS * 3));
+    warn ("%s has weird size (%ld, not mult of %d), ignoring tail\n",
+      lump_name, (long) dir->dir.size, (int) (DOOM_COLOURS * 3));
   }
-  wad_seek (dir->wadfile, dir->dir.start);
+  wf->seek (dir->dir.start);
+  if (wf->error ())
+  {
+    warn ("%s: seek error\n", lump_name);
+    break;
+  }
   playpal = new rgb_c[DOOM_COLOURS];
   for (size_t n = 0; n < DOOM_COLOURS; n++)
   {
     char buf[3];
-    wad_read_bytes (dir->wadfile, buf, sizeof buf);
+    wf->read_bytes (buf, sizeof buf);
     playpal[n].set (buf[0], buf[1], buf[2]);
   }
+  if (wf->error ())
+    warn ("%s: read error\n", lump_name);
 }
 while (0);
 
 // Load the COLORMAP lump
 do
 {
-  MDirPtr dir = FindMasterDir (MasterDir, "COLORMAP");
+  const char *lump_name = "COLORMAP";
+  MDirPtr dir = FindMasterDir (MasterDir, lump_name);
   if (dir == NULL)
   {
-    warn ("COLORMAP lump not found.\n");
+    warn ("%s: lump not found\n", lump_name);
     break;
   }
+  const Wad_file *wf = dir->wadfile;
   nmaps = dir->dir.size / DOOM_COLOURS;
   if ((long) DOOM_COLOURS * nmaps != dir->dir.size)
   {
-    warn ("COLORMAP has weird size (%ld, not mult of %d). Ignoring tail.\n",
-      (long) dir->dir.size, (int) DOOM_COLOURS);
+    warn ("%s: has weird size (%ld, not mult of %d), ignoring tail\n",
+      lump_name, (long) dir->dir.size, (int) DOOM_COLOURS);
   }
   if (nmaps > 200)
   {
-    warn ("COLORMAP has too many (%d) entries. Keeping only 200 first.\n",
-	nmaps);
+    warn ("%s has too many (%d) entries, keeping only 200 first\n",
+	lump_name, nmaps);
     nmaps = 200;
   }
-  wad_seek (dir->wadfile, dir->dir.start);
+  wf->seek (dir->dir.start);
+  if (wf->error ())
+  {
+    warn ("%s: seek error\n", lump_name);
+    break;
+  }
   colormap = new colormap_entry_t *[nmaps];
   for (int n = 0; n < nmaps; n++)
   {
     colormap[n] = new colormap_entry_t;
-    wad_read_bytes (dir->wadfile, colormap[n]->c, sizeof colormap[n]->c);
+    wf->read_bytes (colormap[n]->c, sizeof colormap[n]->c);
   }
+  if (wf->error ())
+    warn ("%s: read error\n", lump_name);
 }
 while (0);
 

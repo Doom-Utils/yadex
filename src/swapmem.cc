@@ -44,7 +44,7 @@ This file is part of Yadex.
 Yadex incorporates code from DEU 5.21 that was put in the public domain in
 1994 by Raphaël Quinet and Brendon Wyber.
 
-The rest of Yadex is Copyright © 1997-2000 André Majorel.
+The rest of Yadex is Copyright © 1997-2003 André Majorel and others.
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -63,6 +63,7 @@ Place, Suite 330, Boston, MA 02111-1307, USA.
 
 #include "yadex.h"
 #include "levels.h"
+#include "objid.h"
 #ifdef SWAP_TO_XMS
 #include "xms.h"
 typedef XMSHandle SwapHandle;	/* XMS handle */
@@ -183,23 +184,25 @@ void SwapOut (void huge *ptr, SwapHandle handle, unsigned long size)
 #else
 FILE      *file;
 char huge *data;
-char      *tmp;
 
-/* get a new (unique) file name */
-tmp = tempnam (NULL, "{DEU}");
-if (tmp == NULL)
+// get a new (unique) file name
+const char *basename = "yadexswpXXXXXX";  // 14 characters
+const char *dir      = getenv ("TMPDIR");
+if (dir == 0 || strlen (dir) + 1 + strlen (basename) >= sizeof (SwapHandle))
+   dir = "/tmp";
+y_snprintf (handle, sizeof (SwapHandle), "%s/%s", dir, basename);
+if (mkstemp (handle) == -1)
 {
 #ifdef DEBUG
    LogMessage ("\nFree memory before crash: %lu bytes.", farcoreleft ());
-#endif /* DEBUG */
-   fatal_error ("cannot create a temporary file name (out of memory)");
+#endif
+   fatal_error ("cannot create a temporary file from \"%s\" (%s)",
+      handle, strerror (errno));
 }
-strcpy (handle, tmp);
-free (tmp);
 #ifdef DEBUG
 LogMessage ("swapping out %lu bytes to %s\n", size, handle);
 #endif /* DEBUG */
-/* write the data to the temporary file */
+// write the data to the temporary file
 data = (char huge *) ptr;
 file = fopen (handle, "wb");
 if (file == NULL)
@@ -207,7 +210,8 @@ if (file == NULL)
 #ifdef DEBUG
    LogMessage ("\nFree memory before crash: %lu bytes.", farcoreleft ());
 #endif /* DEBUG */
-   fatal_error ("error creating temporary file \"%s\"", handle);
+   fatal_error ("error creating temporary file \"%s\" (%s)",
+      handle, strerror (errno));
 }
 while (size > 0x8000)
 {
@@ -218,7 +222,9 @@ while (size > 0x8000)
 }
 if (fwrite (data, 1, size, file) != size)
    fatal_error ("error writing to temporary file \"%s\"", handle);
-fclose (file);
+if (fclose (file))
+   fatal_error ("error writing to temporary file \"%s\" (%s)",
+      handle, strerror (errno));
 #endif /* !SWAP_TO_XMS */
 /* free the data block (in lower RAM) */
 FreeFarMemory (ptr);

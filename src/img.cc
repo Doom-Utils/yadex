@@ -10,7 +10,7 @@ This file is part of Yadex.
 Yadex incorporates code from DEU 5.21 that was put in the public domain in
 1994 by Raphaël Quinet and Brendon Wyber.
 
-The rest of Yadex is Copyright © 1997-2000 André Majorel.
+The rest of Yadex is Copyright © 1997-2003 André Majorel and others.
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -28,19 +28,22 @@ Place, Suite 330, Boston, MA 02111-1307, USA.
 
 
 #include "yadex.h"
-#include "gcolour2.h"  /* colour0 */
+#include "help1.h"
 #include "img.h"
+#include "wadfile.h"
+#include "wads.h"
 
 
 // Holds the private data members
 class Img_priv
 {
   public:
-    Img_priv () { buf = 0; width = 0; height = 0; }
+    Img_priv () { buf = 0; width = 0; height = 0; opaque = false; }
     ~Img_priv () { if (buf != 0) delete[] buf; }
     img_pixel_t *buf;
     img_dim_t    width;
     img_dim_t    height;
+    bool         opaque;
 };
 
 
@@ -60,10 +63,11 @@ Img::Img ()
  *
  *	The new image is set to the specified dimensions.
  */
-Img::Img (img_dim_t width, img_dim_t height)
+Img::Img (img_dim_t width, img_dim_t height, bool opaque)
 {
   p = new Img_priv;
   resize (width, height);
+  set_opaque (opaque);
 }
 
 
@@ -140,6 +144,15 @@ void Img::clear ()
 
 
 /*
+ *	Img::set_opaque - set or clear the opaque flag
+ */
+void Img::set_opaque (bool opaque)
+{
+  p->opaque = opaque;
+}
+
+ 
+/*
  *	Img::resize - resize the image
  *
  *	If either dimension is zero, the image becomes a null
@@ -147,9 +160,7 @@ void Img::clear ()
  */
 void Img::resize (img_dim_t width, img_dim_t height)
 {
-  // FIXME should check that the width and height are valid.
-  if (width == p->width && height == p->height
-    || width * height == p->width * p->height)
+  if (width == p->width && height == p->height)
     return;
 
   // Unallocate old buffer
@@ -172,6 +183,89 @@ void Img::resize (img_dim_t width, img_dim_t height)
   p->height = height;
   p->buf = new img_pixel_t[width * height + 10];  // Some slack
   clear ();
+}
+
+
+/*
+ *	Img::save - save an image to file in packed PPM format
+ *
+ *	Return 0 on success, non-zero on failure
+ *
+ *	If an error occurs, errno is set to:
+ *	- ECHILD if PLAYPAL could not be loaded
+ *	- whatever fopen() or fclose() set it to
+ */
+int Img::save (const char *filename) const
+{
+  int rc = 0;
+  FILE *fp = 0;
+
+  // Load palette 0 from PLAYPAL
+  MDirPtr dir = FindMasterDir (MasterDir, "PLAYPAL");
+  if (dir == 0)
+  {
+    errno = ECHILD;
+    return 1;
+  }
+  unsigned char *pal = new unsigned char[768];
+  dir->wadfile->seek (dir->dir.start);
+  if (dir->wadfile->error ())
+  {
+    /*warn ("%s: can't seek to %lXh\n",
+	dir->wadfile->filename, (unsigned long) ftell (dir->wadfile->fp));
+    warn ("PLAYPAL: seek error\n");*/
+    rc = 1;
+    errno = ECHILD;
+    goto byebye;
+  }
+  dir->wadfile->read_bytes (pal, 768);
+  if (dir->wadfile->error ())
+  {
+    /*warn ("%s: read error", dir->wadfile->where ());
+    warn ("PLAYPAL: read error\n");*/
+    rc = 1;
+    errno = ECHILD;
+    goto byebye;
+  }
+
+  // Create PPM file
+  fp = fopen (filename, "wb");
+  if (fp == NULL)
+  {
+    rc = 1;
+    goto byebye;
+  }
+  fputs ("P6\n", fp);
+  fprintf (fp, "# %s\n", what ());
+  fprintf (fp, "%d %d 255\n", p->width, p->height);
+  {
+    const img_pixel_t *pix    = p->buf;
+    const img_pixel_t *pixmax = pix + (unsigned long) p->width * p->height;
+    for (; pix < pixmax; pix++)
+    {
+      if (*pix == IMG_TRANSP && ! p->opaque)
+      {
+	putc ( 0, fp);	// DeuTex convention, rgb:0/2f/2f
+	putc (47, fp);
+	putc (47, fp);
+      }
+      else
+      {
+	putc (pal[3 * *pix    ], fp);
+	putc (pal[3 * *pix + 1], fp);
+	putc (pal[3 * *pix + 2], fp);
+      }
+    }
+  }
+  if (ferror (fp))
+    rc = 1;
+
+byebye:
+  if (fp != 0)
+    if (fclose (fp))
+      rc = 1;
+  delete[] pal;
+  return rc;
 }
 
 

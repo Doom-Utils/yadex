@@ -10,7 +10,7 @@ This file is part of Yadex.
 Yadex incorporates code from DEU 5.21 that was put in the public domain in
 1994 by Raphaël Quinet and Brendon Wyber.
 
-The rest of Yadex is Copyright © 1997-2000 André Majorel.
+The rest of Yadex is Copyright © 1997-2003 André Majorel and others.
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -28,38 +28,25 @@ Place, Suite 330, Boston, MA 02111-1307, USA.
 
 
 #include "edwidget.h"
+#include "objid.h"
 
 
 class highlight_c : public edwidget_c
    {
    public :
       highlight_c (void);
-      void set (int obj_type, int obj_no)
-	 {
-	 this->obj_type = obj_type;
-	 this->obj_no   = obj_no;
-	 }
+      void set (Objid& obj) { this->obj = obj; }
 
       /* Methods declared in edwidget */
-      void unset ()
-	 { obj_no = OBJ_NO_NONE; }
-
+      void unset () { obj.nil (); }
       void draw          ();
       void undraw        ();
-
-      int can_undraw ()
-         { return 1; }  // I have the ability to undraw myself.
-
-      int need_to_clear ()
-	 { return 0; }  // I know how to undraw myself.
-
-      void clear ()
-	 { obj_no_disp = OBJ_NO_NONE; }
+      int can_undraw () { return 1; }  // I have the ability to undraw myself.
+      int need_to_clear () { return 0; }  // I know how to undraw myself.
+      void clear () { obj_disp.nil (); }
 
    private :
-      int obj_no;	 /* The no. of the object we should highlight */
-      int obj_type;	 /* The type of the object we should highlight */
-      int obj_no_disp;	 /* The no. of the object that is really highlighted */
-      int obj_type_disp; /* The type of the object that is really highlighted */
+      Objid obj;	// The object we should highlight
+      Objid obj_disp;	// The object that is really highlighted
    };
 

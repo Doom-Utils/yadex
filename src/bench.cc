@@ -11,7 +11,7 @@ This file is part of Yadex.
 Yadex incorporates code from DEU 5.21 that was put in the public domain in
 1994 by Raphaël Quinet and Brendon Wyber.
 
-The rest of Yadex is Copyright © 1997-2000 André Majorel.
+The rest of Yadex is Copyright © 1997-2003 André Majorel and others.
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -69,7 +69,7 @@ static void bench_LoadPicture ()
   if (sprite_loc.wad == 0)
     fprintf (stderr, "Could not locate sprite %s\n", sprite_name);
 
-  Img img (width, height);
+  Img img (width, height, false);
   struct tms t0;
   times (&t0);
   for (unsigned long n = 0; n < iterations; n++)
@@ -77,11 +77,11 @@ static void bench_LoadPicture ()
   struct tms t1;
   times (&t1);
 
-  // Have to use CLK_TCK because glibc has a broken CLOCKS_PER_SEC.
-  const char *unit  = "s";
+// Glibc 2.1 (?) has a broken CLOCKS_PER_SEC.
 #ifndef CLOCKS_PER_SEC
 #define CLOCKS_PER_SEC CLK_TCK
 #endif
+  const char *unit  = "s";
   double value = (double) (t1.tms_utime - t0.tms_utime)
 		 / CLOCKS_PER_SEC / iterations;
   if (value < 1E-3)
@@ -96,6 +96,4 @@ static void bench_LoadPicture ()
   }
   printf ("LoadPicture: %f %s per call\n", value, unit);
 }
-
-
 

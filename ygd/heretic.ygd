@@ -36,7 +36,7 @@ ldtgroup t "Teleport"
 ldtgroup L "Light"
 ldtgroup e "End level"
 ldtgroup m "Moving floor"
-ldtgroup s "Raising stair"
+ldtgroup s "Raising stairs"
 ldtgroup x "Misc."
 
 #
@@ -78,8 +78,8 @@ ldt  29 d "S1 Open door"     "S1  Open  door"
 ldt  30 F "W1 Floor up SLT"  "W1  Raise floor by ShortestLowerTexture"
 ldt  31 d "D1 Open door (O)" "D1  Open  door (stays open)"
 ldt  32 b "D1 Open blu (O)"  "D1  Open  door (stays open), blue key"
-ldt  33 r "D1 Open yel (O)"  "D1  Open  door (stays open), red key"
-ldt  34 y "D1 Open red (O)"  "D1  Open  door (stays open), yellow key"
+ldt  33 r "D1 Open red (O)"  "D1  Open  door (stays open), red key"
+ldt  34 y "D1 Open yel (O)"  "D1  Open  door (stays open), yellow key"
 ldt  35 L "W1 Light to 0"    "W1  Light level goes to 0"
 ldt  36 f "W1 F. Dn HEF+8"   "W1  Lower floor fast to HEF + 8"
 ldt  37 f "W1 F. dn LEF NXP" "W1  Lower floor to LEF (NXP)"
@@ -141,7 +141,7 @@ ldt  92 F "WR Floor up 24"   "WR  Raise floor by 24"
 ldt  93 F "WR F. up 24 TXP"  "WR  Raise floor by 24 (TXP)"
 ldt  94 F "WR F. up LIC-8"   "WR  Raise floor to LIC - 8, crush"
 ldt  95 F "WR F. up nhEF TX" "WR  Raise floor to nhEF (TX)"
-ldt  96 F "W1 Floor up SLT"  "W1  Raise floor by ShortestLowerTexture"
+ldt  96 F "WR Floor up SLT"  "WR  Raise floor by ShortestLowerTexture"
 ldt  97 t "WR Teleport"      "WR  Teleport to another sector"
 ldt  98 f "WR F. Dn HEF+8"   "WR  Lower floor fast to HEF + 8"
 ldt  99 b "SR OPEN blu door" "SR  Open  turbo door, blue key [v1.6]"
@@ -150,13 +150,13 @@ ldt 101 F "S1 Floor up LIC"  "S1  Raise floor to LIC"
 ldt 102 f "S1 Floor dn HEF"  "S1  Lower floor to HEF"
 ldt 103 d "S1 Open door (O)" "S1  Open  door (stays open)"
 ldt 104 L "W1 Light to LE"   "W1  Light level goes to LE"
-ldt 105 D "S1 OPEN door"     "S1  Open  turbo door [v1.6]"
+ldt 105 D "WR OPEN door"     "WR  Open  turbo door [v1.6]"
 ldt 106 D "WR OPEN door (O)" "WR  Open  turbo door (stays open) [v1.6]"
 ldt 107 D "WR CLOSE door"    "WR  Close turbo door [v1.6]"
 ldt 108 D "W1 OPEN door"     "W1  Open  turbo door [v1.6]"
 ldt 109 D "W1 OPEN door (O)" "W1  Open  turbo door (stays open) [v1.6]"
 ldt 110 D "W1 CLOSE door"    "W1  Close turbo door [v1.6]"
-ldt 111 D "WR OPEN door"     "WR  Open  turbo door [v1.6]"
+ldt 111 D "S1 OPEN door"     "S1  Open  turbo door [v1.6]"
 ldt 112 D "S1 OPEN door (O)" "S1  Open  turbo door (stays open) [v1.6]"
 ldt 113 D "S1 CLOSE door"    "S1  Close turbo door [v1.6]"
 ldt 114 D "SR OPEN door"     "SR  Open  turbo door [v1.6]"
@@ -236,12 +236,10 @@ st 49 "? Wind W slow"  "? Wind blows westward slowly"
 st 50 "? Wind W mid"   "? Wind blows westward"
 st 51 "? Wind W fast"  "? Wind blows westward fast" 
 
-
 #
 #	Definition of thing groups
 #	Format is : thinggroup <thinggroup> <colour> <description>
 #
-
 
 thinggroup p rgb:4/f/4 "Player"
 thinggroup m rgb:f/0/0 "Monster"
@@ -256,7 +254,6 @@ thinggroup d rgb:6/6/c "Misc. decoration"
 #thinggroup c rgb:6/6/c "Corpse"
 thinggroup e rgb:0/b/d "Environment sound"
 thinggroup s rgb:0/b/d "Ambient sound"
-
 
 #
 #	Definition of things

@@ -18,7 +18,10 @@ class Sticker
     void clear ();
     void load (const Img& img, bool opaque);
     void draw (Drawable drw, char grav, int x, int y);
+
   private :
+    Sticker (const Sticker&);			// Too lazy to implement it
+    Sticker& operator= (const Sticker&);	// Too lazy to implement it
     Sticker_priv *priv;
 };
 

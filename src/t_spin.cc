@@ -10,7 +10,7 @@ This file is part of Yadex.
 Yadex incorporates code from DEU 5.21 that was put in the public domain in
 1994 by Raphaël Quinet and Brendon Wyber.
 
-The rest of Yadex is Copyright © 1997-2000 André Majorel.
+The rest of Yadex is Copyright © 1997-2003 André Majorel and others.
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -34,25 +34,24 @@ Place, Suite 330, Boston, MA 02111-1307, USA.
 
 
 /*
-   Spin things (AYM 1997-06-17)
-*/
-
-void spin_things (SelPtr obj, int degrees) /* SWAP! */
+ *	spin_thing - change the angle of things
+ */
+void spin_things (SelPtr obj, int degrees)
 {
-SelPtr cur;
+  SelPtr cur;
 
-if (! obj)
-   return;
-for (cur = obj; cur; cur = cur->next)
-   {
-   Things[cur->objnum].angle += degrees;
-   while (Things[cur->objnum].angle >= 360)  /* No we can't use % */
+  if (! obj)
+    return;
+  for (cur = obj; cur; cur = cur->next)
+  {
+    Things[cur->objnum].angle += degrees;
+    while (Things[cur->objnum].angle >= 360)	// No we can't use %
       Things[cur->objnum].angle -= 360;
-   while (Things[cur->objnum].angle < 0)  /* (negatives...) */
+    while (Things[cur->objnum].angle < 0)	// (negatives...)
       Things[cur->objnum].angle += 360;
-   }
-things_angles++;
-MadeChanges = 1;
+  }
+  things_angles++;
+  MadeChanges = 1;
 }
 
 

@@ -11,7 +11,7 @@ This file is part of Yadex.
 Yadex incorporates code from DEU 5.21 that was put in the public domain in
 1994 by Raphaël Quinet and Brendon Wyber.
 
-The rest of Yadex is Copyright © 1997-2000 André Majorel.
+The rest of Yadex is Copyright © 1997-2003 André Majorel and others.
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -30,6 +30,7 @@ Place, Suite 330, Boston, MA 02111-1307, USA.
 
 #include "yadex.h"
 #include "patchdir.h"
+#include "wadfile.h"
 #include "wads.h"
 
 
@@ -82,54 +83,77 @@ void Patch_dir::refresh (MDirPtr master_dir)
 
   /* First load PNAMES so that we known in which order we should
      put the patches in the array. */
-  do
   {
-    MDirPtr dir;
-    i32 npatches_head = -42;
-    i32 npatches_body = -42;
+    bool success = false;
+    const char *lump_name = "PNAMES";
+    do
+    {
+      MDirPtr dir;
+      i32 npatches_head = -42;
+      i32 npatches_body = -42;
 
-    dir = FindMasterDir (master_dir, "PNAMES");
-    if (dir == 0)
-    {
-      warn ("No PNAMES lump. Won't be able to render textures\n");
-      break;
+      dir = FindMasterDir (master_dir, lump_name);
+      if (dir == 0)
+      {
+	warn ("No %s lump, won't be able to render textures\n", lump_name);
+	break;
+      }
+      i32 pnames_body_size = dir->dir.size - 4;
+      if (pnames_body_size < 0)
+      {
+	warn ("Bad %s (negative size %ld), won't be able to render textures\n",
+	    lump_name, (long) dir->dir.size);
+	break;
+      }
+      if (pnames_body_size % 8)
+      {
+	warn ("%s lump has weird size %ld, discarding last %d bytes\n",
+	    (long) dir->dir.size, (int) (pnames_body_size % 8));
+      }
+      npatches_body = pnames_body_size / 8;
+      const Wad_file *wf = dir->wadfile;
+      wf->seek (dir->dir.start);
+      if (wf->error ())
+      {
+	warn ("%s: seek error\n", lump_name);
+	break;
+      }
+      wf->read_i32 (&npatches_head);
+      if (wf->error ())
+      {
+	warn ("%s: error reading header\n", lump_name);
+	break;
+      }
+      if (npatches_head > 0 && npatches_head < npatches_body)
+	npnames = npatches_head;
+      else
+	npnames = npatches_body;
+      if (npatches_head != npatches_body)
+      {
+	warn("%s: header says %ld patches, lump size suggests %ld,"
+	    " going for %lu\n",
+	    lump_name, long (npatches_head), long (npatches_body),
+	    (unsigned long) npnames);
+      }
+      if (npnames > 32767)
+      {
+	warn ("%s: too big (%lu patches), keeping only first 32767\n",
+	    lump_name, (unsigned long) npnames);
+	npnames = 32767;
+      }
+      pnames = (char *) GetMemory (npnames * WAD_PIC_NAME);
+      wf->read_bytes (pnames, npnames * WAD_PIC_NAME);
+      if (wf->error ())
+      {
+	warn ("%s: error reading names\n", lump_name);
+	break;
+      }
+      success = true;
     }
-    i32 pnames_body_size = dir->dir.size - 4;
-    if (pnames_body_size < 0)
-    {
-      warn ("Bad PNAMES (negative size %ld)\n", (long) dir->dir.size);
-      warn ("Won't be able to render textures\n");
-      break;
-    }
-    if (pnames_body_size % 8)
-    {
-      warn ("PNAMES lump has weird size %ld. Discarding last %d bytes\n",
-	  (long) dir->dir.size, (int) (pnames_body_size % 8));
-    }
-    npatches_body = pnames_body_size / 8;
-    wad_seek (dir->wadfile, dir->dir.start);
-    wad_read_i32 (dir->wadfile, &npatches_head);
-    if (npatches_head > 0 && npatches_head < npatches_body)
-      npnames = npatches_head;
-    else
-      npnames = npatches_body;
-    if (npatches_head != npatches_body)
-    {
-      warn ("Disagreement on number of entries in PNAMES: header says %ld,\n",
-	  (long) npatches_head);
-      warn ("lump size suggests %ld. Going for %lu\n",
-	  (long) npatches_body, (unsigned long) npnames);
-    }
-    if (npnames > 32767)
-    {
-      warn ("PNAMES too big (%lu patches). Keeping only first 32767\n",
-	  (unsigned long) npnames);
-      npnames = 32767;
-    }
-    pnames = (char *) GetMemory (npnames * WAD_PIC_NAME);
-    wad_read_bytes (dir->wadfile, pnames, npnames * WAD_PIC_NAME);
+    while (0);
+    if (! success)
+      warn ("%s: errors found, won't be able to render textures\n", lump_name);
   }
-  while (0);
 
   /* Get list of patches in the master directory. Everything
      that is between P_START/P_END or PP_START/PP_END and that
@@ -154,7 +178,7 @@ void Patch_dir::refresh (MDirPtr master_dir)
 	if (! dir)
 	{
 	  warn ("%.128s: no matching %s for %.*s\n",
-	      start_label->wadfile->filename,
+	      start_label->wadfile->pathname (),
 	      end_label,
 	      (int) WAD_NAME, start_label->dir.name);
 	  break;
@@ -163,7 +187,7 @@ void Patch_dir::refresh (MDirPtr master_dir)
 	{
 	  if (dir->dir.size != 0)
 	    warn ("%.128s: label %.*s has non-zero size %ld\n",
-		dir->wadfile->filename,
+		dir->wadfile->pathname (),
 		(int) WAD_NAME, dir->dir.name,
 		(long) dir->dir.size);
 	  dir = dir->next;
@@ -180,7 +204,7 @@ void Patch_dir::refresh (MDirPtr master_dir)
 	      && (! y_strnicmp (dir->dir.name + 3, "START", WAD_NAME - 3)
 		  || ! y_strnicmp (dir->dir.name + 3, "END", WAD_NAME - 3))))
 	    warn ("%.128s: unexpected label \"%.*s\" among patches.\n",
-		dir->wadfile->filename, (int) WAD_NAME, dir->dir.name);
+		dir->wadfile->pathname (), (int) WAD_NAME, dir->dir.name);
 	  continue;
 	}
 	//printf ("%-9.8s ", dir->dir.name); fflush (stdout);  // DEBUG

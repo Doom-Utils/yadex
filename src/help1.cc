@@ -10,7 +10,7 @@ This file is part of Yadex.
 Yadex incorporates code from DEU 5.21 that was put in the public domain in
 1994 by Raphaël Quinet and Brendon Wyber.
 
-The rest of Yadex is Copyright © 1997-2000 André Majorel.
+The rest of Yadex is Copyright © 1997-2003 André Majorel and others.
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -107,7 +107,7 @@ fprintf (fd, "**\n"
 fprintf (fd, "** Yadex is work in progress. Subscribe to yadex-announce\n");
 fprintf (fd, "** or keep an eye on the web page.\n");
 fprintf (fd, "** To edit an existing level, type \"e <level_name>\".\n");
-fprintf (fd, "** To create a new level, type \"c <level_name>\".\n"
+fprintf (fd, "** To create a new level, type \"c\".\n"
                 "\n");
 #endif
 }

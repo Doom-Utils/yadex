@@ -4,6 +4,9 @@
  */
 
 
+class Objid;
+
+
 void CenterMapAroundCoords (int, int);
-void GoToObject (int objtype, int objnum); /* SWAP! */
+void GoToObject (const Objid& objid); /* SWAP! */
 

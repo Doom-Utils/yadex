@@ -11,7 +11,7 @@ This file is part of Yadex.
 Yadex incorporates code from DEU 5.21 that was put in the public domain in
 1994 by Raphaël Quinet and Brendon Wyber.
 
-The rest of Yadex is Copyright © 1997-2000 André Majorel.
+The rest of Yadex is Copyright © 1997-2003 André Majorel and others.
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -50,6 +50,8 @@ Place, Suite 330, Boston, MA 02111-1307, USA.
 #include "sanity.h"
 #include "textures.h"
 #include "x11.h"
+#include "wadfile.h"
+#include "wadlist.h"
 #include "wadname.h"
 #include "wadres.h"
 #include "wads2.h"
@@ -83,10 +85,10 @@ int         remind_to_build_nodes = 0;	// Remind user to build nodes
 Wad_res     wad_res (&MasterDir);
 
 // Set from command line and/or config file
-int       autoscroll			= 0;
-int       autoscroll_amp		= 10;
-int       autoscroll_edge		= 30;
-const char *config_file;
+bool      autoscroll			= 0;
+unsigned long autoscroll_amp		= 10;
+unsigned long autoscroll_edge		= 30;
+const char *config_file                 = NULL;
 int       copy_linedef_reuse_sidedefs	= 0;
 int       cpu_big_endian		= 0;
 bool      Debug				= false;
@@ -109,8 +111,11 @@ int       idle_sleep_ms			= 50;
 bool      InfoShown			= true;
 int       zoom_default			= 0;  // 0 means fit
 int       zoom_step			= 0;  // 0 means sqrt(2)
+int       digit_zoom_base               = 100;
+int       digit_zoom_step               = 0;  // 0 means sqrt(2)
 confirm_t insert_vertex_split_linedef	= YC_ASK_ONCE;
 confirm_t insert_vertex_merge_vertices	= YC_ASK_ONCE;
+bool      blindly_swap_sidedefs         = false;
 const char *Iwad1			= NULL;
 const char *Iwad2			= NULL;
 const char *Iwad3			= NULL;
@@ -129,15 +134,13 @@ int       MouseMickeysV			= 5;
 char **   PatchWads			= NULL;
 bool      Quiet				= false;
 bool      Quieter			= false;
-int       scroll_less			= 10;
-int       scroll_more			= 90;
+unsigned long scroll_less		= 10;
+unsigned long scroll_more		= 90;
 bool      Select0			= false;
 int       show_help			= 0;
 int       sprite_scale                  = 100;
 bool      SwapButtons			= false;
-int       thing_fudge			= 400;
 int       verbose			= 0;
-int       vertex_fudge			= 200;
 int       welcome_message		= 1;
 const char *bench			= 0;
 
@@ -162,6 +165,8 @@ static int  parse_environment_vars ();
 static void MainLoop ();
 static void print_error_message (const char *fmt, va_list args);
 static void add_base_colours ();
+static const Wad_file *wad_by_name (const char *pathname);
+static bool wad_already_loaded (const char *pathname);
 
 
 /*
@@ -185,16 +190,20 @@ InitSwap ();
 
 // First detect manually --help and --version
 // because parse_command_line_options() cannot.
-if (argc == 2 && ! strcmp (argv[1], "--help"))
+if (argc == 2 && strcmp (argv[1], "--help") == 0)
    {
    print_usage (stdout);
+   if (fflush (stdout) != 0)
+     fatal_error ("stdout: %s", strerror (errno));
    exit (0);
    }
-if (argc == 2 && ! strcmp (argv[1], "--version"))
+if (argc == 2 && strcmp (argv[1], "--version") == 0)
    {
    puts (what ());
    puts (config_file_magic);
    puts (ygd_file_magic);
+   if (fflush (stdout) != 0)
+     fatal_error ("stdout: %s", strerror (errno));
    exit (0);
    }
 
@@ -210,140 +219,139 @@ if (show_help)
    exit (1);
    }
 
-printf ("%s\n"
-   "This program is derived from DEU 5.21"
-   " by Raphaël Quinet and Brendon Wyber.\n", what ());
+printf ("%s\n", what ());
 
 // Where am I installed ? (the config file might be there)
 #if defined Y_DOS
 install_dir = spec_path (argv[0]);
-#elif defined Y_UNIX
-install_dir = getenv ("YADEX_DIR");
 #endif
 
 // The config file provides some values.
-r = parse_config_file (config_file);
-if (! r)
+if (config_file != NULL)
+  r = parse_config_file_user (config_file);
+else
+  r = parse_config_file_default ();
+if (r == 0)
    {
    // Environment variables can override them.
    r = parse_environment_vars ();
-   if (! r)
+   if (r == 0)
       {
       // And the command line argument can override both.
       r = parse_command_line_options (argc - 1, argv + 1, 2);
       }
    }
-if (r)
+if (r != 0)
    {
    syntax_error :
    fprintf (stderr, "Try \"yadex --help\" or \"man yadex\".\n");
    exit (1);
    }
 
-if (Game != NULL && ! strcmp (Game, "doom"))
+if (Game != NULL && strcmp (Game, "doom") == 0)
    {
    if (Iwad1 == NULL)
       {
-      report_error ("You have to tell me where doom.wad is.");
+      err ("You have to tell me where doom.wad is.");
       fprintf (stderr,
          "Use \"-i1 <file>\" or put \"iwad1=<file>\" in yadex.cfg.\n");
       exit (1);
       }
    MainWad = Iwad1;
    }
-else if (Game != NULL && ! strcmp (Game, "doom2"))
+else if (Game != NULL && strcmp (Game, "doom2") == 0)
    {
    if (Iwad2 == NULL)
       {
-      report_error ("You have to tell me where doom2.wad is.");
+      err ("You have to tell me where doom2.wad is.");
       fprintf (stderr,
          "Use \"-i2 <file>\" or put \"iwad2=<file>\" in yadex.cfg.\n");
       exit (1);
       }
    MainWad = Iwad2;
    }
-else if (Game != NULL && ! strcmp (Game, "heretic"))
+else if (Game != NULL && strcmp (Game, "heretic") == 0)
    {
    if (Iwad3 == NULL)
       {
-      report_error ("You have to tell me where heretic.wad is.");
+      err ("You have to tell me where heretic.wad is.");
       fprintf (stderr,
          "Use \"-i3 <file>\" or put \"iwad3=<file>\" in yadex.cfg.\n");
       exit (1);
       }
    MainWad = Iwad3;
    }
-else if (Game != NULL && ! strcmp (Game, "hexen"))
+else if (Game != NULL && strcmp (Game, "hexen") == 0)
    {
    if (Iwad4 == NULL)
       {
-      report_error ("You have to tell me where hexen.wad is.");
+      err ("You have to tell me where hexen.wad is.");
       fprintf (stderr,
          "Use \"-i4 <file>\" or put \"iwad4=<file>\" in yadex.cfg.\n");
       exit (1);
       }
    MainWad = Iwad4;
    }
-else if (Game != NULL && ! strcmp (Game, "strife"))
+else if (Game != NULL && strcmp (Game, "strife") == 0)
    {
    if (Iwad5 == NULL)
       {
-      report_error ("You have to tell me where strife1.wad is.");
+      err ("You have to tell me where strife1.wad is.");
       fprintf (stderr,
          "Use \"-i5 <file>\" or put \"iwad5=<file>\" in yadex.cfg.\n");
       exit (1);
       }
    MainWad = Iwad5;
    }
-else if (Game != NULL && ! strcmp (Game, "doom02"))
+else if (Game != NULL && strcmp (Game, "doom02") == 0)
    {
    if (Iwad6 == NULL)
       {
-      report_error ("You have to tell me where the Doom alpha 0.2 iwad is.");
+      err ("You have to tell me where the Doom alpha 0.2 iwad is.");
       fprintf (stderr,
          "Use \"-i6 <file>\" or put \"iwad6=<file>\" in yadex.cfg.\n");
       exit (1);
       }
    MainWad = Iwad6;
    }
-else if (Game != NULL && ! strcmp (Game, "doom04"))
+else if (Game != NULL && strcmp (Game, "doom04") == 0)
    {
    if (Iwad7 == NULL)
       {
-      report_error ("You have to tell me where the Doom alpha 0.4 iwad is.");
+      err ("You have to tell me where the Doom alpha 0.4 iwad is.");
       fprintf (stderr,
          "Use \"-i7 <file>\" or put \"iwad7=<file>\" in yadex.cfg.\n");
       exit (1);
       }
    MainWad = Iwad7;
    }
-else if (Game != NULL && ! strcmp (Game, "doom05"))
+else if (Game != NULL && strcmp (Game, "doom05") == 0)
    {
    if (Iwad8 == NULL)
       {
-      report_error ("You have to tell me where the Doom alpha 0.5 iwad is.");
+      err ("You have to tell me where the Doom alpha 0.5 iwad is.");
       fprintf (stderr,
          "Use \"-i8 <file>\" or put \"iwad8=<file>\" in yadex.cfg.\n");
       exit (1);
       }
    MainWad = Iwad8;
    }
-else if (Game != NULL && ! strcmp (Game, "doompr"))
+else if (Game != NULL && strcmp (Game, "doompr") == 0)
    {
    if (Iwad9 == NULL)
       {
-      report_error ("You have to tell me where the Doom press release iwad is.");
+      err ("You have to tell me where the Doom press release iwad is.");
       fprintf (stderr,
          "Use \"-i9 <file>\" or put \"iwad9=<file>\" in yadex.cfg.\n");
       exit (1);
       }
    MainWad = Iwad9;
    }
-else if (Game != NULL && ! strcmp (Game, "strife10"))
+else if (Game != NULL && strcmp (Game, "strife10") == 0)
    {
    if (Iwad10 == NULL)
       {
-      report_error ("You have to tell me where strife1.wad is.");
+      err ("You have to tell me where strife1.wad is.");
       fprintf (stderr,
          "Use \"-i10 <file>\" or put \"iwad10=<file>\" in yadex.cfg.\n");
       exit (1);
@@ -353,9 +361,9 @@ else if (Game != NULL && ! strcmp (Game, "strife10"))
 else
    {
    if (Game == NULL)
-      report_error ("You didn't say for which game you want to edit.");
+      err ("You didn't say for which game you want to edit.");
    else
-      report_error ("Unknown game \"%s\"", Game);
+      err ("Unknown game \"%s\"", Game);
    fprintf (stderr,
   "Use \"-g <game>\" on the command line or put \"game=<game>\" in yadex.cfg\n"
   "where <game> is one of \"doom\", \"doom02\", \"doom04\", \"doom05\","
@@ -410,13 +418,13 @@ else
    if (welcome_message)
       print_welcome (stdout);
 
-   if (! strcmp (Game, "hexen"))
+   if (strcmp (Game, "hexen") == 0)
       printf (
    "WARNING: Hexen mode is experimental. Don't expect to be able to do any\n"
    "real Hexen editing with it. You can edit levels but you can't save them.\n"
    "And there might be other bugs... BE CAREFUL !\n\n");
 
-   if (! strcmp (Game, "strife"))
+   if (strcmp (Game, "strife") == 0)
       printf (
    "WARNING: Strife mode is experimental. Many thing types, linedef types,\n"
    "etc. are missing or wrong. And be careful, there might be bugs.\n\n");
@@ -547,10 +555,10 @@ exit (2);
 
 
 /*
- *	report_error
- *	Print an error message but does not terminate the program.
+ *	err
+ *	Print an error message but do not terminate the program.
  */
-void report_error (const char *fmt, ...)
+void err (const char *fmt, ...)
 {
 va_list args;
 
@@ -566,13 +574,13 @@ print_error_message (fmt, args);
 static void print_error_message (const char *fmt, va_list args)
 {
 fflush (stdout);
-fputs ("Yadex: Error: ", stderr);
+fputs ("Error: ", stderr);
 vfprintf (stderr, fmt, args);
 fputc ('\n', stderr);
 fflush (stderr);
 if (Debug && logfile != NULL)
    {
-   fputs ("Yadex: Error: ", logfile);
+   fputs ("Error: ", logfile);
    vfprintf (logfile, fmt, args);
    fputc ('\n', logfile);
    fflush (logfile);
@@ -600,12 +608,12 @@ if (first_time || strncmp (msg, msg_prev, sizeof msg))
    fflush (stdout);
    if (repeats)
       {
-      fprintf (stderr, "Yadex: Bug: Previous message repeated %d times\n",
+      fprintf (stderr, "Bug: Previous message repeated %d times\n",
 	    repeats);
       repeats = 0;
       }
 
-   fprintf (stderr, "Yadex: Bug: %s\n", msg);
+   fprintf (stderr, "Bug: %s\n", msg);
    fflush (stderr);
    if (first_time)
       {
@@ -620,7 +628,7 @@ else
    if (repeats == 10)
       {
       fflush (stdout);
-      fprintf (stderr, "Yadex: Bug: Previous message repeated %d times\n",
+      fprintf (stderr, "Bug: Previous message repeated %d times\n",
 	    repeats);
       fflush (stderr);
       repeats = 0;
@@ -666,7 +674,6 @@ static void MainLoop ()
 char input[120];
 char *com, *out;
 FILE *file, *raw;
-WadPtr wad;
 
 for (;;)
    {
@@ -690,7 +697,9 @@ for (;;)
       printf ("Please enter a command or ? for help.\n");
 
    /* user inputting for help */
-   else if (!strcmp (com, "?") || !strcmp (com, "h") || !strcmp (com, "help"))
+   else if (strcmp (com, "?") == 0
+	 || strcmp (com, "h") == 0
+	 || strcmp (com, "help") == 0)
       {
       printf ("? | h | help                      --"
               " display this text\n");
@@ -744,18 +753,19 @@ for (;;)
       }
 
    /* user asked for list of open wad files */
-   else if (!strcmp (com, "wads") || !strcmp (com, "w"))
+   else if (strcmp (com, "wads") == 0 || strcmp (com, "w") == 0)
       {
-      printf ("%-40s  Iwad\n", WadFileList->filename);
-      for (wad = WadFileList->next; wad; wad = wad->next)
-	 {
+      const Wad_file *wf;
+      wad_list.rewind ();
+      if (wad_list.get (wf))
+	 printf ("%-40s  Iwad\n", wf->pathname ());
+      while (wad_list.get (wf))
 	 printf ("%-40s  Pwad (%.*s)\n",
-	  wad->filename, (int) WAD_NAME, wad->directory[0].name);
-	 }
+	    wf->pathname (), (int) WAD_NAME, wf->what ());
       }
 
    /* user asked to quit */
-   else if (!strcmp (com, "quit") || !strcmp (com, "q"))
+   else if (strcmp (com, "quit") == 0 || strcmp (com, "q") == 0)
       {
       if (! Registered)
 	 printf ("Remember to register your copy of the game !\n");
@@ -763,10 +773,11 @@ for (;;)
       }
 
    /* user asked to edit a level */
-   else if (!strcmp (com, "edit") || !strcmp (com, "e")
-         || !strcmp (com, "create") || !strcmp (com, "c"))
+   else if (strcmp (com, "edit") == 0 || strcmp (com, "e") == 0
+         || strcmp (com, "create") == 0 || strcmp (com, "c") == 0)
       {
-      const int newlevel = ! strcmp (com, "create") || ! strcmp (com, "c");
+      const int newlevel = strcmp (com, "create") == 0
+			|| strcmp (com, "c") == 0;
       char *level_name = 0;
       com = strtok (NULL, " ");
       if (com == 0)
@@ -816,7 +827,7 @@ for (;;)
       }
 
    /* user asked to build a new main wad file */
-   else if (!strcmp (com, "build") || !strcmp (com, "b"))
+   else if (strcmp (com, "build") == 0 || strcmp (com, "b") == 0)
       {
       com = strtok (NULL, " ");
       if (com == NULL)
@@ -824,21 +835,20 @@ for (;;)
 	 printf ("Wad file name argument missing.\n");
 	 continue;
 	 }
-      for (wad = WadFileList; wad; wad = wad->next)
-	 if (!fncmp (com, wad->filename))
-	    break;
-      if (wad)
+      if (wad_already_loaded (com))
 	 {
-	 printf ("File \"%s\" is opened and cannot be overwritten.\n", com);
+	 printf ("%s: in use, close it first\n", com);
 	 continue;
 	 }
       BuildNewMainWad (com, 0);
       }
 
    /* user asked to build a compound patch wad file */
-   else if (!strcmp (com, "group") || !strcmp (com, "g"))
+   else if (strcmp (com, "group") == 0 || strcmp (com, "g") == 0)
       {
-      if (WadFileList->next == NULL || WadFileList->next->next == NULL)
+      wad_list.rewind ();
+      const Wad_file *wf;
+      if (! wad_list.get (wf) || ! wad_list.get (wf))
 	 {
 	 printf ("You need at least two open wad files "
 	   "if you want to group them.\n");
@@ -850,19 +860,16 @@ for (;;)
 	 printf ("Wad file name argument missing.\n");
 	 continue;
 	 }
-      for (wad = WadFileList; wad; wad = wad->next)
-	 if (!fncmp (com, wad->filename))
-	    break;
-      if (wad)
+      if (wad_already_loaded (com))
 	 {
-	 printf ("File \"%s\" is opened and cannot be overwritten.\n", com);
+	 printf ("%s: in use, close it first\n", com);
 	 continue;
 	 }
       BuildNewMainWad (com, 1);
       }
 
    /* user ask for a listing of a wad file */
-   else if (!strcmp (com, "list") || !strcmp (com, "l"))
+   else if (strcmp (com, "list") == 0 || strcmp (com, "l") == 0)
       {
       com = strtok (NULL, " ");
       if (com == NULL)
@@ -870,38 +877,36 @@ for (;;)
 	 printf ("Wad file name argument missing.\n");
 	 continue;
 	 }
-      for (wad = WadFileList; wad; wad = wad->next)
-	 if (!fncmp (com, wad->filename))
-	    break;
-      if (wad == NULL)
+      const Wad_file *wf = wad_by_name (com);
+      if (wf == 0)
 	 {
-	 printf ("Wad file \"%s\" is not open.\n", com);
+	 printf ("%s: not open\n", com);
 	 continue;
 	 }
       out = strtok (NULL, " ");
       if (out)
 	 {
 	 printf ("Outputting directory of \"%s\" to \"%s\".\n",
-	   wad->filename, out);
-	 if ((file = fopen (out, "wt")) == NULL)
+	   wf->pathname (), out);
+	 if ((file = fopen (out, "w")) == NULL)
 	    fatal_error ("error opening output file \"%s\"", com);
 	 fprintf (file, "%s\n", what ());
-	 ListFileDirectory (file, wad);
+	 ListFileDirectory (file, wf);
 	 fprintf (file, "\nEnd of file.\n");
 	 fclose (file);
 	 }
       else
-	 ListFileDirectory (stdout, wad);
+	 ListFileDirectory (stdout, wf);
       }
 
    /* user asked for the list of the master directory */
-   else if (!strcmp (com, "master") || !strcmp (com, "m"))
+   else if (strcmp (com, "master") == 0 || strcmp (com, "m") == 0)
       {
       out = strtok (NULL, " ");
       if (out)
 	 {
 	 printf ("Outputting master directory to \"%s\".\n", out);
-	 if ((file = fopen (out, "wt")) == NULL)
+	 if ((file = fopen (out, "w")) == NULL)
 	    fatal_error ("error opening output file \"%s\"", com);
 	 fprintf (file, "%s\n", what ());
 	 ListMasterDirectory (file);
@@ -913,7 +918,7 @@ for (;;)
       }
 
    // make_gimp_palette
-   else if (! strcmp (com, "make_gimp_palette"))
+   else if (strcmp (com, "make_gimp_palette") == 0)
       {
       out = strtok (NULL, " ");
       if (out == NULL)
@@ -925,7 +930,7 @@ for (;;)
       }
 
    // make_palette_ppm
-   else if (! strcmp (com, "make_palette_ppm"))
+   else if (strcmp (com, "make_palette_ppm") == 0)
       {
       out = strtok (NULL, "");
       if (out == NULL)
@@ -937,7 +942,7 @@ for (;;)
       }
 
    // make_palette_ppm
-   else if (! strcmp (com, "mp2"))
+   else if (strcmp (com, "mp2") == 0)
       {
       out = strtok (NULL, "");
       if (out == NULL)
@@ -949,13 +954,13 @@ for (;;)
       }
 
    /* user asked to list all options and their values */
-   else if (! strcmp (com, "set"))
+   else if (strcmp (com, "set") == 0)
       {
       dump_parameters (stdout);
       }
 
    /* user asked to read a new patch wad file */
-   else if (!strcmp (com, "read") || !strcmp (com, "r"))
+   else if (strcmp (com, "read") == 0 || strcmp (com, "r") == 0)
       {
       com = strtok (NULL, " ");
       if (com == NULL)
@@ -973,7 +978,7 @@ for (;;)
       }
 
    /* user asked to dump the contents of a wad file */
-   else if (!strcmp (com, "dump") || !strcmp (com, "d"))
+   else if (strcmp (com, "dump") == 0 || strcmp (com, "d") == 0)
       {
       com = strtok (NULL, " ");
       if (com == NULL)
@@ -985,7 +990,7 @@ for (;;)
       if (out)
 	 {
 	 printf ("Outputting directory entry data to \"%s\".\n", out);
-	 if ((file = fopen (out, "wt")) == NULL)
+	 if ((file = fopen (out, "w")) == NULL)
 	    fatal_error ("error opening output file \"%s\"", com);
 	 fprintf (file, "%s\n", what ());
 	 DumpDirectoryEntry (file, com);
@@ -997,7 +1002,7 @@ for (;;)
       }
 
    // "v"/"view" - view the sprites
-   else if (!strcmp (com, "view") || !strcmp (com, "v"))
+   else if (strcmp (com, "view") == 0 || strcmp (com, "v") == 0)
       {
       if (InitGfx ())
 	 goto v_end;
@@ -1027,7 +1032,7 @@ for (;;)
       }
 
    // "viewflat" - view the flats
-   else if (! strcmp (com, "viewflat"))
+   else if (strcmp (com, "viewflat") == 0)
       {
       if (InitGfx ())
 	goto viewflat_end;
@@ -1057,7 +1062,7 @@ for (;;)
       }
 
    // "viewpal" - view the palette (PLAYPAL and COLORMAP)
-   else if (! strcmp (com, "viewpal"))
+   else if (strcmp (com, "viewpal") == 0)
       {
       if (InitGfx ())
 	goto viewpal_end;
@@ -1075,7 +1080,7 @@ for (;;)
       }
    
    // "viewpat" - view the patches
-   else if (! strcmp (com, "viewpat"))
+   else if (strcmp (com, "viewpat") == 0)
       {
       if (InitGfx ())
 	goto viewpat_end;
@@ -1102,7 +1107,7 @@ for (;;)
       }
 
    // "viewtex" - view the textures
-   else if (! strcmp (com, "viewtex"))
+   else if (strcmp (com, "viewtex") == 0)
       {
       if (InitGfx ())
 	goto viewtex_end;
@@ -1128,7 +1133,7 @@ for (;;)
       }
 
    /* user asked to save an object to a separate pwad file */
-   else if (!strcmp (com, "save") || !strcmp (com, "s"))
+   else if (strcmp (com, "save") == 0 || strcmp (com, "s") == 0)
       {
       com = strtok (NULL, " ");
       if (com == NULL)
@@ -1147,13 +1152,9 @@ for (;;)
 	 printf ("Wad file name argument missing.\n");
 	 continue;
 	 }
-      for (wad = WadFileList; wad; wad = wad->next)
-	 if (!fncmp (out, wad->filename))
-	    break;
-      if (wad)
+      if (wad_already_loaded (com))
 	 {
-	 printf ("This wad file is already in use. "
-	    "You may not overwrite it.\n");
+	 printf ("%s: in use, close it first\n", com);
 	 continue;
 	 }
       printf ("Saving directory entry data to \"%s\".\n", out);
@@ -1164,7 +1165,7 @@ for (;;)
       }
 
    /* user asked to encapsulate a raw file in a pwad file */
-   else if (!strcmp (com, "insert") || !strcmp (com, "i"))
+   else if (strcmp (com, "insert") == 0 || strcmp (com, "i") == 0)
       {
       com = strtok (NULL, " ");
       if (com == NULL)
@@ -1188,13 +1189,9 @@ for (;;)
       /* kluge */
       strcpy (input, out);
       strcat (input, ".wad");
-      for (wad = WadFileList; wad; wad = wad->next)
-	 if (!fncmp (input, wad->filename))
-	    break;
-      if (wad)
+      if (wad_already_loaded (input))
 	 {
-	 printf ("This wad file is already in use (%s). "
-	    "You may not overwrite it.\n", input);
+	 printf ("%s: in use, close it first\n", input);
 	 continue;
 	 }
       printf ("Including new object %s in \"%s\".\n", out, input);
@@ -1206,9 +1203,9 @@ for (;;)
       }
 
    /* user asked to extract an object to a raw binary file */
-   else if (!strcmp (com, "xtract")
-	 || !strcmp (com, "extract")
-	 || !strcmp (com, "x"))
+   else if (strcmp (com, "xtract") == 0
+	 || strcmp (com, "extract") == 0
+	 || strcmp (com, "x") == 0)
       {
       com = strtok (NULL, " ");
       if (com == NULL)
@@ -1227,12 +1224,11 @@ for (;;)
 	 printf ("Raw file name argument missing.\n");
 	 continue;
 	 }
-      for (wad = WadFileList; wad; wad = wad->next)
-	 if (!fncmp (out, wad->filename))
-	    break;
-      if (wad)
+      if (wad_already_loaded (com))
 	 {
-	 printf ("You may not overwrite an opened wad file with raw data.\n");
+	 printf ("%s: in use, close it first\n", com);
+	 printf ("Besides do you really want to overwrite a wad file with"
+		 " raw data ?\n");
 	 continue;
 	 }
       printf ("Saving directory entry data to \"%s\".\n", out);
@@ -1263,7 +1259,14 @@ for (size_t n = 0; n < NCOLOURS; n++)
    // The first 16 are the standard IRGB VGA colours.
    // FIXME they're to be removed and replaced by
    // "logical" colours.
-   if (n < 16)
+#ifdef WHITE_BACKGROUND
+   if (n == 0)
+      irgb2rgb (15, &c);
+   else if (n == 15)
+      irgb2rgb (0, &c);
+   else
+#endif
+      if (n < 16)
       irgb2rgb (n, &c);
 
    // Then there are the colours used to draw the
@@ -1271,58 +1274,87 @@ for (size_t n = 0; n < NCOLOURS; n++)
    // the things are parametrized in the .ygd ; they
    // are added by load_game().
    // FIXME they should not be hard-coded, of course !
-   else if (n == WINBG)
-      c.set (0x2a, 0x24, 0x18);  // 0x80, 0x70, 0x60
-   else if (n == WINBG_LIGHT)
- //     c.set (0x50, 0x46, 0x40);  //0xc0 //0xa8 //0x80
-      c.set (0x48, 0x42, 0x3c);  //0xc0 //0xa8 //0x80
-   else if (n == WINBG_DARK)
-      c.set (0x20, 0x1b, 0x12);  //0x40 //0x38 //0x30
-   else if (n == WINFG)
-      c.set (0xa0, 0xa0, 0xa0);
-   else if (n == WINFG_DIM)
-      c.set (0x48, 0x48, 0x48);
-   else if (n == WINBG_HL)
-      c.set (0x58, 0x50, 0x48);
-   else if (n == WINFG_HL)
-      c.set (0xd0, 0xd0, 0xd0);
-   else if (n == WINFG_DIM_HL)
-      c.set (0x70, 0x70, 0x70);
-   else if (n == GRID1)
-      c.set (0, 0, 0xc0);
-   else if (n == GRID2H)
-      c.set (0, 0, 0x30);
-   else if (n == GRID2V)
-      c.set (0, 0, 0x40);
-   else if (n == GRID3H)
-      c.set (0, 0, 0x50);
-   else if (n == GRID3V)
-      c.set (0, 0, 0x70);
-   else if (n == GRID4H)
-      c.set (0, 0, 0x80);
-   else if (n == GRID4V)
-      c.set (0, 0, 0xc0);
-   else if (n == WINFGLABEL)  // Text in window, a bit dimmer
-      c.set (0x88, 0x88, 0x88);
-   else if (n == LINEDEF_NO)
-      c.set (0x40, 0xd0, 0xf0);
-   else if (n == SECTOR_NO)
-      c.set (0x40, 0xd0, 0xf0);
-   else if (n == THING_NO)
-      c.set (0x40, 0xd0, 0xf0);
-   else if (n == VERTEX_NO)
-      c.set (0x40, 0xd0, 0xf0);
-   else if (n == CLR_ERROR)
-      c.set (0xff, 0, 0);
-   else if (n == THING_REM)
-      c.set (0x40, 0x40, 0x40);
-   else
-      fatal_error ("Wrong acn %d", n);
+
+   /* WINBG* is for window backgrounds. Use the _HL variant is
+      for highlighted parts of windows (E.G. the current line in
+      a menu). _LIGHT and _DARK are for window borders and
+      grooves. There is no _HL flavour of these because I didn't
+      feel the need. */
+   else if (n == WINBG)			c.set (0x2a, 0x24, 0x18);
+   else if (n == WINBG_LIGHT)		c.set (0x48, 0x42, 0x3c);
+   else if (n == WINBG_DARK)		c.set (0x20, 0x1b, 0x12);
+   else if (n == WINBG_HL)		c.set (0x58, 0x50, 0x48);
+
+   /* WINFG* is for regular text. _DIM is for greyed out text
+      (for disabled options or text that is not applicable). */
+   else if (n == WINFG)			c.set (0xa0, 0xa0, 0xa0);
+   else if (n == WINFG_HL)		c.set (0xd0, 0xd0, 0xd0);
+   else if (n == WINFG_DIM)		c.set (0x48, 0x48, 0x48);
+   else if (n == WINFG_DIM_HL)		c.set (0x70, 0x70, 0x70);
+
+   /* WINLABEL is for text of lesser importance. For example,
+      the brackets around key binding are displayed in WINLABEL,
+      while what's between them is displayed in WINFG. The
+      difference with WINFG is not very noticeable but it does
+      improve readability. The static text in the object info
+      windows should be displayed in WINLABEL. */
+   else if (n == WINLABEL)		c.set (0x78, 0x78, 0x78);
+   else if (n == WINLABEL_HL)		c.set (0xa0, 0xa0, 0xa0);
+   else if (n == WINLABEL_DIM)		c.set (0x38, 0x38, 0x38);
+   else if (n == WINLABEL_DIM_HL)	c.set (0x50, 0x50, 0x50);
+
+#ifdef WHITE_BACKGROUND
+   else if (n == GRID1)			c.set (0x80, 0x80, 0xff);
+   else if (n == GRID2H)		c.set (0xf0, 0xf0, 0xff);
+   else if (n == GRID2V)		c.set (0xf0, 0xf0, 0xff);
+   else if (n == GRID3H)		c.set (0xd0, 0xd0, 0xff);
+   else if (n == GRID3V)		c.set (0xd0, 0xd0, 0xff);
+   else if (n == GRID4H)		c.set (0xb0, 0xb0, 0xff);
+   else if (n == GRID4V)		c.set (0xb0, 0xb0, 0xff);
+#else
+   else if (n == GRID1)			c.set (0, 0, 0xc0);
+   else if (n == GRID2H)		c.set (0, 0, 0x30);
+   else if (n == GRID2V)		c.set (0, 0, 0x40);
+   else if (n == GRID3H)		c.set (0, 0, 0x50);
+   else if (n == GRID3V)		c.set (0, 0, 0x70);
+   else if (n == GRID4H)		c.set (0, 0, 0x80);
+   else if (n == GRID4V)		c.set (0, 0, 0xc0);
+#endif
+
+   else if (n == LINEDEF_NO)		c.set (0x40, 0xd0, 0xf0);
+   else if (n == SECTOR_NO)		c.set (0x40, 0xd0, 0xf0);
+   else if (n == THING_NO)		c.set (0x40, 0xd0, 0xf0);
+   else if (n == VERTEX_NO)		c.set (0x40, 0xd0, 0xf0);
+   else if (n == CLR_ERROR)		c.set (0xff, 0,    0);
+   else if (n == THING_REM)		c.set (0x40, 0x40, 0x40);
+
+   else if (n == SECTOR_TAG)		c.set (0x00, 0xff, 0x00);
+   else if (n == SECTOR_TAGTYPE)	c.set (0x00, 0xe0, 0xe0);
+   else if (n == SECTOR_TYPE)		c.set (0x00, 0x80, 0xff);
+
+   else					fatal_error ("Wrong acn %d", n);
 
    acolour_t acn = add_app_colour (c);
    if (acn != n)
       fatal_error ("add_base_colours: got %d for %d\n", acn, n);
    }
+}
+
+
+static const Wad_file *wad_by_name (const char *pathname)
+{
+  const Wad_file *wf;
+
+  for (wad_list.rewind (); wad_list.get (wf);)
+    if (fncmp (pathname, wf->pathname ()) == 0)
+      return wf;
+  return 0;
+}
+
+
+static bool wad_already_loaded (const char *pathname)
+{
+  return wad_by_name (pathname) != 0;
 }
 
 

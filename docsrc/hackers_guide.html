@@ -1,6 +1,21 @@
 <html>
 <head>
 <title>Yadex hacker's guide</title>
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css">
+  DT {
+    margin-bottom:       1em;
+    margin-top:          1em;
+    display:             list-item;
+    list-style-image:    none;
+    list-style-position: inside;
+    list-style-type:     disc;
+  }
+  DD {
+    margin-bottom: 1em;
+    margin-top:    1em
+  }
+</style>
 </head>
 <body>
 
@@ -12,6 +27,69 @@
 <br>
 <br>
 <br>
+
+		<h2>Read this first</h2>
+
+Before you start hacking&mdash;no, before you even
+<em>think</em> about hacking&mdash;Yadex, you should do
+this&nbsp;:
+
+<dl>
+  <dt>Read the <a href="TODO"><code>TODO</code></a> file
+
+  <dd>
+    Many possible improvements and fixes have been identified
+    and sometimes a particular approach has already been decided
+    on and written down in <code>TODO</code>. Yes it's tedious
+    reading. But if you skip it, you run the risk of seeing your
+    work go to waste because it's in conflict with an earlier
+    plan.
+
+  <dt>Read the <a href="hackers_guide.html">hacker's guide</a>
+
+  <dd>
+    Patches that don't <em>at the minimum</em> abide by the
+    coding standards and other guidelines in this document are
+    not very likely to be accepted.
+
+  <dt>Subscribe to the <a
+    href="contact.html#list_yadex"><code>yadex</code> list</a>
+
+  <dd>
+    The mailing list is the way by which users and developers
+    communicate. Subscribe to the list and do all communication
+    through the list. It allows developers to coordinate and to
+    benefit from the feedback of all other developers and users.
+    
+    <p>
+      For whatever reason, some contributors seem to think they
+      don't need to subscribe to the list. But the need for
+      coordination remains. Each contributor needs a
+      communication channel with the rest of the project. If
+      it's not the mailing list, it'll probably be the
+      maintainer (me) and I don't want to have to play the role
+      of a mailing list digest server.
+    </p>
+
+    <p>
+      Having a single many-to-many communication channel is
+      better than having many one-to-one channels because you
+      don't have to repeat the same thing <var>n</var> times to
+      <var>n</var> people.
+    </p>
+
+    <p>
+      The mailing list is archived and the archives are publicly
+      accessible by anyone at any time. Private mail isn't.
+    </p>
+
+  <dt>Post on the list about your plans
+  
+  <dd>
+    The job you want to do might be already underway, or might
+    be conflicting with something else.
+
+</dl>
 
 		<h2>Blah</h2>
 
@@ -877,14 +955,17 @@ Some of it may be inadequate or incomplete with C++.
 
 			<h3>Indent style</h3>
 
-I use the Whitesmiths style with an indent width of 3.
+BSD style with an indent width of 2.
 <ul>
 <li>tab stops every 8 characters,
-<li>indent width is 3 spaces,
+<li>indent width is 2 spaces,
 <li>line width limited to 80 characters,
 <li>the braces have the same indentation as the text they contain,
 <li>the body of a function is not indented.
 </ul>
+
+Many files still use Whitesmiths with an indent width of 3. They
+will be reformatted.
 
 Whitespace&nbsp;:
 <ul>
@@ -907,15 +988,15 @@ Example :
 <p>
 <pre>static const char *foo (int n)
 {
-for (stuff; stuff; stuff)
-   {
-   if (thingie || gadget ())
+  for (stuff; stuff; stuff)
+  {
+    if (thingie || gadget ())
       call_this_one (with, three, exactly[arguments]);
-   else
+    else
       dont ();
-   call_that_one ();
-   }
-return NULL;
+    call_that_one ();
+  }
+  return NULL;
 }</pre>
 
 			<h3>Identifiers</h3>
@@ -927,6 +1008,50 @@ For enums and most macros,
 I use all-upper-case identifiers.
 <p>
 I consistently use the English spelling (E.G. "colour", not "color").
+
+			<h3>Conditionals</h3>
+
+The argument of <code>if</code> and <code>while</code> and the
+second argument of <code>for</code> are booleans, not integers,
+so you should provide a boolean expression. The following
+expressions are not booleans&nbsp;:
+
+<ul>
+  <li>pointers,
+  <li>the return value of <code>strcmp()</code>,
+  <li>the return value of functions to return 0 to indicate
+  success and non-zero to indicate failure,
+</ul>
+
+Therefore, don't write
+
+<p><pre>
+if (! fopen (filename, "r"))  // Test for failure
+  ...
+if (strcmp (str1, str2))  // Test for non-equality
+  ...
+if (! strcmp (str1, str2))  // Test for equality
+  ...
+if (remove (filename))  // Test for failure
+  ...
+</pre></p>
+
+but
+
+<p><pre>
+if (fopen (filename, "r") <b>== NULL</b>)
+  ...
+if (strcmp (str1, str2) <b>!= 0</b>)
+  ...
+if (strcmp (str1, str2) <b>== 0</b>)
+  ...
+if (remove (filename) <b>!= 0</b>)
+  ...
+</pre></p>
+  
+On the other hand, when an expression is a boolean, you don't
+need to add anything. <i>Don't</i> write <code>if (boolvar ==
+true)</code>.
 
 			<h3>General style</h3>
 

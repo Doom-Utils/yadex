@@ -1,5 +1,4 @@
 /*
-
  *	editloop.cc
  *	The main loop of the editor.
  *	BW & RQ sometime in 1993 or 1994.
@@ -12,7 +11,7 @@ This file is part of Yadex.
 Yadex incorporates code from DEU 5.21 that was put in the public domain in
 1994 by Raphaël Quinet and Brendon Wyber.
 
-The rest of Yadex is Copyright © 1997-2000 André Majorel.
+The rest of Yadex is Copyright © 1997-2003 André Majorel and others.
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -55,9 +54,12 @@ Place, Suite 330, Boston, MA 02111-1307, USA.
 #include "menubar.h"
 #include "menu.h"
 #include "modpopup.h"
+#include "objects.h"
+#include "objid.h"
 #include "palview.h"
 #include "prefer.h"
 #include "rgbbmp.h"
+#include "s_slice.h"
 #include "selbox.h"
 #include "selectn.h"
 #include "selpath.h"
@@ -66,6 +68,7 @@ Place, Suite 330, Boston, MA 02111-1307, USA.
 #include "t_spin.h"
 #include "x_centre.h"
 #include "x_exchng.h"
+#include "x_hover.h"
 #include "xref.h"
 
 #ifdef Y_X11
@@ -192,6 +195,13 @@ return n;
 }
 
 
+// Used by the View menu
+bool mode_th (micbarg_t p) { return ((edit_t *) p)->obj_type == OBJ_THINGS;   }
+bool mode_l  (micbarg_t p) { return ((edit_t *) p)->obj_type == OBJ_LINEDEFS; }
+bool mode_v  (micbarg_t p) { return ((edit_t *) p)->obj_type == OBJ_VERTICES; }
+bool mode_s  (micbarg_t p) { return ((edit_t *) p)->obj_type == OBJ_SECTORS;  }
+
+
 /*
   the editor main loop
 */
@@ -206,7 +216,8 @@ int    oldbuttons;
 
 bool   StretchSelBox = false;  // FIXME apparently not used anymore...
 
-int object = OBJ_NO_NONE;  /* The object under the pointer */
+Objid object;			// The object under the pointer
+const Objid CANVAS (OBJ_NONE, OBJ_NO_CANVAS);
 
 memset (&e, 0, sizeof e);	/* Catch-all */
 e.move_speed          = 20;
@@ -214,6 +225,7 @@ e.extra_zoom          = 0;
 // If you change this, don't forget to change
 // the initialisation of the menu bar below.
 e.obj_type            = OBJ_THINGS;
+e.global              = false;
 e.tool                = TOOL_NORMAL;
 e.grid_step           = 128;
 e.grid_step_min       = GridMin;
@@ -221,16 +233,19 @@ e.grid_step_max       = GridMax;
 e.grid_step_locked    = 0;
 e.grid_shown          = 1;
 e.grid_snap           = 1;
-e.infobar_shown       = InfoShown;
+e.infobar_shown       = (bool) InfoShown;
+e.objinfo_shown       = true;
 e.show_object_numbers = false;
 e.show_things_squares = false;
 e.show_things_sprites = true;
 e.rulers_shown        = 0;
-e.click_obj_no        = OBJ_NO_NONE;
-e.click_obj_type      = -1;
+e.clicked.nil ();
+//e.click_obj_no        = OBJ_NO_NONE;
+//e.click_obj_type      = -1;
 e.click_ctrl          = 0;
-e.highlight_obj_no    = OBJ_NO_NONE;
-e.highlight_obj_type  = -1;
+e.highlighted.nil ();
+//e.highlight_obj_no    = OBJ_NO_NONE;
+//e.highlight_obj_type  = -1;
 e.Selected            = 0;
 e.selbox              = new selbox_c;
 e.edisplay            = new edisplay_c (&e);
@@ -246,6 +261,8 @@ MadeMapChanges = 0;
 Scale = 1.0;
 OrigX = 0;
 OrigY = 0;
+
+edit_zoom_init ();
 
 if (zoom_default == 0)
    {
@@ -278,122 +295,127 @@ else
 {
 e.menubar->compute_menubar_coords (0, 0, ScrMaxX, ScrMaxY);
 
-e.mb_menu[MBM_FILE] = new menu_c (NULL,
-   "Save",       0, YK_F2, 0,
-   "Save as...", 5, YK_F3, 0,
-// "Print",      0, -1,    MEN_GRAY,
-   "Quit",       0, 'q',   0,
+e.mb_menu[MBM_FILE] = new Menu (NULL,
+   "~Save",       YK_F2, 0,
+   "Save ~as...", YK_F3, 0,
+// "~Print",      YK_,   MIF_SACTIVE, false, 0,
+   "~Quit",       'q',   0,
    NULL);
 
-e.mb_menu[MBM_EDIT] = new menu_c (NULL,
-   "Copy object(s)",          0, 'o',    0,
-   "Add object",              0, YK_INS, 0,
-   "Delete object(s)",        0, YK_DEL, 0,
-   "Exchange object numbers", 0, 24,     0,
-   "Preferences",             0, YK_F5,  0,
-   "Snap to grid",            0, 'y',    MEN_TICK, !! e.grid_snap,
-   "Lock grid step",          0, 'z',    MEN_TICK, !! e.grid_step_locked,
+e.mb_menu[MBM_EDIT] = new Menu (NULL,
+   "~Copy object(s)",          'o',    0,
+   "~Add object",              YK_INS, 0,
+   "~Delete object(s)",        YK_DEL, 0,
+   "~Exchange object numbers", 24,     0,
+   "~Preferences...",          YK_F5,  0,
+   "~Snap to grid",            'y',    MIF_VTICK, &e.grid_snap,		     0,
+   "~Lock grid step",          'z',    MIF_VTICK, &e.grid_step_locked,	     0,
    NULL);
 
 // If you change the order of modes here, don't forget
 // to modify the <modes> array.
-e.mb_menu[MBM_VIEW] = new menu_c (NULL,
-   "Things",               0, 't',        MEN_TICK, e.obj_type==OBJ_THINGS,
-   "Linedefs & sidedefs",  0, 'l',        MEN_TICK, e.obj_type==OBJ_LINEDEFS,
-   "Vertices",             0, 'v',        MEN_TICK, e.obj_type==OBJ_VERTICES,
-   "Sectors",              0, 's',        MEN_TICK, e.obj_type==OBJ_SECTORS,
-   "Next mode",            0, YK_TAB,     0,
-   "Prev mode",            0, YK_BACKTAB, 0,
-   "Zoom in",              5, '+',        0,
-   "Zoom out",             5, '-',        0,
-   "Extra zoom",           6, ' ',        MEN_TICK, !! e.extra_zoom,
-   "Whole level",          0, '`',        0,
-   "Show object numbers", -1, '&',        MEN_TICK, !! e.show_object_numbers,
-   "Show sprites",        -1, '%',        MEN_TICK, !! e.show_things_sprites,
-   "Show grid",            5, 'h',        MEN_TICK, !! e.grid_shown,
-// "3D preview",           0, '3',        MEN_GRAY,
+e.mb_menu[MBM_VIEW] = new Menu (NULL,
+   "~Things",              't',        MIF_FTICK,   mode_th, (micbarg_t) &e, 0,
+   "~Linedefs & sidedefs", 'l',        MIF_FTICK,   mode_l,  (micbarg_t) &e, 0,
+   "~Vertices",            'v',        MIF_FTICK,   mode_v,  (micbarg_t) &e, 0,
+   "~Sectors",             's',        MIF_FTICK,   mode_s,  (micbarg_t) &e, 0,
+   "Global",               '\7',       MIF_VTICK,   &e.global,               0,
+   "~Next mode",           YK_TAB,     0,
+   "~Prev mode",           YK_BACKTAB, 0,
+   MI_SEPARATION,
+   "Zoom ~in",             '+',        0,
+   "Zoom ~out",            '-',        0,
+   "Extra ~zoom",          ' ',        MIF_VTICK,   &e.extra_zoom,           0,
+   "~Whole level",         '`',        0,
+   MI_SEPARATION,
+   "Show object numbers",  '&',        MIF_VTICK,   &e.show_object_numbers,  0,
+   "Show sprites",         '%',        MIF_VTICK,   &e.show_things_sprites,  0,
+   "Show ~grid",           'h',        MIF_VTICK,   &e.grid_shown,           0,
+   "Info bar",             YK_ALT+'i', MIF_VTICK,   &e.infobar_shown,        0,
+   "Object info boxes",    'i',        MIF_VTICK,   &e.objinfo_shown,        0,
+// "3D preview",           '3',        MIF_SACTIVE, false,                   0,
    NULL);
 
-e.mb_menu[MBM_SEARCH] = new menu_c (NULL,
-// "Find/change",       0, YK_F4, MEN_GRAY,
-// "Repeat last find",  0, -1,    MEN_GRAY,
-   "Next object",       0, 'n',   0,
-   "Prev object",       0, 'p',   0,
-   "Jump to object...", 0, 'j',   0,
+e.mb_menu[MBM_SEARCH] = new Menu (NULL,
+// "~Find/change",       YK_F4, MIF_SACTIVE, false, 0,
+// "~Repeat last find",  -1,    MIF_SACTIVE, false, 0,
+   "~Next object",       'n',   0,
+   "~Prev object",       'p',   0,
+   "~Jump to object...", 'j',   0,
    NULL);
 
-e.mb_menu[MBM_MISC_L] = new menu_c ("Misc. operations",
-   "Find first free tag number",		16, -1, 0,
-   "Rotate and scale linedefs",			 0, -1, 0,
-   "Split linedefs (add new vertex)",		23, -1, 0,
-   "Split linedefs and sector",			 0, -1, 0,
-   "Delete linedefs and join sectors",		 0, -1, 0,
-   "Flip linedefs",				 0, -1, 0,
-   "Swap sidedefs",				 1, -1, 0,
-   "Align textures (Y offset)",			16, -1, 0,
-   "Align textures (X offset)",			16, -1, 0,
-   "Remove 2nd sidedef (make single-sided)",	 7, -1, 0,
-   "Make rectangular nook (32x16)",		17, -1, 0,
-   "Make rectangular boss (32x16)",		17, -1, 0,
-   "Set length (move 1st vertex)...",		 4, -1, 0,
-   "Set length (move 2nd vertex)...",		-1, -1, 0,
-   "Unlink 1st sidedef",			 0, -1, 0,
-   "Unlink 2nd sidedef",			-1, -1, 0,
-   "Mirror horizontally",			 0, -1, 0,
-   "Mirror vertically",				 0, -1, 0,
+e.mb_menu[MBM_MISC_L] = new Menu ("Misc. operations",
+   "Find first free ~tag number",		YK_, 0,
+   "~Rotate and scale linedefs...",		YK_, 0,
+   "Split linedefs (add new ~vertex)",		YK_, 0,
+   "~Split linedefs and sector",		YK_, 0,
+   "~Delete linedefs and join sectors",		YK_, 0,
+   "~Flip linedefs",				YK_, 0,
+   "S~wap sidedefs",				YK_, 0,
+   "Align textures (~Y offset)",		YK_, 0,
+   "Align textures (~X offset)...",		YK_, 0,
+   "Remove ~2nd sidedef (make single-sided)",	YK_, 0,
+   "Make rectangular ~nook (32x16)",		YK_, 0,
+   "Make rectangular ~boss (32x16)",		YK_, 0,
+   "Set ~length (move 1st vertex)...",		YK_, 0,
+   "Set length (move 2nd vertex)...",		YK_, 0,
+   "~Unlink 1st sidedef",			YK_, 0,
+   "Unlink 2nd sidedef",			YK_, 0,
+   "~Mirror horizontally",			YK_, 0,
+   "Mirror v~ertically",			YK_, 0,
+   "~Cut a slice out of a sector",		YK_, 0,
    NULL);
 
-e.mb_menu[MBM_MISC_S] = new menu_c ("Misc. operations",
-   "Find first free tag number",	16, -1, 0,
-   "Rotate and scale sectors",		 0, -1, 0,
-   "Make door from sector",		 5, -1, 0,
-   "Make lift from sector",		 5, -1, 0,
-   "Distribute sector floor heights",	18, -1, 0,
-   "Distribute sector ceiling heights",	18, -1, 0,
-   "Raise or lower sectors...",		 9, -1, 0,
-   "Brighten or darken sectors...",	 0, -1, 0,
-   "Unlink room",			 0, -1, 0,
-   "Mirror horizontally",		 0, -1, 0,
-   "Mirror vertically",			 0, -1, 0,
-   "Swap flats",			 0, -1, 0,
+e.mb_menu[MBM_MISC_S] = new Menu ("Misc. operations",
+   "Find first free ~tag number",	YK_, 0,
+   "~Rotate and scale sectors...",	YK_, 0,
+   "Make ~door from sector",		YK_, 0,
+   "Make ~lift from sector",		YK_, 0,
+   "Distribute sector ~floor heights",	YK_, 0,
+   "Distribute sector ~ceiling heights",YK_, 0,
+   "R~aise or lower sectors...",	YK_, 0,
+   "~Brighten or darken sectors...",	YK_, 0,
+   "~Unlink room",			YK_, 0,
+   "~Mirror horizontally",		YK_, 0,
+   "Mirror ~vertically",		YK_, 0,
+   "~Swap flats",			YK_, 0,
    NULL);
 
-e.mb_menu[MBM_MISC_T] = new menu_c ("Misc. operations",
-   "Find first free tag number",	16,  -1, 0,
-   "Rotate and scale things",		 0,  -1, 0,
-   "Spin things 45° clockwise",		 0, 'x', 0,
-   "Spin things 45° counter-clockwise",	16, 'w', 0,
-   "Mirror horizontally",		 0,  -1, 0,
-   "Mirror vertically",			 0,  -1, 0,
+e.mb_menu[MBM_MISC_T] = new Menu ("Misc. operations",
+   "Find first free ~tag number",	 YK_, 0,
+   "~Rotate and scale things...",	 YK_, 0,
+   "~Spin things 45° clockwise",	 'x', 0,
+   "Spin things 45° ~counter-clockwise", 'w', 0,
+   "~Mirror horizontally",		 YK_, 0,
+   "Mirror ~vertically",		 YK_, 0,
    NULL);
 
-e.mb_menu[MBM_MISC_V] = new menu_c ("Misc. operations",
-   "Find first free tag number",	16, -1, 0,
-   "Rotate and scale vertices",		 0, -1, 0,
-   "Delete vertex and join linedefs",	 0, -1, 0,
-   "Merge several vertices into one",	 0, -1, 0,
-   "Add a linedef and split sector",	18, -1, 0,
-   "Mirror horizontally",		 0, -1, 0,
-   "Mirror vertically",			 0, -1, 0,
+e.mb_menu[MBM_MISC_V] = new Menu ("Misc. operations",
+   "Find first free ~tag number",	YK_, 0,
+   "~Rotate and scale vertices...",	YK_, 0,
+   "~Delete vertex and join linedefs",	YK_, 0,
+   "~Merge several vertices into one",	YK_, 0,
+   "Add a linedef and ~split sector",	YK_, 0,
+   "Mirror ~horizontally",		YK_, 0,
+   "Mirror ~vertically",		YK_, 0,
    NULL);
 
-e.mb_menu[MBM_OBJECTS] = new menu_c ("Insert a pre-defined object",
-   "Rectangle",         0, -1, 0,
-   "Polygon (N sides)", 0, -1, 0,
+e.mb_menu[MBM_OBJECTS] = new Menu ("Insert a pre-defined object",
+   "~Rectangle...",         YK_, 0,
+   "~Polygon (N sides)...", YK_, 0,
    NULL);
 
-e.mb_menu[MBM_CHECK] = new menu_c ("Check level consistency",
-   "Number of objects",			 0, -1, 0,
-   "Check if all sectors are closed",	13, -1, 0,
-   "Check all cross-references",	10, -1, 0,
-   "Check for missing textures",	10, -1, 0,
-   "Check texture names",		 6, -1, 0,
+e.mb_menu[MBM_CHECK] = new Menu ("Check level consistency",
+   "~Number of objects",		YK_, 0,
+   "Check if all ~sectors are closed",	YK_, 0,
+   "Check all ~cross-references",	YK_, 0,
+   "Check for ~missing textures",	YK_, 0,
+   "Check ~texture names",		YK_, 0,
    NULL);
 
-e.mb_menu[MBM_HELP] = new menu_c (NULL,
-   "Keyboard & mouse...", 0, YK_F1, 0,
-   "Info bar",            0, 'i',   MEN_TICK, e.infobar_shown,
-   "About Yadex...",      0, YK_ALT + 'a', 0,
+e.mb_menu[MBM_HELP] = new Menu (NULL,
+   "~Keyboard & mouse...", YK_F1,        0,
+   "~About Yadex...",      YK_ALT + 'a', 0,
    NULL);
 
 e.mb_ino[MBI_FILE] =
@@ -418,42 +440,42 @@ menubar_out_y1 = 2 * BOX_BORDER + 2 * NARROW_VSPACING + FONTH - 1;  // FIXME
 
 // FIXME this should come from the .ygd
 // instead of being hard-coded.
-menu_c *menu_linedef_flags = new menu_c (NULL,
-   "Impassable",		0, -1, 0,
-   "Monsters cannot cross",	0, -1, 0,
-   "Double-sided",		0, -1, 0,
-   "Upper texture unpegged",	0, -1, 0,
-   "Lower texture unpegged",	0, -1, 0,
-   "Secret (shown as normal)",	0, -1, 0,
-   "Blocks sound",		0, -1, 0,
-   "Never shown on the map",	0, -1, 0,
-   "Always shown on the map",	0, -1, 0,
-   "Pass through [Boom]",	0, -1, 0,  // Boom extension
-   "b10 0400h",			2, -1, 0,  // Undefined
-   "b11 0800h",			2, -1, 0,  // Undefined
-   "Translucent [Strife]",	0, -1, 0,  // Strife
-   "b13 2000h",			2, -1, 0,  // Undefined
-   "b14 4000h",			2, -1, 0,  // Undefined
-   "b15 8000h",			2, -1, 0,  // Undefined
+Menu *menu_linedef_flags = new Menu (NULL,
+   "~Impassable",		YK_, 0,
+   "~Monsters cannot cross",	YK_, 0,
+   "~Double-sided",		YK_, 0,
+   "~Upper texture unpegged",	YK_, 0,
+   "~Lower texture unpegged",	YK_, 0,
+   "~Secret (shown as normal)",	YK_, 0,
+   "~Blocks sound",		YK_, 0,
+   "~Never shown on the map",	YK_, 0,
+   "~Always shown on the map",	YK_, 0,
+   "~Pass through [Boom]",	YK_, 0,  // Boom extension
+   "b1~0 0400h",		YK_, 0,  // Undefined
+   "b1~1 0800h",		YK_, 0,  // Undefined
+   "~Translucent [Strife]",	YK_, 0,  // Strife
+   "b1~3 2000h",		YK_, 0,  // Undefined
+   "b1~4 4000h",		YK_, 0,  // Undefined
+   "b1~5 8000h",		YK_, 0,  // Undefined
    NULL);
 
-menu_c *menu_thing_flags = new menu_c (NULL,
-   "Easy",			0, -1, 0,
-   "Medium",			4, -1, 0,
-   "Hard",			0, -1, 0,
-   "Deaf",			0, -1, 0,
-   "Multiplayer",		0, -1, 0,
-   "Not in DM [Boom]",		0, -1, 0,  // Boom extension
-   "Not in coop [Boom]", 	7, -1, 0,  // Boom extension
-   "Friendly [MBF]",		1, -1, 0,  // MBF extension
-   "b8  0100h",			1, -1, 0,  // Undefined
-   "b9  0200h",			1, -1, 0,  // Undefined
-   "b10 0400h",			2, -1, 0,  // Undefined
-   "b11 0800h",			2, -1, 0,  // Undefined
-   "b12 1000h",			2, -1, 0,  // Undefined
-   "b13 2000h",			2, -1, 0,  // Undefined
-   "b14 4000h",			2, -1, 0,  // Undefined
-   "b15 8000h",			2, -1, 0,  // Undefined
+Menu *menu_thing_flags = new Menu (NULL,
+   "~Easy",			YK_, 0,
+   "Medi~um",			YK_, 0,
+   "~Hard",			YK_, 0,
+   "~Deaf",			YK_, 0,
+   "~Multiplayer",		YK_, 0,
+   "~Not in DM [Boom]",		YK_, 0,  // Boom extension
+   "Not in ~coop [Boom]", 	YK_, 0,  // Boom extension
+   "F~riendly [MBF]",		YK_, 0,  // MBF extension
+   "b~8  0100h",		YK_, 0,  // Undefined
+   "b~9  0200h",		YK_, 0,  // Undefined
+   "b1~0 0400h",		YK_, 0,  // Undefined
+   "b1~1 0800h",		YK_, 0,  // Undefined
+   "b1~2 1000h",		YK_, 0,  // Undefined
+   "b1~3 2000h",		YK_, 0,  // Undefined
+   "b1~4 4000h",		YK_, 0,  // Undefined
+   "b1~5 8000h",		YK_, 0,  // Undefined
    NULL);
 
 /* AYM 1998-06-22
@@ -481,10 +503,10 @@ for (RedrawMap = 1; ; RedrawMap = 0)
    if (! has_event () && ! has_input_event ())
       {
 #endif
-      if (is_obj (e.highlight_obj_no))				// FIXME
-	 e.edisplay->highlight_object (e.highlight_obj_no);	// Should
-      else							// be in
-	 e.edisplay->forget_highlight ();			// edisplay_c !
+      if (e.highlighted ())				// FIXME
+	 e.edisplay->highlight_object (e.highlighted);	// Should
+      else						// be in
+	 e.edisplay->forget_highlight ();		// edisplay_c !
 
    if (is.in_window)
       e.spot->set (edit_mapx_snapped (&e, e.pointer_x),
@@ -521,7 +543,8 @@ for (RedrawMap = 1; ; RedrawMap = 0)
 
       e.pointer_x = MAPX (is.x);
       e.pointer_y = MAPY (is.y);
-      object = GetCurObject (e.obj_type, e.pointer_x, e.pointer_y, 20);
+      obj_type_t t = e.global ? OBJ_ANY : e.obj_type;
+      GetCurObject (object, t, e.pointer_x, e.pointer_y);
       }
 
    /*
@@ -537,7 +560,7 @@ for (RedrawMap = 1; ; RedrawMap = 0)
    if (e.menubar->pulled_down () >= 0)
       {
       int menu_no = e.menubar->pulled_down ();
-      menu_c *menu = e.menubar->get_menu (menu_no);
+      Menu *menu = e.menubar->get_menu (menu_no);
       int r = menu->process_event (&is);
 
       if (r == MEN_CANCEL)
@@ -568,13 +591,13 @@ for (RedrawMap = 1; ; RedrawMap = 0)
 	       MiscOperations (e.obj_type, &e.Selected, r + 1);
 	    else
 	       {
-	       if (is_obj (e.highlight_obj_no))
-		  SelectObject (&e.Selected, e.highlight_obj_no);
+	       if (e.highlighted ())
+		  SelectObject (&e.Selected, e.highlighted.num);
 	       MiscOperations (e.obj_type, &e.Selected, r + 1);
-	       if (is_obj (e.highlight_obj_no))
-		  UnSelectObject (&e.Selected, e.highlight_obj_no);
+	       if (e.highlighted ())
+		  UnSelectObject (&e.Selected, e.highlighted.num);
 	       }
-	    e.highlight_obj_no = OBJ_NO_NONE;
+	    e.highlighted.nil ();
 	    DragObject = false;
 	    StretchSelBox = false;
 	    RedrawMap = 1;
@@ -590,7 +613,7 @@ for (RedrawMap = 1; ; RedrawMap = 0)
 	       e.obj_type = OBJ_LINEDEFS;
 	       for (int i = savednum; i < NumLineDefs; i++)
 		  SelectObject (&e.Selected, i);
-	       e.highlight_obj_no = OBJ_NO_NONE;
+	       e.highlighted.nil ();
 	       DragObject = false;
 	       StretchSelBox = false;
 	       }
@@ -653,13 +676,13 @@ for (RedrawMap = 1; ; RedrawMap = 0)
 	    MiscOperations (e.obj_type, &e.Selected, r + 1);
 	 else
 	    {
-	    if (is_obj (e.highlight_obj_no))
-	       SelectObject (&e.Selected, e.highlight_obj_no);
+	    if (e.highlighted ())
+	       SelectObject (&e.Selected, e.highlighted.num);
 	    MiscOperations (e.obj_type, &e.Selected, r + 1);
-	    if (is_obj (e.highlight_obj_no))
-	       UnSelectObject (&e.Selected, e.highlight_obj_no);
+	    if (e.highlighted ())
+	       UnSelectObject (&e.Selected, e.highlighted.num);
 	    }
-	 e.highlight_obj_no = OBJ_NO_NONE;
+	 e.highlighted.nil ();
 	 DragObject = false;
 	 StretchSelBox = false;
 	 goto done2;
@@ -705,7 +728,7 @@ for (RedrawMap = 1; ; RedrawMap = 0)
 	    e.obj_type = OBJ_LINEDEFS;
 	    for (int i = savednum; i < NumLineDefs; i++)
 	       SelectObject (&e.Selected, i);
-	    e.highlight_obj_no = OBJ_NO_NONE;
+	    e.highlighted.nil ();
 	    DragObject = false;
 	    StretchSelBox = false;
 	    }
@@ -754,9 +777,9 @@ for (RedrawMap = 1; ; RedrawMap = 0)
             fatal_error ("modal=%02X", e.modal);
          if (! e.Selected)
             {
-            SelectObject (&e.Selected, e.highlight_obj_no);
+            SelectObject (&e.Selected, e.highlighted.num);
             frob_linedefs_flags (e.Selected, op, r);
-            UnSelectObject (&e.Selected, e.highlight_obj_no);
+            UnSelectObject (&e.Selected, e.highlighted.num);
             }
          else
             {
@@ -807,9 +830,9 @@ for (RedrawMap = 1; ; RedrawMap = 0)
             fatal_error ("modal=%02X", e.modal);
          if (! e.Selected)
             {
-            SelectObject (&e.Selected, e.highlight_obj_no);
+            SelectObject (&e.Selected, e.highlighted.num);
             frob_things_flags (e.Selected, op, r);
-            UnSelectObject (&e.Selected, e.highlight_obj_no);
+            UnSelectObject (&e.Selected, e.highlighted.num);
             }
          else
             {
@@ -859,7 +882,7 @@ for (RedrawMap = 1; ; RedrawMap = 0)
       {
       int itemno;
 
-      e.click_obj_no = OBJ_NO_NONE;
+      e.clicked.nil ();
       itemno = e.menubar->is_on_menubar_item (is.x, is.y);
       if (itemno >= 0)
          e.menubar->pull_down (itemno);
@@ -872,11 +895,11 @@ for (RedrawMap = 1; ; RedrawMap = 0)
       Unless [Ctrl] is pressed, it also clears the current selection. */
    else if (is.key == YE_BUTL_PRESS
 	 && e.tool == TOOL_NORMAL
-	 && ! is_obj (object))
+	 && object.is_nil ())
       {
       e.menubar->highlight (-1);  // Close any open menu
-      e.click_obj_no = OBJ_NO_CANVAS;
-      e.click_ctrl   = is.ctrl;
+      e.clicked    = CANVAS;
+      e.click_ctrl = is.ctrl;
       if (! is.ctrl)
          {
          ForgetSelection (&e.Selected);
@@ -892,24 +915,23 @@ for (RedrawMap = 1; ; RedrawMap = 0)
       the user is about to drag it. */
    else if (is.key == YE_BUTL_PRESS && ! is.ctrl
 	 && e.tool == TOOL_NORMAL
-	 && ! IsSelected (e.Selected, object))
+	 && ! IsSelected (e.Selected, object.num))
       {
       e.menubar->highlight (-1);  // Close any open menu
-      e.click_obj_no   = object;
-      e.click_obj_type = e.obj_type;
+      e.clicked        = object;
       e.click_ctrl     = 0;
       e.click_time     = is.time;
       ForgetSelection (&e.Selected);
-      SelectObject (&e.Selected, object);
+      SelectObject (&e.Selected, object.num);
       /* I don't like having to do that */
-      if (e.obj_type == OBJ_THINGS && is_obj (object))
-	 MoveObjectsToCoords (e.obj_type, 0,
-            Things[object].xpos, Things[object].ypos, 0);
-      else if (e.obj_type == OBJ_VERTICES && is_obj (object))
-	 MoveObjectsToCoords (e.obj_type, 0,
-            Vertices[object].x, Vertices[object].y, 0);
+      if (object.type == OBJ_THINGS && object ())
+	 MoveObjectsToCoords (object.type, 0,
+            Things[object.num].xpos, Things[object.num].ypos, 0);
+      else if (object.type == OBJ_VERTICES && object ())
+	 MoveObjectsToCoords (object.type, 0,
+            Vertices[object.num].x, Vertices[object.num].y, 0);
       else
-	 MoveObjectsToCoords (e.obj_type, 0,
+	 MoveObjectsToCoords (object.type, 0,
             e.pointer_x, e.pointer_y, e.grid_snap ? e.grid_step : 0);
       RedrawMap = 1;
       }
@@ -917,14 +939,13 @@ for (RedrawMap = 1; ; RedrawMap = 0)
    /* Second click of a double click on an object */
    else if (is.key == YE_BUTL_PRESS && ! is.ctrl
 	 && e.tool == TOOL_NORMAL
-	 && IsSelected (e.Selected, object)
-	 && object == e.click_obj_no
-	 && e.obj_type == e.click_obj_type
+	 && IsSelected (e.Selected, object.num)
+	 && object  == e.clicked
 	 && is.time - e.click_time <= (unsigned long) double_click_timeout)
       {
       // Very important! If you don't do that, the release of the
       // click that closed the properties menu will drag the object.
-      e.click_obj_no = OBJ_NO_NONE;
+      e.clicked.nil ();
       send_event (YK_RETURN);
       goto done;
       }
@@ -933,22 +954,21 @@ for (RedrawMap = 1; ; RedrawMap = 0)
       the user might want to drag the selection. */
    else if (is.key == YE_BUTL_PRESS && ! is.ctrl
 	 && e.tool == TOOL_NORMAL
-	 && IsSelected (e.Selected, object))
+	 && IsSelected (e.Selected, object.num))
       {
       e.menubar->highlight (-1);  // Close any open menu
-      e.click_obj_no   = object;
-      e.click_obj_type = e.obj_type;
+      e.clicked        = object;
       e.click_ctrl     = 0;
       e.click_time     = is.time;
       /* I don't like having to do that */
-      if (e.obj_type == OBJ_THINGS && is_obj (object))
-	 MoveObjectsToCoords (e.obj_type, 0,
-            Things[object].xpos, Things[object].ypos, 0);
-      else if (e.obj_type == OBJ_VERTICES && is_obj (object))
-	 MoveObjectsToCoords (e.obj_type, 0,
-            Vertices[object].x, Vertices[object].y, 0);
+      if (object.type == OBJ_THINGS && object ())
+	 MoveObjectsToCoords (object.type, 0,
+            Things[object.num].xpos, Things[object.num].ypos, 0);
+      else if (object.type == OBJ_VERTICES && object ())
+	 MoveObjectsToCoords (object.type, 0,
+            Vertices[object.num].x, Vertices[object.num].y, 0);
       else
-	 MoveObjectsToCoords (e.obj_type, 0,
+	 MoveObjectsToCoords (object.type, 0,
             e.pointer_x, e.pointer_y, e.grid_snap ? e.grid_step : 0);
       }
 
@@ -956,16 +976,15 @@ for (RedrawMap = 1; ; RedrawMap = 0)
       Clicking on unselected object with [Ctrl] pressed selects it. */
    else if (is.key == YE_BUTL_PRESS && is.ctrl
 	 && e.tool == TOOL_NORMAL
-	 && is_obj (object))
+	 && object ())
       {
       e.menubar->highlight (-1);  // Close any open menu
-      e.click_obj_no   = object;
-      e.click_obj_type = e.obj_type;
+      e.clicked        = object;
       e.click_ctrl     = 1;
-      if (IsSelected (e.Selected, object))
-	UnSelectObject (&e.Selected, object);
+      if (IsSelected (e.Selected, object.num))
+	UnSelectObject (&e.Selected, object.num);
       else
-	SelectObject (&e.Selected, object);
+	SelectObject (&e.Selected, object.num);
       RedrawMap = 1;
       }
 
@@ -973,13 +992,13 @@ for (RedrawMap = 1; ; RedrawMap = 0)
    else if (is.key == YE_BUTL_PRESS
 	    && e.tool == TOOL_SNAP_VERTEX
 	    && e.obj_type == OBJ_VERTICES
-	    && is_obj (object)
+	    && object ()
 	    // Can't delete vertex that is referenced by the selection
-	    && ! IsSelected (e.Selected, object))
+	    && ! IsSelected (e.Selected, object.num))
       {
-      printf ("SNAP %d\n", (int) object);
+      printf ("SNAP %d\n", (int) object.num);
       SelPtr list = 0;
-      SelectObject (&list, object);
+      SelectObject (&list, object.num);
       DeleteVerticesJoinLineDefs (list);
       ForgetSelection (&list);
       RedrawMap = 1;
@@ -994,7 +1013,7 @@ for (RedrawMap = 1; ; RedrawMap = 0)
    // FIXME : should call this automatically when switching tool
    else if (is.key == YE_BUTL_RELEASE
 	 && e.tool == TOOL_NORMAL
-	 && e.click_obj_no == OBJ_NO_CANVAS)
+	 && e.clicked == CANVAS)
       {
       int x1, y1, x2, y2;
       e.selbox->get_corners (&x1, &y1, &x2, &y2);
@@ -1007,7 +1026,7 @@ for (RedrawMap = 1; ; RedrawMap = 0)
    // FIXME : should call this automatically when switching tool
    else if (is.key == YE_BUTL_RELEASE
 	 && e.tool == TOOL_NORMAL
-	 && is_obj (e.click_obj_no))
+	 && e.clicked ())
       {
       if (AutoMergeVertices (&e.Selected, e.obj_type, 'm'))
          RedrawMap = 1;
@@ -1019,7 +1038,7 @@ for (RedrawMap = 1; ; RedrawMap = 0)
    else if (is.key == YE_MOTION
       && e.tool == TOOL_NORMAL
       && is.butl
-      && e.click_obj_no == OBJ_NO_NONE)
+      && ! e.clicked () && ! (e.clicked == CANVAS))
       {
       int itemno = e.menubar->is_on_menubar_item (is.x, is.y);
       if (itemno >= 0)
@@ -1032,7 +1051,7 @@ for (RedrawMap = 1; ; RedrawMap = 0)
       corner of the selection box. */
    else if ((is.key == YE_MOTION || motion)
       && e.tool == TOOL_NORMAL
-      && is.butl && e.click_obj_no == OBJ_NO_CANVAS)
+      && is.butl && e.clicked == CANVAS)
       {
       e.selbox->set_2nd_corner (e.pointer_x, e.pointer_y);
       }
@@ -1044,19 +1063,19 @@ for (RedrawMap = 1; ; RedrawMap = 0)
    else if ((is.key == YE_MOTION || motion)
       && e.tool == TOOL_NORMAL
       && is.butl
-      && is_obj (e.click_obj_no)
+      && e.clicked ()
       && ! e.click_ctrl)
       {
       if (! e.Selected)
 	 {
-	 SelectObject (&e.Selected, e.click_obj_no);
-	 if (MoveObjectsToCoords (e.obj_type, e.Selected,
+	 SelectObject (&e.Selected, e.clicked.num);
+	 if (MoveObjectsToCoords (e.clicked.type, e.Selected,
             e.pointer_x, e.pointer_y, e.grid_snap ? e.grid_step : 0))
 	    RedrawMap = 1;
 	 ForgetSelection (&e.Selected);
 	 }
       else
-	 if (MoveObjectsToCoords (e.obj_type, e.Selected,
+	 if (MoveObjectsToCoords (e.clicked.type, e.Selected,
             e.pointer_x, e.pointer_y, e.grid_snap ? e.grid_step : 0))
 	    RedrawMap = 1;
       }
@@ -1065,8 +1084,7 @@ for (RedrawMap = 1; ; RedrawMap = 0)
    if (is.in_window && ! is.butl && ! is.shift)
       {
       /* Check if there is something near the pointer */
-      e.highlight_obj_no   = object;
-      e.highlight_obj_type = e.obj_type;
+      e.highlighted = object;
       }
 
    /*
@@ -1206,6 +1224,9 @@ for (RedrawMap = 1; ; RedrawMap = 0)
 	 if (! outfile)
 	    goto cancel_save;
 	 SaveLevelData (outfile, newlevelname);
+	 levelname = newlevelname;
+	 // Sigh. Shouldn't have to do that. Level must die !
+	 Level = FindMasterDir (MasterDir, levelname);
 cancel_save:
 	 RedrawMap = 1;
          }
@@ -1229,23 +1250,26 @@ cancel_save:
 	    // Horrible indeed -- AYM 1999-07-30
 	    newLevel = FindMasterDir (MasterDir, newlevelname);
 	    if (! newLevel)
-	       nf_bug ("newLevel is NULL");
-	    oldl = Level;
-	    newl = newLevel;
-	    for (int m = 0; m < 11; m++)
+	       nf_bug ("newLevel is NULL");  // Debatable ! -- AYM 2001-05-29
+	    if (Level)  // If new level ("create" command), Level is NULL
 	       {
-	       newl->wadfile = oldl->wadfile;
-	       if (m > 0)
-		  newl->dir = oldl->dir;
-	       /*
-	       if (!fncmp (outfile, oldl->wadfile->filename))
+	       oldl = Level;
+	       newl = newLevel;
+	       for (int m = 0; m < 11; m++)
 		  {
-		  oldl->wadfile = WadFileList;
-		  oldl->dir = lost...
+		  newl->wadfile = oldl->wadfile;
+		  if (m > 0)
+		     newl->dir = oldl->dir;
+		  /*
+		  if (!fncmp (outfile, oldl->wadfile->filename))
+		     {
+		     oldl->wadfile = WadFileList;
+		     oldl->dir = lost...
+		     }
+		  */
+		  oldl = oldl->next;
+		  newl = newl->next;
 		  }
-	       */
-	       oldl = oldl->next;
-	       newl = newl->next;
 	       }
 	    Level = newLevel;
 	    }
@@ -1269,7 +1293,7 @@ cancel_save_as:
       // [a]: pop up the "Set flag" menu
       else if (is.key == 'a'
          && e.menubar->highlighted () < 0
-         && (e.Selected || is_obj (e.highlight_obj_no)))
+         && (e.Selected || e.highlighted ()))
          {
          e.modal = 's';  // Set
          if (e.obj_type == OBJ_LINEDEFS)
@@ -1287,7 +1311,7 @@ cancel_save_as:
       // [b]: pop up the "Toggle flag" menu
       else if (is.key == 'b'
          && e.menubar->highlighted () < 0
-         && (e.Selected || is_obj (e.highlight_obj_no)))
+         && (e.Selected || e.highlighted ()))
          {
          e.modal = 't';  // Toggle
          if (e.obj_type == OBJ_LINEDEFS)
@@ -1305,7 +1329,7 @@ cancel_save_as:
       // [c]: pop up the "Clear flag" menu
       else if (is.key == 'c'
          && e.menubar->highlighted () < 0
-         && (e.Selected || is_obj (e.highlight_obj_no)))
+         && (e.Selected || e.highlighted ()))
          {
          e.modal = 'c';  // Clear;
          if (e.obj_type == OBJ_LINEDEFS)
@@ -1342,14 +1366,19 @@ cancel_save_as:
 	 RedrawMap = 1;
          }
 
-      // [i]: show/hide the info bar
-      else if (is.key == 'i')
+      // [Alt][i]: show/hide the info bar
+      else if (is.key == YK_ALT + 'i')
          {
 	 e.infobar_shown = !e.infobar_shown;
-         // In the "Help" menu tick/untick the "Info bar" item.
-         e.mb_menu[MBM_HELP]->set_ticked (1, e.infobar_shown);
 	 RedrawMap = 1;
          }
+
+      // [i]: show/hide the object info boxes
+      else if (is.key == 'i')
+         {
+	 e.objinfo_shown = !e.objinfo_shown;
+	 RedrawMap = 1;
+	 }
 
       // [+], [=], wheel: zooming in
       else if (is.key == '+' || is.key == '=' || is.key == YE_WHEEL_UP)
@@ -1367,10 +1396,10 @@ cancel_save_as:
 	   RedrawMap = 1;
          }
 
-      // [0], [1], ... [9]: set the zoom factor
+      // [1] - [9], [0]: set the zoom factor
       else if (is.key >= '0' && is.key <= '9')
          {
-         int r = edit_set_zoom (&e, is.key == '0' ? 0.1 : 1.0 / dectoi(is.key));
+         int r = edit_set_zoom (&e, digit_zoom_factors[dectoi(is.key)]);
 	 if (r == 0)
 	   RedrawMap = 1;
          }
@@ -1494,8 +1523,6 @@ cancel_save_as:
          {
          e.extra_zoom = ! e.extra_zoom;
          edit_set_zoom (&e, Scale * (e.extra_zoom ? 4 : 0.25));
-         // In the "View" menu, tick/untick the "Extra zoom" item
-         e.mb_menu[MBM_VIEW]->set_ticked (8, e.extra_zoom);
          RedrawMap = 1;
          }
 
@@ -1534,11 +1561,6 @@ cancel_save_as:
 
          // Set the object type according to the new mode.
          e.obj_type = modes[new_mode].obj_type;
-
-         // In the "View" menu, untick the old mode
-         // and tick the new mode.
-         e.mb_menu[MBM_VIEW]->set_ticked (modes[old_mode].item_no, 0);
-         e.mb_menu[MBM_VIEW]->set_ticked (modes[new_mode].item_no, 1);
 
          // Change the flavour of the "Misc" menu.
          e.menubar->set_menu (e.mb_ino[MBI_MISC],
@@ -1626,52 +1648,77 @@ cancel_save_as:
 	    else
 	       ForgetSelection (&e.Selected);
 	    }
-	 if (GetMaxObjectNum (e.obj_type) >= 0 && Select0)
-	    e.highlight_obj_no = 0;
+	 if (GetMaxObjectNum (e.obj_type) >= 0 && Select0 && ! e.global)
+	 {
+	    e.highlighted.type = e.obj_type;
+	    e.highlighted.num  = 0;
+	 }
 	 else
-	    e.highlight_obj_no = OBJ_NO_NONE;
-         e.highlight_obj_type = e.obj_type;
+	    e.highlighted.nil ();
 
 	 DragObject = false;
 	 StretchSelBox = false;
 	 RedrawMap = 1;
 	 }
 
+      // [Ctrl][g]: toggle global mode
+      else if (is.key == '\7')
+	 {
+	 static bool dont_warn = false;
+	 bool        ok        = false;
+	 if (e.global)
+	    ok = true;  // No confirmation needed to switch off
+	 else if (dont_warn)
+	    ok = true;
+	 else
+	    {
+	    ok = Confirm (-1, -1,
+			  "Global mode is experimental and probably highly",
+			  "unstable. This means crashes. Are you sure ?");
+	    RedrawMap = 1;
+	    if (ok)
+	       {
+	       dont_warn = true;  // User is sure. Won't ask again
+	       Notify (-1, -1,
+		   "Selection does not work in global mode. Don't",
+		   "bother reporting it, I'm aware of it already.");
+	       }
+	    }
+	 if (ok)
+	    {
+	    ForgetSelection (&e.Selected);
+	    e.global = ! e.global;
+	    RedrawMap = 1;
+	    }
+	 }
+
       // [e]: Select/unselect all linedefs in non-forked path
-      else if (is.key == 'e'
-	  && e.highlight_obj_type == OBJ_LINEDEFS
-	  && e.highlight_obj_no != OBJ_NO_NONE)
+      else if (is.key == 'e' && e.highlighted._is_linedef ())
 	 {
 	 ForgetSelection (&e.Selected);
-	 select_linedefs_path (&e.Selected, e.highlight_obj_no, YS_ADD);
+	 select_linedefs_path (&e.Selected, e.highlighted.num, YS_ADD);
 	 RedrawMap = 1;
 	 }
 
       // [Ctrl][e] Select/unselect all linedefs in path
-      else if (is.key == '\5' && ! is.shift
-	  && e.highlight_obj_type == OBJ_LINEDEFS
-	  && e.highlight_obj_no != OBJ_NO_NONE)
+      else if (is.key == '\5' && ! is.shift && e.highlighted._is_linedef ())
 	 {
-	 select_linedefs_path (&e.Selected, e.highlight_obj_no, YS_TOGGLE);
+	 select_linedefs_path (&e.Selected, e.highlighted.num, YS_TOGGLE);
 	 RedrawMap = 1;
 	 }
 
       // [E]: Select/unselect all 1s linedefs in path
-      else if (is.key == 'E'
-	  && e.highlight_obj_type == OBJ_LINEDEFS
-	  && e.highlight_obj_no != OBJ_NO_NONE)
+      else if (is.key == 'E' && e.highlighted._is_linedef ())
 	 {
 	 ForgetSelection (&e.Selected);
-	 select_1s_linedefs_path (&e.Selected, e.highlight_obj_no, YS_ADD);
+	 select_1s_linedefs_path (&e.Selected, e.highlighted.num, YS_ADD);
 	 RedrawMap = 1;
 	 }
 
       // [Ctrl][Shift][e]: Select/unselect all 1s linedefs in path
-      else if (is.key == '\5' && is.shift
-	  && e.highlight_obj_type == OBJ_LINEDEFS
-	  && e.highlight_obj_no != OBJ_NO_NONE)
+      else if (is.key == '\5' && is.shift && e.highlighted._is_linedef ())
 	 {
-	 select_1s_linedefs_path (&e.Selected, e.highlight_obj_no, YS_TOGGLE);
+	 select_1s_linedefs_path (&e.Selected, e.highlighted.num, YS_TOGGLE);
 	 RedrawMap = 1;
 	 }
 
@@ -1699,7 +1746,6 @@ cancel_save_as:
       else if (is.key == 'h')
 	 {
 	 e.grid_shown = ! e.grid_shown;
-         e.mb_menu[MBM_VIEW]->set_ticked (11, e.grid_shown);
 	 RedrawMap = 1;
 	 }
 
@@ -1714,14 +1760,12 @@ cancel_save_as:
       else if (is.key == 'y')
          {
          e.grid_snap = ! e.grid_snap;
-         e.mb_menu[MBM_EDIT]->set_ticked (5, e.grid_snap);
          }
 
       // [z]: toggle the lock_grip_step flag
       else if (is.key == 'z')
          {
          e.grid_step_locked = ! e.grid_step_locked;
-         e.mb_menu[MBM_EDIT]->set_ticked (6, e.grid_step_locked);
          }
  
       // [r]: toggle the rulers
@@ -1729,40 +1773,64 @@ cancel_save_as:
 	 e.rulers_shown = !e.rulers_shown;
 
       // [n], [>]: highlight the next object
-      else if (is.key == 'n' || is.key == '>')
+      else if ((is.key == 'n' || is.key == '>')
+	 && (! e.global || e.highlighted ()))
 	 {
-	 obj_no_t nmax = GetMaxObjectNum (e.obj_type);
+	 obj_type_t t = e.highlighted () ? e.highlighted.type : e.obj_type;
+	 obj_no_t nmax = GetMaxObjectNum (t);
 	 if (is_obj (nmax))
 	    {
-	    e.highlight_obj_no++;
-	    if (e.highlight_obj_no > nmax)
-	       e.highlight_obj_no = 0;
-	    GoToObject (e.obj_type, e.highlight_obj_no);
+	    if (e.highlighted.is_nil ())
+	       {
+	       e.highlighted.type = t;
+	       e.highlighted.num = 0;
+	       }
+	    else
+	       {
+	       e.highlighted.num++;
+	       if (e.highlighted.num > nmax)
+		  e.highlighted.num = 0;
+	       }
+	    GoToObject (e.highlighted);
 	    RedrawMap = 1;
 	    }
 	 }
 
       // [p], [<]: highlight the previous object
-      else if (is.key == 'p' || is.key == '<')
+      else if ((is.key == 'p' || is.key == '<')
+	 && (! e.global || e.highlighted ()))
 	 {
-	 obj_no_t nmax = GetMaxObjectNum (e.obj_type);
+	 obj_type_t t = e.highlighted () ? e.highlighted.type : e.obj_type;
+	 obj_no_t nmax = GetMaxObjectNum (t);
 	 if (is_obj (nmax))
 	    {
-	    e.highlight_obj_no--;
-	    if (e.highlight_obj_no < 0)
-	       e.highlight_obj_no = nmax;
-	    GoToObject (e.obj_type, e.highlight_obj_no);
+	    if (e.highlighted.is_nil ())
+	       {
+	       e.highlighted.type = t;
+	       e.highlighted.num = nmax;
+	       }
+	    else
+	       {
+	       e.highlighted.num--;
+	       if (e.highlighted.num < 0)
+		  e.highlighted.num = nmax;
+	       }
+	    GoToObject (e.highlighted);
 	    RedrawMap = 1;
 	    }
 	 }
 
       // [j], [#]: jump to object by number
-      else if (is.key == 'j' || is.key == '#')
+      else if ((is.key == 'j' || is.key == '#')
+	 && (! e.global || e.highlighted ()))
 	 {
-	 e.highlight_obj_no = InputObjectNumber (-1, -1, e.obj_type,
-                                                 e.highlight_obj_no);
-	 if (is_obj (e.highlight_obj_no))
-	    GoToObject (e.obj_type, e.highlight_obj_no);
+	 Objid default_obj;
+	 default_obj.type = e.highlighted () ? e.highlighted.type : e.obj_type;
+	 default_obj.num  = e.highlighted () ? e.highlighted.num  : 0;
+	 Objid target_obj;
+	 input_objid (target_obj, default_obj, -1, -1);
+	 if (target_obj ())
+	    GoToObject (target_obj);
 	 RedrawMap = 1;
 	 }
 
@@ -1779,13 +1847,13 @@ cancel_save_as:
 
       // [o]: copy a group of objects
       else if (is.key == 'o'
-         && (e.Selected || is_obj (e.highlight_obj_no)))
+         && (e.Selected || e.highlighted ()))
 	 {
          int x, y;
 
 	 /* copy the object(s) */
 	 if (! e.Selected)
-	    SelectObject (&e.Selected, e.highlight_obj_no);
+	    SelectObject (&e.Selected, e.highlighted.num);
 	 CopyObjects (e.obj_type, e.Selected);
 	 /* enter drag mode */
 	 //DragObject = true;
@@ -1793,8 +1861,8 @@ cancel_save_as:
 	 //e.highlight_obj_no = e.Selected->objnum;
 
          // Find the "hotspot" in the object(s)
-         if (is_obj (e.highlight_obj_no) && ! e.Selected)
-            GetObjectCoords (e.highlight_obj_type, e.highlight_obj_no, &x, &y);
+         if (e.highlighted () && ! e.Selected)
+            GetObjectCoords (e.highlighted.type, e.highlighted.num, &x, &y);
          else
             centre_of_objects (e.obj_type, e.Selected, &x, &y);
 
@@ -1808,15 +1876,15 @@ cancel_save_as:
 
       // [Return]: edit the properties of the current object.
       else if (is.key == YK_RETURN
-         && (e.Selected || is_obj (e.highlight_obj_no)))
+         && (e.Selected || e.highlighted ()))
 	 {
 	 if (e.Selected)
 	    EditObjectsInfo (0, menubar_out_y1 + 1, e.obj_type, e.Selected);
 	 else
 	    {
-	    SelectObject (&e.Selected, e.highlight_obj_no);
-	    EditObjectsInfo (0, menubar_out_y1 + 1, e.obj_type, e.Selected);
-	    UnSelectObject (&e.Selected, e.highlight_obj_no);
+	    SelectObject (&e.Selected, e.highlighted.num);
+	    EditObjectsInfo (0, menubar_out_y1 + 1, e.highlighted.type, e.Selected);
+	    UnSelectObject (&e.Selected, e.highlighted.num);
 	    }
 	 RedrawMap = 1;
 	 DragObject = false;
@@ -1825,13 +1893,13 @@ cancel_save_as:
 
       // [w]: spin things 1/8 turn counter-clockwise
       else if (is.key == 'w' && e.obj_type == OBJ_THINGS
-         && (e.Selected || is_obj (e.highlight_obj_no)))
+         && (e.Selected || e.highlighted ()))
 	 {
 	 if (! e.Selected)
 	    {
-	    SelectObject (&e.Selected, e.highlight_obj_no);
+	    SelectObject (&e.Selected, e.highlighted.num);
 	    spin_things (e.Selected, 45);
-	    UnSelectObject (&e.Selected, e.highlight_obj_no);
+	    UnSelectObject (&e.Selected, e.highlighted.num);
 	    }
 	 else
 	    {
@@ -1855,13 +1923,13 @@ cancel_save_as:
 
       // [x]: spin things 1/8 turn clockwise
       else if (is.key == 'x' && e.obj_type == OBJ_THINGS
-         && (e.Selected || is_obj (e.highlight_obj_no)))
+         && (e.Selected || e.highlighted ()))
 	 {
 	 if (! e.Selected)
 	    {
-	    SelectObject (&e.Selected, e.highlight_obj_no);
+	    SelectObject (&e.Selected, e.highlighted.num);
 	    spin_things (e.Selected, -45);
-	    UnSelectObject (&e.Selected, e.highlight_obj_no);
+	    UnSelectObject (&e.Selected, e.highlighted.num);
 	    }
 	 else
 	    {
@@ -1874,13 +1942,13 @@ cancel_save_as:
 
       // [x]: split linedefs
       else if (is.key == 'x' && e.obj_type == OBJ_LINEDEFS
-         && (e.Selected || is_obj (e.highlight_obj_no)))
+         && (e.Selected || e.highlighted ()))
          {
          if (! e.Selected)
             {
-            SelectObject (&e.Selected, e.highlight_obj_no);
+            SelectObject (&e.Selected, e.highlighted.num);
             SplitLineDefs (e.Selected);
-            UnSelectObject (&e.Selected, e.highlight_obj_no);
+            UnSelectObject (&e.Selected, e.highlighted.num);
             }
          else
             SplitLineDefs (e.Selected);
@@ -1907,9 +1975,20 @@ cancel_save_as:
 	    }
 	 }
 
+      // [Ctrl][k]: cut a slice out of a sector
+      else if (is.key == 11 && e.obj_type == OBJ_LINEDEFS
+         && e.Selected && e.Selected->next && ! e.Selected->next->next)
+      {
+         sector_slice (e.Selected->next->objnum, e.Selected->objnum);
+         ForgetSelection (&e.Selected);
+         RedrawMap = 1;
+         DragObject = false;
+         StretchSelBox = false;
+      }
+      
       // [Del]: delete the current object
       else if (is.key == YK_DEL
-         && (e.Selected || e.highlight_obj_no >= 0)) /* 'Del' */
+         && (e.Selected || e.highlighted ())) /* 'Del' */
 	 {
 	 if (e.obj_type == OBJ_THINGS
 	  || Expert
@@ -1924,19 +2003,19 @@ cancel_save_as:
 	    if (e.Selected)
 	       DeleteObjects (e.obj_type, &e.Selected);
 	    else
-	       DeleteObject (e.obj_type, e.highlight_obj_no);
+	       DeleteObject (e.highlighted);
 	    }
          // AYM 1998-09-20 I thought I'd add this
          // (though it doesn't fix the problem : if the object has been
          // deleted, HighlightObject is still called with a bad object#).
-         e.highlight_obj_no = OBJ_NO_NONE;
+         e.highlighted.nil ();
 	 DragObject = false;
 	 StretchSelBox = false;
 	 RedrawMap = 1;
 	 }
 
       // [Ins]: insert a new object
-      else if (is.key == YK_INS) /* 'Ins' */
+      else if (is.key == YK_INS || is.key == YK_INS + YK_SHIFT) /* 'Ins' */
 	 {
 	 SelPtr cur;
          int prev_obj_type = e.obj_type;
@@ -1970,32 +2049,35 @@ cancel_save_as:
 	       else
 		  {
 		  InsertObject (OBJ_LINEDEFS, -1, 0, 0);
-		  e.highlight_obj_no = NumLineDefs - 1;
-		  LineDefs[e.highlight_obj_no].start = cur->next->objnum;
-		  LineDefs[e.highlight_obj_no].end = cur->objnum;
-		  cur->objnum = e.highlight_obj_no;
+		  e.highlighted.type = OBJ_LINEDEFS;
+		  e.highlighted.num  = NumLineDefs - 1;
+		  LineDefs[e.highlighted.num].start = cur->next->objnum;
+		  LineDefs[e.highlighted.num].end = cur->objnum;
+		  cur->objnum = e.highlighted.num;  // FIXME cur = e.highlighted
 		  }
 	       }
 	    /* close the polygon if there are more than 2 vertices */
 	    if (firstv >= 0 && is.shift)
 	       {
-	       for (e.highlight_obj_no = 0;
-                    e.highlight_obj_no < NumLineDefs;
-                    e.highlight_obj_no++)
-		  if ((LineDefs[e.highlight_obj_no].start == firstv
-		    && LineDefs[e.highlight_obj_no].end   == cur->objnum)
-		   || (LineDefs[e.highlight_obj_no].end   == firstv
-		    && LineDefs[e.highlight_obj_no].start == cur->objnum))
+	       e.highlighted.type = OBJ_LINEDEFS;
+	       for (e.highlighted.num = 0;
+                    e.highlighted.num < NumLineDefs;
+                    e.highlighted.num++)
+		  if ((LineDefs[e.highlighted.num].start == firstv
+		    && LineDefs[e.highlighted.num].end   == cur->objnum)
+		   || (LineDefs[e.highlighted.num].end   == firstv
+		    && LineDefs[e.highlighted.num].start == cur->objnum))
 		     break;
-	       if (e.highlight_obj_no < NumLineDefs)
+	       if (e.highlighted.num < NumLineDefs)
 		  cur->objnum = obj_no;
 	       else
 		  {
 		  InsertObject (OBJ_LINEDEFS, -1, 0, 0);
-		  e.highlight_obj_no = NumLineDefs - 1;
-		  LineDefs[e.highlight_obj_no].start = firstv;
-		  LineDefs[e.highlight_obj_no].end   = cur->objnum;
-		  cur->objnum = e.highlight_obj_no;
+		  e.highlighted.type = OBJ_LINEDEFS;
+		  e.highlighted.num  = NumLineDefs - 1;
+		  LineDefs[e.highlighted.num].start = firstv;
+		  LineDefs[e.highlighted.num].end   = cur->objnum;
+		  cur->objnum = e.highlighted.num;  // FIXME cur = e.highlighted
 		  }
 	       }
 	    else
@@ -2021,11 +2103,12 @@ cancel_save_as:
 	       {
 	       e.obj_type = OBJ_SECTORS;
 	       InsertObject (OBJ_SECTORS, -1, 0, 0);
-	       e.highlight_obj_no = NumSectors - 1;
+	       e.highlighted.type = OBJ_SECTORS;
+	       e.highlighted.num  = NumSectors - 1;
 	       for (cur = e.Selected; cur; cur = cur->next)
 		  {
 		  InsertObject (OBJ_SIDEDEFS, -1, 0, 0);
-		  SideDefs[NumSideDefs - 1].sector = e.highlight_obj_no;
+		  SideDefs[NumSideDefs - 1].sector = e.highlighted.num;
 		  ObjectsNeeded (OBJ_LINEDEFS, OBJ_SIDEDEFS, 0);
 		  if (LineDefs[cur->objnum].sidedef1 >= 0)
 		     {
@@ -2034,13 +2117,13 @@ cancel_save_as:
 		     s = SideDefs[LineDefs[cur->objnum].sidedef1].sector;
 		     if (s >= 0)
 			{
-			Sectors[e.highlight_obj_no].floorh = Sectors[s].floorh;
-			Sectors[e.highlight_obj_no].ceilh = Sectors[s].ceilh;
-			strncpy (Sectors[e.highlight_obj_no].floort,
+			Sectors[e.highlighted.num].floorh = Sectors[s].floorh;
+			Sectors[e.highlighted.num].ceilh = Sectors[s].ceilh;
+			strncpy (Sectors[e.highlighted.num].floort,
 			   Sectors[s].floort, WAD_FLAT_NAME);
-			strncpy (Sectors[e.highlight_obj_no].ceilt,
+			strncpy (Sectors[e.highlighted.num].ceilt,
 			   Sectors[s].ceilt, WAD_FLAT_NAME);
-			Sectors[e.highlight_obj_no].light = Sectors[s].light;
+			Sectors[e.highlighted.num].light = Sectors[s].light;
 			}
 		     LineDefs[cur->objnum].sidedef2 = NumSideDefs - 1;
 		     LineDefs[cur->objnum].flags = 4;
@@ -2053,36 +2136,40 @@ cancel_save_as:
 		     LineDefs[cur->objnum].sidedef1 = NumSideDefs - 1;
 		  }
 	       ForgetSelection (&e.Selected);
-	       SelectObject (&e.Selected, e.highlight_obj_no);
+	       SelectObject (&e.Selected, e.highlighted.num);
 	       }
 	    }
 	 /* normal case: add a new object of the current type */
 	 else
 	    {
 	    ForgetSelection (&e.Selected);
-	    InsertObject (e.obj_type, e.highlight_obj_no,
+	    /* FIXME how do you insert a new object of type T if
+	       no object of that type already exists ? */
+	    obj_type_t t = e.highlighted () ? e.highlighted.type : e.obj_type;
+	    InsertObject (t, e.highlighted.num,
 	       edit_mapx_snapped (&e, e.pointer_x),
 	       edit_mapy_snapped (&e, e.pointer_y));
-	    e.highlight_obj_no = GetMaxObjectNum (e.obj_type);
+	    e.highlighted.type = t;
+	    e.highlighted.num  = GetMaxObjectNum (e.obj_type);
 	    if (e.obj_type == OBJ_LINEDEFS)
 	       {
-	       int v1 = LineDefs[e.highlight_obj_no].start;
-	       int v2 = LineDefs[e.highlight_obj_no].end;
+	       int v1 = LineDefs[e.highlighted.num].start;
+	       int v2 = LineDefs[e.highlighted.num].end;
 	       if (! Input2VertexNumbers (-1, -1,
 		 "Choose the two vertices for the new linedef", &v1, &v2))
 		  {
-		  DeleteObject (e.obj_type, e.highlight_obj_no);
-		  e.highlight_obj_no = OBJ_NO_NONE;
+		  DeleteObject (e.highlighted);
+		  e.highlighted.nil ();
 		  }
 	       else
 		  {
-		  LineDefs[e.highlight_obj_no].start = v1;
-		  LineDefs[e.highlight_obj_no].end   = v2;
+		  LineDefs[e.highlighted.num].start = v1;
+		  LineDefs[e.highlighted.num].end   = v2;
 		  }
 	       }
 	    else if (e.obj_type == OBJ_VERTICES)
 	       {
-	       SelectObject (&e.Selected, e.highlight_obj_no);
+	       SelectObject (&e.Selected, e.highlighted.num);
 	       if (AutoMergeVertices (&e.Selected, e.obj_type, 'i'))
 		  RedrawMap = 1;
 	       ForgetSelection (&e.Selected);
@@ -2099,19 +2186,10 @@ cancel_save_as:
          // have the time (as of 1998-12-14) to do it now.
          if (e.obj_type != prev_obj_type)
 	    {
-            int old_mode;
 	    int new_mode;
-
-	    // What's the number of the current mode ?
-	    old_mode = obj_type_to_mode_no (prev_obj_type);
 
 	    // What's the number of the new mode ?
             new_mode = obj_type_to_mode_no (e.obj_type);
-
-	    // In the "View" menu, untick the old mode
-	    // and tick the new mode.
-	    e.mb_menu[MBM_VIEW]->set_ticked (modes[old_mode].item_no, 0);
-	    e.mb_menu[MBM_VIEW]->set_ticked (modes[new_mode].item_no, 1);
 
 	    // Change the flavour of the "Misc" menu.
 	    e.menubar->set_menu (e.mb_ino[MBI_MISC],
@@ -2170,6 +2248,17 @@ cancel_save_as:
 	 secret_sectors ();
 	 }
 
+      // [Ctrl][t] List tagged linedefs or sectors
+      else if (is.key == 20)
+	 {
+	 if (e.highlighted._is_sector ())
+	    list_tagged_linedefs (Sectors[e.highlighted.num].tag);
+	 else if (e.highlighted._is_linedef ())
+	    list_tagged_sectors (LineDefs[e.highlighted.num].tag);
+	 else
+	    Beep ();
+	 }
+
       // [Ctrl][u] Select linedefs with unknown type (not documented)
       else if (is.key == 21)
 	 {
@@ -2198,7 +2287,6 @@ cancel_save_as:
       else if (is.key == '&')
          {
          e.show_object_numbers = ! e.show_object_numbers;
-         e.mb_menu[MBM_VIEW]->set_ticked (9, e.show_object_numbers);
          RedrawMap = 1;
          }
 
@@ -2207,7 +2295,6 @@ cancel_save_as:
 	 {
 	 e.show_things_sprites = ! e.show_things_sprites;
 	 e.show_things_squares = ! e.show_things_sprites;  // Not a typo !
-         e.mb_menu[MBM_VIEW]->set_ticked (10, e.show_things_sprites);
 	 RedrawMap = 1;
 	 }
 
@@ -2237,7 +2324,7 @@ cancel_save_as:
       && ! is.scroll_lock
       && e.menubar->pulled_down () < 0)
       {
-      int distance;		// In pixels
+      unsigned distance;		// In pixels
 
 #define actual_move(total,dist) \
    ((int) (((total * autoscroll_amp / 100)\
@@ -2290,7 +2377,7 @@ cancel_save_as:
       // Note: the ordinate "3 * FONTH" is of course not
       // critical. It's just a rough approximation.
       distance = ScrMaxX - is.x;
-      if (distance <= autoscroll_edge && is.y >= 3 * FONTH)
+      if (distance <= autoscroll_edge && (unsigned) is.y >= 3 * FONTH)
 	 {
 	 if (! UseMouse)
 	    is.x -= e.move_speed;

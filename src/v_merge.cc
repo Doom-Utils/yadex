@@ -11,7 +11,7 @@ This file is part of Yadex.
 Yadex incorporates code from DEU 5.21 that was put in the public domain in
 1994 by Raphaël Quinet and Brendon Wyber.
 
-The rest of Yadex is Copyright © 1997-2000 André Majorel.
+The rest of Yadex is Copyright © 1997-2003 André Majorel and others.
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -31,6 +31,8 @@ Place, Suite 330, Boston, MA 02111-1307, USA.
 #include "yadex.h"
 #include "dialog.h"
 #include "levels.h"
+#include "objects.h"
+#include "objid.h"
 #include "selectn.h"
 
 
@@ -46,10 +48,10 @@ static int SortLinedefs  (const void *item1, const void *item2);
 
 
 /*
-   delete a Vertex and join the two LineDefs
+   delete a vertex and join the two linedefs
 */
 
-void DeleteVerticesJoinLineDefs (SelPtr obj) /* SWAP! */
+void DeleteVerticesJoinLineDefs (SelPtr obj)
 {
 int    lstart, lend, l;
 SelPtr cur;
@@ -89,8 +91,8 @@ while (obj != NULL)
       continue;
       }
    LineDefs[lend].end = LineDefs[lstart].end;
-   DeleteObject (OBJ_LINEDEFS, lstart);
-   DeleteObject (OBJ_VERTICES, cur->objnum);
+   DeleteObject (Objid (OBJ_LINEDEFS, lstart));
+   DeleteObject (Objid (OBJ_VERTICES, cur->objnum));
    MadeChanges = 1;
    MadeMapChanges = 1;
    }
@@ -102,7 +104,7 @@ while (obj != NULL)
    merge several vertices into one
 */
 
-void MergeVertices (SelPtr *list) /* SWAP! */
+void MergeVertices (SelPtr *list)
 {
 int    v, l;
 
@@ -115,12 +117,12 @@ if (*list == NULL)
    Notify (-1, -1, "You must select at least two vertices", NULL);
    return;
    }
-/* change the LineDefs starts & ends */
+/* change the linedefs starts & ends */
 for (l = 0; l < NumLineDefs; l++)
    {
    if (IsSelected (*list, LineDefs[l].start))
       {
-      /* don't change a LineDef that has both ends on the same spot */
+      /* don't change a linedef that has both ends on the same spot */
       if (!IsSelected (*list, LineDefs[l].end) && LineDefs[l].end != v)
 	 LineDefs[l].start = v;
       }
@@ -131,7 +133,7 @@ for (l = 0; l < NumLineDefs; l++)
 	 LineDefs[l].end = v;
       }
    }
-/* delete the Vertices (and some LineDefs too) */
+/* delete the vertices (and some linedefs too) */
 DeleteObjects (OBJ_VERTICES, list);
 MadeChanges = 1;
 MadeMapChanges = 1;
@@ -149,7 +151,7 @@ MadeMapChanges = 1;
    Returns a non-zero value if the screen needs to be redrawn.
 */
 
-bool AutoMergeVertices (SelPtr *list, int obj_type, char operation) /* SWAP! */
+bool AutoMergeVertices (SelPtr *list, int obj_type, char operation)
 {
 SelPtr ref, cur;
 bool   redraw;
@@ -170,7 +172,6 @@ if (obj_type != OBJ_VERTICES)
 
 ObjectsNeeded (OBJ_VERTICES, 0);
 redraw = false;
-//redraw = 1;
 mergedone = false;
 isldend = false;
 
@@ -179,13 +180,13 @@ if (operation == 'i')
 else
    confirm_flag = YC_ASK_ONCE;
 
-/* first, check if two (or more) Vertices should be merged */
+/* first, check if two (or more) vertices should be merged */
 ref = *list;
 while (ref)
    {
    refv = ref->objnum;
    ref = ref->next;
-   /* check if there is a Vertex at the same position (same X and Y) */
+   /* check if there is a vertex at the same position (same X and Y) */
    for (v = 0; v < NumVertices; v++)
       if (v != refv
          && Vertices[refv].x == Vertices[v].x
@@ -212,9 +213,9 @@ while (ref)
 		  cur->objnum = cur->objnum - 1;
 	    if (v > refv)
 	       v--;
-	    /* the old Vertex has been deleted */
+	    /* the old vertex has been deleted */
 	    UnSelectObject (list, refv);
-	    /* select the new Vertex instead */
+	    /* select the new vertex instead */
 	    if (!IsSelected (*list, v))
 	       SelectObject (list, v);
 	    break;
@@ -224,7 +225,7 @@ while (ref)
          }
    }
 
-/* Now, check if one or more Vertices are on a LineDef */
+/* Now, check if one or more vertices are on a linedef */
 //DisplayMessage  (-1, -1, "Checking vertices on a linedef");
 
 // Distance in map units that is equivalent to 4 pixels
@@ -240,13 +241,13 @@ while (ref)
    refv = ref->objnum;
    ref = ref->next;
    oldnumld = NumLineDefs;
-   /* check if this Vertex is on a LineDef */
+   /* check if this vertex is on a linedef */
    for (ld = 0; ld < oldnumld; ld++)
       {
       ObjectsNeeded (OBJ_VERTICES, OBJ_LINEDEFS, 0);
       if (LineDefs[ld].start == refv || LineDefs[ld].end == refv)
          {
-	 /* one Vertex had a LineDef bound to it -- check it later */
+	 /* one vertex had a linedef bound to it -- check it later */
 	 isldend = true;
          }
       else if (IsLineDefInside (ld, Vertices[refv].x - tolerance,
@@ -261,7 +262,7 @@ while (ref)
             buf,
             "Do you want to split the linedef there?"))
 	    {
-	    /* split the LineDef */
+	    /* split the linedef */
 	    mergedone = true;
 	    InsertObject (OBJ_LINEDEFS, ld, 0, 0);
 	    LineDefs[ld].end = refv;
@@ -293,7 +294,7 @@ while (ref)
 if (! isldend || ! mergedone)
    return redraw;
 
-/* finally, test if two LineDefs are between the same pair of Vertices */
+/* finally, test if two linedefs are between the same pair of vertices */
 /* AYM 1997-07-17
    Here I put a new algorithm. The original one led to a very large
    number of tests (N*(N-1)/2 where N is number of linedefs). For
@@ -343,7 +344,7 @@ for (ld = 0; ld+1 < NumLineDefs; ld++)
       {
       LDPtr ldo = LineDefs + ld1;
       LDPtr ldn = LineDefs + ld2;
-      /* Test if the LineDefs have the same orientation */
+      /* Test if the linedefs have the same orientation */
       if (ldn->start == ldo->end)
 	 flipped = true;
       else
@@ -361,12 +362,12 @@ for (ld = 0; ld+1 < NumLineDefs; ld++)
 	 if (flipped)
 	    {
 	    ldn->sidedef1 = ldo->sidedef2;
-	    ldo->sidedef2 = -1;
+	    ldo->sidedef2 = OBJ_NO_NONE;
 	    }
 	 else
 	    {
 	    ldn->sidedef1 = ldo->sidedef1;
-	    ldo->sidedef1 = -1;
+	    ldo->sidedef1 = OBJ_NO_NONE;
 	    }
 	 }
       if (ldn->sidedef2 < 0)
@@ -374,17 +375,17 @@ for (ld = 0; ld+1 < NumLineDefs; ld++)
 	 if (flipped)
 	    {
 	    ldn->sidedef2 = ldo->sidedef1;
-	    ldo->sidedef1 = -1;
+	    ldo->sidedef1 = OBJ_NO_NONE;
 	    }
 	 else
 	    {
 	    ldn->sidedef2 = ldo->sidedef2;
-	    ldo->sidedef2 = -1;
+	    ldo->sidedef2 = OBJ_NO_NONE;
 	    }
          }
       if (ldn->sidedef1 >= 0 && ldn->sidedef2 >= 0 && (ldn->flags & 0x04) == 0)
 	 ldn->flags = 0x04;
-      DeleteObject (OBJ_LINEDEFS, ld1);
+      DeleteObject (Objid (OBJ_LINEDEFS, ld1));
       }
    }
 

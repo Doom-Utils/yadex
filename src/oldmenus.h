@@ -4,7 +4,14 @@
  */
 
 
-int DisplayMenu (int, int, const char *, ...);
+#ifndef YH_OLDMENUS  /* DO NOT INSERT ANYTHING BEFORE THIS LINE */
+#define YH_OLDMENUS
+
+
+class Menu_data;
+
+
+int vDisplayMenu (int, int, const char *, ...);
 
 int DisplayMenuList (
    int		x0,
@@ -14,15 +21,12 @@ int DisplayMenuList (
    const char	*(*getstr)(void *),
    int		*item_no);
 
-int DisplayMenuArray (
-   int		x0,
-   int		y0,
-   const char	*title,
-   int		numitems,
-   int		*ticked,
-   char		**menustr,
-   const i8	*shortcut_index,
-   const int	*shortcut_key,
-   int		*grayed_out);
+int DisplayMenuList (
+  int		x0,
+  int		y0,
+  const char	*menutitle,
+  Menu_data&    menudata,
+  int		*item_no);
 
 
+#endif  /* DO NOT ADD ANYTHING AFTER THIS LINE */

@@ -13,6 +13,7 @@ class Recording
   public :
     read ();
     write ();
+
   private :
     class priv;
     priv *p;
