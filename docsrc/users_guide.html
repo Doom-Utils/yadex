@@ -1,0 +1,1638 @@
+<html>
+<head>
+<title>Yadex user's guide</title>
+<style type="text/css">
+body {
+	color: black;
+	/*background-color: rgb(176,144,104);*/
+	background-color: rgb(184,152,120);
+}
+
+code {
+        /*background-color: rgb(192,160,120);*/
+}
+
+/* Apparently, Mozilla doesn't support it. */
+dl dt {
+	font-weight: bold;
+}
+
+h1 {
+	align: center;
+}
+
+h1, h2, h3, h4 {
+	font-family: helvetica, arial, sans-serif;
+}
+
+kbd {
+	color: black;
+	background-color: rgb(224,192,128);
+}
+
+strong {
+	color: rgb(192,0,0);
+	font-weight: bold;
+}
+
+</style>
+</head>
+<body>
+<h1>Yadex user's guide</h1>
+<p align="center">Yadex $VERSION ($SOURCE_DATE)</p>
+
+<strong>Warning : this document is unfinished,
+ill-structured and incomplete.</strong>
+<p>
+Contents :
+<ul>
+<li>1. Yadex in a nutshell
+<li>2. What do I need ?
+	<ul>
+	<li>Iwad
+	<li>Directories
+	<li>Display
+	</ul>
+<li>3. Compiling and installing Yadex
+<li>4. I've never used Yadex. Where do I start ?
+	<ul>
+	<li>I know nothing about Doom editing
+	<li>How do I run Yadex ?
+	<li>Moving around in the edit window
+	<li>Highlighting, selecting, dragging, changing properties
+	<li>Deleting and creating
+	<li>Modes
+	<li>Zooming and the grid
+	<li>Creating complex objects
+	<li>Advanced functions
+	<li>Checks
+	<li>Saving and exiting
+	<li>Testing your level
+	<li>Fixing your level
+	</ul>
+<li>5. Running Yadex
+	<ul>
+	<li>The command line arguments
+	<li>Options
+	<li>Specifying the game for which you want to edit
+	<li>Specifying the names of pwads to load
+	<li>Environment variables
+	</ul>
+<li>6. Editing levels with Yadex
+	<ul>
+	<li>Using external textures and flats
+	<li>Logging of time spent
+	<li>The prompt commands
+	<li>Zooming in and out
+	<li>The grid
+	<li>Inserting objects
+	<li>Copying objects
+	<li>Deleting objects
+	<li>Changing the properties of objects
+	<li>Moving objects a.k.a. drag-and-drop
+	<li>Selecting objects
+	<li>The use of [<kbd>Shift</kbd>]
+	<li>Sector miscellaneous operations
+	<li>Thing miscellaneous operations
+	<li>Setting/toggling/clearing thing flags
+	<li>Vertex miscellaneous operations
+	<li>Linedef miscellaneous operations
+	<li>Setting/toggling/clearing linedef flags
+	<li>Undoing
+	<li>Cut-and-paste from one level to another
+	</ul>
+<li>7. Configuring and customizing Yadex
+	<ul>
+	<li>Preferences
+	<li>Configuration file
+	<li>Game definition files
+	<li>The font
+	</ul>
+<li>Annex A: known bugs
+<li>Annex B: differences between Yadex and DEU 5.21
+<li>Annex C: Which games are supported ?
+	<ul>
+	<li>Doom
+	<li>Doom II
+	<li>Heretic
+	<li>Hexen
+	<li>Boom
+	<li>Other Doom derivatives and ports
+	</ul>
+<li>Annex D: Credits
+	<ul>
+	<li>DEU
+	<li>Contributors
+	<li>Testers
+	</ul>
+<li>Annex E: Miscellaneous information
+	<ul>
+	<li>What's in a name ?
+	<li>Contact information
+	</ul>
+</ul>
+
+	</p><hr noshade>
+	<h2>1. Yadex in a nutshell</h2>
+
+Yadex is Doom/Doom II/Heretic level (wad) editor for X.
+
+	</p><hr noshade>
+	<h2>2. What do I need ?</h2>
+
+To compile, install and run this release of Yadex, you need
+<ul>
+<li>a POSIX-compatible environment (such as Unix),
+<li>an ISO C/C++ compiler (preferably GCC or EGCS),
+<li>GNU make (it won't work with other flavours of make),
+<li>an HTML viewer to read the doc,
+<li>a Doom/Doom II/Heretic iwad.
+<li>X11R6.
+</ul>
+<p>
+More specifically, Yadex expects that
+<ul>
+<li>the routines in <code>ctype.h</code> accept the range
+	<code>CHAR_MIN</code> through <code>UCHAR_MAX</code>,
+<li>the <code>nanosleep()</code> system call is supported.
+</ul>
+
+		<h3>Iwad</h3>
+
+A shareware Doom or Heretic iwad is okay
+but you need a registered iwad if you want to
+be able to save your changes.
+
+		<h3>Directories</h3>
+
+Yadex conforms to the <a href="http://www.pathname.com/fhs/">
+FHS (filesystem hierarchy standard)</a>.
+The installation procedure will try to copy files in the following
+directories, creating the directories if they don't exist ;
+<ul>
+<li><code>/usr/local/bin</code>
+<li><code>/usr/local/etc</code>
+<li><code>/usr/local/share/games/</code>
+</ul>
+So make sure you have the necessary rights before installing
+(or change the makefile).
+<p>
+
+		<h3>Display</h3>
+
+Yadex uses about 270 different colours.
+In most cases, on PseudoColor displays,
+there aren't that many free colour cells.
+So, if it detects a PseudoColor display,
+Yadex uses a private colormap so as to
+get as many free colour cells as possible.
+The inconvenient of this method is that,
+when you're in the Yadex window, all other
+windows are displayed with wrong colours
+and vice-versa.
+<p>
+What's more, as PseudoColor displays typically
+have 256 colours (at least on PC), which is
+less than the number of colours needed, Yadex
+might have to assign the same physical colour
+to different logical colours. If it happens,
+it will try to render the colours of the game
+accurately at the expense of the application
+colours.
+<p>
+Monochrome displays might work but they have
+not been tested.
+<p>
+Executive summary: if you can, use a TrueColor
+or DirectColor display and a depth of more
+than 8 bits per pixel (E.G. by launching X
+with "<code>startx -- -bpp 16</code>").
+<p>
+A 640x480 screen is okay though, of course, a larger display
+is better.
+
+	</p><hr noshade>
+	<h2><a name="compiling">
+	3. Compiling and installing Yadex</a></h2>
+
+See <a href="README"><code>README</code></a>.
+<p>
+Don't forget to tell Yadex where your iwads are
+by changing the lines "<code>iwad1&nbsp;=</code>",
+"<code>iwad2&nbsp;=</code>" and "<code>iwad3&nbsp;=</code>"
+in <code>/usr/local/etc/yadex.cfg</code>.
+If there is an iwad you don't have, you can just
+comment out the corresponding line.
+
+	</p><hr noshade>
+	<h2>4. I've never used Yadex. Where do I start ?</h2>
+
+		<h3>I know nothing about Doom editing</h3>
+
+This section is meant to be a quick introduction to using Yadex.
+I assume you already know the basics of Doom editing,
+i.e. what vertices, linedefs, sidedefs, things and sectors are
+and how they work together.
+If you don't, it would be good idea to
+go get a Doom editing tutorial.
+If at first it seems confusing, persevere.
+It worked for me anyway ;-).
+
+		<h3><a name="q_running">
+		How do I run Yadex ?</a></h3>
+
+You must have successfully compiled, installed and configured Yadex.
+If you haven't, see <a href="#compiling">there</a>.
+<p>
+For the sake of discussion, we'll assume you want to edit MAP01
+of Doom II. From the shell, type&nbsp;:
+<p>
+<code>$ yadex -g doom2</code>
+<p>
+(of course, you don't have to type the "<code>$</code>" !)<br>
+You should see a couple of messages
+and then the Yadex prompt, which looks like this&nbsp;:
+<p>
+<code>[? for help]</code>
+<p>
+At this prompt, type&nbsp;:
+<p>
+<code>[? for help] e map01</code>
+<p>
+(once again, don't type the "<code>[? for help]</code>" !)<br>
+The editor window opens.
+
+		<h3>Moving around in the edit window</h3>
+
+There you are.
+What you should see now is a window
+with the map of the level you wanted to edit.
+<p>
+On top of the window, there is the menu bar.
+I assume you know what a menu bar is.
+On bottom of the window, there is the info bar.
+It displays some information about your current status&nbsp;:
+the name of the level you're editing,
+whether it has changed since last saved,
+in which editing mode you are,
+etc.
+<p>
+Try to move the pointer around.
+Note that the info bar shows the position of the pointer
+in map coordinates.
+<p>
+If you move near the edge of the window
+or press [<kbd>Home</kbd>], [<kbd>End</kbd>],
+[<kbd>Page-up</kbd>] or [<kbd>Page-down</kbd>],
+the map scrolls.
+<p>
+You can also zoom in and out by pressing [<kbd>+</kbd>] and [<kbd>-</kbd>].
+
+		<h3>Highlighting, selecting, dragging, changing properties</h3>
+
+As you are now in "things" mode (as you can see on the info bar),
+every time you pass over a thing, it is highlighted
+and a window pops up in the bottom left corner of the window
+that shows the properties of that thing.
+<p>
+What if you want to change the properties of a thing ?
+Double-click on it or highlight it and press [<kbd>Return</kbd>].
+A menu pops up in the top left corner of the window.
+Select the property you want to change
+and yet another window pops up.
+Enter the new value of the property and that's it.
+<p>
+You can drag things around ;
+click on the thing and, without releasing the button,
+move the pointer to where you want to move it to
+and then release the button.
+If you want to move a group of things,
+select them all, and drag one of them.
+All selected things follow.
+<p>
+To select several things,
+you can either hold [<kbd>Ctrl</kbd>] down and click on each of them in turn
+or select them all at once with a selection box.
+To do that, click on an empty spot and,
+without releasing the button, move the pointer
+to where you want the other corner of the box to be.
+Then release the button ;
+all the things within the box are selected.
+<p>
+Note that when you start a selection box,
+everything else is unselected.
+If you don't want that to happen,
+hold [<kbd>Ctrl</kbd>] down while you draw the box.
+Thus you can <em>add</em> the contents of the new box
+to the selection.
+
+		<h3>Deleting and creating</h3>
+
+You can delete things by pressing [<kbd>Del</kbd>].
+It will delete all selected things
+or, if there is no selection, the highlighted thing.
+<p>
+You can also create a new thing under the pointer
+by pressing [<kbd>Ins</kbd>].
+If, at the moment you press [<kbd>Ins</kbd>],
+there is a thing highlighted,
+the new thing will be created with the same properties as its "model".
+Else, it will have the default properties
+as defined in the Preferences.
+
+		<h3>Modes</h3>
+
+So far we've only edited things.
+Now how do we edit other objects ?
+As I've said before, you're in "things" mode.
+If you press [<kbd>Tab</kbd>], you will switch to the next mode,
+that is the vertices mode.
+Press [<kbd>Tab</kbd>] again and you are in linedefs-and-sidedefs mode.
+Press [<kbd>Tab</kbd>] again and you are in sectors mode.
+Press [<kbd>Tab</kbd>] again and you are back in things mode.
+You can also use [<kbd>Shift-Tab</kbd>] to cycle backwards through the modes
+and [<kbd>t</kbd>], [<kbd>v</kbd>], [<kbd>l</kbd>] and [<kbd>s</kbd>]
+to go directly to a particular mode.
+<p>
+The other modes work like the things mode
+except that you operate on different types of objects.
+
+		<h3>Zooming and the grid</h3>
+
+Use [<kbd>g</kbd>] and [<kbd>G</kbd>] to change the grid step.
+<br>
+Use [<kbd>y</kbd>] if you want to be able to place objects
+"off" the grid.
+
+		<h3>Creating complex objects</h3>
+
+Click on the "Objects" item on the menu bar
+or press [<kbd>F9</kbd>] and look at the menu that pops up.
+<br>
+You can also create a sector from a path of linedefs
+by selecting those linedefs and pressing [<kbd>Ins</kbd>].
+<br>
+You can create a linedef between two vertices
+by selecting those vertices and pressing [<kbd>Ins</kbd>].
+
+		<h3>Advanced functions</h3>
+
+Click on the "Misc" item on the menu bar
+or press [<kbd>F8</kbd>] in different modes
+and look at the menu that pops up.
+
+		<h3>Checks</h3>
+
+Click on the "Checks" item on the menu bar
+or press [<kbd>F10</kbd>] and look at the menu that pops up.
+
+		<h3>Saving and exiting</h3>
+
+If you still haven't, please make some modifications
+to the level.
+For example change some textures and light levels
+and add, say, a dozen of cyberdemons in the courtyard.
+<p>
+I want you to save the modified level to a pwad
+named <code>mywad.wad</code> so that you can test
+it with Doom.
+To do that, press [<kbd>F2</kbd>].
+Don't worry, it will not overwrite your iwad.
+Individual levels are always saved to a pwad.
+You are prompted for a file name.
+Enter <code>mywad.wad</code>.
+<p>
+Before when go on, here a few things worth mentioning&nbsp;:
+<p>
+<ul>
+<li>
+If you press [<kbd>Esc</kbd>], you quit without saving.
+If you have unsaved changes, you are asked to confirm.
+<br>
+If you press [<kbd>q</kbd>], you save and quit.
+<br>
+If you press [<kbd>F2</kbd>], you save.
+<br>
+If you press [<kbd>F3</kbd>], like [<kbd>F2</kbd>] but
+you can save under a different level name (E.G. MAP02).
+</p>
+<li>
+Whenever you are queried for a file name,
+remember that the <code>.wad</code> extension is <em>not</em>
+automatically appended.
+In addition, if you used to be a DOS/Windows user,
+remember that Unix treats file names case-sensitively
+so you'd better think twice before using names like FOO.WAD.
+</p>
+<li>
+When a <code>.wad</code> file is changed,
+a backup is made in the same directory and with the same name
+but with the extension <code>.bak</code>.
+</p>
+<li>
+I said above that iwads are not overwritten.
+The same is not true of pwads.
+If you edit a level that comes from a pwad,
+it will be saved to the same pwad file,
+unless you specify a different file name.
+</p>
+<li>
+<strong>GOTCHA: when you save to a pwad,
+everything that used to be in that pwad is lost !</strong>
+For example, if you load a pwad that contains
+MAP01 and MAP02, edit MAP01 and save MAP01 to
+the same pwad file, the level MAP02 it used
+to contain is <em>lost</em> !
+It's unfortunate but not very easy to fix.
+</ul>
+<p>
+Now press [<kbd>Esc</kbd>].
+The editing window closes and
+you are returned to the Yadex prompt.
+From there, use the "<code>e</code>" or "<code>c</code>" commands
+to edit another level
+or use the "<code>q</code>" command to really quit Yadex.
+
+		<h3>Testing your level</h3>
+
+<strong>GOTCHA: Before you test your level,
+you MUST run it through a nodes builder.</strong>
+If you don't, you'll get strange results
+or you'll crash Doom/Heretic.
+<p>
+There are several nodes builders around.
+One of the best is BSP 2.3.
+Lee Killough kindly allowed me to include
+it with the Yadex distribution.
+To build the nodes on your level with BSP
+and then test it with Doom,
+type something along the lines of&nbsp;:
+<p>
+<pre>$ bsp mywad.wad -o final.wad
+$ doom -file final.wad
+</pre>
+
+		<h3>Fixing your level</h3>
+
+You've tested your level and you've found
+that some things need to be fixed.
+What do you do ?
+Well, go back to <a href="#q_running">
+How do I run Yadex</a> except that, this time,
+you need to tell Yadex to load your pwad.
+You do that by running Yadex with the name
+of your pwad as argument (you can ommit
+the <code>.wad</code> extension). E.G.&nbsp;:
+<p>
+<code>$ yadex -g doom2 mywad</code>
+<p>
+That's it !
+You've been through an entire edit-build-test-edit cycle.
+Doubtlessly the first of thousands :-).
+
+	</p><hr noshade>
+	<h2>5. Running Yadex</h2>
+
+		<h3>The command line arguments</h3>
+
+Yadex takes two sorts of command line arguments : parameters and options.
+An option is a command line argument that starts with a "<code>-</code>".
+<p>
+Some options take an argument.
+The argument must be separated from the option by some whitespace.
+<strong>Constructs like "<code>-othingy</code>" are not recognized.
+You have to type "<code>-o thingy</code>".</strong>.
+<p>
+The "<code>-file</code>" option takes a variable number
+of arguments. It uses all the non-options up to the next option.
+<p>
+The options that take no argument can be negated by using
+a "<code>+</code>" instead of a "<code>-</code>".
+For example, "<code>+sb</code>" will undo the effect
+of a "<code>swap_buttons&nbsp;= true</code>" directive in the config file.
+<p>
+In general, if you specify the same option more than once,
+the last occurrence overrides the previous ones.
+For example, "<code>yadex +P -P</code>"
+is equivalent to "<code>yadex -P</code>".
+Similarly, "<code>yadex -i1 foo.wad -i1 bar.wad -i1 baz.wad</code>"
+boils down to "<code>yadex -i1 baz.wad</code>".
+<p>
+The "<code>-pwad</code>" (or "<code>-pw</code>") option,
+however are additive.
+Each occurrence will add to the previous ones.
+For instance, "<code>yadex -pwad foo.wad -pwad bar.wad</code>"
+is equivalent to "<code>yadex foo.wad bar.wad</code>".
+<p>
+Any command line argument that is not an option
+is treated as the name of a pwad to load.
+You can put as many names of pwads on the command line
+as you wish (or none at all).
+The details of specifying pwad names are discussed <a href="#pwads">there</a>.
+
+		<h3>Options</h3>
+
+To know about the command line options that Yadex understands, type
+<p>
+<code>$ yadex -help</code>
+<p>
+You'll get this:
+<p>
+<pre>
+-f  -config_file   <i>string</i>     Config file
+-d  -debug                    Debug mode
+-e  -expert                   Expert mode
+-fc -fake_cursor              Fake cursor
+-fn -font          <i>string</i>     Font name
+-g  -game          <i>string</i>     Game
+-h  -height        <i>integer</i>    Initial window height
+-?  -help                     Show usage summary
+-i1 -iwad1         <i>string</i>     The name of Doom IWAD
+-i2 -iwad2         <i>string</i>     The name of the Doom II IWAD
+-i3 -iwad3         <i>string</i>     The name of the Heretic IWAD
+-pw -pwad          <i>string</i>     Patch WAD file
+-P  -no_pixmap                No pixmap, saves memory, more flicker
+-q  -quiet                    Quiet mode
+-qq -quieter                  Quieter mode
+-s0 -select0                  Automatic selection of 0th object
+-sb -swap_buttons             Swap mouse buttons
+-td -text_dot                 DrawScreenText debug flag
+-v  -verbose                  Verbose mode
+-w  -width         <i>integer</i>    Initial window width
+-z  -zoom          <i>integer</i>    Initial zoom factor
+</pre>
+You might wonder what the "<code>-file</code>",
+"<code>-pw</code>" and "<code>-pwad</code>" options are for
+since it's so simple to just put the names of the pwads
+on the command line. The answer is that they're only here
+for compatibility with previous versions of Yadex/Yade/DEU.
+Don't use them. They might go away one day.
+
+		<h3><a name="game">
+		Specifying the game for which you want to edit</a></h3>
+
+Yadex can handle several games (Doom, Doom II and Heretic)
+but only one at a time.
+Unfortunately, that game can't be changed dynamically.
+If you want to switch game, you must quit Yadex and run it again.
+<p>
+By default, the game used is the one specified by the
+"<code>game=</code>" directive in the configuration file.
+If you want to override the default, use "<code>-g <i>game</i></code>".
+
+		<h3><a name="pwads">
+		Specifying the names of pwads to load</a></h3>
+
+When you have to specify the name of a pwad to load,
+for example in the <code>r</code> command,
+or as a command line argument,
+you don't always have to spell it all out.
+<ul>
+<p>
+<li>
+The <code>.wad</code> extension can be omitted,
+it will be added automatically.
+For example, specifying the name "<code>foo</code>"
+is equivalent to specifying "<code>foo.wad</code>".
+An unfortunate consequence of this convention is
+that it's impossible to load a wad that would be
+really called "<code>foo</code>".
+Though, under DOS, you can still work around this limitation
+by specifying the name with a trailing dot,
+("<code>foo.</code>").
+<p>
+<li>
+The path can sometimes be omitted too, if the
+wad is in one of the <dfn>standard directories</dfn>,
+or one of their subdirectories.
+If no file of the name you specified
+is found in the current directory,
+Yadex will look for a file of that name
+in the standard directories, which are&nbsp;:
+<ol>
+<li>your home directory,
+<li><code>/usr/local/share/games/</code><i>game</i>,
+<li><code>/usr/share/games/</code><i>game</i>,
+<li><code>/usr/local/share/games/wads</code>,
+<li><code>/usr/share/games/wads</code>,
+</ol>
+(where <i>game</i> is the name of the <a href="#game">game</a>).
+<p>
+On the other hand, if you give an absolute file name,
+that is one that begins with a "<code>/</code>",
+the standard directories will <em>not</em> be used.
+Yadex will only try to open the file
+of the exact name you specified.
+<p>
+For example, if you type "<code>yadex -g doom2 foo/bar</code>",
+Yadex will look for the following files in order&nbsp;:
+<ol>
+<li><code>~/foo/bar.wad</code>,
+<li><code>/usr/local/share/games/doom2/foo/bar.wad</code>,
+<li><code>/usr/share/games/doom2/foo/bar.wad</code>,
+<li><code>/usr/local/share/games/wads/foo/bar.wad</code>,
+<li><code>/usr/share/games/wads/foo/bar.wad</code>,
+</ol>
+and open the first it finds.
+<p>
+But if you type "<kbd>yadex -g doom2 /foo/bar</kbd>"
+(note the leading slash),
+Yadex will try to open "<code>/foo/bar.wad</code>", period.
+<p>
+The philosophy behind those standard directories is that&nbsp;:
+<ul>
+<li>a local file overrides a global one,
+<li>a game-specific file overrides a non-game-specific one.
+</ul>
+</ul>
+<p>
+Gotcha:
+those shorthands can only be used when <em>reading</em> a pwad.
+When <em>writing</em> to a pwad,
+you always have to specify the exact name,
+with the full path and extension.
+
+		<h3>Environment variables</h3>
+
+<dl>
+<dt><code>DISPLAY</code>
+<dd>Unix only. The name of the X display that Yadex will try to connect to.
+
+<dt><code>YADEX_GAME</code>
+<dd>Indicates the game to use.
+Overrides the <code>game</code> parameter in the config file,
+is overridden by the <code>-g</code> command line option.
+</dl>
+
+	</p><hr noshade>
+	<h2>6. Editing levels with Yadex</h2>
+
+		<h3>Using external textures and flats</h3>
+
+Like Doom, Yadex accepts the addition and replacement
+of textures and flats from pwads.
+You just need to load those pwads into Yadex.
+<p>
+Flats should be placed between <code>FF_START</code> and <code>F_END</code>.
+The pwads produced by Deutex are fine
+except that they have an <code>FF_END</code> marker after the flats.
+You can make them usable by Yadex and Doom
+by replacing <code>FF_END</code> by <code>F_END</code>
+with a binary editor.
+You don't need Deusf.
+<p>
+Replacing other resources may or may not work.
+<code>COLORMAP</code> very probably does,
+sprites probably don't.
+
+		<h3>Logging of time spent</h3>
+
+If you edit a level from a file and
+there exists a file in the same directory
+with the same name but with the extension <code>.yl</code>,
+that file will be used to keep track
+of the time you spent editing that level.
+At the end of the editing session,
+Yadex will append a line to the <code>.yl</code> file
+with the name of the level and the number of minutes spent on it.
+<p>
+Note that if the <code>.yl</code> file does not already exist,
+it is <em>not</em> created.
+This is to prevent the creation of a large number of small
+useless files when browsing through a collection of wads.
+Thus, if you want to enable logging,
+you need to manually create the log file first
+with a command such as "<code>touch <i>name</i>.yl</code>".
+
+		<h3>The prompt commands</h3>
+
+You can get a summary of the prompt commands
+by typing "<code>?</code>" at the Yadex prompt.
+
+		<h3>Zooming in and out</h3>
+
+The current zoom factor is shown on the info bar,
+after the word "<code>Scale:</code>".
+It is shown in pixels per map units.
+The indication "<code>Scale: 1/2</code>"
+means that one pixel of the display
+corresponds to 2 map units.
+<p>
+You can zoom in by pressing [<kbd>+</kbd>] or [<kbd>=</kbd>]
+or the 4th mouse button or by moving the mouse wheel "up".
+<p>
+You can zoom out by pressing [<kbd>-</kbd>] or [<kbd>_</kbd>]
+or the 5th mouse button or by moving the mouse wheel "down".
+<p>
+You can also set the zoom factor directly
+with the keys [<kbd>0</kbd>] through [<kbd>9</kbd>].
+
+		<h3>The grid</h3>
+
+The <dfn>grid</dfn> is a square mesh of blue lines in the background.
+It's here to help you aligning your objects
+correctly with regard to Doom's metrics,
+which will save you a lot of textures misalignments.
+<p>
+When you insert or drag objects, they are <dfn><i>snapped to grid</i></dfn>.
+That is Yadex prevents you from placing them off the grid.
+You can toggle the <code>snap_to_grid</code> flag by pressing [<kbd>y</kbd>].
+<p>
+The grid step is always a power of 2, E.G. 128, 64, 32, etc.
+You can get a finer grid (dividing the grid step by 2)
+by pressing [<kbd>g</kbd>].
+Conversely, pressing [<kbd>G</kbd>] multiplies the grid step by 2.
+If you press [<kbd>g</kbd>] when the grid step is already at
+its minimum value, it will be set to its maximum value.
+And conversely.
+The minimum and maximum values are set in the configuration
+file with <code>grid_min</code> and <code>grid_max</code>.
+<p>
+When you change the zoom factor, Yadex automatically
+changes the grid step to make it what it thinks is
+best for the new zoom factor.
+If you want to lock the grid step to its current value,
+press [<kbd>z</kbd>].
+To unlock it, press that key again.
+<p>
+You can hide the grid by pressing [<kbd>h</kbd>]
+(but this doesn't disable <code>snap_to_grid</code>).
+Press that key again to make the grid visible again.
+<p>
+You can also use [<kbd>H</kbd>] to reset the grid step.
+
+		<h3>Inserting objects</h3>
+
+By pressing $k Ins, you insert a new object under the pointer.
+<p>
+If an object of the same type is highlighted at the moment
+you press $k Ins, the properties of the new object are copied
+from the highlighted object.
+In other words, the highlighted object serves as a "model".
+Else the properties of the new object are set to default
+values.
+<p>
+<table>
+<tr valign=top>
+<th>Object type
+<th>Property
+<th>Value if there is a model
+<th>Value if there is no model
+
+<tr valign=top>
+<td rowspan=7>Linedef
+<td>Start vertex
+<td>Like the model
+<td>If there are two selected vertices, the first.
+	If not, you are prompted for a vertex number.
+
+<tr valign=top>
+<td>End vertex
+<td>Like the model
+<td>If there are two selected vertices, the second.
+	If not, you are prompted for a vertex number.
+
+<tr valign=top>
+<td>Flags
+<td>Like the model
+<td>Impassable
+
+<tr valign=top>
+<td>Type
+<td>Like the model
+<td>0 (normal)
+
+<tr valign=top>
+<td>Sector tag
+<td>Like the model
+<td>0 (none)
+
+<tr valign=top>
+<td>First sidedef
+<td>FFFFh (none)
+<td>FFFFh (none)
+
+<tr valign=top>
+<td>Second sidedef
+<td>FFFFh (none)
+<td>FFFFh (none)
+
+<tr valign=top>
+<td rowspan=4>Thing
+<td>Coordinates
+<td>Like the pointer
+<td>Like the pointer
+
+<tr valign=top>
+<td>Type
+<td>Like the model
+<td><a href="#param_default_thing"><code>default_thing</code></a>
+
+<tr valign=top>
+<td>Flags
+<td>Like the model
+<td>D12 D3 D45
+
+<tr valign=top>
+<td>Angle
+<td>Like the model
+<td>0 (east)
+
+<tr valign=top>
+<td rowspan=7>Sector
+<td>Floor height
+<td>Like the model
+<td><a href="#param_default_floor_height"><code>default_floor_height</code></a>
+
+<tr>
+<td>Ceiling height
+<td>Like the model
+<td><a href="#param_default_ceiling_height"><code>default_ceiling_height</code></a>
+
+<tr>
+<td>Floor texture
+<td>Like the model
+<td><a href="#param_default_floor_texture"><code>default_floor_texture</code></a>
+
+<tr>
+<td>Ceiling texture
+<td>Like the model
+<td><a href="#param_default_ceiling_texture"><code>default_ceiling_texture</code></a>
+
+<tr>
+<td>Light level
+<td>Like the model
+<td><a href="#param_default_light_level"><code>default_light_level</code></a>
+
+<tr>
+<td>Type
+<td>Like the model
+<td>0 (normal)
+
+<tr>
+<td>Tag
+<td>Like the model
+<td>0 (none)
+
+<tr valign=top>
+<td>Vertex
+<td>Coordinates
+<td>Like the pointer
+<td>Like the pointer
+
+</table>
+
+		<h3>Copying objects</h3>
+
+		<h3>Deleting objects</h3>
+
+		<h3>Changing the properties of objects</h3>
+
+		<h3>Moving objects a.k.a. drag-and-drop</h3>
+
+		<h3>Selecting objects</h3>
+
+		<h3>The use of [<kbd>Shift</kbd>]</h3>
+
+The [<kbd>Shift</kbd>] key has an interesting property ;
+as long as you hold it down, the highlight is locked.
+If an object is not highlighted,
+it stays so even if you bring the mouse pointer over it.
+Likewise, if an object is already highlighted,
+it remains so, even if you move the pointer away from it.
+<p>
+This can be useful in certain occasions,
+such as when you want to compare two sectors
+that have other sectors between them.
+
+		<h3>Sector miscellaneous operations</h3>
+
+		<h3>Thing miscellaneous operations</h3>
+
+		<h3>Setting/toggling/clearing thing flags</h3>
+
+In things mode, press [<kbd>a</kbd>] to open the "set thing flags" popup menu.
+<br>Press [<kbd>b</kbd>] to open the "toggle thing flags" popup menu.
+<br>Press [<kbd>c</kbd>] to open the "clear thing flags" popup menu.
+
+		<h3>Vertex miscellaneous operations</h3>
+
+		<h3>Linedef miscellaneous operations</h3>
+
+<dl>
+<dt>Find first free tag number
+<dd>Displays the smallest tag number greater than 0
+and not used by any linedef or sector.
+
+<p><dt>Rotate and scale LD & SD...
+<dd>TBD.
+
+<p><dt>Split linedef (add new vertex)
+<dd>Split all selected linedefs, by adding a vertex
+in the middle.
+
+<p><dt>Split linedefs and sector
+<dd>Split both selected linedefs in the middle by adding a vertex
+for each, create a linedef between the two new vertices and
+split the sector with this new linedef.
+There must be exactly 2 selected linedefs and they
+must face a common sector.
+<p>
+The new linedef goes from the second selected linedef to the
+first selected linedef.
+The new sector in on the second sidedef of the new linedef.
+<p>
+There is a bug in this function ; if the sector
+contains other sectors, some sidedefs are given
+the wrong sector number. Jim Flynn has recently
+fixed this in DETH.
+
+<p><dt>Delete linedefs and join sector
+<dd>Dude.
+
+<p><dt>Flip linedef
+<dd>The start and end vertices of the selected linedef
+are swapped and so are its first and second sidedefs.
+
+<p><dt>Swap sidedefs
+<dd>Swap the first and second sidedefs of the selected
+linedefs <em>without</em> swapping the start and end
+vertices. This means that the sector references are also
+swapped. If you don't understand what this implies,
+don't use this function.
+
+<p><dt>Align textures (Y offset)
+<dd>This function is buggy.
+
+<p><dt>Align textures (X offset)
+<dd>This function is buggy.
+
+<p><dt>Remove 2nd sidedef (make single-sided)
+<dd>When two superimposed linedefs are merged, the
+result is often a two-sided linedefs, even though
+the second sidedef faces no sector.
+Use this function to fix the mess.
+<p>
+It sets the I flag, clears the 2 flag and
+sets the second sidedef to -1.
+
+<p><dt>Make rectangular nook (32x16)
+<dd>This is a single-key function to make a rectangular
+nook in the middle of a linedef. "Nook" means that, seen
+from the first side of the original linedef, the resulting
+5 linedefs form a concave figure.
+<p>
+If the linedef is not long enough, the length of the nook
+is one third of the length of the linedef.
+
+<p><dt>Make rectangular boss (32x16)
+<dd>Same thing as "Make rectangular nook" but the
+resulting figure is convex.
+
+<p><dt>Set length (move 1st vertex)
+<dd>Prompts you for a length and moves the 1st vertex
+of the selected linedefs so that they have the length
+you specified. 
+
+<p><dt>Set length (move 2nd vertex)
+<dd>Same thing as "Set length (move 1st vertex) but
+moves the 2nd vertex.
+
+<p><dt>Unlink 1st sidedef
+<dd>This function is used when you have several linedefs
+sharing common sidedefs and you don't want them to share
+any sidedefs anymore so that you can, for instance, change
+the sector reference or texture of one of the linedefs
+independently from the others.
+<p>
+Here is how it works&nbsp;: all sidedefs that are used on the
+first side of any linedef in the selection and on any
+side of any linedef <em>not</em> in the selection are
+duplicated and the first side of the concerned linedefs
+in the selection is set to use the copy instead of the
+original.
+<p>
+Gotcha&nbsp;: note that the selected linedefs are not "unlinked"
+from each other. They are only "unlinked" from any other
+(i.e. non-selected) linedefs. Thus, if you have <em>n</em>
+linedefs that you want to unlink from each other, you have
+to unlink every one of them separately. This is so that, if
+you have, say, two square pillars (2 x 4 linedefs that all
+use the same sidedef), you can easily unlink one pillar from
+the other while still having its 4 linedefs all use the same
+sidedef.
+
+<p><dt>Unlink 2nd sidedef
+<dd>Same as "Unlink 1st sidedef" but with second sidedef
+instead of first sidedef.
+
+</dl>
+
+		<h3>Setting/toggling/clearing linedef flags</h3>
+
+In linedefs mode, press [<kbd>a</kbd>]
+to open the "set linedef flags" popup menu.
+<br>Press [<kbd>b</kbd>] to open the "toggle linedef flags" popup menu.
+<br>Press [<kbd>c</kbd>] to open the "clear linedef flags" popup menu.
+
+		<h3>Undoing</h3>
+
+As of this release, undoing is not implemented.
+
+		<h3>Cut-and-paste from one level to another</h3>
+
+As of this release, it's not possible.
+
+	</p><hr noshade>
+	<h2>7. Configuring and customizing Yadex</h2>
+
+There are several ways to configure Yadex&nbsp;:
+the configuration file, the environment variables,
+the command line options and the Preferences menu.
+<p>
+The choices made in the Preferences menu
+override all others but they are lost when you exit Yadex.
+<p>
+The command line options override
+the environment variables which in turn override
+the configuration file.
+<p>
+The details of command line options and environment variables
+are explained elsewhere.
+
+		<h3>Preferences</h3>
+
+When you create objects, their properties are
+automatically given default values.
+Some of those default values can be set from the configuration file
+or from the command line but also through the Preferences menu,
+that pops up when you press [<kbd>F5</kbd>].
+<p>
+The settings entered through the Preferences menu
+are lost when you exit Yadex.
+
+		<h3>Configuration file</h3>
+
+If you don't specify "<code>-f</code>" on the command line,
+Yadex tries to open the following files in order&nbsp;:
+<p>
+<ol>
+<li><code>./yadex.cfg</code>
+<li><code>~/yadex.cfg</code>
+<li><code><i>install_dir</i>/yadex.cfg</code>
+<li><code>/usr/local/etc/yadex.cfg</code>
+<li><code>/etc/yadex.cfg</code>
+</ol>
+<p>
+The first file found is used.
+<p>
+If you use "<code>-f <i>file</i></code>"
+and "<code><i>file</i></code>" is an absolute name
+(i.e. it starts with "<code>/</code>"), only that name is used.
+<p>
+If "<code><i>file</i></code>" is a relative name,
+the standard directories will be searched for a file of that name
+instead of "<code>yadex.cfg</code>".
+For example, if you specify "<code>-f foo/bar</code>",
+Yadex will try to open
+"<code>./foo/bar</code>", "<code>~/foo/bar</code>", and so on.
+<p>
+The first line of the configuration file must contain exactly
+the following string :
+<p>
+"<code># Yadex configuration file version 1</code>"
+<p>
+If it doesn't, Yadex will print an error message and bail out.
+The reason for being so fussy is to avoid headaches when the
+configuration file format changes and there are old configuration
+files lying around in your directories.
+<p>
+The configuration file is self-documenting.
+Look at the sample configuration file in the Yadex distribution
+to see what options are available.
+
+		<h3>Game definition files</h3>
+
+A lot of Yadex's knowledge about thing numbers and names,
+linedef types etc. is stored in so-called game definition files.
+When you specify "<code>-g foo</code>,
+it in fact means that Yadex should use the game definition file
+named "<code>foo.ygd</code>".
+As of this release three games are supported&nbsp;:
+"<code>doom</code>", "<code>doom2</code>" and "<code>heretic</code>"
+(though, as I'm not familiar with Heretic editing,
+<code>heretic.ygd</code> might contain errors and omissions).
+<p>
+To open the game definition file,
+Yadex tries those names in order&nbsp;:
+<ol>
+<li><code>./<i>game</i>.ygd</code>
+<li><code>~/<i>game</i>.ygd</code>
+<li><code><i>install_dir</i>/<i>game</i>.ygd</code>
+<li><code>/usr/local/share/games/<i>game</i>.ygd</code>
+<li><code>/usr/share/games/<i>game</i>.ygd</code>
+</ol>
+
+		<h3>The font</h3>
+
+By default, Yadex uses the default font of your system
+(that is often "<code>fixed</code>" a.k.a. "<code>6x13</code>").
+But you can use the font of your choice by
+using the "<code>-fn </code><i>font_name</i>" option
+or setting "<code>font&nbsp;=&nbsp;</code><i>font_name</i>"
+in <code>yadex.cfg</code>.
+You should use a fixed-width font
+and not one that is too large for the size of your Yadex window
+or the display will look ugly.
+<p>
+You can get a list of all available fonts on your system
+with the command <code>xlsfonts</code>.
+
+	</p><hr noshade>
+	<h2><a name="bugs">
+	Annex A: known bugs</a></h2>
+
+Though Yadex has quite a few bugs,
+most of them are inconsequential,
+i.e. not likely to make Yadex unusable or damage precious data.
+On the other hand, <strong>some can bite</strong>.
+Those are the ones you should know about&nbsp;:
+
+<ul>
+<li>Command line options that take an argument
+need to have a space between their argument and themselves.
+
+<li>Exposure events are not always handled.
+If the Yadex window turns black,
+back out by pressing [<kbd>Esc</kbd>],
+several times if necessary.
+
+<li>If you edit a level from a file that contains several and save it,
+all the other levels from that file are lost.
+</ul>
+
+Check <a href="TODO"><code>TODO</code></a> for a complete list
+of things to fix.
+
+	</p><hr noshade>
+	<h2><a name="diffs">
+	Annex B: differences between Yadex and DEU 5.21</a></h2>
+
+<strong>Warning&nbsp;: this section is badly out of date.</strong>
+<p>
+Yadex is derived from DEU 5.21. So if you're used to DEU 5.21, you
+might find this list useful.
+<p>
+1. SIGNIFICANT CHANGES
+
+<ul>
+<li> ADDED SUPPORT FOR VERSIONS OF DOOM BEYOND 1.2
+  Added support for levels E4Mn. Added linedef and sector types
+  introduced with Doom v1.666.
+<li> ADDED SUPPORT FOR DOOM II
+  Added support for levels MAPnn. Added new linedef and sector types
+  (see above). Added reading sector and wall textures from doom2.wad.
+  Added definition of Doom II things.
+  You now have to replace main= in the config.file by iwad1= and
+  iwad2= and invoke yadex with either "-g doom" or "-g doom2".
+
+<li> INTEGRATED INFO FROM DOOM SPECS 1.6
+  Corrected linedef types and sector types. Reordered sector types.
+  Added new linedef and sector types (see above).
+
+<li> EDITING IN GENERAL
+  <ul>
+  <li> Highlighting: it does not require as much a precise positionning
+    of the pointer as it did (+/-8 pixels instead of +/-4).
+  <li> Made PU PD END HOME scroll only 1/6 screen at a time (not 1/2)
+  <li> Grid: also highlights multiples of 1024 or 256 or 64. This is
+    useful when you are working with small grid steps (E.G. 8) but
+    still need to align to 64.
+  <li> Grid: you can now have a grid finer than 8 or coarser than 256.
+    So you can now do 4-alignment or even 2-alignment. There are two
+    new parameters (gridmin and gridmax) in the config file to set the
+    low and high bounds (default&nbsp;: 4 and 256).
+  <li> Zoom: added 1 extra magnification step (x8).
+  <li> Zoom: vertices green crosses and linedef arrows are never drawn
+    larger than they would at zoom 1.0. This makes editing of crowded
+    areas easier.
+  <li> Status bar: added the name of the file the level being edited comes
+    from.
+  <li> Made checking after moving a vertex onto a linedef much faster. This
+    should be a relief when connecting sectors together
+  <li> Map: now drawn faster, especially when viewing only a part of it.
+  </ul>
+
+<li> EDITING THINGS
+  <ul>
+  <li> Rotate things with W and X in things mode.
+  <li> The thing type dialog is slightly better.
+  <li> You can now enter type in the range [-32749, 32749].
+  </ul>
+
+<li> EDITING SECTORS
+  <ul>
+  <li> Added raising or lowering of a group of sectors.
+  <li> Added brightening or darkening of a group of sectors.
+  <li> Added display of the headroom (ceiling height - floor height).
+  <li> You can now enter type, tag, floor height and ceiling height in the
+    range [-32749, 32749].
+  </ul>
+
+<li> EDITING LINEDEFS & SIDEDEFS
+  <ul>
+  <li> Added function to remove the 2nd sidedef (make linedef single-sided).
+  <li> Added function to make a nook or a boss.
+  <li> Added function to set length of linedef by moving either vertex.
+  <li> You can now enter type, tag, sidedef x-offset and sidedef y-offset
+    in the range [-32749, 32749].
+  </ul>
+
+<li> GENERAL
+  <ul>
+  <li> The slash is also recognized in file names.
+  <li> You can omit the ".wad" in the names of patch wads files (after
+    -pw, -file, READ).
+  <li> Consumes about 20 kB less memory than DEU 5.21 did.
+  </ul>
+
+<li> CAN BE RUN FROM ANY DIRECTORY
+  <ul>
+  <li> The .bgi driver is searched for in the directory where yadex is
+    installed (i.e. where yadex.exe is), not in the current directory.
+  <li> If the config file (yadex.cfg) is not found in the current directory,
+    it is searched for in the installation directory. On the other hand,
+    if the config file is specified with -config on the command line,
+    default locations are not used.
+  </ul>
+  Deu was difficult to run from another directory that its own. Now you
+  can run it from the directory where the file to edit is, just like you
+  do with, for example, a text editor. That's a bit of improvement,
+  believe me! And you still have the possibility of having a .cfg in the
+  current directory, if you want to have different settings locally.
+  You have several different approaches to making yadex available from
+  anywhere&nbsp;:
+  1. put yadex.exe and the .bgi you need in one of the directories of
+     your PATH
+  2. add the yadex directory to your path.
+  3. make a yadex.bat in one of the directories of your path with the
+     line "@&lt;yadex_directory&gt;\yadex %1 %2 %3 %4 %5 %6 %7 %8 %9"
+  Each solution has pros and cons.
+
+<li> DELETED NODES BUILDER. Nodes are NEVER built and you are not queried
+  whether to do it. In 1994, the nodes builder of DEU 5.21 was a
+  pioneer and we have to thank RQ for having done it. However, in 1997,
+  it is perceived as slow and buggy. Better to use an external nodes
+  builder (I use bsp 2.1).
+
+<li> SYNTAX OF THE "EDIT" AND "CREATE" COMMANDS
+  They now take only one argument. It may be either a complete level
+  name (such as "e1m1" or "map01") or a number. For example, "1"
+  matches "map01", "11" matches both "e1m1 and "map11", etc. If there
+  is not exactly 1 level that matches the argument, a list of levels
+  to choose from is displayed. It contains all levels that matched or
+  all levels if 0 matched.
+
+<li> LETS YOU USE NEW FLOOR/CEILING TEXTURES
+  Understands FF_START/F_END and does the proper additions/replacements
+  ATTENTION, BUG: but an old one: if you have a lump that has the same
+  name as the texture to display...
+
+<li> SCREEN SHOT, SAVING TEXTURE TO FILE
+  When editing, Shift-F1 dumps the current window to a 16-colour GIF
+  file named yadex.gif. Works _only_ when in 256-colour mode.
+  In the image viewer, pressing shift-F1 saves the current image to a
+  file of the same name as the image followed by ".gif". That's the
+  only way I know to extract a texture.
+
+<li> LOG FILE
+  To help you keep track of time spent on a wad, Yadex writes down the
+  number of minutes spent editing in a log file. The name of the log
+  file is the same as the name of the .wad file except it has the
+  extension ".yl". The log file is _not_ created if it does not already
+  exist. Example&nbsp;: if you want to enable logging for /foo/bar.wad,
+  you should first create the file /foo/bar.yl.
+</ul>
+
+
+2. COSMETIC CHANGES
+
+<ul>
+<li> #ifdef'd out the funny message (assuming this is used by wizards)
+  and the "Goodbye..." message
+<li> Do not force anymore the name of pwads to upper case.
+<li> changed "LineDefs and SideDefs" to "LD & SD" to make room in the
+  status bar.
+<li> **Spector -&gt; Spectre, **Sargeant -&gt; Sergeant
+<li> "Misc operations" menus now have "..." where due.
+<li> When drawing the map, negative linedef types and linedef/sector tags
+  are now considered non-zero.
+</ul>
+
+
+3. TECHNICAL CHANGES
+
+<ul>
+<li> Replaced c:\bc4\lib by g:\dt\bcpp.402\lib.
+<li> Replaced d:\bc4\include by g:\dt\bcpp.402\include.
+<li> Removed both "-v" from compiler options.
+<li> Added "-mh" to compiler options.
+<li> Removed "/v" from linker options.
+<li> Removed some private functions from deu.h (SelectLevel).
+<li> Do not demand anymore that an EnMn/MAPnn entry have a length of 0
+  because MAP05 and MAP10 in dyst3 failed that test. Just print a
+  warning.
+<li> Further externalized paths in the makefile...
+<li> Increased overlay granularity (to improve memory consumption).
+<li> In the makefile, put explicit /o+ or /o- options in front of all
+  modules. The following modules were previously unqualified&nbsp;: edit
+  editobj objects things wads aym scrnshot. They now all have /o+.
+<li> Put all modules in alphabetical order in deu.h and in the makefile.
+</ul>
+
+4. BUGS OF DEU 5.21 FIXED
+
+<ul>
+<li> Now you can use wall textures in PWADs without getting "Error
+  reading from file" when trying to display the texture in the
+  texture selector. Deutex users don't need the -deu option anymore.
+<li> The numeric keypad can now be used in menus.
+<li> Fixed 4 display bugs in BuildNewMainWad() and ListMasterDirectory
+  that were not noticeable on a little endian machine.
+<li> Menus work better&nbsp;: static right button state is now ignored (you
+  have to press it) and a left button release is ignored unless the
+  pointer was on an item when it was pressed.
+<li> Texture viewer&nbsp;: fixed minor glitch that showed with BIGDOOR7,
+  SKY1, TEKWALL1, TEKWALL5 and some others.
+</ul>
+
+
+5. NEW BUGS
+
+<ul>
+<li> For Doom II, some wall textures are not displayed correctly.
+  Specifically, instead of SW?BRN1, SW?STARG, SW?STON2 and SW?STONE,
+  SW?BRCOM is displayed. Very strange. I don't know why.
+</ul>
+
+	</p><hr noshade>
+	<h2>Annex C: Which games are supported ?</h2>
+
+		<h3>Doom</h3>
+
+Supported. Linedef types and sector types added in v. 1.666
+are supported and marked with "<code>[v1.6]</code>".
+
+		<h3>Doom II</h3>
+
+Supported.
+
+		<h3>Heretic</h3>
+
+Supported. Still missing: the sprite names for the different
+thing types. If there is a Heretic hacker out there willing
+to do it, he/she is welcome. See "<code>heretic.ygd</code>".
+
+		<h3>Hexen and Strife</h3>
+
+Not supported. I know that Hexen is based on the Doom engine
+but I don't know how different the data structures are. Is
+it hard to do ? Is there any interest ? Contact the maintainer.
+
+		<h3>Boom</h3>
+
+Kind of supported, only very inconvenient to use &lt;g&gt;.
+<dl>
+<dt>New linedef flag "P" (pass through)
+<dd>Supported.
+
+<dt>New linedef types
+<dd>You can enter arbitrary linedef types ("enter number").
+
+<dt>New sector types
+<dd>You can enter arbitrary sector types ("enter number")
+
+<dt>New things flags "N" (not in deathmatch) and "C" (not in coop)
+<dd>Supported.
+
+<dt>New things types 5001 and 5002
+<dd>Supported.
+
+<dt>Special lumps <code>SWITCHES</code> and <code>ANIMATED</code>
+<dd>Unsupported.
+</dl>
+In progress...
+
+		<h3>Other ports</h3>
+
+See "Hexen and Strife".
+
+	</p><hr noshade>
+	<h2>Annex D: Credits</h2>
+
+		<h3>DEU</h3>
+
+Yadex is derived from DEU 5.21 that was written by Raphaël Quinet,
+Brendon Wyber and others.
+I am deeply indebted to them as, if they had not written
+DEU 5.21 and, more importantly, had not kindly released
+the source code, Yadex wouldn't exist.
+<p>
+Here are the credits from the DEU 5.21 documentation&nbsp;:
+<p>
+<pre>* Everybody at id Software for making such great games!
+
+* Brendon Wyber                   (b.wyber@csc.canterbury.ac.nz)
+     The first version of this program was written by Brendon Wyber.
+     Map display, Things editor.
+
+* Raphaël Quinet                  (quinet@montefiore.ulg.ac.be)
+     Much of this program was written by Raphaël Quinet.
+     New interface (mouse, menus, etc).
+     Ability to edit Vertices, Linedefs, Sidedefs, Sectors, and last
+     but certainly not least an AUTOMATIC NODES BUILDER.
+     Even if I rewrote nearly 90% of the code, this editor still has its
+     strong DEU roots... :-)
+
+* Matt Fell                       (matt.burnett@acebbs.com)
+     Author of the great Unofficial Doom Specs.  Making this program
+     would have been impossible if the Specs didn't exist.
+
+* Steve Bareman                   (bareman@hope.cit.hope.edu)
+     Rewrote the documentation (this file and DEU.TXT)
+     Author of the DEU tutorial (look in the TUTOR directory).
+     Constant promoter of including source code with the editor.
+     For a good FTP...
+         anonymous @ hope.cit.hope.edu (198.110.98.2)
+        (Registered DOOM patches, DEU, and various doom utils for
+         Registered DOOMers only.)
+
+* Trevor Phillips                 (rphillip@cc.curtin.edu.au)
+     Textures viewer in 256 colors
+     Many, many suggestions and improvements to the DEU code.
+
+* Alistair Brown                  (A.D.Brown@bradford.ac.uk)
+* Chris Phillips                  (chrisp@halcyon.com)
+* Colin Reed                      (colin@argonaut.co.uk)
+* Dylan Cuthbert                  (dyl@cix.compulink.co.uk)
+     Lots of infos about the Nodes objects.
+     They fixed the bug(s) in my Nodes builder.
+     Looking for cute Doom add-ons?  Get BSP and ZAMBONY!
+
+* Dewi Morgan                     (D.Morgan@bradford.ac.uk)
+     Drop-down menus and menu bar.
+     Rewrote and reorganized part of this file.
+     Numerous improvements and suggestions.
+     Now working on a GIF support for DEU.
+
+* Will Ellett                     (wellett@cs.uah.edu)
+     Configuration file (DEU.INI) and better command line parsing.
+     Lots of suggestions for DEU.
+
+* Barry Bloom                     (barry@noc.unt.edu)
+     Maintainer of the official DEU distribution site for the USA:
+          the best DOOM FTP server: infant2.sphs.indiana.edu
+          (DOOM add-ons and utils, collection of WAD files, ...)
+     Also sent some useful suggestions and bug reports.
+     The first martyr of the DOOM cause: his first ftp site (ocf.unt.edu)
+     has been closed by short-minded academic authorities.  &lt;sob!&gt;
+
+* Sven Neuhaus                    (sven@lilly.ping.de)
+* Billy Chow                      (billy.chow@engineering.oxford.ac.uk)
+     The most efficient beta-testers!  They keep on finding bugs that
+     most other people never see...
+
+* Jeremy Blackman                 (ranma@eskinews.eskimo.com)
+* Brian Downing                   (bdowning@ncsa.uiuc.edu)
+* Ted Vessenes                    (tedv@geom.umn.edu)
+* Ed Boling                       (edb9140@tamsun.tamu.edu)
+* Greg Grimsby                    (no more E-mail address &lt;sob!&gt;)
+* Michael Emmons                  (ie78hc0z@solix.fiu.edu)
+* Ryan Budney                     (rybu@jazz.math.ualberta.ca)
+* Cameron Newham                  (cam@iinet.com.au)
+     Numerous comments, suggestions for improvements, and bug reports.
+     They were amongst the first to have faith in DEU and support it.
+
+* Tom Neff                        (tneff@panix.com)
+     Not only a good beta-tester, but also the author of the WIF Specs,
+     a text interchange format for Doom levels, based on the DWD files
+     used internally by id Software.
+
+* Dietrich Hempelmann             (avatar@uni-paderborn.de)
+     Designed the "DEU 5" logo in DEU.TXT.  Great ascii-art... 
+
+* Jean-Serge Gagnon               (jsg8a@acadvm1.uottawa.ca)
+     Helped Steve with the docs and improved the DEU tutorial.
+     If you want to see a good WAD file, get FOREST.WAD...
+
+* Sean Malloy                     (malloy@crash.cts.com)
+     Updated the docs for the stairs, sent some interesting suggestions
+     and bug reports.  Improved display of the LineDef flags, etc.
+
+* Christian Johannes Sladetsch    (s924706@yallara.cs.rmit.oz.au)
+     Better texture display, XMS support (memory swapping).
+
+* Craig Smith                     (bcs@cs.tamu.edu)
+     Ideas for improvements in the memory allocation routines.
+
+* Tim Dedischew                   (kfdedisc@vela.acs.oakland.edu)
+     Working on a realistic 3D previewer for DEU.
+
+* Tobias Ringström                (d2rinto@dtek.chalmers.se)
+     Added the code to distribute floors and ceiling heights.
+
+* Robert Hodkinson                (R.J.Hodkinson@bradford.ac.uk)
+     Texture alignment (X offset).
+
+* Per Allanson                    (c91peral@und.ida.liu.se)
+     Ported DEU 5.x to GCC + GO32 (DGJPP).
+
+* Per Kofod                       (per@ollie.dnk.hp.com)
+     Added the code to display the pointer coords.  Sent some bug reports
+     and suggestions for improvements.
+
+* Jim Pitts                       (pitts@mimosa.astro.indiana.edu)
+     Maintainer of the 'infant2' FTP site.  Our salvation when the UNT
+     authorities closed the 'ocf' DOOM-only FTP site.  Thanks, Jim!
+
+* Andy Sherwood                   (enigma@indirect.com)
+     Patch for Cirrus Logic cards: use the hardware cursor for the mouse.
+
+* "Dino"                          (s.sproston-se2@cs.bham.ac.uk
+     Found 35 new LineDef types!  New ways to raise or lower floors, etc.
+
+* Hank Leukart                    (ap641@cleveland.freenet.edu)
+     Author of the DOOM FAQ.  Publisher of Matt's Unofficial DOOM Specs.
+     He was (and still is) one of the best promoters of DOOM on the net.
+</pre>
+
+		<h3>Contributors</h3>
+
+As for Yadex per se, the contributors are&nbsp;:
+<p>
+<dl>
+<dt>Jean Forget (JF)
+<dd>Provided the base of the <code>youngest</code> perl script.
+
+<dt>André Majorel (AYM)
+<dd>Did the rest ;-).
+</dl>
+
+		<h3>Testers</h3>
+
+The people who have tested Yade and Yadex
+are, by alphabetical order&nbsp;:
+<p>
+<dl>
+<dt>Ben Davies <code>&lt;d3095027@bohm.anu.edu.au&gt;</code> (BD)
+<dd>A post by him and another one by Nathan Lucas in r.g.c.d.e.
+	led to the development of the "save image to a file" feature.
+	Gave thorough reports.
+
+<dt>Joe Koperski <code>&lt;joekoperski@hotmail.com&gt;</code> (JK)
+<dd>-
+
+<dt>Josh R. Ray <code>&lt;joshray@prodigy.net&gt;</code> (JRR)
+<dd>-
+
+<dt>Jan Van der Veken <code>&lt;jan.van.der.veken@village.uunet.be&gt;</code>
+	(JVDV)
+<dd>Requested the "brighten or darken sectors" feature.
+</dl>
+<p>
+Thanks for your feedback !
+
+	</p><hr noshade>
+	<h2>Annex E: Miscellaneous information</h2>
+
+		<h3>What's in a name ?</h3>
+
+In its previous incarnation, Yadex was named Yade,
+which means Yet Another Doom Editor.
+I later realized that this name was already taken
+(by Yet Another Diagram Editor).
+I decided that the easiest way to remedy this
+would be to append a fifth letter.
+I chose "<i>x</i>" because it has a neat regular shape
+and because it evokes both Unix and X
+and therefore conveys an important political message ;-).
+<p>
+The right way to typeset it is with a capital Y and
+the rest in lower case. Think of it as of a proper noun.
+
+		<h3>Contact information</h3>
+
+The maintainer can be contacted at the following address&nbsp;:
+<p>
+André Majorel <code>&lt;amajorel@teaser.fr&gt;</code>
+<p>
+The web page is&nbsp;:
+<p>
+<a href="http://www.teaser.fr/~amajorel/yadex/">
+<code>http://www.teaser.fr/~amajorel/yadex/</code></a>
+
+	</p><hr noshade>
+
+</body>
+</html>
+

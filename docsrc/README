@@ -1,0 +1,97 @@
+Yadex $VERSION ($SOURCE_DATE)
+
+WHAT IS YADEX ?
+    Yadex is a Doom/Doom II/Heretic level (wad) editor for X.
+
+PREREQUISITES
+    You need :
+    - X11R6 and a display of at least 640x480x256,
+    - a shareware or registered Doom/Doom II/Heretic iwad,
+    - GNU make,
+    - GCC or EGCS (it should work with other compilers but you'll
+      have to tweak the makefile).
+
+COMPILING
+    Extract the archive in a new directory and type "make".
+    You will get some warning messages from the compiler. Ignore them.
+
+INSTALLING
+    If you want to install in /usr/local/, just type "make install".
+    If you want to install somewhere else, E.G. in /opt/yadex, add
+    "PREFIX=/opt/yadex" on the make command line.
+
+    -> BEWARE, the installation OVERWRITES the following files:
+    /usr/local/bin/bsp
+    /usr/local/bin/yadex
+    /usr/local/etc/yadex.cfg
+    /usr/local/man/man6/bsp.6
+    /usr/local/man/man6/yadex.6
+    /usr/local/share/games/doom.ygd
+    /usr/local/share/games/doom2.ygd
+    /usr/local/share/games/heretic.ygd
+
+    Before you run Yadex, you need to tell it where to find your iwads.
+    Open /usr/local/etc/yadex.cfg with your favourite text editor and
+    append the appropriate values after "iwad1=", "iwad2=" and "iwad3=".
+    If you don't want Doom II to be the default iwad, also change the
+    "game=" line.
+
+    You can now run Yadex by typing "yadex".
+    A prompt should show. Type "e map01" and have fun !
+
+    But there is much more to it than this so, for your own good, you are
+    advised to read users_guide.html (or, short of it, pretend you have
+    when I ask you).
+
+DOCUMENTATION
+    README             - This file.
+    yadex.lsm          - The LSM entry.
+    yadex(6)           - The good old terse man page.
+    bsp(6)             - Ditto for BSP.
+    users_guide.html   - What users should read.
+    hackers_guide.html - For people who want to hack it.
+    TODO               - A list of things I'd like to do.
+    HISTORY            - History of changes & what's new.
+    COPYING            - The license under which Yadex is distributed.
+    COPYING.LIB        - The license under which Atclib is distributed.
+
+    As Larry Wall would say : "did we mention that you should definitely
+    consider reading users_guide.html ?"
+
+STATUS
+    Yadex is work in progress. It still lacks important features like a
+    better interface, cut-and-paste, undo/redo, support for Boom and many
+    more. I know. They will come faster if you help.
+
+    The source code is a horrible mess. I'm not proud of it. Be indulgent.
+
+LEGAL STATUS
+    Yadex is GPL'd free software. It incorporates code from DEU 5.21
+    that was put in the public domain in 1994 by Raphaël Quinet and
+    Brendon Wyber. The rest is Copyright © 1997-1998 André Majorel.
+
+    Now comes the part I like best :
+    This program is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 2 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program; if not, write to the Free Software
+    Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+
+CONTACT
+    The maintainer:  André Majorel <amajorel@teaser.fr>
+    The web page:    http://www.teaser.fr/~amajorel/yadex/
+    If you have questions, suggestions, bug reports, observations,
+    beautiful levels made with Yadex, contributions etc. don't hesitate
+    to contact me.
+
+
+AYM 1998-12-20
+

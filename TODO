@@ -1,0 +1,558 @@
+----------------------------------------
+
+TO-DO LIST FOR YADEX
+
+----------------------------------------
+
+
+General
+- Better support for changing of configuration variables from the
+  editor.
+- Automatically adapt to level to edit; if it's a Doom level (ExMy),
+  reread doom.wad, if it's a Doom II level (MAPnn), reread doom2.wad.
+  what if it's a Heretic level ? It must be possible to tell a Heretic
+  level by the special sector & thing types.
+- DOS: do more modules splitting (deu.c, ReadConfigFile, menus.c).
+  In gfx.c, move InitGfx() in a separate module.
+- DOS: be able to handle large levels.
+- Understand sprites in PWAD (SS_START, S_END).
+- DOS: switch to DJGPP
+- DOS: dig *.wad...
+- DOS: maybe compress the sidedef struct (30 B -> 12 B).
+- DOS: try to waste less space with in-core image of wad directories.
+- DOS: respect screen ;
+  - restore contents
+  - restore proper number of lines/columns
+- Support Boom extensions, at least by allowing to enter hexadecimal
+  linedef types etc.
+
+Game definitions
+- Move thing groups colour from .ygd to .cfg.
+- Generalize the principle of game by replacing iwad[123]= by iwad=
+  in different sections of the .cfg.
+- Fix TranslateToDoomColor().
+- -g should accept anything as long as <anything>.ygd exists.
+- Have to think of how to handle different games : Doom, Doom II and
+  Boom all have a lot in common. Try not to duplicate all this, perhaps
+  by _include_ing a "generic_doom" block, which contains _if_s before
+  features not common to all versions.
+- It is prob. possible to crash the program by entering weird things in
+  LoadGameDefs. For example, shortdesc is not truncated and the current
+  number of "raise floor" types will probably make the menu "overflow"
+  the screen. DisplayMenu() should fix the y-offset if necessary.
+- It is possible to define the same group twice or use a non existing
+  group.
+- LoadGameDefs : try to waste less memory if possible.
+- LoadGameDefs : at present, FreeGameDefs does NOT unallocate what
+  LoadGameDefs allocated.
+- YGD: enter two iwad names for the same game (E.G. doom.wad and doom1.wad).
+- YGD: add list of animated flats and textures
+- YGD: add sprite names for things [partly done]
+- YGD: add player height
+- YGD: add flat width and height
+- YGD: add min and max player and deathmatch starts
+- YGD: an attempt to define twice the same thing/linedef/sector type
+  should be detected and reported.
+- Thing name: "Radiation shielding suit" is too long for the window.
+- FreeGameDefs(): apparently does not unallocate everything. It's
+  immaterial since it's only called just before exiting but I'll have to
+  fix it one day.
+
+Confirmation
+- Fine selection of automatic confirmations ("split linedef when
+  inserting new vertex", "split linedef when moving vertex", "merging
+  vertices", etc).
+
+Old bugs to fix
+- When splitting and merging sectors, some of the sidedefs in the split
+  sector are given the wrong sector number.
+- When splitting a sector, sometimes get erroneous messages like
+  "vertices A and B not on the same sector" or "cannot find a closed
+  path", etc. I have already got "no sector between vertex A and vertex
+  B" ; save, quit, edit and try again : it works !
+- A newly created sector is sometimes not highlightable until the level
+  is saved (F2).
+- Let RIGHT work after SPACE (works if no mouse driver!)
+- DOS: understand why mouse pointer moves 8 pixels at a time and fix that.
+- I already got erroneous "sector not closed" messages. The last time I
+  remember, it was on a tiny triangular sector (base=16, height=2).
+- When merging sectors, linedefs sometimes get only 1 sidedef...
+- InputInteger limits numbers to [-32749,+32749].
+- InputInteger doesn't accept hexadecimal numbers.
+- DOS: numeric keypad "." means Del even if Numlock is on.
+- If you do "delete linedef and merge sectors" when it's the same
+  sector on both sides of the linedef, the sector is deleted.
+- Check that all sectors are closed : chokes on pseudo sectors (s1=s2).
+  I've verified that unclosed sectors, whether single ou double sided
+  don't disturb Doom. However, some look ugly. The checking function
+  should be modified so that only ugly unclosed sectors are reported.
+- DOS: fake pointer: make it an arrow and not flickering (Ben Davies).
+
+Editing in general
+- Move things along with vertexes
+- Add a "global" or "everything" editing mode. In that mode, moving,
+  deleting, duplicating affects all objects (things, vertexes...)
+- Move cursor : jump to next object in direction ...
+- Move objects n grid steps in direction ...
+- Move objects n Grid steps in direction ...
+- Move object to nth next grid position in direction ...
+- Move object to nth next Grid position in direction ...
+- Flip info window on either side of the screen.
+- Toggle key to zoom in temporarily (press once -> x4, press again -> /4)
+
+Editing things:
+- Thing info box:
+  - It's a waste of time to scan all the sprites each time; should
+    do a dichotomic search or prepare sprite names each time either
+    the game is changed or a pwad is loaded/unloaded. Better yet,
+    copy offset and length of lump to avoid a FindMasterDir().
+  - Should not match S?_START and S?_END.
+  - What if there are several S_ blocks ?
+  - Should sort the sprite names before searching.
+  - Eye candy: animate the sprites.
+  - Eye candy: show the sprites according to their angle.
+
+Editing vertices:
+
+Editing linedefs and sidedefs
+- Linedef type : show long name.
+- When ceiling is F_SKY1, do not mark upper textures as missing.
+- Paint linedef with colour depending on difference of floor height...
+- Show several textures at a time ?
+- Insert window/corridor/door between sectors. exactly 2 linedefs must
+  be selected and they must no belong to the same sector. select style;
+  low window, high window, small door (64x72), big door (128x128-),
+  user-defined.
+- Function: split inner sector with channel:
+
+		+---------+		+---------+
+		| +-----+ |		| +-----+ |
+		| |     | |		| |     | |
+		| |     | |	===>	| +-----+ |
+		| |     | |		| +-----+ |
+		| |     | |		| |     | |
+		| +-----+ |		| +-----+ |
+		+---------+		+---------+
+
+- Function: make plain embrasure:
+
+		---+----+---		---+----+---
+		   |    |       ===>       |----|
+		   |    |                  |    |
+
+  also "45° embrasure" and "fancy embrasure" (sides are L-shaped).
+
+- Nooks and bosses: add a way to specify width and depth. Maybe have
+  several predefined dimensions plus user-defined dimensions (set in
+  the config file). Maybe set textures automatically (EG DOORSTOP and
+  LITE4). Provide for shapes other than rectangle.
+  Difference with "Make nook" is that it also splits the sector.
+  Maybe set automatically floor and ceiling height of new sector.
+- Automatically set UTU/LTU when line becomes 2-sided ?
+- Reset linedef as double-sided (sets 2S, unsets IM, clears normal
+  texture, set upper and lower textures, possibly set UTU and LTU).
+- Frequent operations :
+  copy upper texture -> lower texture or inverse
+  set texture. mostly on 1st sidedef
+  set normal texture 
+  copy lower+upper texture = normal texture of adjacent linedef,
+  set lower+upper texture unpegged, normaltx = -
+- Cut and paste between wads. at least in a limited way: insert the
+  contents of a wad at the cursor. involves renumbering all items
+  by adding the number of such items already existing. E.G. if there
+  are already 50 vertices, increment the vertex numbers in all the
+  linedefs by 50. Same thing for sidedefs numbers in linedefs,
+  sector tags (DON'T increment those above 900!). increment sector#
+  in sidedefs too. that's all ?
+- Select all linedefs that in same path as the highlighted one.
+  This can be hairy when the same vertex is shared by more than 2
+  sidedefs. Ideas that come to mind :
+  - only single-sided linedefs,
+  - only linedefs that have as many sides as the reference linedef,
+  - called from sector mode: select all linedefs that form the
+    boundary of the sector and switch to linedef mode,
+  - only linedefs that form a chain (last (n-1) == first (n)).
+- Fix the mess with duplicating linedefs. The ideal would be to
+  duplicate sidedefs, but to be also able to share them (if asked
+  explicitly). Maybe by using a modifier when copying like [Alt]...
+- Function to substitute sidedef texture.
+- Dragging linedefs is still slower than dragging vertices. But it might
+  be just because of the overhead of highlighting all those linedefs.
+- Another function often needed : "split" a vertex shared between
+  several linedefs :
+
+                    |                  |
+                  --x--     ===>     --x  x--
+                    |                     |
+
+  The way to use it could be : select one or more linedefs that have
+  a common vertex. That vertex is duplicated, moved aside a little bit
+  (so as to reduce the lengths of the linedefs and the vertex reference
+  of the concerned linedefs is changed. Instead of moving it, it could
+  be selected for dragging automatically...
+  Could be called "unlink vertex".
+
+Editing sectors
+- Set floor height to ceiling height - headroom.
+- Set ceiling height to floor height + headroom.
+- "Change sector reference" or "substitute sector"
+  Change sector reference for all the sidedefs that reference one of the
+  selected sectors.
+- Paint sectors with colour depending on tallness, brightness, texture...
+- Function to substitute sector texture.
+- Dragging sectors is still slower than dragging vertices. But it might
+  be because of the overhead incurred by highlighting all the linedefs.
+- Sectors are sometimes mistakenly considered unclosed and don't
+  highlight properly. E.G. in ss27bet2.wad, sector #66.
+- A DCK-like philosophy could be used when moving sectors :
+
+	|			|
+	|  +----+	      +-+--+
+	|  |    |	==>   |    |
+	|  |    |	      |    |
+	|  +----+	      +-+--+
+	|			|
+
+
+Keyboard interface
+- Proposition: in linedef mode, <letter><letter> gives access to
+  parameter.
+- Add macros and key bindings.
+
+Documentation
+- Update DEU 5.21 doc...
+- Document screenshot.
+
+Unimportant :
+- If bgi= or -bgi specifies a path for the .bgi driver, handle it.
+- Search for .cfg in directory where .wad is. hm-hm...
+- Nodes: have an option to pipe the output file through BSP.
+
+Picture viewer
+- Use other palettes than #0 (also when saving).
+- Use COLORMAPs (also when saving).
+- Zoom.
+- Toggle between SW1* and SW2*.
+- Go to next sprite (E.G. advance until root changes).
+- Display number of patches (and posts, and patch list...).
+
+X11 port
+- Implement Beep() and its friend.
+- Implement -geometry and -display.
+- Implement several windows at once ?
+- Add an option like in Xmame to have either a private or shared colormap
+  (by default shared, at least in map mode).
+- Look into *WMHints*()
+- When drawing the map, etc, ignore some intermediate events (for mouse
+  pointer position). Also, when several arrow key keystrokes are in the
+  input key, just count them and redraw only once.
+- Displaying pointer coords; should look into using PutImageFont().
+- Replace all occurences of BLACK, WHITE, ... by logical colours.
+- Set WM hints (icon name, min size, max size, etc.).
+- Find a replacement for bioskey(0) in text mode.
+- Look into getting the status of scroll lock.
+- Handle KeymapNotify events.
+- Show cursor in input boxes and let user move it with arrows and mouse.
+- The numeric keypad does not seem to work.
+- The highlight proximity should always match the apparent size of the
+  object (done for things, to be done for vertices and linedefs).
+- Jump/GoToObject : object should not be put at the center of the screen
+  but under the pointer.
+- Grid: draws one line too many to the right, two lines too many to the
+  bottom and one line too few to the top. [fixed ?]
+- When there is another colour-hungry app running (like Netscape), get
+  error upon freeing colours. I think Xmame has the same problem.
+- After pressing Alt-Fn, get "(state & Mod1Mask)=0 but is.alt=1"
+- Make sure that input.c intercepts only events concerning Yadex's window.
+- Externalize occurences of ".wad".
+- Externalize occurences of ".bak".
+- Let the selection include objects of different types.
+- GetCurObject(): the radius should not be expressed in map units but in
+  screen units and should depend on the apparent size of the object.
+  Indeed, 20 is too much for linedefs at high zoom factors and too little
+  for vertexes at low zoom factors.
+- There is something that sucks in the edit loop ; when you scroll without
+  moving the mouse, the selection box always "lags behind" because its
+  map coordinates are updated only _after_ the next screen refresh.
+- Select all.
+- Reverse selection (select everything that's not selected and unselect
+  everything that's selected).
+- Edit functions : copy, cut, paste.
+- Crop (delete all unselected objects).
+- Persistent box for cropping ?
+- Be able to select objects of several types at once.
+- Modelessness ?
+- When there are several objects under the pointer, report it and give
+  a way to access any one of them. Or maybe implement planes ?
+- When doing drag-n-drop, should the snap-to-grid be applied to
+  A. relative position since started dragging
+  B. or to the highlighted object ?
+  If A, you can't use drag-n-drop to snap-to-grid objects that aren't.
+  If B, you can't drag correctly objects that are not aligned on grid.
+- Object number: the type should be "u16", not "int" (cf. SelPtr).
+- Object number: the test for none should be "==0xffff", not "<0".
+- Add a special function (like ProgError) to report bugs. It shall
+  display the message along with something like : "This is a bug in
+  Yadex -- report this to amajorel@teaser.fr".
+- Browse mode, as in xv and psp, to browse through a large number of
+  wads.
+- Be able to open zipped files ?
+- After a resize, pointer_x/y are not updated so the wrong object is
+  highlighted.
+- After a resize, the map is redrawn 3 TIMES !
+  I know why : the window manager (FVWM) send three sets of exposure
+  events. Making drawmap() and refresh in general able to do partial
+  drawings will eliminate this problem. And give better performance
+  when moving a thing, or flipping through the menus.
+- On ProgError(), save current data to a file named yadexcrash.wad.
+  On startup, if that file exists, propose to use it.
+- If DOOMWADDIR exists, use it ? But overridden by yadex.cfg & -iwad
+- Texture browser : it's so slow that, even on a K6/200, some textures
+  are slow to come (AMRIBS). Should cache patches ?
+- JVDV suggests single-key sector splitting à la WinDEU.
+- BD suggests sector creation à la DCK ("r" then draw box).
+- Parameters :
+  - colour# used to represent transparent colour when saving textures,
+  - rgb used to represent transparent colour when saving textures,
+  - rgb used to represent transparent colour when displaying textures,
+- Replace putimage() by calls to display_game_image().
+  Implement the BGI version of display_game_image().
+- Sprite viewer does not work well (should wait for first expose event).
+- While dragging or drawing a selbox, prevent Del, Ins, etc. from
+  working. E.G. Del would suppress the object being dragged !
+- Add config file parameters for initial snap_to_grid and lock_grid_step.
+- Scale: make it local to an edit window.
+- MadeChanges: make it local to an edit window.
+- MadeMapChanges: make it local to an edit window.
+- When saving with F2, ".wad" should be appended automatically.
+- Log file: create/update it iff the PWAD file is modified.
+- Things: the name is sometimes too long and cut off. It looks bad.
+- Highlighthing things: if there is a small thing and a large thing
+  in the same spot, when you're "in" the small thing, it should be
+  highlighted, even if it's higher-numbered. At the moment, it's the
+  lowest-numbered thing that's highlighted.
+- A function that would be really very useful would be the possibility
+  to change the start/end vertex of a linedef. That could be done by
+  holding, say, Alt, down and dragging the start/end until on top of
+  another vertex. When the button is released, the linedef start/end
+  is changed and the sector references of the impacted linedefs are
+  updated.
+- Texture viewer: wide textures (such as the SKY in darken2d.wad) are
+  not clipped.
+- Events; generalize internal events and hold refresh until all events
+  have been processed. Though autoscroll could bite me.
+- Delete all those "huge" qualifiers ; means nothing for Unix and the
+  DOS version should be compiled with -mh anyway.
+- Flat viewer: with mm2.wad, thinks "FF_END" is a flat.
+- With font "variable", in the flat viewer, underscores are not cleared
+  properly.
+- Ctrl + Click:
+    Press button: do nothing.
+    Release button: select or unselect IF STILL ON TOP OF OBJECT.
+  Thus we can use Ctrl + drag to copy :-).
+- XLoadFont(): handle errors more gracefully.
+- Makefile: differences between "make" for end users and "make"
+  for hackers :
+  - make compiles with -g and possibly -lefence
+  - make installs automatically
+  - make runs Yadex automatically (perhaps with -v)
+- Vertex on linedef: lower tolerance when zoom factor is high.
+  [partly done as of 1998-12-20 but still needs work].
+- Check self-consistency of level data: for each linedef, v1 and v2
+  must be either OBJ_NO_NONE or between 0 and NumVertexes and
+  s1 and s2 must be either OBJ_NO_NONE or between 0 and NumSideDefs.
+- Showing linedef textures: several solutions:
+  - easiest: show raw middle texture,
+  - easy: show raw upper, middle and lower textures,
+  - hardest: show as Doom would render it, with offsets, LTU, UTU
+    and all. Scale it down so as to fit in the window that has a
+    fixed size. Optionally apply brightness. Maybe show
+    the edge of the neighbouring walls, it might help for alignment.
+    ISSUE: it might not be a good thing to respect the length of
+    the linedef as, for long linedefs, it will force us to scale
+    down too much.
+  For textures that don't exist, show background with cross. For
+  texture "-", show background only. For transparent texture,
+  background sees through. It's probably better to use a special
+  colour (like black) for background as the user might want to
+  use a bright colour for window backgrounds, which wouldn't look
+  too good with Doom's dark textures.
+- Showing sector textures: optionally apply brightness.
+- Goto function: takes as an argument either the centre of the level
+  or a previously set mark. Like in vi: m<mark>, '<mark>. Maybe ''
+  to go to centre ?
+- One day, should try to make "n", "N", "<" and ">" work better
+  (i.e. not need [Shift]).
+- Clicking and superimposed objects: if n1 and n2 (n1 < n2) are
+  superimposed, n1 is not selected but n2 is selected and you click
+  on them, Yadex thinks you are starting a new selection because
+  is_selected (highlight) is false.
+- objects.cc: GetObjectCoords(): should use center_of_objects()
+  instead.
+- Grid: have a choice between lines and dots
+- Permanently show a 64-wide object to scale ?
+- Right-button menus: access to many different menus (no modifier,
+  [Shift], [Ctrl], [Alt], several of them).
+  - Cut, copy, paste
+  - Show properties
+  - Misc. operations
+  - Frequently used properties (toggle bit of linedef...)
+  - Change tool
+- Dragging with [Ctrl] on duplicates ?
+- Makefile: after changing DEFINES in the makefile, running make does
+  nothing ! (have to delete manually wads.o and sanity.o)
+- Makefile: after hacking for two days on a machine, some objects are
+  not rebuilt on another machine. Even though yadex.h has changed !
+- Menus: when you move the pointer over a pulled down menu is, you can
+  highlight the objects it hides.
+- Replace "insert rectangle"/"insert polygon" by :
+  - insert pillar (nb. of sides, size)
+  - insert subsector
+    Differences in floor/ceiling height/textures and lighting level could be
+    set by predefined styles :
+    - pedestal (floor + 48, ceiling - ...)
+    - hanging from ceiling
+    - teleporters
+- In addition of make nook/make boss,
+  - insert protruding subsector
+  - insert recessed subsector
+- Force the event type to 16 bit. Would make us save a few kB in the
+  menus (shortcut_key and cooked_shortcut).
+- Change the way the menu_c class is defined so that it wastes less
+  space. Should probably look into other classes too. Why not using
+  bitvectors instead of arrays of ints used as booleans ?
+- Setting options: add a "set name value" prompt command.
+- Setting options: make "set" stop after each screenful.
+- Setting options: modify the "Preferences" menu so that all options
+  can be changed from there and modifications are saved.
+- The popup menus should get the pointer position event when there
+  is no motion event. It's an issue when, to close a submenu, you
+  click on the parent menu; until you move, the parent menu still
+  highlights the old line.
+- Object info box: if the box is already drawn, don't draw it again;
+  it makes the strings and, more importantly, the sprite window flash
+  (black -> WINBG -> black).
+- [Alt] alone should highlight the menu bar.
+- Minor glitch: when a popup menu is active, the spot is still shown
+- Minor glitch: when a popup menu becomes active (active again) it
+  does not try to check if the pointer is over it. It waits for the
+  first motion event. I'm not sure whether this is the right thing.
+- Popup menus: that code is brittle because the same menu_c object
+  is used for popups and pull-downs. For example, if a menu was pulled
+  down before the same menu (that was previously popped up) was undrawn,
+  weird things might happen. I don't like the idea of duplicating the
+  whole menus, though. It would be cleaner to split the menu_c class
+  into a constant part and a dynamic part but it would be a lot of work.
+- Split sector: the new linedef should go from 1 -> 2, not the other
+  way around.
+- Highlighting sectors: for a constant number of sectors to highlight,
+  gets slower as the total number of sectors increases. Might have to
+  do with the search for tagged linedefs.
+- Highlighting linedefs: same problem when some of the linedefs to
+  highlight have a non-zero tag. IMO, the key of the problem is the
+  O(2) part in the highlighting of sectors. Should restructure 
+  HighlightObject() and HighlightObjects(). Build a bit vector of all
+  linedefs that should be highlighted and do them all in a loop, without
+  recursion. And thus we would not highlight the same linedef more than
+  once anymore.
+- Highlighting linedefs: the test "tag > 0" is arguable. Shouldn't it
+  be "tag != 0" ?
+- When merging superimposed 1S linedefs, the resulting 2S linedef often
+  has the middle textures the 1S linedefs had.
+
+
+----------------------------------------
+
+MISCELLANEOUS MUSINGS
+
+----------------------------------------
+
+COLOUR HANDLING
+[AYM 1998-11-30: don't trust this, it's partially obsolete]
+Yadex can run on "a variety of displays". We can have anything from 16 to
+16M colours. It needs to be able to handle this variability correctly and
+quickly. I have to following idea : the code uses internal colour numbers
+(ICN) to specify colours. When a part of the code needs a certain colour,
+it calls a particular function with the RGB spec of that colour and the
+function returns an ICN. Only the function knows how many colours are
+really available. The rest of the code does not have to deal with that.
+If more colours than that are asked for, it tries to allocate colours
+anyway, possibly by approximating the required colour by an already
+existing one or even by reshuffling the palette.
+
+The colour allocation function uses an internal table which has as many
+entries as there are allocated colours. Each entry contains the RGB
+description of the colour and the corresponding external colour number.
+
+The behaviour of the colour allocation function is influenced by certain
+parameters. E.G. for X11, there is a flag that says whether the user is
+willing to have a private colormap for the Yadex window.
+
+The IRGB constants in the code need to be replaced by RGB values taken
+from the configuration file (like has been done for THINGS colours).
+
+Suggestions if it's difficult to allocate all colours :
+
+  You could try to
+  - stop other colour-hungry applications
+    that may be running (such as Mozilla)
+    and restart Yadex,
+  - restart the X server with more colours
+    (E.G. "startx -- -bpp 16"),
+  - restart Yadex with -privatecmap.
+
+WIDGETS
+A widget should have the following methods :
+- create:
+- destroy:
+- get_size: the size the widget would like to have
+- set_size: the size the widget got from the geometry manager
+- set_coords: the top left corner assigned by the geometry manager
+- draw: can be partial !
+- undraw: only some widgets can do that
+- set_focus: gain or lose focus
+
+The types of widgets :
+- text label
+  Attribute: text
+- button: a rectangle.
+  Attribute: text label.
+  Attribute: text label colour (grayed out ?)
+  State: depressed or normal.
+  State: would be activated by return.
+  Event: if left button is pressed on it, sinks.
+  Event: if left button had been pressed on _that_ button and is
+    released on top of it, triggers.
+  Event: if pointer moves away, returns to normal.
+  Event: if pointer comes in and left button is pressed and when it
+    was pressed, the pointer was on top of _that_ button, sinks.
+- radio buttons
+  Attribute: channel #.
+  State: on or off
+  Event: similar to button.
+- check buttons
+  Event: similar to button.
+  State: on or off
+- window
+  Attribute: title
+  Attribute: a list of widgets with placement information.
+
+GEOMETRY MANAGER
+The geometry manager is passed a list of widgets with placement
+information.
+Each widget is 
+Braces are groups of widgets. A group of widgets is a rectangular shell.
+By default, the group places its widgets from top to bottom and aligned
+to the left.
+A widget group can optionally be materialized by a frame and a title.
+Brace modifiers:
+- place widgets left-to-right
+- place widgets left-to-right
+- place widgets top-to-bottom
+- place widgets bottom-to-top
+Widget modifiers (override the per-group placement order):
+- "<" left-align
+- ">" right-align
+- "^" place to the top
+- "v" place to the bottom
+

@@ -1,0 +1,256 @@
+----------------------------------------
+
+Yadex
+History of releases
+
+----------------------------------------
+
+
+AYM 1997-08-20
+
+  First version ever released.
+  Sent to JVDV (reported no bug).
+
+AYM 1997-11-01
+
+  - Added "Make rectangular nook" and "Make rectangular boss" in
+    linedef misc. operations.
+
+  Sent to JVDV.
+  Sent to JK.
+
+AYM 1997-11-30
+
+  - Added full support for Doom II : uses sector and sidedef textures
+    from doom2.wad.
+
+  Sent to JK (said it worked fine).
+
+AYM 1997-12-12
+
+  - Attempted to speed up sidedef texture display (without much success).
+  - Oops! I realized that unlike what I wrote on 1997-11-30, Doom II
+    support is still not complete. The "linedef type" dialog doesn't let
+    you enter new linedef types (turbo door, etc.) and the "thing type"
+    dialog doesn't let you enter new thing types (mercury lamp, etc.).
+    Unless you know the type number by heart, of course.
+
+  DEU BUGS FIXED :
+  - Fixed old DEU bug that triggered "Error reading from file" when
+    trying to display new textures. Yade doesn't need the -deu option of
+    Deutex anymore.
+
+  Sent to JVDV (no report).
+  Sent to JRR (said it "seems stable").
+
+AYM 1997-12-20
+
+  - Added brightening or darkening of selected sectors.
+
+  Sent to JVDV.
+
+AYM 1998-02-07
+
+  - Added "..." where needed in "Misc operations" menus.
+  - Added 1 extra magnification step (x8).
+  - Bounds for grid step are now customizable (gridmin & gridmax)
+  - Added logging of time spent editing.
+  - Added setting of linedef length (by moving either vertex).
+  - Improved memory consumption (about 20 kB less than DEU 5.21). I did
+    this simply by improving the overlay granularity.
+  - Added parameters game= (-g), iwad1= (-i1) and iwad2= (-i2).
+  - Thing types, linedef types and sector types are now defined in the
+    .ygd file instead of being hard-coded.
+  - You can now use Doom II thing types and v1.666 linedef types.
+  - The "thing type" dialog : what was called a class is now called a
+    group. If you press Esc from within a thing group, you return to the
+    group list. Groups are more finely defined than in DEU.
+  - The "linedef type" dialog : if you press Esc from within a linedef
+    type group, you return to the group list. Groups are more finely
+    defined than in DEU.
+  - Things colours : teleport exits are now green like player starts,
+    monsters are normal red, not bright red and keys are pink.
+  - Removed arbitrary limitations on the value of the following fields :
+    thing type, linedef type, linedef tag, sector type, sector tag. All
+    can now be entered over the full range [-32768, +32768]. Well,
+    actually [-32749, +32749] because of the input routine.
+  
+  BUG FIXES :
+  - Fixed the stupid bug in the "CREATE" command.
+  - Put back in one of the "superimposed linedefs" checking that I had
+    #ifdef'd out on 1997-07-17 and forgotten to un-#ifdef. Sorry for that.
+  - A sidedef is not deleted anymore if there still is a linedef that
+    uses it. This was an issue when deleting a linedef created by
+    duplication.
+
+  DEU BUGS FIXED :
+  - The numeric keypad can now be used in menus.
+  
+  Sent to JVDV.
+
+AYM 1998-02-13
+
+  - Added shift-F1 in picture viewer to save image to a file.
+  - Added indication of size when viewing sprites.
+  - Added display of sector headroom (ceiling-floor).
+  - Removed 5 more arbitrary limits (amount to raise or lower sectors
+    by, sector floor and ceiling height, sidedef x- and y-offset).
+
+  BUG FIXES :
+  - Fixed the screen shot bug (in the 1998-02-07 release, shift-F1 hangs).
+    Apparently the gifsave library doesn't like to be linked as an
+    overlay.
+  - Pressing Esc after "Raise or lower sectors" or "Brighten or darken
+    sectors" now works. I had forgotten that, in C, "==" has a higher
+    precedence than "&", grr...
+    
+  Sent to BD (reported no bug).
+  Sent to JK.
+  Sent to JRR.
+  Sent to JVDV.
+
+AYM 1998-02-14
+
+  - Rebuilt gifsave with -Y and overlaid it again. Gain : 3 kB.
+  - To make it easier to edit crowded areas at high zoom factors,
+    limited the apparent size of vertices and linedef arrows to what it
+    is at zoom factor 1/1.
+  - Optimization : when drawing the map, now avoids to draw off-screen
+    things and vertexes. It's still slow :-(
+
+  - Added substitution of sidedef and sector texture.
+  (not finished as of 1998-05-25)
+
+AYM 1998-06-03 (after sending YADE8603.ZIP to Ben)
+
+  - More optimization ; when drawing the map, now avoids to draw
+    off-screen linedefs. This one did speed things up :-). Also avoid to
+    call SetColor() unnecessarily.
+  - Added ^L to force redraw.
+
+Yadex 1.0.0 (AYM 1998-12-26)
+
+  - Renamed as Yadex to avoid confusion with Yet Another Diagram Editor.
+  - Added magic string to configuration file.
+  - Added magic string to game definition file.
+
+  - Platform: ported to X (plain Xlib). This version is not available
+    for DOS.
+  - Platform: now works on big-endian machines.
+  - Platform: removed several DOS-isms from file name handling code.
+
+  - Loading pwads: implemented standard directories. If the pwad to load
+    is in one of the standard directories (or a subdirectory) you don't
+    have to type the whole name.
+  - Loading pwads: added standard directories and made the messages less
+    verbose for pwads that contain patches (PP_START/PP_END).
+
+  - Included BSP 2.3
+  - If a wad file has been changed and saved, remind the user to build
+    nodes.
+
+  - Game support: Heretic is now supported.
+  - Game support: added support for Boom's new thing flags not-in-deathmatch
+    and not-in-coop.
+  - Game support: added support for Boom's new linedef flag pass-through.
+  - Game support: added definitions for Boom's things 5001 and 5002 (point
+    pusher and puller).
+
+  - Command line: you don't have anymore to put "-file" or "-pwad" in front
+    of pwads names on the command line. E.G. you can type "yadex foo.wad".
+  - Command line: deleted a few little-used or DOS-specific options.
+
+  - Prompt: now groks TTYs with a number of lines other than 25.
+
+  - Menu bar and pop-up menus much improved.
+  - Info bar: reworked.
+  - When prompted to "Press a key to continue", you can now also press
+    the left mouse button.
+  - Grid: the grid step can now adapt automatically as you zoom in/out.
+  - Grid: whether dragging is snapped to grid is now independent of whether
+    the grid is shown or not (added flags grid_snap and grid_shown).
+  - Changed the welcome message (a.k.a. "reminder").
+  - Added an "About Yadex..." window.
+  - Added finer-grained confirmation options.
+  - General editing: you can now scroll the map further from the centre
+    of the level.
+  - Technical: replaced occurences of "x==TRUE" and "x==FALSE"
+    by "x" and "!x".
+  - Technical: replaced occurences of "x=TRUE" and "x=FALSE"
+    by "x=1" and "x=0".
+  - Added ['] to re-centre the window around the centre of the map.
+  - Added [`] to re-centre the window around the centre of the map
+    and adjust the zoom so that the map fills the screen.
+  - Added [&] to show things and vertices numbers.
+  - Autoscroll: scroll speed is now progressive.
+  - Autoscroll: easier to use near the top of the window.
+  - [Left], [Right], [Up], [Down] do nothing.
+  - [Space] does not toggle move fast/slow anymore; it toggles between
+    nominal zoom and x 4.
+  - Highlighting of things, vertices and linedefs much improved.
+  - Don't copy SEGS, SSECTORS, NODES, REJECT and BLOCKMAP from the original
+    file anymore when the map has changed. Makes smaller .wad files. Nice
+    for archival.
+  - Added environment variable YADEX_GAME.
+  - Dragging objects is now done with the left mouse button instead of the
+    right button.
+  - Editing object properties is now done by double-clicking on the object.
+  - Selection and drag-and-drop have changed a lot.
+  - Selection box: removed the -a (addselbox) option. Whether the selection
+    box is additive or not is now controlled by the user (with [Ctrl]).
+  - Sprite viewer: sprites are now centred.
+
+  - Linedef info: shortened flags names to one character.
+  - Linedef info: a missing normal texture on a 1-sided linedef is now
+    flagged in red.
+  - Linedefs copy: you now have the choice between duplicating
+    the sidedefs too and reusing the same sidedefs. DEU left the new
+    linedefs sidedef-less and, so far, Yadex used to reuse the same
+    sidedefs.
+  - Linedefs: added function to "unlink" sidedefs.
+  - Linedefs: dragging linedefs is much faster than before.
+  - Linedefs: can now set/toggle/clear flags by pressing [a],[b] or [c].
+
+  - Sectors: in the object info window, added display of floor and ceiling
+    height delta with respect to previous sector.
+  - Sectors: in the object info window, added display of floor and ceiling
+    texture.
+  - Sectors: dragging sectors is much faster than before.
+
+  - Things: now drawn as squares so that it's easier to see whether they
+    are stuck in a wall or another thing. And you don't have to highlight
+    them to see their angle. Note: the old shape is still available by
+    #defining ROUND_THINGS.
+  - Things: changed the colours again. Tried to make important things
+    stand out and conversely. Bonuses are now dark green and player/
+    deathmatch start bright green. Keys are magenta. Decoration is
+    dim blue instead of white. Unknown objects are cyan instead of
+    white. Weapons are orange instead of brownish. Heretic sound source
+    things and Boom point pushers are dim turquoise-ish.
+  - Things: the sprite is now shown in the object info window.
+  - Things: can now set/toggle/clear flags by pressing [a],[b] or [c].
+
+  - Vertices: deciding whether a vertex is on a linedef is now done on the
+    distance in pixels, not in map units. So you can now work on very fine
+    details (E.G. vertices only 2 map units away) provided that the zoom
+    factor is high enough.
+
+  DEU BUGS FIXED :
+  - Removed dereferencing of NULL pointer in ParseCommandLineOptions().
+  - Fixed minor glitch in texture viewer that showed with BIGDOOR7, SKY1,
+    TEKWALL1, TEKWALL5 and others.
+  - When highlighting a sector, compared
+    SideDefs[LineDef[n].sidedef1].sector with ObjNum even though .sector
+    was -1. Somehow it always tested false.
+  - "Check textures names": the name of the offending texture is now
+    printed correctly even if it is 8 characters long.
+  - "Check textures names": if you fixed a missing texture, the editor
+    was not made aware that you had made changes to the level.
+  - Unused sectors are not selected anymore.
+  - Changing the preferences could overwrite other variables.
+  - InputNameFromListWithFunc() used to segfault if you pressed [page
+    down] on a list shorter than (listdisp + 1) elements.
+  - Removed segfault during fatal_error() on failure to open the iwad.
+  - Removed segfault in AlignTexturesX().
+
+

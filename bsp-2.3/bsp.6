@@ -1,0 +1,92 @@
+.TH bsp 6 1998-02-23 "BSP 2.3"
+
+.SH NAME
+bsp \- node builder for Doom wad files
+
+.SH SYNOPSIS
+\fBbsp\fP [\fIoptions\fP] [\fB-o \fP\fIfile\fP] \fIfile\fP
+
+.SH DISCLAIMER
+This program is furnished on an AS IS basis for the fun of it.
+id Software does not support this program.
+
+.SH DESCRIPTION
+BSP builds the node and blockmap resources for a level map in
+a wad file. Level maps created with level editors and level
+compilers won't run without this resources build by a node builder.
+The program supports multilevel building, means it automatically
+builds the resources for all levels found in the input wad file.
+.LP
+If the program is used without the \fB\-o\fP option it will create an output
+wad file with the name \fBtmp.wad\fP.
+.LP
+BSP has some special effect features:
+.LP
+If a linedef has a sector tag >= 900, then it is treated as "precious"
+and will not be split unless absolutely necessary. This is good to use
+around borders of deep water, invisible stairs, etc.
+.LP
+Furthermore, just for a grin, if the linedef's tag is 999, then the
+sidedef's x-offset set an angle adjustment in degrees to be
+applied \-\- you can look straight at a wall, but it might come
+right at you on both sides and "stretch".
+.LP
+BSP supports HOM-free transparent doors. Simply make the sector
+referenced by the doortracks have a sector tag of >= 900. No need
+to remember sector numbers and type them in on a command line \-\-
+just use any sector tag >= 900 to permanently mark the sector
+special.
+
+.SH OPTIONS
+.TP
+.BI "\-factor " number
+Changes the cost assigned to seg splits. Factor can be any positive
+integer, and the larger the factor, the more costly seg splits are.
+A factor of 17 is the default and behaves just like earlier versions
+of BSP.
+Changing the factor can sometimes prevent visplane overflows in wads.
+But then again, some wads have just too many visplane overflows,
+experiment with the \fB\-factor\fP option before giving up.
+.TP
+.B \-noreject
+Does not clobber already existing reject map.
+.TP
+.BI "\-o " file
+Write output to \fIfile\fP instead of \fBtmp.wad\fP.
+.TP
+.BI "\-thold " number
+Threshold for visplane overflow. May be used to report
+more potential visplane overflows
+if the \fB\-vpwarn\fP or \fB\-vpmark\fP options
+estimate too few visplanes. Default threshold is 128.
+.TP
+.B \-vp
+Attempts to prevent visplane overflows without loss of detail. Using the
+option causes node line picker to choose node lines in a way that is
+empirically known to reduce or eliminate visplane overflows.
+.TP
+.B \-vpmark
+Marks visplane overflows with player starts. It's a good idea to write
+to a separate output file when using this option! One can use an editor
+then, play each alternate player start, and see if each one causes
+visplane overflows, and then remove it. Usually no-clipping must be used,
+at least to step out of walls, since it inserts player starts without
+regards to collisions, and it uses walls as a basis for visplane
+calculation.
+.TP
+.B \-vpwarn
+Warns about potential visplane overflows.
+
+.SH SEE ALSO
+The Unofficial Doom Specs by Matthew S Fell.
+.br
+\fBbsp23x.txt\fP
+
+.SH BUGS
+Will only work on little endian systems.
+
+.SH AUTHOR
+BSP was written by Colin Reed and Lee Killough (killough@rsn.hp.com).
+André Majorel did the Unix port
+and wrote the man page based on the one written by Udo Munk.
+

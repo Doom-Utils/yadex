@@ -1,0 +1,131 @@
+.TH yadex 6 $SOURCE_DATE "Yadex $VERSION" \" -*- nroff -*-
+.SH NAME
+Yadex \- Doom/Doom II/Heretic level (wad) editor for X
+.\"
+.\"
+.SH SYNOPSIS
+.\"
+.\"
+\fByadex\fP [\fIoptions\fP] [\fIfile\fP ...]
+.\"
+.\"
+.SH DESCRIPTION
+.\"
+.\"
+Yadex can be used to view, create and modify levels for
+\fBDoom\fP, \fBDoom II\fP and \fBHeretic\fP.
+.PP
+See \fBREADME\fP for a quick start.
+.br
+To know what's new in this release, see \fBHISTORY\fP.
+.br
+The rest of the user documentation is in \fBusers_guide.html\fP.
+.\"
+.\"
+.SH FILES
+.\"
+.\"
+.B ./yadex.cfg
+.br
+.B ~/yadex.cfg
+.br
+\fIinstall_dir\fB/yadex.cfg\fP
+.br
+.B /usr/local/etc/yadex.cfg
+.br
+.B /etc/yadex.cfg
+.PP
+.BI ./ game .ygd
+.br
+.BI ~/ game .ygd
+.br
+.IB install_dir / doom .ygd
+.br
+.BI /usr/local/share/games/ game .ygd
+.br
+.BI /usr/share/games/ game .ygd
+.\"
+.\"
+.SH "ENVIRONMENT VARIABLES"
+.\"
+.\"
+.IP \fBDISPLAY\fP
+Unix only. The name of the X display that Yadex will try to connect to.
+.IP \fBYADEX_GAME\fB
+Indicates the game to use.
+Overrides the \fBgame\fP parameter in the config file,
+is overridden by the \fB-g\fP command line option.
+.\"
+.\"
+.SH "EXIT STATUS"
+.\"
+.\"
+.ta 3
+\fB0\fP	Ok.
+.br
+\fB1\fP	Incorrect invocation.
+.br
+\fB2\fP	Fatal error.
+.\"
+.\"
+.SH BUGS
+.\"
+.\"
+Command line options that take an argument
+need to have a space between their argument and themselves.
+.PP
+In certain circumstances, exposures are not handled.
+If the Yadex window turns black,
+back out by pressing \fBEsc\fP, several times if necessary.
+.PP
+If you edit a level from a file that contains several and save it,
+all the other levels from that file are lost.
+.PP
+And many more. See \fBTODO\fP.
+.PP
+.\"
+.\"
+.SH AUTHOR
+.\"
+.\"
+André Majorel <amajorel@teaser.fr>.
+.PP
+Yadex is derived from DEU 5.21 that was written by Raphaël Quinet,
+Brendon Wyber and others.
+.PP
+See the user's guide for detailed credits.
+.\"
+.\"
+.SH LEGAL
+.\"
+.\"
+Yadex incorporates code from DEU 5.21 that was put in the public
+domain in 1994 by Raphaël Quinet and Brendon Wyber.
+.PP
+The rest of Yadex is Copyright © 1997-1998 André Majorel.
+.PP
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+(at your option) any later version.
+.PP
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+.PP
+You should have received a copy of the GNU Library General Public
+License along with this library; if not, write to the Free
+Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
+02111-1307, USA.
+.\"
+.\"
+.SH "SEE ALSO"
+.\"
+.\"
+\fBREADME\fP,
+\fBHISTORY\fP,
+\fBTODO\fP,
+\fBusers_guide.html\fP,
+\fBhackers_guide.html\fP.
+

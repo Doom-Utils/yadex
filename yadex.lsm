@@ -1,0 +1,17 @@
+Begin3
+Title:		Yadex
+Version:	1.0.0
+Entered-date:	1998-12-26
+Description:	Doom/Doom II/Heretic level (wad) editor for X.
+Keywords:	editor wad level doom heretic
+Author: 	amajorel@teaser.fr (André Majorel)
+Maintained-by:	amajorel@teaser.fr (André Majorel)
+Primary-site:	www.teaser.fr /~amajorel/yadex
+		yadex.lsm
+		yadex-1.0.0.tar.gz
+Alternate-site: sunsite.unc.edu /pub/Linux/games/doom
+Alternate-site: ftp.cdrom.com /pub/idgames/source
+Platforms:	X11R6.
+		A shareware or registered Doom/Doom II/Heretic wad.
+Copying-policy:	GPL
+End
