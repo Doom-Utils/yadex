@@ -10,7 +10,7 @@ This file is part of Yadex.
 Yadex incorporates code from DEU 5.21 that was put in the public domain in
 1994 by Raphaël Quinet and Brendon Wyber.
 
-The rest of Yadex is Copyright © 1997-1999 André Majorel.
+The rest of Yadex is Copyright © 1997-2000 André Majorel.
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -32,6 +32,8 @@ Place, Suite 330, Boston, MA 02111-1307, USA.
 #include "gfx.h"
 #include "help1.h"
 #include "levels.h"
+#include "macro.h"
+#include "trace.h"
 
 
 const char config_file_magic[] = "# Yadex configuration file version 2";
@@ -537,14 +539,17 @@ opt_desc_t options[] =		/* description of the command line options */
 
 
 static const char *standard_directories[] =
-  {
-  ".",
-  "~",			/* $HOME */
-  "/",			/* $Y_DIR */
-  "/usr/local/etc",
-  "/etc",
-  0
-  };
+   {
+   "./%b",
+   "~/.yadex/%v/%b",
+   "~/.yadex/%b",
+   "%i/%b",
+   "/usr/local/etc/yadex/%v/%b",
+   "/usr/local/etc/yadex/%b",
+   "/etc/yadex/%v/%b",
+   "/etc/yadex/%b",
+   0
+   };
 
 
 static void append_item_to_list (const char ***list, const char *item);
@@ -562,55 +567,60 @@ static const char *confirm_i2e (confirm_t internal);
  *	If <filename> is not NULL and is not an absolute name (i.e.
  *	does not start with a "/"), the standard directories are
  *	searched for a file named <filename>. <filename> may contain
- *	slashes, E.G. if you use "-config foo/yadex.cfg", the function
- *	will search for "./foo/yadex.cfg", "~/foo/yadex.cfg",
- *	"/opt/etc/foo/yadex.cfg", and so on.
+ *	slashes, E.G. if you use "-f foo/bar", the function will search
+ *	for "./yadex/foo/bar", "~/.yadex/foo/bar",
+ *	"/usr/local/etc/yadex/foo/bar", and so on.
  *
  *	If <filename> is not NULL but is an absolute name, only that
  *	file is searched.
+ *
+ *	Return 0 on success, non-zero on failure.
  */
 int parse_config_file (const char *filename)
 {
-const char **dirname;
-int is_absolute;
-char name[257];
-int failure = 1;
-
-is_absolute = filename && *filename == '/';
+bool is_absolute = filename && *filename == '/';
 
 if (is_absolute)
-   failure = parse_one_config_file (filename);
+   {
+   printf ("Using config file \"%s\".\n", filename);
+   int failure = parse_one_config_file (filename);
+   if (failure)
+      printf ("Can't open config file \"%s\" (%s)\n.",
+         filename, strerror (errno));
+   return failure;
+   }
 else
    {
-   for (dirname = standard_directories; *dirname; dirname++)
+   char name[257];
+   const char *home = getenv ("HOME");
+   for (const char **dirname = standard_directories; *dirname; dirname++)
       {
-      if (! strcmp (*dirname, "~"))
-         if (getenv ("HOME"))
-	    al_scps (name, getenv ("HOME"), sizeof name - 1);
-         else
-            continue;
-      else if (! strcmp (*dirname, "/"))
-         if (install_dir)
-            al_scps (name, install_dir, sizeof name - 1);
-         else
-            continue;
-      else
-	 al_scps (name, *dirname, sizeof name - 1);
-      al_sapc (name, '/', sizeof name - 1);
-      al_saps (name, filename ? filename : "yadex.cfg", sizeof name - 1);
-      failure = parse_one_config_file (name);
-      if (! failure)
-         break;
+      int r = macro_expand (name, sizeof name - 1, *dirname,
+	  "%b", filename ? filename : "yadex.cfg",
+	  "%i", install_dir,
+	  "%v", yadex_version,
+	  "~",  home,
+	  (const char *) 0);
+      if (r)
+	 {
+	 trace ("cfgloc", "%s: Could not expand macro #%d", *dirname, r);
+	 continue;
+	 }
+      if (file_exists (name))
+	 {
+	 trace ("cfgloc", "%s: hit", name);
+	 printf ("Using config file \"%s\".\n", name);
+	 int failure = parse_one_config_file (name);
+	 if (failure)
+	    printf ("Can't open config file \"%s\" (%s)\n.",
+	       name, strerror (errno));
+	 return failure;
+	 }
+      trace ("cfgloc", "%s: miss (%s)", name, strerror (errno));
       }
-   }
-
-if (failure && is_absolute)
-   printf ("Can't open config file \"%s\" (%s)\n.", filename, strerror (errno));
-else if (failure)
    printf ("No config file found.\n");
-else
-   printf ("Using config file \"%s\".\n", is_absolute ? filename : name);
-return failure;
+   return 1;
+   }
 }
 
 
@@ -1102,6 +1112,4 @@ else
 (*list)[i] = item;
 (*list)[i + 1] = NULL;
 }
-
-
 

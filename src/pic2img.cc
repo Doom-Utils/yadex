@@ -12,7 +12,7 @@ This file is part of Yadex.
 Yadex incorporates code from DEU 5.21 that was put in the public domain in
 1994 by Raphaël Quinet and Brendon Wyber.
 
-The rest of Yadex is Copyright © 1997-1999 André Majorel.
+The rest of Yadex is Copyright © 1997-2000 André Majorel.
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -60,12 +60,14 @@ int LoadPicture (
    int buf_width,		/* Dimensions of the buffer */
    int buf_height,
    const char *picname,		/* Picture lump name */
+   const Lump_loc& picloc,	/* Picture lump location */
    int pic_x_offset,		/* Coordinates of top left corner of picture */
    int pic_y_offset, 		/* relative to top left corner of buffer. */
    int *pic_width,		/* To return the size of the picture */
    int *pic_height)		/* (can be NULL) */
 {
 MDirPtr	dir;
+MasterDirectory dirbuf;
 i16	_pic_width;
 i16	_pic_height;
 i16	pic_intrinsic_x_ofs;
@@ -85,20 +87,22 @@ u8      *buf;	/* This variable is set to point to the element of
 		   <buffer> where the top of the current column
 		   should be pasted. It can be off <buffer>! */
 
-#if 0
-c->flags = 0;
-#endif
-
-dir = (MDirPtr) FindMasterDir (MasterDir, picname);
-if (dir == NULL)
+if (picloc.wad != 0)
    {
-   //warn ("picture %.*s does not exist.\n", WAD_PIC_NAME, picname);
-   return 1;
+   dirbuf.wadfile   = picloc.wad;
+   dirbuf.dir.start = picloc.ofs;
+   dirbuf.dir.size  = picloc.len;
+   dir = &dirbuf;
    }
-bool dummy_bytes  = dir->wadfile->pic_format == YGPF_NORMAL;
-bool long_header  = dir->wadfile->pic_format != YGPF_ALPHA;
-bool long_offsets = dir->wadfile->pic_format == YGPF_NORMAL;
-
+else
+   {
+   dir = (MDirPtr) FindMasterDir (MasterDir, picname);
+   if (dir == NULL)
+      {
+      warn ("picture %.*s does not exist.\n", WAD_PIC_NAME, picname);
+      return 1;
+      }
+   }
 
 if (wad_seek2 (dir->wadfile, dir->dir.start))
    {
@@ -109,6 +113,11 @@ if (wad_seek2 (dir->wadfile, dir->dir.start))
 	 (unsigned long) dir->dir.start);
    return 1;
    }
+
+bool dummy_bytes  = dir->wadfile->pic_format == YGPF_NORMAL;
+bool long_header  = dir->wadfile->pic_format != YGPF_ALPHA;
+bool long_offsets = dir->wadfile->pic_format == YGPF_NORMAL;
+
 if (long_header)
    {
    wad_read_i16 (dir->wadfile, &_pic_width         );

@@ -10,7 +10,7 @@ This file is part of Yadex.
 Yadex incorporates code from DEU 5.21 that was put in the public domain in
 1994 by Raphaël Quinet and Brendon Wyber.
 
-The rest of Yadex is Copyright © 1997-1999 André Majorel.
+The rest of Yadex is Copyright © 1997-2000 André Majorel.
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -72,6 +72,13 @@ enum
    };
 
 
+typedef enum
+   {
+   TOOL_NORMAL,
+   TOOL_SNAP_VERTEX
+   } tool_t;
+
+
 /* This structure holds all the data necessary to an edit window. */
 // FIXME: make a class of it.
 typedef struct
@@ -82,6 +89,7 @@ typedef struct
    int move_speed;		// Movement speed.
    int extra_zoom;		// Act like the zoom was 4 times what it is
    int obj_type;		// The mode (OBJ_LINEDEF, OBJ_SECTOR...)
+   tool_t tool;			// The current tool
    int grid_step;		// The grid step
    int grid_step_min;		// The floor of the grid step
    int grid_step_max;		// The ceiling of the grid step

@@ -16,6 +16,7 @@ int LoadPicture (
    int buf_width,		/* Dimensions of the buffer */
    int buf_height,
    const char *picname,		/* Picture lump name */
+   const Lump_loc& picloc,	/* Picture lump name */
    int pic_x_offset,		/* Coordinates of top left corner of picture */
    int pic_y_offset,		/* relative to top left corner of buffer. */
    int *pic_width,		/* To return the size of the picture */

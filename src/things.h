@@ -24,7 +24,7 @@ extern
 #ifndef YC_THINGS
 const
 #endif
-int max_radius;
+int _max_radius;
 
 
 void        create_things_table ();
@@ -34,7 +34,7 @@ const char *get_thing_name   (wad_ttype_t type);
 const char *get_thing_sprite (wad_ttype_t type);
 char        get_thing_flags  (wad_ttype_t type);
 int         get_thing_radius (wad_ttype_t type);
-inline int  get_max_thing_radius () { return max_radius; }
+inline int  get_max_thing_radius () { return _max_radius; }
 const char *GetAngleName (int);
 const char *GetWhenName (int);
 

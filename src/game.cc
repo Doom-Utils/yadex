@@ -11,7 +11,7 @@ This file is part of Yadex.
 Yadex incorporates code from DEU 5.21 that was put in the public domain in
 1994 by Raphaël Quinet and Brendon Wyber.
 
-The rest of Yadex is Copyright © 1997-1999 André Majorel.
+The rest of Yadex is Copyright © 1997-2000 André Majorel.
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -31,16 +31,20 @@ Place, Suite 330, Boston, MA 02111-1307, USA.
 #include "yadex.h"
 #include "acolours.h"
 #include "game.h"
+#include "macro.h"
 #include "things.h"
+#include "trace.h"
 
 
 static const char *standard_directories[] =
    {
-   ".",
-   "~",				/* "~" means "the user's home directory" */
-   "/",				/* "/" means "where Yadex is installed" */
-   "/usr/local/share/games",
-   "/usr/share/games",
+   "./%b",
+   "~/.yadex/%v/%b",
+   "%i/%b",
+   "/usr/local/share/games/yadex/%v/%b",
+   "/usr/share/games/yadex/%v/%b",
+   "/usr/local/share/games/yadex/%b",
+   "/usr/share/games/yadex/%b",
    0
    };
 
@@ -82,32 +86,39 @@ char basename[13];
 al_scps (basename, game,   sizeof basename - 1);
 al_saps (basename, ".ygd", sizeof basename - 1);
 
-for (dirname = standard_directories; *dirname; dirname++)
-   {
-   if (! strcmp (*dirname, "~"))
-      if (getenv ("HOME"))
-         al_scps (filename, getenv ("HOME"), sizeof filename - 1);
-      else
-         continue;
-   else if (! strcmp (*dirname, "/"))
-      if (install_dir)
-         al_scps (filename, install_dir, sizeof filename - 1);
-      else
-         continue;
-   else
-      al_scps (filename, *dirname, sizeof filename - 1);
-   al_sapc (filename, '/',      sizeof filename - 1);
-   al_saps (filename, basename, sizeof filename - 1);
-   ygdfile = fopen (filename, "r");
-   if (ygdfile)
-      break;
-   }
+/* Locate the game definition file. */
+{
+   const char *home = getenv ("HOME");
 
-if (! ygdfile)
-   fatal_error ("Game definition file \"%s\" not found (%s)",
-      basename, strerror (errno));
-else
-   printf ("Using game definition file \"%s\".\n", filename);
+   for (dirname = standard_directories; *dirname; dirname++)
+      {
+      int r = macro_expand (filename, sizeof filename - 1, *dirname,
+	  "%b", basename,
+	  "%g", game,
+	  "%i", install_dir,
+	  "%v", yadex_version,
+	  "~",  home,
+	  (const char *) 0);
+      if (r)
+      {
+	trace ("ygdloc", "%s: Could not expand macro #%d", *dirname, r);
+	continue;
+      }
+      ygdfile = fopen (filename, "r");
+      if (ygdfile)
+	 {
+	 trace ("ygdloc", "%s: hit", filename);
+	 break;
+	 }
+      trace ("ygcloc", "%s: miss (%s)", filename, strerror (errno));
+      }
+
+   if (! ygdfile)
+      fatal_error ("Game definition file \"%s\" not found (%s)",
+	 basename, strerror (errno));
+   else
+      printf ("Using game definition file \"%s\".\n", filename);
+}
 
 /* The first line of the ygd file must
    contain exactly ygd_file_magic. */
@@ -120,6 +131,8 @@ if (fgets (readbuf, sizeof readbuf, ygdfile) == NULL
    fatal_error ("Perhaps a leftover from a previous version of Yadex ?");
    }
 
+/* Read the game definition
+   file, line by line. */
 for (lineno = 2; fgets (readbuf, sizeof readbuf, ygdfile); lineno++)
    {
    int         ntoks;

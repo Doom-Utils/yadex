@@ -92,6 +92,59 @@ I changed the name of my baby to "Yadex".
 At the same time, I began to use C++ in places
 so that's why Yadex is such an ugly mixture of languages.
 
+		<h2>Development cycle</h2>
+
+			<h3>Compiling, installing, testing</h3>
+
+<p>OK. So I want to hack Yadex&nbsp;; what do I do now&nbsp;?
+The obvious development cycle is
+
+<ol>
+  <li>modify the files in <code>src/</code>,
+  <li>type <code>make</code>,
+  <li>type <code>su -c 'make install'</code>,
+  <li>run Yadex and test.
+</ol>
+
+<p>However, there are a few things to know that can make you
+more efficient.
+
+<p>To compile with debugging information, you don't have to
+modifiy the makefile&nbsp;; just use the appropriate target
+(<code>dyadex</code>). The resulting executable is put in
+<code>dobj/0/</code> instead of <code>obj/0/</code>.
+
+<p>You don't have to install to test&nbsp;: you can test in
+place with the special targets <code>test</code> and
+<code>dtest</code> (<code>test</code> is for the regular
+executable, <code>dtest</code> is for the debugging executable
+and is my favourite target by far). When testing through make,
+you can't pass arguments to Yadex directly&nbsp;: you have to
+pass them through the <code>A</code> macro. For example&nbsp;:
+
+<pre>  $ <b>make dtest A='-g heretic foo.wad'</b></pre>
+ 
+<p>You can also run your hack through the debugger with the
+<code>dg</code> (GDB) and <code>dd</code> (DDD) targets. With
+those targets, you can't use the <code>A=</code>
+convention&nbsp;: you have to type "<code>set args blah blah
+blah</code>" at the debugger prompt.
+
+<pre>  $ <b>make dg</b>
+  (gdb) <b>set args -g heretic foo.wad</b>
+  (gdb) <b>run</b></pre>
+
+<p>Even if you want to install your hack, you may want to keep
+the original Yadex around, for reference or for a good laugh.
+To do that, edit the <code>VERSION</code> file before compiling
+your hack. If your hack bears a different version number, it
+will not overwrite the original version. You don't have to
+change the version number much&nbsp;: you can just change
+"<code>3.8.0</code>" into "<code>3.8.0a</code>" or
+"<code>3.8.0.0</code>" for example.
+
+<p>
+
 		<h2>The programming environment</h2>
 
 			<h3>Memory allocation</h3>

@@ -10,7 +10,7 @@ This file is part of Yadex.
 Yadex incorporates code from DEU 5.21 that was put in the public domain in
 1994 by Raphaël Quinet and Brendon Wyber.
 
-The rest of Yadex is Copyright © 1997-1999 André Majorel.
+The rest of Yadex is Copyright © 1997-2000 André Majorel.
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -42,11 +42,6 @@ Place, Suite 330, Boston, MA 02111-1307, USA.
 
 void draw_map (edit_t *e) /* SWAP! */
 {
-int mapx0 = MAPX (0);
-int mapx9 = MAPX (ScrMaxX);
-int mapy0 = MAPY (ScrMaxY);
-int mapy9 = MAPY (0);
-
 /* Draw the grid.
    Optimization: set_colour is not called unnecessarily. */
 if (e->grid_shown)
@@ -83,30 +78,30 @@ if (e->grid_shown)
    for (grid_step2 = 64; grid_step2 < 4 * e->grid_step; grid_step2 *= 4)
       ;
 
-   for (int n = mapx0; n <= mapx1; n += e->grid_step)
+   for (int i = mapx0; i <= mapx1; i += e->grid_step)
       {
-      new_colour = n % grid_step2 ? GRID1 : GRID2;
+      new_colour = i % grid_step2 ? GRID1 : GRID2;
       if (new_colour != current_colour)
 	set_colour (current_colour = new_colour);
 #ifdef NEW_GRID
-      if (n % (4 * e->grid_step) == 0)
+      if (i % (4 * e->grid_step) == 0)
 #endif
-         DrawMapLine (n, mapy0, n, mapy1);
+         DrawMapLine (i, mapy0, i, mapy1);
       }
-   for (int n = mapy0; n <= mapy1; n += e->grid_step)
+   for (int j = mapy0; j <= mapy1; j += e->grid_step)
       {
-      new_colour = n % grid_step2 ? GRID1 : GRID2;
+      new_colour = j % grid_step2 ? GRID1 : GRID2;
       if (new_colour != current_colour)
 	set_colour (current_colour = new_colour);
 #ifdef NEW_GRID
-      if (n % (4 * e->grid_step) == 0)
+      if (j % (4 * e->grid_step) == 0)
 #endif
-         DrawMapLine (mapx0, n, mapx1, n);
+         DrawMapLine (mapx0, j, mapx1, j);
 #ifdef NEW_GRID
       else
          {
 	 set_colour (current_colour = GRID3);
-         points[0].y = SCREENY (n);
+         points[0].y = SCREENY (j);
 	 XDrawPoints (dpy, drw, gc, points, npoints, CoordModePrevious);
          }
 #endif
@@ -117,7 +112,11 @@ if (e->grid_shown)
 #endif
    }
 
-int  n, m;
+int mapx0 = MAPX (0);
+int mapx9 = MAPX (ScrMaxX);
+int mapy0 = MAPY (ScrMaxY);
+int mapy9 = MAPY (0);
+int n, m;
 
 /* Draw the linedefs to form the map.
    Optimization: off-screen lines are not drawn

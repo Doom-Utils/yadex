@@ -1,4 +1,5 @@
 /*
+
  *	editloop.cc
  *	The main loop of the editor.
  *	BW & RQ sometime in 1993 or 1994.
@@ -11,7 +12,7 @@ This file is part of Yadex.
 Yadex incorporates code from DEU 5.21 that was put in the public domain in
 1994 by Raphaël Quinet and Brendon Wyber.
 
-The rest of Yadex is Copyright © 1997-1999 André Majorel.
+The rest of Yadex is Copyright © 1997-2000 André Majorel.
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -209,6 +210,7 @@ e.extra_zoom         = 0;
 // If you change this, don't forget to change
 // the initialisation of the menu bar below.
 e.obj_type           = OBJ_THINGS;
+e.tool               = TOOL_NORMAL;
 e.grid_step          = 128;
 e.grid_step_min      = GridMin;
 e.grid_step_max      = GridMax;
@@ -845,7 +847,9 @@ for (RedrawMap = 1; ; RedrawMap = 0)
 
    /* Clicking on an empty space starts a new selection box.
       Unless [Ctrl] is pressed, it also clears the current selection. */
-   else if (is.key == YE_BUTL_PRESS && ! is_obj (object))
+   else if (is.key == YE_BUTL_PRESS
+	 && e.tool == TOOL_NORMAL
+	 && ! is_obj (object))
       {
       e.menubar->highlight (-1);  // Close any open menu
       e.click_obj_no = OBJ_NO_CANVAS;
@@ -864,7 +868,8 @@ for (RedrawMap = 1; ; RedrawMap = 0)
       we write the number of the object in case
       the user is about to drag it. */
    else if (is.key == YE_BUTL_PRESS && ! is.ctrl
-      && ! IsSelected (e.Selected, object))
+	 && e.tool == TOOL_NORMAL
+	 && ! IsSelected (e.Selected, object))
       {
       e.menubar->highlight (-1);  // Close any open menu
       e.click_obj_no   = object;
@@ -888,10 +893,11 @@ for (RedrawMap = 1; ; RedrawMap = 0)
 
    /* Second click of a double click on an object */
    else if (is.key == YE_BUTL_PRESS && ! is.ctrl
-      && IsSelected (e.Selected, object)
-      && object == e.click_obj_no
-      && e.obj_type == e.click_obj_type
-      && is.time - e.click_time <= (unsigned long) double_click_timeout)
+	 && e.tool == TOOL_NORMAL
+	 && IsSelected (e.Selected, object)
+	 && object == e.click_obj_no
+	 && e.obj_type == e.click_obj_type
+	 && is.time - e.click_time <= (unsigned long) double_click_timeout)
       {
       // Very important! If you don't do that, the release of the
       // click that closed the properties menu will drag the object.
@@ -903,7 +909,8 @@ for (RedrawMap = 1; ; RedrawMap = 0)
    /* Clicking on a selected object does nothing ;
       the user might want to drag the selection. */
    else if (is.key == YE_BUTL_PRESS && ! is.ctrl
-      && IsSelected (e.Selected, object))
+	 && e.tool == TOOL_NORMAL
+	 && IsSelected (e.Selected, object))
       {
       e.menubar->highlight (-1);  // Close any open menu
       e.click_obj_no   = object;
@@ -924,7 +931,9 @@ for (RedrawMap = 1; ; RedrawMap = 0)
 
    /* Clicking on selected object with [Ctrl] pressed unselects it.
       Clicking on unselected object with [Ctrl] pressed selects it. */
-   else if (is.key == YE_BUTL_PRESS && is.ctrl && is_obj (object))
+   else if (is.key == YE_BUTL_PRESS && is.ctrl
+	 && e.tool == TOOL_NORMAL
+	 && is_obj (object))
       {
       e.menubar->highlight (-1);  // Close any open menu
       e.click_obj_no   = object;
@@ -937,13 +946,32 @@ for (RedrawMap = 1; ; RedrawMap = 0)
       RedrawMap = 1;
       }
 
+   /* TOOL_SNAP_VERTEX */
+   else if (is.key == YE_BUTL_PRESS
+	    && e.tool == TOOL_SNAP_VERTEX
+	    && e.obj_type == OBJ_VERTICES
+	    && is_obj (object)
+	    // Can't delete vertex that is referenced by the selection
+	    && ! IsSelected (e.Selected, object))
+      {
+      printf ("SNAP %d\n", (int) object);
+      SelPtr list = 0;
+      SelectObject (&list, object);
+      DeleteVerticesJoinLineDefs (list);
+      ForgetSelection (&list);
+      RedrawMap = 1;
+      }
+
    /* Clicking anywhere else closes the pull-down menus. */
    else if (is.key == YE_BUTL_PRESS)
       e.menubar->highlight (-1);  // Close any open menu
 
    /* Releasing the button while there was a selection box
       causes all the objects within the box to be selected. */
-   else if (is.key == YE_BUTL_RELEASE && e.click_obj_no == OBJ_NO_CANVAS)
+   // FIXME : should call this automatically when switching tool
+   else if (is.key == YE_BUTL_RELEASE
+	 && e.tool == TOOL_NORMAL
+	 && e.click_obj_no == OBJ_NO_CANVAS)
       {
       int x1, y1, x2, y2;
       e.selbox->get_corners (&x1, &y1, &x2, &y2);
@@ -953,7 +981,10 @@ for (RedrawMap = 1; ; RedrawMap = 0)
       }
 
    /* Releasing the button while dragging : drop the selection. */
-   else if (is.key == YE_BUTL_RELEASE && is_obj (e.click_obj_no))
+   // FIXME : should call this automatically when switching tool
+   else if (is.key == YE_BUTL_RELEASE
+	 && e.tool == TOOL_NORMAL
+	 && is_obj (e.click_obj_no))
       {
       if (AutoMergeVertices (&e.Selected, e.obj_type, 'm'))
          RedrawMap = 1;
@@ -963,6 +994,7 @@ for (RedrawMap = 1; ; RedrawMap = 0)
    // after clicking on an item of the menu bar : pull
    // down menus as the pointer passes over them.
    else if (is.key == YE_MOTION
+      && e.tool == TOOL_NORMAL
       && is.butl
       && e.click_obj_no == OBJ_NO_NONE)
       {
@@ -976,6 +1008,7 @@ for (RedrawMap = 1; ; RedrawMap = 0)
       and a selection box exists : move the second
       corner of the selection box. */
    else if ((is.key == YE_MOTION || motion)
+      && e.tool == TOOL_NORMAL
       && is.butl && e.click_obj_no == OBJ_NO_CANVAS)
       {
       e.selbox->set_2nd_corner (e.pointer_x, e.pointer_y);
@@ -986,6 +1019,7 @@ for (RedrawMap = 1; ; RedrawMap = 0)
       pressed when the button was pressed :
       drag the selection. */
    else if ((is.key == YE_MOTION || motion)
+      && e.tool == TOOL_NORMAL
       && is.butl
       && is_obj (e.click_obj_no)
       && ! e.click_ctrl)
@@ -2090,6 +2124,13 @@ cancel_save_as:
 	 RedrawMap = 1;
          }
 
+      // [Ctrl][b] Select linedefs whose sidedefs reference non-existant sectors
+      else if (is.key == 2)
+	 {
+	 bad_sector_number (&e.Selected);
+	 RedrawMap = 1;
+         }
+
       // [Ctrl][p] Examine game palette (not documented)
       else if (is.key == 16)
          {
@@ -2104,24 +2145,34 @@ cancel_save_as:
 	 xref_sidedef ();
 	 }
 
-      // [Ctrl][b] Select linedefs whose sidedefs reference non-existant sectors
-      else if (is.key == 2)
+      // [Ctrl][s] List secret sectors (not documented)
+      else if (is.key == 19)
 	 {
-	 bad_sector_number (&e.Selected);
-	 RedrawMap = 1;
-         }
+	 secret_sectors ();
+	 }
 
       // [Ctrl][u] Select linedefs with unknown type (not documented)
-      else if (is.key == '\x15')
+      else if (is.key == 21)
 	 {
 	 unknown_linedef_type (&e.Selected);
 	 RedrawMap = 1;
 	 }
 
-      // [Ctrl][s] List secret sectors (not documented)
-      else if (is.key == '\x13')
+      // [Ctrl][v] Toggle between "snap vertex" tool and normal tool
+      // (not documented)
+      else if (is.key == 22)
 	 {
-	 secret_sectors ();
+	 if (e.tool == TOOL_NORMAL)
+	    {
+	    e.tool = TOOL_SNAP_VERTEX;
+	    printf ("Switched to snap vertex tool."
+		  " Press [Ctrl][v] to switch back to normal tool.\n");
+	    }
+	 else
+	    {
+	    e.tool = TOOL_NORMAL;
+	    printf ("Switched back to normal tool.\n");
+	    }
 	 }
 
       // [&] Show object numbers

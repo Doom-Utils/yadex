@@ -1,6 +1,6 @@
 #
 #	Makefile for Yadex
-#	Copyright © André Majorel 1998-1999.
+#	Copyright © André Majorel 1998-2000.
 #	AYM 1998-06-10
 #
 
@@ -15,17 +15,27 @@
 
 # Don't change these lines.
 DEFINES =
-OS       := $(shell uname -s | tr A-Z a-z)
-HAVE_GCC := $(shell if gcc --version; then echo OK; fi)
+VERSION := $(shell cat VERSION)
 
+########################################################################
 #
 #	Definitions that end users
 #	might want to change
 #
+########################################################################
 
 # Where you want "make install" to put things.
 # Typical values : "/usr", "/usr/local" and "/opt".
 PREFIX = /usr/local
+
+# Which OS ?
+OS := $(shell uname -s | tr A-Z a-z)
+
+# Can we use GCC to compile BSP ?
+HAVE_GCC := $(shell if gcc --version; then echo OK; fi)
+
+# Is that /usr/man or /usr/share/man ?
+FHS_MAN := $(shell if [ -d "$(PREFIX)/share/man" ]; then echo OK; fi)
 
 # Does your system have gettimeofday() ?
 # Current rule: all systems have it.
@@ -33,42 +43,43 @@ HAVE_GETTIMEOFDAY = 1
 
 # Does your system have nanosleep() ?
 # Current rule: only Linux has it.
-ifneq (,$(findstring $(OS),linux))
-HAVE_NANOSLEEP = 
+ifneq (,$(findstring $(OS), linux))
+  HAVE_NANOSLEEP = 
 endif
 
 # Does your system have snprintf() ?
 # Current rule: only Linux has it.
-ifneq (,$(findstring $(OS),linux))
-HAVE_SNPRINTF = 1
+ifneq (,$(findstring $(OS), linux))
+  HAVE_SNPRINTF = 1
 endif
 
 # Does your system have usleep() ?
 # Current rule: all unices have it.
 ifdef OS
-HAVE_USLEEP = 1
+  HAVE_USLEEP = 1
 endif
 
-# Where your X11 libraries reside.
-# Current rule: AIX has it in /usr/lpp/X11/lib,
-# all other unices in /usr/X11R6/lib.
-ifeq ($(findstring $(OS),aix),$(OS))
-X11LIBDIR = /usr/lpp/X11/lib
+# Where your X11 libraries and headers reside.
+# Current rule:
+# - AIX has them in /usr/lpp/X11/{lib,include},
+# - Solaris has them in /usr/openwin/{lib,include},
+# - all other unices in /usr/X11R6/{lib,include}.
+ifeq ($(findstring $(OS), aix), $(OS))
+  X11LIBDIR     = /usr/lpp/X11/lib
+  X11INCLUDEDIR = /usr/lpp/X11/include
 else
-X11LIBDIR = /usr/X11R6/lib
+  ifeq ($(findstring $(OS), solaris sunos), $(OS))
+    X11LIBDIR     = /usr/openwin/lib
+    X11INCLUDEDIR = /usr/openwin/include
+  else
+    X11LIBDIR     = /usr/X11R6/lib
+    X11INCLUDEDIR = /usr/X11R6/include
+  endif
 endif
 
 # Your C and C++ compilers.
 CC = cc
 CXX = c++
-
-#grr:
-#	@echo OS=$(OS)
-#	@echo NANO=$(HAVE_NANOSLEEP)
-#	@echo SNPRINTF=$(HAVE_SNPRINTF)
-#	@echo USLEEP=$(HAVE_USLEEP)
-#	@echo X11LIBDIR=$(X11LIBDIR)
-#	@echo DEFINES=$(DEFINES)
 
 #
 #	Definitions that only hackers
@@ -78,32 +89,32 @@ CXX = c++
 # All the modules of Yadex without path or extension.
 MODULES_YADEX =\
 	acolours	aym		bitvec		cfgfile\
-	checks\
-	clearimg	colour1		colour2		colour3\
-	colour4		dialog		dispimg		disppic\
-	drawmap		edisplay	editgrid	editlev\
-	editloop	editobj		editsave	endian\
-	editzoom	entry		entry2		events\
-	flats		game		gcolour1	gcolour2\
-	geom		gfx		gfx2		gfx3\
-	gotoobj		help1		help2		highlt\
-	infobar		input		l_align		l_centre\
-	l_flags		l_misc		l_prop		l_unlink\
-	l_vertices	levels		lists		memory\
-	menubar		menu		mkpalette	mouse\
-	names		nop		objects		objinfo\
-	oldmenus	palview		pic2img		prefer\
-	s_centre\
+	checks		clearimg	colour1		colour2\
+	colour3		colour4		dialog		dispimg\
+	disppic		drawmap		edisplay	editgrid\
+	editlev		editloop	editobj		editsave\
+	endian		editzoom	entry		entry2\
+	events		flats		game		gcolour1\
+	gcolour2	geom		gfx		gfx2\
+	gfx3		gotoobj		help1		help2\
+	highlt		infobar		input		l_align\
+	l_centre	l_flags		l_misc		l_prop\
+	l_unlink	l_vertices	levels		lists\
+	macro		memory		menubar		menu\
+	mkpalette	mouse		names		nop\
+	objects		objinfo		oldmenus	palview\
+	patchdir	pic2img		prefer		s_centre\
 	s_door		s_lift		s_linedefs	s_merge\
 	s_misc		s_prop		s_split		s_vertices\
 	sanity		savepic		scrnshot	selbox\
 	selectn		selpath		selrect		spectimg\
 	sprites		swapmem		t_centre	t_flags\
 	t_prop		t_spin		textures	things\
-	v_centre	v_merge		v_polyg		verbmsg\
-	version		wads		wads2		warn\
-	x_centre	x_exchng	x_mirror	x_rotate\
-	x11		xref		yadex		ytime
+	trace		v_centre	v_merge		v_polyg\
+	verbmsg		version		wads		wads2\
+	warn		x_centre	x_exchng	x_mirror\
+	x_rotate	x11		xref		yadex\
+	ytime
 
 # All the modules of Atclib without path or extension.
 MODULES_ATCLIB =\
@@ -122,13 +133,13 @@ MODULES_BSP =\
 	bsp		funcs		makenode	picknode
 
 # The source files of Yadex.
-SRC_YADEX = $(addprefix src/,$(addsuffix .cc,$(MODULES_YADEX)))
+SRC_YADEX = $(addprefix src/, $(addsuffix .cc, $(MODULES_YADEX)))
 
 # The source files of Atclib.
-SRC_ATCLIB = $(addprefix atclib/,$(addsuffix .c,$(MODULES_ATCLIB)))
+SRC_ATCLIB = $(addprefix atclib/, $(addsuffix .c, $(MODULES_ATCLIB)))
 
 # The source files of BSP.
-SRC_BSP = $(addprefix bsp-2.3/,$(addsuffix .c,$(MODULES_BSP)))
+SRC_BSP = $(addprefix bsp-2.3/, $(addsuffix .c, $(MODULES_BSP)))
 
 # The headers of Yadex.
 HEADERS_YADEX := $(wildcard src/*.h)
@@ -145,7 +156,7 @@ SRC = $(SRC_YADEX)  $(HEADERS_YADEX)\
       $(SRC_BSP)    $(HEADERS_BSP)
 
 # The files on which youngest is run.
-SRC_NON_GEN = $(filter-out src/version.cc,$(SRC))
+SRC_NON_GEN = $(filter-out src/version.cc, $(SRC))
 
 # Options used when compiling Atclib.
 CFLAGS = -O
@@ -154,7 +165,7 @@ CFLAGS = -O
 # ld is invoked through the C++ compiler
 # so LDFLAGS should not contain options that mean
 # something to the C++ compiler.
-CXXFLAGS = -O
+CXXFLAGS = -O -I$(X11INCLUDEDIR)
 LDFLAGS  =
 
 # Options used to compile and link the debugging
@@ -164,7 +175,8 @@ LDFLAGS  =
 DCFLAGS = -O -g -pedantic -Wall -Wno-parentheses -Wpointer-arith\
 		-Wcast-qual -Wcast-align -Wwrite-strings\
 		-Wmissing-declarations -Wmissing-prototypes -Winline
-DCXXFLAGS = -O -g -pedantic -Wall -Wno-parentheses -Wpointer-arith\
+DCXXFLAGS = -O -I$(X11INCLUDEDIR)\
+		-g -pedantic -Wall -Wno-parentheses -Wpointer-arith\
 		-Wcast-qual -Wcast-align -Wwrite-strings\
 		-Wmissing-declarations -Wmissing-prototypes -Winline
 DLDFLAGS =
@@ -177,32 +189,35 @@ DEFINES += -DY_UNIX -DY_X11
 #DEFINES += -DY_ALPHA
 #DEFINES += -DY_BETA
 ifdef HAVE_GETTIMEOFDAY
-DEFINES += -DY_GETTIMEOFDAY
+  DEFINES += -DY_GETTIMEOFDAY
 endif
 ifdef HAVE_NANOSLEEP
-DEFINES += -DY_NANOSLEEP
+  DEFINES += -DY_NANOSLEEP
 endif
 ifdef HAVE_SNPRINTF
-DEFINES += -DY_SNPRINTF
+  DEFINES += -DY_SNPRINTF
 endif
 ifdef HAVE_USLEEP
-DEFINES += -DY_USLEEP
+  DEFINES += -DY_USLEEP
 endif
 
 # The name of the directory where objects and binaries
 # are put. I include the output of "uname -a" to make
 # it easier for me to build Yadex for different platforms
 # from the same source tree.
-OBJSUBDIR   := $(shell uname -a | tr -c "[:alnum:]._-" "[_*]")
-OBJDIR      = obj/0
-OBJPHYSDIR  = obj/$(OBJSUBDIR)
-DOBJPHYSDIR = dobj/$(OBJSUBDIR)
+OBJSUBDIR          := $(shell uname -a | tr -c "[:alnum:]._-" "[_*]")
+OBJDIR             = obj/0
+DOBJDIR            = dobj/0
+OBJPHYSDIR         = obj/$(OBJSUBDIR)
+DOBJPHYSDIR        = dobj/$(OBJSUBDIR)
+OBJDIR_ATCLIB      = $(OBJDIR)/atclib
+DOBJDIR_ATCLIB     = $(DOBJDIR)/atclib
 OBJPHYSDIR_ATCLIB  = $(OBJPHYSDIR)/atclib
 DOBJPHYSDIR_ATCLIB = $(DOBJPHYSDIR)/atclib
-OBJ_YADEX   = $(addprefix $(OBJPHYSDIR)/,  $(addsuffix .o, $(MODULES_YADEX)))
-DOBJ_YADEX  = $(addprefix $(DOBJPHYSDIR)/, $(addsuffix .o, $(MODULES_YADEX)))
-OBJ_ATCLIB  = $(addprefix $(OBJPHYSDIR_ATCLIB)/,  $(addsuffix .o, $(MODULES_ATCLIB)))
-DOBJ_ATCLIB = $(addprefix $(DOBJPHYSDIR_ATCLIB)/, $(addsuffix .o, $(MODULES_ATCLIB)))
+OBJ_YADEX   = $(addprefix $(OBJDIR)/,  $(addsuffix .o, $(MODULES_YADEX)))
+DOBJ_YADEX  = $(addprefix $(DOBJDIR)/, $(addsuffix .o, $(MODULES_YADEX)))
+OBJ_ATCLIB  = $(addprefix $(OBJDIR_ATCLIB)/,  $(addsuffix .o, $(MODULES_ATCLIB)))
+DOBJ_ATCLIB = $(addprefix $(DOBJDIR_ATCLIB)/, $(addsuffix .o, $(MODULES_ATCLIB)))
 
 # The game definition files.
 YGD = $(addprefix ygd/,\
@@ -235,6 +250,7 @@ DOC2_SRC_HTML =\
 	docsrc/legal.html\
 	docsrc/palette.html\
 	docsrc/reporting.html\
+	docsrc/tips.html\
 	docsrc/trivia.html\
 	docsrc/trouble.html\
 	docsrc/users_guide.html\
@@ -292,27 +308,34 @@ SCRIPTS = $(addprefix scripts/,\
 ARC_FILES = $(sort $(DOC1) $(DOC1_SRC) $(DOC2_SRC_HTML) $(DOC2_SRC_MISC)\
 	$(MISC_FILES) $(addprefix docsrc/, $(PIX)) $(SCRIPTS) $(SRC) $(YGD))
 
-# Where the normal and debugging binaries are put.
-BINDIR  = $(OBJPHYSDIR)
-DBINDIR = $(DOBJPHYSDIR)
+# Where the normal and debugging binaries are
+# put. Don't change this or you'll break things.
+BINDIR  = $(OBJDIR)
+DBINDIR = $(DOBJDIR)
 
 # The basename of the archive.
-ARCHIVE := yadex-$(shell cat VERSION)
+ARCHIVE := yadex-$(VERSION)
 
 # Where "make install" puts things.
 INST_BINDIR = $(PREFIX)/bin
-ifeq ($(PREFIX),/usr)	# Special case: not /usr/etc but /etc
-INST_CFGDIR = /etc
+ifeq ($(PREFIX), /usr)	# Special case: not /usr/etc but /etc
+  INST_CFGDIR = /etc/yadex/$(VERSION)
 else
-INST_CFGDIR = $(PREFIX)/etc
+  INST_CFGDIR = $(PREFIX)/etc/yadex/$(VERSION)
 endif
-INST_YGDDIR = $(PREFIX)/share/games
-INST_MANDIR = $(PREFIX)/man/man6
+INST_YGDDIR = $(PREFIX)/share/games/yadex/$(VERSION)
+ifdef FHS_MAN
+  INST_MANDIR = $(PREFIX)/share/man/man6
+else
+  INST_MANDIR = $(PREFIX)/man/man6
+endif
 
+########################################################################
 #
 #	Targets for
 #	end users.
 #
+########################################################################
 
 .PHONY: all
 all: doc yadex.dep dirs yadex ybsp $(YGD)
@@ -333,11 +356,11 @@ $(BINDIR)/ybsp: $(SRC_BSP) $(HEADERS_BSP)
 	@echo
 ifdef HAVE_GCC
 	@echo Compiling and linking BSP with gcc
-	@gcc bsp-2.3/bsp.c -DYADEX_VERSION=\"$$(cat VERSION)\" \
+	@gcc bsp-2.3/bsp.c -DYADEX_VERSION=\"$(VERSION)\" \
 		-O2 -Wall -Winline -finline-functions -ffast-math -lm -o $@
 else
 	@echo Compiling and linking BSP with cc
-	@$(CC) bsp-2.3/bsp.c -DYADEX_VERSION=\"$$(cat VERSION)\" -O2 -lm -o $@
+	@$(CC) bsp-2.3/bsp.c -DYADEX_VERSION=\"$(VERSION)\" -O2 -lm -o $@
 endif
 
 .PHONY: test
@@ -351,17 +374,19 @@ install:
 	@scripts/mkinstalldirs $(INST_CFGDIR)
 	@scripts/mkinstalldirs $(INST_MANDIR)
 	@scripts/mkinstalldirs $(INST_YGDDIR)
-	@echo Installing binaries in $(INST_BINDIR)
-	@cp -p $(BINDIR)/yadex	$(INST_BINDIR)	2>&1
-	@cp -p $(BINDIR)/ybsp	$(INST_BINDIR)	2>&1
+	@echo Installing yadex and ybsp in $(INST_BINDIR)
+	cp -p $(BINDIR)/yadex	$(INST_BINDIR)/yadex-$(VERSION)	2>&1
+	ln -sf yadex-$(VERSION)	$(INST_BINDIR)/yadex		2>&1
+	cp -p $(BINDIR)/ybsp	$(INST_BINDIR)/ybsp-$(VERSION)	2>&1
+	ln -sf ybsp-$(VERSION)	$(INST_BINDIR)/ybsp		2>&1
 	@echo Installing man pages in $(INST_MANDIR)
-	@cp -p doc/yadex.6	$(INST_MANDIR)	2>&1
-	@cp -p doc/ybsp.6	$(INST_MANDIR)	2>&1
+	cp -p doc/yadex.6	$(INST_MANDIR)	2>&1
+	cp -p doc/ybsp.6	$(INST_MANDIR)	2>&1
 	@echo Installing game definition files in $(INST_YGDDIR)
-	@cp -p $(YGD) 		$(INST_YGDDIR)	2>&1
+	cp -p $(YGD) 		$(INST_YGDDIR)	2>&1
 	@echo Installing configuration file in $(INST_CFGDIR)
-	@cp -p yadex.cfg	$(INST_CFGDIR)	2>&1
-	@chmod a+w $(INST_CFGDIR)/yadex.cfg	2>&1
+	cp -p yadex.cfg	$(INST_CFGDIR)		2>&1
+	chmod a+w $(INST_CFGDIR)/yadex.cfg	2>&1
 	@echo "---------------------------------------------------------------"
 	@echo "  Yadex is now installed."
 	@echo
@@ -388,28 +413,31 @@ doc2: $(DOC2)
 .PHONY: help
 help:
 	@echo User targets:
-	@echo "make [all]                  Build Yadex and BSP"
-	@echo "make yadex                  Build Yadex"
-	@echo "make ybsp                   Build BSP"
-	@echo "make test [A=args]          Test Yadex"
-	@echo "make install [PREFIX=dir]   Install Yadex and BSP"
+	@echo "make [all]                 Build Yadex and BSP"
+	@echo "make yadex                 Build Yadex"
+	@echo "make ybsp                  Build BSP"
+	@echo "make test [A=args]         Test Yadex"
+	@echo "make install [PREFIX=dir]  Install Yadex and BSP"
 	@echo
 	@echo Hacker targets:
-	@echo "make dall                Build debug version of Yadex and BSP"
-	@echo "make dyadex              Build debug version of Yadex"
-	@echo "make dybsp               Build debug version of BSP"
-	@echo "make dtest [A=args]      Test debug version of Yadex"
-	@echo "make dg                  Run debug version of Yadex through gdb"
-	@echo "make dd                  Run debug version of Yadex through ddd"
-	@echo "make doc                 Update doc"
-	@echo "make dist                Create distribution archive"
-	@echo "make save                Create backup archive"
+	@echo "make dall            Build debug version of Yadex and BSP"
+	@echo "make dyadex          Build debug version of Yadex"
+	@echo "make dybsp           Build debug version of BSP"
+	@echo "make dtest [A=args]  Test debug version of Yadex"
+	@echo "make dg              Run debug version of Yadex through gdb"
+	@echo "make dd              Run debug version of Yadex through ddd"
+	@echo "make doc             Update doc"
+	@echo "make dist            Create distribution archive"
+	@echo "make save            Create backup archive"
+	@echo "make showconf        Show current configuration"
 
 
+########################################################################
 #
 #	Targets meant for
 #	hackers only.
 #
+########################################################################
 
 # d: Compile and run
 .PHONY: d
@@ -466,8 +494,8 @@ dd:
 
 # Generate the distribution archive. Requires GNU tar,
 # GNU cp, gzip and optionally bzip2. bzip2 is cool but,
-# in this case, it's 10 times slower that gzip while
-# being only 15% more efficient. That's why the creation
+# in this case, it's 1000% slower than gzip while being
+# only 15% more efficient. That's why the creation
 # of the .tar.bz2 archive is commented out.
 .PHONY: dist
 dist: changes distimage distgz #distbz2
@@ -490,26 +518,73 @@ distgz: distimage
 distbz2: distimage
 	tar -cIf $(ARCHIVE).tar.bz2 $(ARCHIVE)
 
+.PHONY: showconf
+showconf:
+	@echo "ARCHIVE            \"$(ARCHIVE)\""
+	@echo "CC                 \"$(CC)\""
+	@echo "CFLAGS             \"$(CFLAGS)\""
+	@echo "CXX                \"$(CXX)\""
+	@echo "CXXFLAGS           \"$(CXXFLAGS)\""
+	@echo "DCFLAGS            \"$(DCFLAGS)\""
+	@echo "DCXXFLAGS          \"$(DCXXFLAGS)\""
+	@echo "DEFINES            \"$(DEFINES)\""
+	@echo "DLDFLAGS           \"$(DLDFLAGS)\""
+	@echo "FHS_MAN            \"$(FHS_MAN)\""
+	@echo "HAVE_GCC           \"$(HAVE_GCC)\""
+	@echo "HAVE_GETTIMEOFDAY  \"$(HAVE_GETTIMEOFDAY)\""
+	@echo "HAVE_NANOSLEEP     \"$(HAVE_NANOSLEEP)\""
+	@echo "HAVE_SNPRINTF      \"$(HAVE_SNPRINTF)\""
+	@echo "HAVE_USLEEP        \"$(HAVE_USLEEP)\""
+	@echo "INST_BINDIR        \"$(INST_BINDIR)\""
+	@echo "INST_CFGDIR        \"$(INST_CFGDIR)\""
+	@echo "INST_MANDIR        \"$(INST_MANDIR)\""
+	@echo "INST_YGDDIR        \"$(INST_YGDDIR)\""
+	@echo "LDFLAGS            \"$(LDFLAGS)\""
+	@echo "OBJSUBDIR          \"$(OBJSUBDIR)\""
+	@echo "OS                 \"$(OS)\""
+	@echo "PREFIX             \"$(PREFIX)\""
+	@echo "SHELL              \"$(SHELL)\""
+	@echo "VERSION            \"$(VERSION)\""
+	@echo "X11INCLUDEDIR      \"$(X11INCLUDEDIR)\""
+	@echo "X11LIBDIR          \"$(X11LIBDIR)\""
+	@echo "c++ --version      \"`c++ --version`\""
+	@echo "cc --version       \"`cc --version`\""
+	@echo "shell              \"$$SHELL\""
+	@echo "uname              \"`uname`\""
 
+########################################################################
 #
 #	Internal targets, not meant
 #	to be invoked directly
 #
+########################################################################
 
 # Dependencies of the modules of Yadex
 # -Y is here to prevent the inclusion of dependencies on
 # /usr/include/*.h etc. As a side-effect, it generates many
-# warnings. We use "grep -v" to filter them out and "|| true"
-# to prevent the non-zero exit status of grep from being
-# seen by make.
+# warnings, hence "2>/dev/null".
+#
+# The purpose of the awk script is to transform this input :
+#
+#   src/foo.o: src/whatever.h
+#
+# into this output :
+#
+#   obj/0/foo.o: src/whatever.h
+#   dobj/0/foo.o: src/whatever.h
+#
 # Note: the modules of Atclib are not scanned as they all
 # depend on $(HEADERS_ATCLIB) and nothing else.
 
 yadex.dep: $(SRC_YADEX)
 	@echo
 	@echo makedepend
-	@makedepend -f- -p$(OBJDIR)/ -Y -Iatclib $(DEFINES) $(SRC_YADEX)\
-		2>/dev/null | sed -e "s:/src::" >$@
+	@makedepend -f- -Y -Iatclib $(DEFINES) $(SRC_YADEX) 2>/dev/null\
+		| awk 'sub (/^src/, "") == 1 {\
+				print "'$(OBJDIR)'" $$0;\
+				print "'$(DOBJDIR)'" $$0;\
+				next;\
+			}' >$@
 
 # The YYYY-MM-DD date indicated in the parentheses after the
 # version number is the mtime of the most recent source file
@@ -567,7 +642,7 @@ src/.uptodate: scripts/youngest $(SRC_NON_GEN)
 	@if perl -v >/dev/null 2>&1; then\
 	  echo Generating src/.srcdate;\
 	  scripts/youngest $(SRC_NON_GEN) >src/.srcdate;\
-	  touch -t $$(date '+%m%d')0000 src/.srcdate;\
+	  touch -t `date '+%m%d'`0000 src/.srcdate;\
 	elif [ -f src/.srcdate ]; then\
 	  echo Perl not available. Keeping old src/.srcdate;\
 	else\
@@ -578,52 +653,54 @@ src/.uptodate: scripts/youngest $(SRC_NON_GEN)
 
 # Directories where objects and binaries are put.
 # (normal and debugging versions)
+
 .PHONY: dirs
-.PHONY: ddirs
 dirs:
 	@if [ ! -d $(OBJPHYSDIR)\
-		-o ! -d $(OBJPHYSDIR_ATCLIB)\
-		-o ! -d $(BINDIR) ];\
+	  -o ! -d $(OBJPHYSDIR_ATCLIB) ];\
 	then\
-		echo Creating object directories;\
-		scripts/mkinstalldirs $(OBJPHYSDIR)        2>&1;\
-		scripts/mkinstalldirs $(OBJPHYSDIR_ATCLIB) 2>&1;\
-		scripts/mkinstalldirs $(BINDIR)            2>&1;\
+	  echo Creating object directories;\
+	  scripts/mkinstalldirs $(OBJPHYSDIR)        2>&1;\
+	  scripts/mkinstalldirs $(OBJPHYSDIR_ATCLIB) 2>&1;\
 	fi
 	@if [ -e $(OBJDIR) ]; then rm $(OBJDIR) 2>&1; fi
 	@ln -sf $(OBJSUBDIR) $(OBJDIR) 2>&1
+
+.PHONY: ddirs
 ddirs:
 	@if [ ! -d $(DOBJPHYSDIR)\
-		-o ! -d $(DOBJPHYSDIR_ATCLIB)\
-		-o ! -d $(DBINDIR) ];\
+	  -o ! -d $(DOBJPHYSDIR_ATCLIB) ];\
 	then\
-		echo Creating object directories;\
-		scripts/mkinstalldirs $(DOBJPHYSDIR)        2>&1;\
-		scripts/mkinstalldirs $(DOBJPHYSDIR_ATCLIB) 2>&1;\
-		scripts/mkinstalldirs $(DBINDIR)            2>&1;\
+	  echo Creating object directories;\
+	  scripts/mkinstalldirs $(DOBJPHYSDIR)        2>&1;\
+	  scripts/mkinstalldirs $(DOBJPHYSDIR_ATCLIB) 2>&1;\
 	fi
-	@if [ -e $(OBJDIR) ]; then rm $(OBJDIR) 2>&1; fi
-	@ln -sf ../dobj/$(OBJSUBDIR) $(OBJDIR) 2>&1
+	@if [ -e $(DOBJDIR) ]; then rm $(DOBJDIR) 2>&1; fi
+	@ln -sf $(OBJSUBDIR) $(DOBJDIR) 2>&1
 
 # To compile the modules of Yadex
 # (normal and debugging versions)
+
 include yadex.dep
-$(OBJPHYSDIR)/%.o: src/%.cc
+$(OBJDIR)/%.o: src/%.cc
 	@echo
 	@echo $(CXX) $<
 	@$(CXX) $(CXXFLAGS) -c -Iatclib $(DEFINES) $< -o $@ 2>&1
-$(DOBJPHYSDIR)/%.o: src/%.cc
+
+$(DOBJDIR)/%.o: src/%.cc
 	@echo
 	@echo $(CXX) $<
 	@$(CXX) $(DCXXFLAGS) -c -Iatclib $(DEFINES) $< -o $@ 2>&1
 
 # To compile the modules of Atclib
 # (normal and debugging versions)
-$(OBJPHYSDIR_ATCLIB)/%.o: atclib/%.c $(HEADERS_ATCLIB)
+
+$(OBJDIR_ATCLIB)/%.o: atclib/%.c $(HEADERS_ATCLIB)
 	@echo
 	@echo $(CC) $<
 	@$(CC) $(CFLAGS) -c $< -o $@ 2>&1
-$(DOBJPHYSDIR_ATCLIB)/%.o: atclib/%.c $(HEADERS_ATCLIB)
+
+$(DOBJDIR_ATCLIB)/%.o: atclib/%.c $(HEADERS_ATCLIB)
 	@echo
 	@echo $(CC) $<
 	@$(CC) $(DCFLAGS) -c $< -o $@ 2>&1
@@ -631,13 +708,14 @@ $(DOBJPHYSDIR_ATCLIB)/%.o: atclib/%.c $(HEADERS_ATCLIB)
 # A source file containing just the date of the
 # most recent source file and the version number
 # (found in ./VERSION).
+
 src/version.cc: $(SRC_NON_GEN) VERSION src/.srcdate
 	@echo
 	@echo Generating $@
 	@printf "extern const char *const yadex_source_date = \"%s\";\n" \
-		$$(cat src/.srcdate) >$@
+		`cat src/.srcdate` >$@
 	@printf "extern const char *const yadex_version = \"%s\";\n" \
-		$$(cat VERSION) >>$@
+		$(VERSION) >>$@
 
 # -------- Doc-related stuff --------
 
@@ -671,6 +749,7 @@ changes: changes/changes.html
 
 
 # Generate the doc by filtering them through scripts/process
+
 PROCESS = VERSION src/.srcdate scripts/process scripts/ftime
 
 doc/ybsp.6: bsp-2.3/ybsp.6 $(PROCESS)
@@ -699,9 +778,9 @@ doc/%.html: docsrc/%.html $(PROCESS)
 	@scripts/process $< >$@
 
 # The images are just symlinked from docsrc/ to doc/
+
 doc/%.png: docsrc/%.png
 	@ln -sf ../$< $@
-
 
 #scripts/mdate: scripts/mdate.c
 #	$(CC) $< -o $@

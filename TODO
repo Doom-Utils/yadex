@@ -15,7 +15,6 @@ General
 - DOS: do more modules splitting (deu.c, ReadConfigFile, menus.c). In
   gfx.c, move InitGfx() in a separate module.
 - DOS: be able to handle large levels.
-- Understand sprites in PWAD (SS_START, S_END).
 - DOS: switch to DJGPP
 - DOS: dig *.wad...
 - DOS: maybe compress the sidedef struct (30 B -> 12 B).
@@ -78,27 +77,26 @@ Game and wad support
   phobos, 2wad/dks_e1l1, 2wad/dks_e1l3, amanda2 (no tail !), atica,
   badblu35, dmdv (tail 76% unused 45/469), drdeath (unused 69/1382),
   spit e1m2 unused 661/816 tail 0
-- Handle sprites between SS_START and S_END/SS_END (cf. basilica.wad)
-  and patches between PP_START and PP_END (cf. mbfedit!.wad) properly.
-  The problem is that FindMasterDir() searches the master directory from
-  beginning to end, while Doom does the reverse. Therefore, replacement
-  entries never replace old entries, except when OpenPatchWad() has
-  explicitly replaced them, which does not occur for lumps framed by
-  *_START/*_END labels. The problem is not visible for flats because
-  ReadFTextureNames() explicitely merges and sorts all the
-  F*_START/F*_END sequences.
-  It's a mess. There are several approaches to fix that :
+- Handle sprites between SS_START and S_END/SS_END (cf. basilica.wad,
+  alitcsf.wad) properly. The problem is that FindMasterDir() searches
+  the master directory from beginning to end, while Doom does the
+  reverse. Therefore, replacement entries never replace old entries,
+  except when OpenPatchWad() has explicitly replaced them, which does
+  not occur for lumps framed by *_START/*_END labels. The problem is not
+  visible for flats because ReadFTextureNames() explicitely merges and
+  sorts all the F*_START/F*_END sequences.  It's a mess. There are
+  several approaches to fix that :
   - (1) Don't try to replace anything, just read the directory from the
     end like Doom does.
   - (2) Fix OpenPatchWad() to replace patch and sprite lumps where
     appropriate.
   - (3) Create ReadSpriteNames() and ReadPatchNames() and use the tables
-    they generate instead of searching the master directory.
-  There are some drawbacks to (1). Directory lookups are long (E.G. 1936
-  flats for eternall.wad). When loading a pwad that replaces lots of
-  resources, you waste memory by having every entry duplicated. Also,
-  I'm skeptical about that way of doing because we know it does not work
-  too well with sprites.
+    they generate instead of searching the master directory.  There are
+    some drawbacks to (1). Directory lookups are long (E.G. 1936 flats
+    for eternall.wad). When loading a pwad that replaces lots of
+    resources, you waste memory by having every entry duplicated. Also,
+    I'm skeptical about that way of doing because we know it does not
+    work too well with sprites.
 
   I'm not sure about how to do (2). I suspect that the right thing is to
   replace anything that has the same name. That is, there is only one
@@ -141,16 +139,20 @@ Game and wad support
 - Fix OpenPatchWad() so that, if a pwad contains FF_START ... FF_END
   F_END (mm2.wad), the F_END does not replace the F_END from the iwad,
   as this causes a spurious "this wad uses FF_END" warning.
+- icarus.wad uses F_END + FF_END. Sigh.
 - When a pwad contains F_START F1_START ... F3_END F_END, the F_END
   replaces the one from the iwad and this causes Yadex to think all
   following lumps are flats (sod.wad).
-- icarus.wad uses F_END + FF_END. Sigh.
+- With hacxsw.wad, which replaces all patches and has P_START/P_END
+  labels, get a "No matching P_END for P_START in hacxsw.wad". Surely
+  the same problem as with F_END ; OpenPatchWad() uses the P_END from
+  the pwad to replace the P_END from the iwad.
 - Heretic has some flats with a size of 4160. Is this why DeuTex accepts
   64x65 flats ?
 - Hexen has some flats with a size of 8 kB.
-- The pwad loading messages should be made even more compact if
-  possible (cf. eternal or doom2099 for instance).
 - Alpha: fix wrong things definitions and add missing ones.
+- Doom alpha: when loading a pwad with several contiguous levels, every
+  second level is discarded. See wads2.cc.
 
 Messages and reports
   The reason for emitting messages :
@@ -430,6 +432,8 @@ Keyboard interface
 Documentation
 - Update DEU 5.21 doc...
 - Document screenshot.
+- faq.html should be included in the distribution.
+- Some entries in the FAQ should also be in trouble.html and vice-versa.
 
 Unimportant :
 - If bgi= or -bgi specifies a path for the .bgi driver, handle it.
@@ -547,7 +551,8 @@ Misc.
   startup, if that file exists, propose to use it.
 - If DOOMWADDIR exists, use it ? But overridden by yadex.cfg & -iwad
 - Texture browser : it's so slow that, even on a K6/200, some textures
-  are slow to come (AMRIBS). Should cache patches ?
+  are slow to come (AMRIBS). Should cache patches ? 1999-11-28: after
+  implementing Patch_dir, did not notice a huge improvement.
 - Parameters :
   - colour# used to represent transparent colour when saving textures,
   - rgb used to represent transparent colour when saving textures,
@@ -571,7 +576,8 @@ Misc.
 - Events; generalize internal events and hold refresh until all events
   have been processed. Though autoscroll could bite me.
 - Delete all those "huge" qualifiers ; means nothing for Unix and the
-  DOS version should be compiled with -mh anyway.
+  DOS version should be compiled with -mh anyway. Update: 1999-11-25:
+  Ha! Ha! Ha! Ha! Ho! Ho! ... I was so young and naive...
 - Displaying pointer coords; should look into using PutImageFont().
 - [Ctrl][Click]: Press button: do nothing.  Release button: select or
   unselect IF STILL ON TOP OF OBJECT.  Thus we can use [Ctrl] + drag to
@@ -712,13 +718,7 @@ To do soon
 - Test XK_*_ISO_* on SCO X11R5.
 - Test on Final Doom.
 - Add option to let Yadex tell you with which options it was compiled.
-- Generate home page from the makefile. Make it contain news and
-  a screenshot, and also old archives (at least the previous one) in
-  case something goes wrong with the latest one.
-- Generate history from news.
 - Generate text announcement (yadex-announce, freshmeat, rgcde, cola)
-- Fix the tendency of the makefile to ignore the .h dependencies
-  (it's like yadex.dep wasn't there).
 - Fix any remaining problems that might remain in saving.
 - "create": Fix the problem with levelname being NULL in EditLoop().
   Check [F3].

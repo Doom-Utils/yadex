@@ -11,7 +11,7 @@ This file is part of Yadex.
 Yadex incorporates code from DEU 5.21 that was put in the public domain in
 1994 by Raphaël Quinet and Brendon Wyber.
 
-The rest of Yadex is Copyright © 1997-1999 André Majorel.
+The rest of Yadex is Copyright © 1997-2000 André Majorel.
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -32,6 +32,7 @@ Place, Suite 330, Boston, MA 02111-1307, USA.
 #include <time.h>
 #include "acolours.h"
 #include "cfgfile.h"
+#include "disppic.h"  /* Because of "p" */
 #include "editlev.h"
 #include "endian.h"
 #include "game.h"
@@ -40,6 +41,7 @@ Place, Suite 330, Boston, MA 02111-1307, USA.
 #include "help1.h"
 #include "mkpalette.h"
 #include "palview.h"
+#include "patchdir.h"  /* Because of "p" */
 #include "rgb.h"
 #include "sanity.h"
 #include "sprites.h"
@@ -703,10 +705,12 @@ for (;;)
               " to save one object to a separate file\n");
       printf ("set                               --"
               " to list all options and their values\n");
-      printf ("v[iew] [SpriteName]               --"
+      printf ("v[iew] [<spritename>]             --"
               " to display the sprites\n");
       printf ("viewpal                           --"
 	      " palette viewer\n");
+      printf ("viewpat [<patchname>]             --"
+	      " patch viewer\n");
       printf ("w[ads]                            --"
               " to display the open wads\n");
       printf ("x[tract] <DirEntry> <RawFile>     --"
@@ -964,6 +968,31 @@ for (;;)
 	 }
       else
 	 DumpDirectoryEntry (stdout, com);
+      }
+
+   // "viewpat" - view the patches
+   else if (! strcmp (com, "viewpat"))
+      {
+      InitGfx ();
+      init_input_status ();
+      do
+	 get_input_status ();
+      while (is.key != YE_EXPOSE);
+      com = strtok (NULL, " ");
+      force_window_not_pixmap ();  // FIXME quick hack
+      patch_dir.refresh (MasterDir);
+      {
+	 char buf[WAD_NAME + 1];
+	 *buf = '\0';
+	 if (com != 0)
+	   strncat (buf, com, sizeof buf - 1);
+	 Patch_list pl;
+	 patch_dir.list (pl);
+	 InputNameFromListWithFunc (-1, -1, "Patch viewer", pl.size (),
+	       pl.data (), 10, buf, 256, 256, display_pic,
+	       HOOK_DISP_SIZE | HOOK_PATCH);
+      }
+      TermGfx ();
       }
 
    /* user asked to view the sprites */

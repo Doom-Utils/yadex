@@ -106,6 +106,11 @@ the man page based on the one written by Udo Munk. Colin Phipps
 contributed bug fixes.
 
 .SH SEE ALSO
+.BR idbsp (6),
+.BR warm (6),
+.BR wreject (6),
+.BR xwadtools (6)
+.br
 The Unofficial Doom Specs by Matthew S Fell.
 .br
 .B bsp23x.txt
@@ -113,3 +118,29 @@ The Unofficial Doom Specs by Matthew S Fell.
 .B http://www.teaser.fr/~amajorel/doom/bsp23bug.zip
 .br
 .B http://lxdoom.linuxgames.com/notes.html#bsp
+
+.SH BUGS/ERRORS
+This program will \fBNOT\fR built a reject map, it will build a zero-ed one,
+where every sector is visible from any other sector, or with the appropriate
+option it won't touch an existing reject map. So if this node builder is used
+the WAD reject resource should be build with other tools.
+
+.SH AUTHOR
+.B Bsp
+was written by Colin Reed and Lee Killough (killough@rsn.hp.com),
+based on the node builder included in DEU5 by Raphael Quinet
+(Raphael.Quinet@eed.ericsson.se).
+.LP
+Linux port was done by Andre Majorel (amajorel@teaser.fr).
+.LP
+Port to other UNIX flavors and some minor modifications by
+Udo Munk (um@compuserve.com)
+.LP
+Big endian support for Solaris SPARC done by Oliver Kraus
+(kraus@lw010.e-technik.uni-erlangen.de)
+.LP
+Disabling progress indicator if stderr redirected done by
+Andre Majorel (amajorel@teaser.fr).
+.LP
+Two bug fixes done by Colin Phipps (cph@lxdoom.linuxgames.com).
+

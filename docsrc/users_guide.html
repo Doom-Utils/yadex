@@ -186,8 +186,9 @@ See <a href="README"><code>README</code></a>.
 <p>Don't forget to tell Yadex where your iwads are by changing
 the lines "<code>iwad1&nbsp;=</code>",
 "<code>iwad2&nbsp;=</code>" etc. in
-<code>/usr/local/etc/yadex.cfg</code>. If there is an iwad you
-don't have, you can just comment out the corresponding line.
+<code>/usr/local/etc/yadex/<var>version</var>/yadex.cfg</code>.
+If there is an iwad you don't have, you can just comment out the
+corresponding line.
 
 	</p><hr noshade>
 	<h2><a name="running">
@@ -441,22 +442,17 @@ used. If there are several <code>PLAYPAL</code> lumps, the last
 one is used.
 
 <p><dt>Patches
-<dd>New or replacement patches are recognized iff they're in the
-<code>PNAMES</code> lump. If there are several
+<dd>New or replacement patches are recognized iff they're
+between <code>P_START</code> and <code>P_END</code> or
+<code>PP_START</code> and <code>PP_END</code>. New patches must
+also appear in the <code>PNAMES</code> lump or the texture
+browser won't be able to use them. If there are several
 <code>PNAMES</code> lumps, the last one is used. If there are
 several lumps for the same flat, the last one is used.
 
-<p>There is a bug in the handling of replacement patches:
-they're normally expected to be between <code>PP_START</code>
-and <code>PP_END</code> but, if they are, Yadex ignores them.
-For example, a pwad that contains only the <code>RSKY1</code>
-lump will work but a pwad that contains <code>PP_START</code>,
-<code>RSKY1</code>, <code>PP_END</code> will not. This will be
-fixed in another release.
-
 <p><dt>Sprites
-<dd>Neither new nor replacement sprites are recognized. This will
-be fixed in another release.
+<dd>Neither new nor replacement sprites are reliably recognized.
+This will be fixed in another release.
 
 <p><dt>Textures
 <dd>New or replacement textures are recognized iff they're in a
@@ -1339,11 +1335,12 @@ linedef flags" popup menu.
 
 <p>As of this release, it's not possible.
 
-		<h3>Using the flat/sprite/texture viewer</h3>
+		<h3>Using the flat/patch/sprite/texture viewer</h3>
 
-<p>Flats, sprites and textures are browsed and selected with the
-same basic tool, snappily named the flat/sprite/texture viewer.
-How do you use that beast&nbsp;?
+<p>Flats, patches, sprites and textures are browsed and selected
+with the same basic tool, snappily named the
+flat/patch/sprite/texture viewer. How do you use that
+beast&nbsp;?
 
 <p><img src="vflat.png" alt="Browsing flats" WIDTH=315 HEIGHT=86>
 
@@ -1392,10 +1389,10 @@ thing as [<kbd>Pgdn</kbd>].
 [<kbd>Esc</kbd>].
 
 <p>In the DOS version, pressing [<kbd>Shift-F1</kbd>] used to
-save the current flat/sprite/texture to a GIF file. However, in
-the X11 version, this function is currently a no-op because I've
-not taken the time to port the Gifsave library to Unix yet.
-Besides, I'd rather use PPM and/or PNG than GIF.
+save the current flat/patch/sprite/texture to a GIF file.
+However, in the X11 version, this function is currently a no-op
+because I've not taken the time to port the Gifsave library to
+Unix yet. Besides, I'd rather use PPM and/or PNG than GIF.
 
 <p>Finally when viewing sprites, two other useful commands are
 [<kbd>Ctrl-n</kbd>] and [<kbd>Ctrl-p</kbd>]. These go
@@ -1486,23 +1483,27 @@ Yadex tries to open the following files in order&nbsp;:
 <p>
 <ol>
 <li><code>./yadex.cfg</code>
-<li><code>~/yadex.cfg</code>
+<li><code>~/.yadex/<var>version</var>/yadex.cfg</code>
+<li><code>~/.yadex/yadex.cfg</code>
 <li><code><var>install_dir</var>/yadex.cfg</code>
-<li><code>/usr/local/etc/yadex.cfg</code>
-<li><code>/etc/yadex.cfg</code>
+<li><code>/usr/local/etc/yadex/<var>version</var>/yadex.cfg</code>
+<li><code>/usr/local/etc/yadex/yadex.cfg</code>
+<li><code>/etc/yadex/<var>version</var>/yadex.cfg</code>
+<li><code>/etc/yadex/yadex.cfg</code>
 </ol>
 <p>
 The first file found is used.
 
 <p>If you use "<code>-f&nbsp;<var>file</var></code>" and
-"<code><var>file</var></code>" is an absolute name (i.e. it starts
-with "<code>/</code>"), only that name is used.
+"<code><var>file</var></code>" is an absolute name (i.e. it
+starts with "<code>/</code>"), only that name is used.
 
 <p>If "<code><var>file</var></code>" is a relative name, the
 standard directories will be searched for a file of that name
 instead of "<code>yadex.cfg</code>". For example, if you
 specify "<code>-f&nbsp;foo/bar</code>", Yadex will try to open
-"<code>./foo/bar</code>", "<code>~/foo/bar</code>", and so on.
+"<code>./foo/bar</code>",
+"<code>~/.yadex/<var>version</var>/foo/bar</code>", and so on.
 
 <p>For Yadex to recognize the file as a configuration file, its
 first line must contain exactly the following characters&nbsp;:
@@ -1529,10 +1530,10 @@ Yadex should use the game definition file named
 names in order&nbsp;:
 <ol>
 <li><code>./<var>game</var>.ygd</code>
-<li><code>~/<var>game</var>.ygd</code>
+<li><code>~/.yadex/<var>version</var>/<var>game</var>.ygd</code>
 <li><code><var>install_dir</var>/<var>game</var>.ygd</code>
-<li><code>/usr/local/share/games/<var>game</var>.ygd</code>
-<li><code>/usr/share/games/<var>game</var>.ygd</code>
+<li><code>/usr/local/share/games/yadex/<var>version</var>/<var>game</var>.ygd</code>
+<li><code>/usr/share/games/yadex/<var>version</var>/<var>game</var>.ygd</code>
 </ol>
 
 <p>For Yadex to recognize the file as a game definition file,
@@ -1556,7 +1557,9 @@ you can use the font of your choice by using the "<code>-fn
 "<code>font&nbsp;=&nbsp;</code><var>font_name</var>" in
 <code>yadex.cfg</code>. You should use a fixed-width font and
 not one that is too large for the size of your Yadex window or
-the display will look ugly.
+the display will look ugly. If Yadex does not find the specified
+font, it emits a warning and falls back on the default system
+font.
 
 <p> You can get a list of all available fonts on your system
 with the command <code>xlsfonts</code>.
@@ -1654,7 +1657,7 @@ href="ftp://ftp.cdrom.com/pub/idgames/historic/doom0_2.zip">0.2</a>,
 href="ftp://ftp.cdrom.com/pub/idgames/historic/doom0_4.zip">0.4</a>
 and <a
 href="ftp://ftp.cdrom.com/pub/idgames/historic/doom0_5.zip">0.5</a>.
-They're supported to a varying degree of completeness. All
+They're supported to varying degrees of completeness. All
 graphics resources (flats, patches, <code>PLAYPAL</code>,
 sprites and textures) are supported for all versions with the
 exception of version 0.2, for which textures are not supported.
@@ -1677,10 +1680,10 @@ don't expect many people to actually want to use the alphas
 because, from a player point of view, they're much less
 comfortable than the later versions of Doom. To say nothing of
 the fact that all we have is a DOS executable and no source
-code.  That being said, I can't deny that it would indeed be
-cool to be able to generate wads for the alphas, if only for the
-fun of it.  If you want to do it, I won't discourage you and I
-will gladly accept patches.
+code. That being said, I can't deny that it would indeed be cool
+to be able to generate wads for the alphas, if only for the fun
+of it. If you want to do it, I won't discourage you and I will
+gladly accept patches.
 
 		<h3>Doom press release pre-beta</h3>
 
@@ -1785,7 +1788,7 @@ executable.
 
 <p>Yadex is GPL'd libre software. It incorporates code from DEU
 5.21 that was put in the public domain in 1994 by Raphaël Quinet
-and Brendon Wyber. The rest is Copyright © 1997-1999 André
+and Brendon Wyber. The rest is Copyright © 1997-2000 André
 Majorel.
 
 <p>This program is free software; you can redistribute it and/or

@@ -12,7 +12,7 @@ This file is part of Yadex.
 Yadex incorporates code from DEU 5.21 that was put in the public domain in
 1994 by Raphaël Quinet and Brendon Wyber.
 
-The rest of Yadex is Copyright © 1997-1999 André Majorel.
+The rest of Yadex is Copyright © 1997-2000 André Majorel.
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -198,9 +198,11 @@ for (pcolour_t *pcn = pcn_table; count; count--, pcn++)
 // remove them from the table of physical colours.
 size_t new_physical_colours = 0;
 
+{
 for (size_t i = 0; i < physical_colours; i++)
    if (pcolours[i].pcn != PCOLOUR_NONE)
       new_physical_colours++;  // Number of phys. colours still in use.
+}
 
 verbmsg ("freed %d physical colours of %d\n",
    physical_colours - new_physical_colours, physical_colours);

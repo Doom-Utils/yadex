@@ -12,7 +12,7 @@ This file is part of Yadex.
 Yadex incorporates code from DEU 5.21 that was put in the public domain in
 1994 by Raphaël Quinet and Brendon Wyber.
 
-The rest of Yadex is Copyright © 1997-1999 André Majorel.
+The rest of Yadex is Copyright © 1997-2000 André Majorel.
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -1306,7 +1306,7 @@ if (yg_texture_lumps == YGTL_TEXTURES
       WTexture = (char **) GetMemory ((long) NumWTexture * sizeof *WTexture);
       WTexture[0] = (char *) GetMemory (WAD_TEX_NAME + 1);
       strcpy (WTexture[0], "-");
-      if (WAD_TEX_NAME < 7) nf_bug ("WAD_TEX_NAME to small");  // Sanity
+      if (WAD_TEX_NAME < 7) nf_bug ("WAD_TEX_NAME too small");  // Sanity
       for (long n = 0; n < val; n++)
 	 {
 	 WTexture[n + 1] = (char *) GetMemory (WAD_TEX_NAME + 1);

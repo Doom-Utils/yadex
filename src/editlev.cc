@@ -10,7 +10,7 @@ This file is part of Yadex.
 Yadex incorporates code from DEU 5.21 that was put in the public domain in
 1994 by Raphaël Quinet and Brendon Wyber.
 
-The rest of Yadex is Copyright © 1997-1999 André Majorel.
+The rest of Yadex is Copyright © 1997-2000 André Majorel.
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -38,6 +38,7 @@ Place, Suite 330, Boston, MA 02111-1307, USA.
 #include "game.h"
 #include "gfx.h"
 #include "levels.h"
+#include "patchdir.h"
 
 
 static void WriteYadexLog (const char *file, const char *level,
@@ -149,6 +150,7 @@ void EditLevel (const char *levelname, Bool newlevel)
 {
 ReadWTextureNames ();
 ReadFTextureNames ();
+patch_dir.refresh (MasterDir);
 InitGfx ();
 /* Call init_input_status() as shortly as possible after the creation
    of the window to minimize the risk of calling get_input_status(),
@@ -169,6 +171,7 @@ else if (newlevel && levelname)  // "create <level_name>"
    {
    printf ("Sorry, \"create <level_name>\" is not implemented."
 	 " Try \"create\" without argument.\n");
+   TermGfx ();
    return;
    }
 else  // "edit <level_name>" or "edit"

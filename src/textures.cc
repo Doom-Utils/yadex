@@ -11,7 +11,7 @@ This file is part of Yadex.
 Yadex incorporates code from DEU 5.21 that was put in the public domain in
 1994 by Raphaël Quinet and Brendon Wyber.
 
-The rest of Yadex is Copyright © 1997-1999 André Majorel.
+The rest of Yadex is Copyright © 1997-2000 André Majorel.
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -34,6 +34,7 @@ Place, Suite 330, Boston, MA 02111-1307, USA.
 #include "dispimg.h"
 #include "game.h"      /* yg_picture_format */
 #include "gfx.h"
+#include "patchdir.h"
 #include "pic2img.h"
 #include "wads.h"
 #include "wstructs.h"
@@ -213,11 +214,9 @@ Place, Suite 330, Boston, MA 02111-1307, USA.
    display a wall texture ("TEXTURE1" or "TEXTURE2" object)
    at coords c->x0, c->y0
 */
-
 void DisplayWallTexture (hookfunc_comm_t *c)
 {
 MDirPtr  dir = 0;	/* main directory pointer to the TEXTURE* entries */
-MDirPtr  pdir;		/* main directory pointer to the PNAMES entry */
 i32     *offsets;	/* array of offsets to texture names */
 int      n;		/* general counter */
 i16      xsize, ysize;	/* size of the texture */
@@ -255,8 +254,6 @@ else
    c->flags = 0;
    return;
    }
-     
-
 
 c->flags = 0;
 #ifndef Y_X11
@@ -426,11 +423,6 @@ for (n = 0; n < fields; n++)
       wad_read_i16 (dir->wadfile, &colormap);  // Always 0, unused.
       }
 
-#ifdef DEBUG
-   printf ("Texture \"%.8s\": Patch %2d: #%3d (%d, %d)\n",
-       c->name, (int) pnameind, (int) n, (int) xofs, (int) yofs);
-#endif
-
    /* AYM 1998-08-08: Yes, that's weird but that's what Doom
       does. Without these two lines, the few textures that have
       patches with negative y-offsets (BIGDOOR7, SKY1, TEKWALL1,
@@ -440,15 +432,24 @@ for (n = 0; n < fields; n++)
    if (yofs < 0)
       yofs = 0;
 
-   /* OK, now look up the pic's name in the PNAMES entry. */
-   // FIXME should probably cache the PNAMES lump
-   pdir = FindMasterDir (MasterDir, "PNAMES");
-   wad_seek (pdir->wadfile, pdir->dir.start + 4L + pnameind * 8L);
-   wad_read_bytes (pdir->wadfile, &picname, WAD_PIC_NAME);
-   picname[WAD_PIC_NAME] = '\0';
-#ifdef Y_DOS
-   strupr (picname);  /* FIXME ? */
+   Lump_loc loc;
+   {
+     wad_pic_name_t *name = patch_dir.name_for_num (pnameind);
+     if (name == 0)
+       {
+       warn ("texture \"%.*s\": patch %2d has bad index %d.\n",
+	  WAD_TEX_NAME, tname, (int) n, (int) pnameind);
+       continue;
+       }
+     patch_dir.loc_by_name ((const char *) *name, loc);
+     *picname = '\0';
+     strncat (picname, (const char *) *name, sizeof picname - 1);
+#ifdef DEBUG
+     printf ("Texture \"%.*s\": Patch %2d: #%3d %-8.8s (%d, %d)\n",
+       c->name, (int) n, (int) pnameind, picname, (int) xofs, (int) yofs);
 #endif
+   }
+
    /* coords changed because of the "setviewport" */
 #ifdef Y_BGI
    /* AYM 1998-07-11
@@ -465,7 +466,7 @@ for (n = 0; n < fields; n++)
 #endif
    subc.name = picname;
 
-   if (LoadPicture (texbuf, xsize, ysize, picname, xofs, yofs, 0, 0))
+   if (LoadPicture (texbuf, xsize, ysize, picname, loc, xofs, yofs, 0, 0))
       warn ("texture \"%.*s\": patch \"%.*s\" not found.\n",
 	  WAD_TEX_NAME, tname, WAD_PIC_NAME, picname);
    }
@@ -483,11 +484,9 @@ c->flags |= HOOK_DRAWN;
 }
 
 
-
 /*
    Function to get the size of a wall texture
 */
-
 void GetWallTextureSize (i16 *xsize_r, i16 *ysize_r, const char *texname)
 {
 MDirPtr  dir = 0;	/* pointer in main directory to texname */
@@ -598,12 +597,9 @@ else
 }
 
 
-
-
 /*
    choose a wall texture
 */
-
 void ChooseWallTexture (int x0, int y0, const char *prompt, int listsize,
    char **list, char *name)
 {
@@ -623,6 +619,4 @@ SwitchToVGA16 ();
 
 ShowMousePointer ();
 }
-
-
 

@@ -14,7 +14,7 @@ This file is part of Yadex.
 Yadex incorporates code from DEU 5.21 that was put in the public domain in
 1994 by Raphaël Quinet and Brendon Wyber.
 
-The rest of Yadex is Copyright © 1997-1999 André Majorel.
+The rest of Yadex is Copyright © 1997-2000 André Majorel.
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -40,19 +40,29 @@ Place, Suite 330, Boston, MA 02111-1307, USA.
 
 // Directory
 const size_t WAD_NAME = 8;		// Length of a directory entry name
+typedef char wad_name_t[WAD_NAME];
 typedef struct Directory huge *DirPtr;
 struct Directory
    {
-   i32  start;			// Offset to start of data
-   i32  size;			// Byte size of data
-   char name[WAD_NAME];		// Name of data block
+   i32        start;			// Offset to start of data
+   i32        size;			// Byte size of data
+   wad_name_t name;			// Name of data block
    };
 
 
 // Textures
-const size_t WAD_TEX_NAME  = 8;		// Length of a texture name
-const size_t WAD_FLAT_NAME = WAD_NAME;	// Length of a flat name
-const size_t WAD_PIC_NAME  = WAD_NAME;	// Length of a patch or sprite name
+const size_t WAD_TEX_NAME = 8;
+typedef char wad_tex_name_t[WAD_TEX_NAME];
+
+
+// Flats
+const size_t WAD_FLAT_NAME = WAD_NAME;
+typedef char wad_flat_name_t[WAD_FLAT_NAME];
+
+
+// Pictures (sprites and patches)
+const size_t WAD_PIC_NAME = WAD_NAME;
+typedef char wad_pic_name_t[WAD_TEX_NAME];
 
 
 // Level objects properties
@@ -135,12 +145,12 @@ typedef struct LineDef huge *LDPtr;
 const size_t WAD_SIDEDEF_BYTES = 30;	// Size in the wad file
 struct SideDef
    {
-   wad_coord_t xoff;			// FIXME rename to "xofs"
-   wad_coord_t yoff;			// FIXME rename to "yofs"
-   char        tex1[WAD_TEX_NAME];	// Name of upper texture
-   char        tex2[WAD_TEX_NAME];	// Name of lower texture
-   char        tex3[WAD_TEX_NAME];	// Name of middle texture
-   wad_sn_t sector;			// # of adjacent sector
+   wad_coord_t    xoff;			// FIXME rename to "xofs"
+   wad_coord_t    yoff;			// FIXME rename to "yofs"
+   wad_tex_name_t tex1;			// Name of upper texture
+   wad_tex_name_t tex2;			// Name of lower texture
+   wad_tex_name_t tex3;			// Name of middle texture
+   wad_sn_t       sector;		// # of adjacent sector
    };
 // (it's the same for Hexen)
 typedef struct SideDef huge *SDPtr;
@@ -162,13 +172,13 @@ const size_t WAD_SECTOR_BYTES = 26;	// Size in the wad file
 typedef i16 wad_stype_t;
 struct Sector
    {
-   wad_z_t     floorh;			// Floor height
-   wad_z_t     ceilh;			// Ceiling height
-   char        floort[WAD_FLAT_NAME];	// Name of floor texture
-   char        ceilt[WAD_FLAT_NAME];	// Name of ceiling texture
-   i16         light;			// Light level (0-255)
-   wad_stype_t special;			// FIXME rename to "type"
-   wad_tag_t   tag;
+   wad_z_t         floorh;		// Floor height
+   wad_z_t         ceilh;		// Ceiling height
+   wad_flat_name_t floort;		// Name of floor texture
+   wad_flat_name_t ceilt;		// Name of ceiling texture
+   i16             light;		// Light level (0-255)
+   wad_stype_t     special;		// FIXME rename to "type"
+   wad_tag_t       tag;
    };
 typedef struct Sector huge *SPtr;
 

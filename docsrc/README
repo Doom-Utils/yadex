@@ -21,7 +21,7 @@ BUILDING AND INSTALLING
     Type this :
 
                           make
-                          make install
+                          su -c 'make install'
 
     Notes :
     1) If you get an error on -lX11, add X11LIBDIR=<dir> to the make
@@ -29,26 +29,35 @@ BUILDING AND INSTALLING
     E.G. "make X11LIBDIR=/usr/lpp/X11/lib"
     
     2) If you want to install somewhere else than in /usr/local/bin,
-    add PREFIX=<dir> to the make install command line.
-    E.G. "make install PREFIX=/opt/yadex"
+    add PREFIX=<dir> to the "make install" command line.
+    E.G. "su -c 'make install PREFIX=/opt/yadex'"
+      or "make install PREFIX=~"
 
-    3) You may need root privileges to run make install.
-
-    4) Beware, the installation OVERWRITES the following files:
-    /usr/local/bin/bsp                 /usr/local/share/games/alpha05.ygd
-    /usr/local/bin/yadex               /usr/local/share/games/beta.ygd
-    /usr/local/etc/yadex.cfg           /usr/local/share/games/doom.ygd 
-    /usr/local/man/man6/bsp.6          /usr/local/share/games/doom2.ygd
-    /usr/local/man/man6/yadex.6        /usr/local/share/games/heretic.ygd
-    /usr/local/share/games/alpha02.ygd /usr/local/share/games/hexen.ygd
-    /usr/local/share/games/alpha04.ygd /usr/local/share/games/strife.ygd
+    3) Beware, the installation OVERWRITES the following files:
+    /usr/local/bin/ybsp
+    /usr/local/bin/ybsp-$VERSION
+    /usr/local/bin/yadex
+    /usr/local/bin/yadex-$VERSION
+    /usr/local/etc/yadex/$VERSION/yadex.cfg
+    /usr/local/share/games/yadex/$VERSION/doom.ygd
+    /usr/local/share/games/yadex/$VERSION/doom02.ygd
+    /usr/local/share/games/yadex/$VERSION/doom04.ygd
+    /usr/local/share/games/yadex/$VERSION/doom05.ygd
+    /usr/local/share/games/yadex/$VERSION/doom2.ygd 
+    /usr/local/share/games/yadex/$VERSION/doompr.ygd
+    /usr/local/share/games/yadex/$VERSION/heretic.ygd
+    /usr/local/share/games/yadex/$VERSION/hexen.ygd
+    /usr/local/share/games/yadex/$VERSION/strife.ygd
+    /usr/local/share/games/yadex/$VERSION/strife10.ygd
+    /usr/local/[share/]man/man6/ybsp.6
+    /usr/local/[share/]man/man6/yadex.6
 
 CONFIGURING AND RUNNING
     Before you run Yadex, you need to tell it where to find your iwads.
-    Open /usr/local/etc/yadex.cfg with your favourite text editor and
-    insert the appropriate values for the parameters "iwad1", "iwad2",
-    etc. If you don't want Doom II to be the default iwad, also change
-    the value of the "game" parameter.
+    Open /usr/local/etc/yadex/$VERSION/yadex.cfg with your favourite
+    text editor and insert the appropriate values for the parameters
+    "iwad1", "iwad2", etc. If you don't want Doom II to be the default
+    iwad, also change the value of the "game" parameter.
 
     You can now run Yadex by typing :
     
@@ -57,6 +66,10 @@ CONFIGURING AND RUNNING
     A "yadex:" prompt should show. At that prompt, type this :
     
 			  e map01
+
+    or this :
+
+			  e e1m1
 
     Have fun !
 
@@ -75,7 +88,7 @@ STATUS
 LEGAL
     Yadex is GPL'd libre software. It incorporates code from DEU 5.21
     that was put in the public domain in 1994 by Raphaël Quinet and
-    Brendon Wyber. The rest is Copyright © 1997-1999 André Majorel.
+    Brendon Wyber. The rest is Copyright © 1997-2000 André Majorel.
 
     Now comes the part I like best : This program is free software; you
     can redistribute it and/or modify it under the terms of the GNU

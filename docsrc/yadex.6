@@ -20,25 +20,38 @@ To know what's new in this release, see \fBCHANGES\fP.
 .br
 The rest of documentation is in \fBdoc/index.html\fP (HTML format).
 .SH FILES
+.TP
+.B Configuration file
 .B ./yadex.cfg
 .br
-.B ~/yadex.cfg
+.BI ~/.yadex/ version /yadex.cfg
 .br
-\fIinstall_dir\fB/yadex.cfg\fP
+.B ~/.yadex/yadex.cfg
 .br
-.B /usr/local/etc/yadex.cfg
+.IB install_dir /yadex.cfg
 .br
-.B /etc/yadex.cfg
-
+.BI /usr/local/etc/yadex/ version /yadex.cfg
+.br
+.B /usr/local/etc/yadex/yadex.cfg
+.br
+.BI /etc/yadex/ version /yadex.cfg
+.br
+.B /etc/yadex/yadex.cfg
+.TP
+.B Game definition file
 .BI ./ game .ygd
 .br
-.BI ~/ game .ygd
+.BI ~/.yadex/ version / game .ygd
 .br
-.IB install_dir / doom .ygd
+.IB install_dir / game .ygd
 .br
-.BI /usr/local/share/games/ game .ygd
+.BI /usr/local/share/games/yadex/ version / game .ygd
 .br
-.BI /usr/share/games/ game .ygd
+.BI /usr/share/games/yadex/ version / game .ygd
+.br
+.BI /usr/local/share/games/yadex/ game .ygd
+.br
+.BI /usr/share/games/yadex/ game .ygd
 .SH ENVIRONMENT VARIABLES
 .IP \fBDISPLAY\fP
 X11 only. The name of the X display that Yadex will try to connect to.
@@ -54,7 +67,7 @@ None. Yadex does not use the X resources system.
 .br
 \fB1\fP	Incorrect invocation.
 .br
-\fB2\fP	Fatal error.
+\fB>1\fP	Fatal error.
 .SH BUGS
 Command line options that take an argument
 need to have a space between their argument and themselves.
@@ -78,7 +91,7 @@ See the HTML documentation for detailed credits.
 Yadex incorporates code from DEU 5.21 that was put in the public
 domain in 1994 by Raphaël Quinet and Brendon Wyber.
 
-The rest of Yadex is Copyright © 1997-1999 André Majorel.
+The rest of Yadex is Copyright © 1997-2000 André Majorel.
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -97,7 +110,14 @@ Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 
 All trademarks are the propriety of their owners.
 .SH SEE ALSO
-\fBREADME\fP,
-\fBCHANGES\fP,
-\fBTODO\fP,
-\fBdoc/index.html\fP.
+.BR tkwadcad (6),
+.BR xwadtools (6),
+.BR ybsp (6)
+.IP LDE
+http://www-unix.oit.umass.edu/~tetron/lde/
+.IP PFME
+http://www.purplefrog.com/~thoth/purplefrog/editor.html
+.IP "Xwad (part of Dumb)"
+http://stekt.oulu.fi/~tosi/dumb/dumb.html
+.IP Xwadtools
+ftp://ftp.cdrom.com/pub/idgames/source/

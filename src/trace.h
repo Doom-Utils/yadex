@@ -1,6 +1,7 @@
 /*
- *	rgb.h
- *	AYM 1998-11-28
+ *	trace.h
+ *	Selective tracing system
+ *	AYM 1999-11-30
  */
 
 
@@ -27,44 +28,12 @@ Place, Suite 330, Boston, MA 02111-1307, USA.
 */
 
 
-#ifndef YH_RGB  /* Prevent multiple inclusion */
-#define YH_RGB  /* Prevent multiple inclusion */
+#ifndef YH_TRACE
+#define YH_TRACE
 
 
-class rgb_c
-   {
-   public :
-      rgb_c ()
-         {
-         }
-
-      // Must be defined before rbg_c (r, g, b)
-      void set (u8 red, u8 green, u8 blue)
-         {
-         r = red;
-         g = green;
-         b = blue;
-         }
-
-      rgb_c (u8 red, u8 green, u8 blue)
-         {
-         set (red, green, blue);
-         }
-
-      int operator == (const rgb_c rgb2) const
-         {
-         return rgb2.r == r && rgb2.g == g && rgb2.b == b;
-         }
-
-      int operator - (const rgb_c rgb2) const
-         {
-         return abs (rgb2.r - r) + abs (rgb2.g - g) + abs (rgb2.b - b);
-         }
-
-      u8 r;
-      u8 g;
-      u8 b;
-   };
+// FIXME stopgap
+void trace (const char *domain, const char *fmt, ...);
 
 
 #endif  /* DO NOT ADD ANYTHING AFTER THIS LINE */

@@ -11,7 +11,7 @@ This file is part of Yadex.
 Yadex incorporates code from DEU 5.21 that was put in the public domain in
 1994 by Raphaël Quinet and Brendon Wyber.
 
-The rest of Yadex is Copyright © 1997-1999 André Majorel.
+The rest of Yadex is Copyright © 1997-2000 André Majorel.
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -52,7 +52,7 @@ typedef struct
 
 static thing_attributes_t *things_table;
 static size_t nthings;
-int max_radius;
+int _max_radius;
 static size_t last_table_idx = (size_t) -1;
 
 
@@ -69,7 +69,7 @@ void create_things_table ()
 {
 size_t n;
 
-max_radius = 0;
+_max_radius = 0;
 nthings = al_lcount (thingdef);
 things_table = (thing_attributes_t *) malloc (nthings * sizeof *things_table);
 if (! things_table)
@@ -79,7 +79,7 @@ for (al_lrewind (thingdef), n = 0; n < nthings; al_lstep (thingdef), n++)
    things_table[n].type   = CUR_THINGDEF->number;
    things_table[n].flags  = CUR_THINGDEF->flags;
    things_table[n].radius = CUR_THINGDEF->radius;
-   max_radius = max (max_radius, CUR_THINGDEF->radius);
+   _max_radius = max (_max_radius, CUR_THINGDEF->radius);
 
    // Fetch the app colour no. for the thinggroup
    for (al_lrewind (thinggroup); ! al_leol (thinggroup); al_lstep (thinggroup))
@@ -263,7 +263,7 @@ else
 /* It's now inlined in things.h
 int get_max_thing_radius ()
 {
-return max_radius;
+return _max_radius;
 }
 */
 

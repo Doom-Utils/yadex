@@ -1,6 +1,66 @@
 
                                     Changes
                                        
+Yadex 1.3.0 (2000-01-11)
+
+     * Build: The makefile now honours the dependencies in yadex.dep.
+     * Build: Support for FHS-compliant systems: "make install" now
+       copies the man pages into /usr/local/share/man/man6/ if
+       /usr/local/share/man/ exists. If not, it still uses
+       /usr/local/man/man6/ (requested by Joseph Carter).
+     * Build: Added "#include <stddef.h>" to fix compilation error on
+       wads.cc under Solaris.
+     * Build: Downgraded the makefile and scripts to use the old
+       backquote syntax for command substitution, because Oliver Kraus'
+       reports suggest that the Solaris sh does not understand the "$()"
+       syntax. Barfulation !
+     * Build: New makefile target showconf that shows the value of all
+       the important macros as well as the output of certain commands. If
+       you have trouble compiling Yadex, mail me the output of "make
+       showconf".
+     * Build: A bunch of little changes in the makefile to try to make
+       build problems on Solaris go away.
+     * Doc: Fixed several discrepancies in README.
+     * Game/wad: Support for the german edition of Doom II (as the iwad
+       has no MAP31 and MAP32, Yadex 1.1.0 and 1.2.0 used to say "this is
+       the shareware version of the game").
+     * Game/wad: Replacement patches in pwads are now supported, even if
+       between PP_START and PP_END. Fixes failure to see redefined
+       textures with mbfedit!.wad, alitcwad.wad and certainly many
+       others. Replacement patches in pwads not between P_START/P_END or
+       PP_START/PP_END are not recognized anymore. Many PNAMES errors
+       that would have made previous versions of Yadex abort now just
+       make it print warnings.
+     * Misc: Cleaned up the web page source and makefile. Added
+       documentation, should someone else take over maintainership. No
+       harm in dreaming.
+     * Misc: New command viewpat to browse through the patches.
+     * Misc: It's now possible to have several different versions of
+       Yadex installed simultaneously. Some paths have changed :
+          + $(PREFIX)/share/games/ is now
+            $(PREFIX)/share/games/yadex/$(VERSION)/
+          + $(PREFIX)/etc/yadex.cfg is now
+            $(PREFIX)/etc/yadex/$(VERSION)/yadex.cfg
+          + ~/yadex.cfg is now ~/.yadex/$(VERSION)/yadex.cfg
+          + $(PREFIX)/bin/yadex changed to $(PREFIX)/bin/yadex-$(VERSION)
+          + $(PREFIX)/bin/ybsp changed to $(PREFIX)/bin/ybsp-$(VERSION)
+          + $(PREFIX)/bin/yadex is now a symlink pointing to
+            yadex-$(VERSION)
+          + $(PREFIX)/bin/ybsp is now a symlink pointing to
+            ybsp-$(VERSION)
+       The insertion of a yadex/ component in the paths was done for two
+       reasons. In the first place, it was requested by Joseph Carter for
+       game definition files, to reduce clutter in
+       $(PREFIX)/share/games/. I extended it to configuration files
+       because it I thought it was a nice way not to clutter
+       $(PREFIX)/etc/. On the other hand, it was not done for man pages
+       and executables because it would have interfered.
+     * Misc: Fixed bug where if you typed "yadex: c level", then created
+       or edited a level and then closed the editing window, you got a
+       dozen of messages like this one : "Warning: error freeing colour
+       00005820h (BadAccess (attempt to access private resource
+       denied))". I hope this fixes the related item in TODO.
+       
 Yadex 1.2.0 (1999-11-23)
 
      * BSP: Added missing newline in banner.

@@ -11,7 +11,7 @@ This file is part of Yadex.
 Yadex incorporates code from DEU 5.21 that was put in the public domain in
 1994 by Raphaël Quinet and Brendon Wyber.
 
-The rest of Yadex is Copyright © 1997-1999 André Majorel.
+The rest of Yadex is Copyright © 1997-2000 André Majorel.
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -41,6 +41,7 @@ Place, Suite 330, Boston, MA 02111-1307, USA.
 /*
  *	Standard headers
  */
+#include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -192,6 +193,17 @@ struct MasterDirectory
    struct Directory dir;	// Directory data
    };
 
+/* Lump location : enough information to load a lump without
+   having to do a directory lookup. */
+struct Lump_loc
+   {
+   Lump_loc () { wad = 0; }
+   Lump_loc (WadPtr w, i32 o, i32 l) { wad = w; ofs = o; len = l; }
+   WadPtr wad;
+   i32 ofs;
+   i32 len;
+   };
+
 
 /*
  *	The colour system.
@@ -288,6 +300,7 @@ const int HOOK_DRAWN      = 1 << 0;	// image is completely drawn
 const int HOOK_SIZE_VALID = 1 << 1;	// width and height are valid
 const int HOOK_DISP_SIZE  = 1 << 2;	// caller should display "widthxheight"
 const int HOOK_SPECTRAL   = 1 << 3;	// Render picture with a spectral look
+const int HOOK_PATCH      = 1 << 4;	// Use patch_dir.loc_by_name()
 
 // The actual definition is in selectn.h
 typedef struct SelectionList *SelPtr;
