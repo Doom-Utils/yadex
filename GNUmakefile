@@ -160,6 +160,7 @@ MODULES_YADEX =								\
 	s_swapf		s_vertices	sanity		scrnshot	\
 	selbox		selectn		selpath		selrect		\
 	serialnum	spritdir	sticker		swapmem		\
+ 	r_render	r_images					\
 	t_centre	t_flags		t_prop		t_spin		\
 	textures	things		trace		v_centre	\
 	v_merge		v_polyg		vectext		verbmsg		\
@@ -237,6 +238,7 @@ DOC2_SRC_HTML =				\
 	docsrc/legal.html		\
 	docsrc/packagers_guide.html	\
 	docsrc/palette.html		\
+	docsrc/preview.html		\
 	docsrc/reporting.html		\
 	docsrc/tips.html		\
 	docsrc/trivia.html		\

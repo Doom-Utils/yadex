@@ -70,6 +70,7 @@ Place, Suite 330, Boston, MA 02111-1307, USA.
 #include "x_exchng.h"
 #include "x_hover.h"
 #include "xref.h"
+#include "r_render.h"
 
 #ifdef Y_X11
 #include <X11/Xlib.h>
@@ -2206,6 +2207,13 @@ cancel_save_as:
          {
          DumpSelection (e.Selected);
          }
+
+      // [R] Render 3D view (AJA)
+      else if (is.key == 'R')
+        {
+        Render3D ();
+        RedrawMap = 1;
+        }
 
       // [@] Show font (not documented)
       else if (is.key == '@')
