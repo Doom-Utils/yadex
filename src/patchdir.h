@@ -85,7 +85,7 @@ struct Pllik_less
   bool operator() (const Pllik& p1, const Pllik& p2) const;
 };
 
-typedef map<Pllik, Lump_loc, Pllik_less> Patch_lumps_map;
+typedef std::map<Pllik, Lump_loc, Pllik_less> Patch_lumps_map;
 
 class Patch_list
 {

@@ -650,7 +650,8 @@ static void sortlump(struct lumplist **link)
 
 void usage(void)
 {
- printf("\nThis Node builder was created from the basic theory stated in DEU5 (OBJECTS.C)\n"
+ fprintf(stdout,
+        "\nThis Node builder was created from the basic theory stated in DEU5 (OBJECTS.C)\n"
         "Credits should go to :-\n"
         "Matt Fell      (msfell@aol.com) for the Doom Specs.\n"
         "Raphael Quinet (Raphael.Quinet@eed.ericsson.se) for DEU and the original idea.\n"

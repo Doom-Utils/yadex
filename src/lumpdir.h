@@ -77,7 +77,7 @@ struct Lump_map_less
   bool operator() (const Wad_name& p1, const Wad_name& p2) const;
 };
 
-typedef map<Wad_name, Lump_loc, Lump_map_less> Lump_map;
+typedef std::map<Wad_name, Lump_loc, Lump_map_less> Lump_map;
 
 class Lump_list
 {

@@ -1,6 +1,11 @@
 
                                     Changes
                                        
+Yadex 1.5.2 (2001-06-30)
+
+     * Platform: Compiles with GCC 3.0 (added std:: qualifiers where they
+       were missing and removed #ifdef inside printf()).
+       
 Yadex 1.5.1 (2000-12-12)
 
      * Platform: One-line fix in menu.cc to please GCC 2.96 (of Red Hat 7
@@ -186,6 +191,9 @@ Yadex 1.5.0 (2000-08-27)
        XFree86 seemed to mind much when it wasn't).
      * Platform: Began to clean the code up to make porting less
        difficult.
+     * Platform: Added patch to get Yadex to compile with GCC 2.7
+       (patch/gcc-2.7.diff). GCC 2.7 is officially considered
+       unsupported, though. You're on your own.
        
 Yadex 1.4.0 (2000-04-01)
 

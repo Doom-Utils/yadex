@@ -556,7 +556,7 @@ class Thing_list_by_size
       sort (a.begin (), a.end ());
     }
   private :
-    vector <Thing_npixels> a;
+    std::vector <Thing_npixels> a;
 };
 
 
@@ -576,7 +576,7 @@ struct sprite_dim_t
   unsigned short height;
 };
 
-typedef map <i16, sprite_dim_t> dim_map_t;
+typedef std::map <i16, sprite_dim_t> dim_map_t;
 static dim_map_t dim_map;  // FIXME there should be one for each game
 
 

@@ -76,7 +76,7 @@ class Extraf
 };
 
 
-static void get_extrafloors (vector<Extraf>& list, wad_tag_t tag);
+static void get_extrafloors (std::vector<Extraf>& list, wad_tag_t tag);
 
 
 objinfo_c::objinfo_c ()
@@ -548,7 +548,7 @@ void objinfo_c::draw ()
 			   + HOLLOW_BORDER
 			   + WIDE_HSPACING
 			   + BOX_BORDER;
-	vector<Extraf> v;
+	std::vector<Extraf> v;
 	get_extrafloors (v, tag);
 	int e;
 	for (e = 0; e < v.size () && e + 1 < MAX_BOXES; e++, x0 += width2)
@@ -681,7 +681,7 @@ void objinfo_c::draw ()
  *	- <height> is the to the floor height of the dummy
  *	  sector.
  */
-static void get_extrafloors (vector<Extraf>& v, wad_tag_t tag)
+static void get_extrafloors (std::vector<Extraf>& v, wad_tag_t tag)
 {
   v.clear ();
   for (obj_no_t l = 0; l < NumLineDefs; l++)

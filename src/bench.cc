@@ -79,7 +79,11 @@ static void bench_LoadPicture ()
 
   // Have to use CLK_TCK because glibc has a broken CLOCKS_PER_SEC.
   const char *unit  = "s";
-  double value = (double) (t1.tms_utime - t0.tms_utime) / CLK_TCK / iterations;
+#ifndef CLOCKS_PER_SEC
+#define CLOCKS_PER_SEC CLK_TCK
+#endif
+  double value = (double) (t1.tms_utime - t0.tms_utime)
+		 / CLOCKS_PER_SEC / iterations;
   if (value < 1E-3)
   {
     unit = "µs";
