@@ -84,12 +84,28 @@ typedef i16 wad_tangle_t;
 typedef i16 wad_tflags_t;
 struct Thing
 {
+  i16              tid;
+  wad_coord_t      xpos;		// FIXME rename to "x"
+  wad_coord_t      ypos;		// FIXME rename to "y"
+  wad_z_t          height;
+  wad_tangle_t     angle;
+  wad_ttype_t      type;
+  wad_tflags_t     when;		// FIXME rename to "flags"
+  u8               special;
+  u8               arg1;
+  u8               arg2;
+  u8               arg3;
+  u8               arg4;
+  u8               arg5;
+};
+typedef struct
+{
   wad_coord_t      xpos;		// FIXME rename to "x"
   wad_coord_t      ypos;		// FIXME rename to "y"
   wad_tangle_t     angle;
   wad_ttype_t      type;
   wad_tflags_t     when;		// FIXME rename to "flags"
-};
+} wad_doom_thing_t;
 typedef struct
 {
   i16              tid;
@@ -121,9 +137,23 @@ struct LineDef
   wad_ldflags_t flags;
   wad_ldtype_t  type;
   wad_tag_t     tag;
+  u8            arg2;
+  u8            arg3;
+  u8            arg4;
+  u8            arg5;
   wad_sdn_t     sidedef1;		// # of first (right) sidedef
   wad_sdn_t     sidedef2;		// # of second (left) sidedef or 0xffff
 };
+typedef struct
+{
+  wad_vn_t      start;			// # of start vertex
+  wad_vn_t      end;			// # of end vertex
+  wad_ldflags_t flags;
+  wad_ldtype_t  type;
+  wad_tag_t     tag;
+  wad_sdn_t     sidedef1;		// # of first (right) sidedef
+  wad_sdn_t     sidedef2;		// # of second (left) sidedef or 0xffff
+} wad_doom_linedef_t;
 typedef struct
 {
   wad_vn_t      start;
@@ -197,8 +227,11 @@ typedef enum
   WAD_LL_SECTORS,
   WAD_LL_REJECT,
   WAD_LL_BLOCKMAP,
-		      // Hexen has a BEHAVIOR lump here
-  WAD_LL__
+  WAD_LL_BEHAVIOR,
+
+  WAD_LL__MAX,
+  WAD_LL__HEXEN = WAD_LL__MAX,
+  WAD_LL__DOOM = WAD_LL_BEHAVIOR
 } wad_level_lump_no_t;
 
 typedef struct
@@ -207,7 +240,7 @@ typedef struct
   size_t item_size;
 } wad_level_lump_def_t;
 
-const wad_level_lump_def_t wad_level_lump[WAD_LL__] =
+const wad_level_lump_def_t wad_level_lump[WAD_LL__MAX] =
 {
   { 0,          0                 },  // Label -- no fixed name
   { "THINGS",   WAD_THING_BYTES   },
@@ -219,8 +252,8 @@ const wad_level_lump_def_t wad_level_lump[WAD_LL__] =
   { "NODES",    0                 },
   { "SECTORS",  WAD_SECTOR_BYTES  },
   { "REJECT",   0                 },
-  { "BLOCKMAP", 0                 }
-				      // Hexen has a BEHAVIOR lump here
+  { "BLOCKMAP", 0                 },
+  { "BEHAVIOR", 0                 }
 };
 
 

@@ -43,6 +43,7 @@ Place, Suite 330, Boston, MA 02111-1307, USA.
 #include "entry.h"
 #include "entry2.h"
 #include "events.h"
+#include "game.h"
 #include "gfx.h"
 #include "gfx2.h"	// show_character_set() show_pcolours()
 #include "gfx3.h"
@@ -94,6 +95,7 @@ static int menubar_out_y1;	/* FIXME */
 
 /* prototypes of private functions */
 static int SortLevels (const void *item1, const void *item2);
+static char *GetBehaviorFileName (const char *levelname);
 
 /*
  *	SelectLevel
@@ -303,15 +305,28 @@ e.mb_menu[MBM_FILE] = new Menu (NULL,
    "~Quit",       'q',   0,
    NULL);
 
-e.mb_menu[MBM_EDIT] = new Menu (NULL,
-   "~Copy object(s)",          'o',    0,
-   "~Add object",              YK_INS, 0,
-   "~Delete object(s)",        YK_DEL, 0,
-   "~Exchange object numbers", 24,     0,
-   "~Preferences...",          YK_F5,  0,
-   "~Snap to grid",            'y',    MIF_VTICK, &e.grid_snap,		     0,
-   "~Lock grid step",          'z',    MIF_VTICK, &e.grid_step_locked,	     0,
-   NULL);
+
+if (yg_level_format == YGLF_HEXEN)
+   e.mb_menu[MBM_EDIT] = new Menu (NULL,
+     "~Copy object(s)",          'o',    0,
+      "~Add object",              YK_INS, 0,
+      "~Delete object(s)",        YK_DEL, 0,
+      "~Exchange object numbers", 24,     0,
+      "~Preferences...",          YK_F5,  0,
+      "~Snap to grid",            'y',    MIF_VTICK, &e.grid_snap,		     0,
+      "~Lock grid step",          'z',    MIF_VTICK, &e.grid_step_locked,	     0,
+      "Load ~BEHAVIOR lump",      'b',    0,
+      NULL);
+else
+   e.mb_menu[MBM_EDIT] = new Menu (NULL,
+      "~Copy object(s)",          'o',    0,
+      "~Add object",              YK_INS, 0,
+      "~Delete object(s)",        YK_DEL, 0,
+      "~Exchange object numbers", 24,     0,
+      "~Preferences...",          YK_F5,  0,
+      "~Snap to grid",            'y',    MIF_VTICK, &e.grid_snap,		     0,
+      "~Lock grid step",          'z',    MIF_VTICK, &e.grid_step_locked,	     0,
+      NULL);
 
 // If you change the order of modes here, don't forget
 // to modify the <modes> array.
@@ -2357,6 +2372,30 @@ cancel_save_as:
 	 RedrawMap = 1;
 	 }
 
+      // Load BEHAVIOR lump (JL)
+      else if (is.key == 'b')
+         {
+         char *acsfile;
+         const char *acsname;
+         if (levelname)
+            acsname = levelname;
+         else
+            acsname = "behavior";
+         acsfile = GetBehaviorFileName (acsname);
+         FILE* f = fopen(acsfile, "rb");
+         if (f)
+            {
+            FreeFarMemory(Behavior);
+            fseek(f, 0, SEEK_END);
+            BehaviorSize = ftell(f);
+            Behavior = (u8*)GetFarMemory(BehaviorSize);
+            fseek(f, 0, SEEK_SET);
+            fread(Behavior, BehaviorSize, 1, f);
+            fclose(f);
+            }
+         RedrawMap = 1;
+      }
+
       /* user likes music */
       else if (is.key)
 	 {
@@ -2504,6 +2543,34 @@ static int zoom_fit (edit_t& e)
     return 1;
   CenterMapAroundCoords ((MapMinX + MapMaxX) / 2, (MapMinY + MapMaxY) / 2);
   return 0;
+}
+
+/*
+   get the name of the BEHAVIOR lump file (returns NULL on Esc)
+*/
+
+static char *GetBehaviorFileName (const char *levelname)
+{
+#define BUFSZ 79
+  char *outfile = (char *) GetMemory (BUFSZ + 1);
+
+  /* get the file name */
+  // If no name, find a default one
+  if (! levelname)
+  {
+    levelname = "behavior";
+  }
+
+  al_scpslower (outfile, levelname, BUFSZ);
+  al_saps (outfile, ".o", BUFSZ);
+  InputFileName (-1, -1, "Name of the BEHAVIOR script file:", BUFSZ, outfile);
+  /* escape */
+  if (outfile[0] == '\0')
+  {
+    FreeMemory (outfile);
+    return 0;
+  }
+  return outfile;
 }
 
 

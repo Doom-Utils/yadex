@@ -58,6 +58,8 @@ int NumVertices;		/* number of vertexes */
 VPtr Vertices;			/* vertex data */
 int NumSectors;			/* number of sectors */
 SPtr Sectors;			/* sectors data */
+u8* Behavior;
+int BehaviorSize;
 
 // FIXME should be somewhere else
 int NumWTexture;		/* number of wall textures */
@@ -95,6 +97,10 @@ y_file_name_t Level_file_name_saved;  /* The name of the file in
 				   the Level has never been saved yet,
 				   an empty string. */
 
+static u8 DefaultBehavior[16] = {
+	'A', 'C', 'S', 0, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+};
+
 void EmptyLevelData (const char *levelname)
 {
 Things = 0;
@@ -109,6 +115,12 @@ Sectors = 0;
 NumSectors = 0;
 Vertices = 0;
 NumVertices = 0;
+if (yg_level_format == YGLF_HEXEN)
+   {
+      BehaviorSize = sizeof(DefaultBehavior);
+      Behavior = (u8*) GetFarMemory ((unsigned long) BehaviorSize );
+      memcpy(Behavior, DefaultBehavior, BehaviorSize);
+   }
 }
 
 
@@ -199,7 +211,7 @@ else
    {
    offset = dir->dir.start;
    length = dir->dir.size;
-   if (MainWad == Iwad4)  // Hexen mode
+   if (yg_level_format == YGLF_HEXEN)  // Hexen mode
       {
       NumThings = (int) (length / WAD_HEXEN_THING_BYTES);
       if ((i32) (NumThings * WAD_HEXEN_THING_BYTES) != length)
@@ -234,18 +246,23 @@ if (NumThings > 0)
       rc = 1;
       goto byebye;
       }
-   if (MainWad == Iwad4)		// Hexen mode
+   if (yg_level_format == YGLF_HEXEN)		// Hexen mode
       for (long n = 0; n < NumThings; n++)
 	 {
          u8 dummy2[6];
-	 wf->read_i16   ();					// Tid
+	 wf->read_i16   (&Things[n].tid  );
 	 wf->read_i16   (&Things[n].xpos );
 	 wf->read_i16   (&Things[n].ypos );
-	 wf->read_i16   ();					// Height
+	 wf->read_i16   (&Things[n].height);
 	 wf->read_i16   (&Things[n].angle);
 	 wf->read_i16   (&Things[n].type );
 	 wf->read_i16   (&Things[n].when );
-         wf->read_bytes (dummy2, sizeof dummy2);
+	 wf->read_u8    (Things[n].special);
+	 wf->read_u8    (Things[n].arg1  );
+	 wf->read_u8    (Things[n].arg2  );
+	 wf->read_u8    (Things[n].arg3  );
+	 wf->read_u8    (Things[n].arg4  );
+	 wf->read_u8    (Things[n].arg5  );
 	 if (wf->error ())
 	    {
 	    err ("%s: error reading thing #%ld", lump_name, n);
@@ -283,7 +300,7 @@ if (yg_level_format != YGLF_ALPHA)
       NumLineDefs = 0;
    else
       {
-      if (MainWad == Iwad4)  // Hexen mode
+      if (yg_level_format == YGLF_HEXEN)  // Hexen mode
 	 {
 	 NumLineDefs = (int) (dir->dir.size / WAD_HEXEN_LINEDEF_BYTES);
 	 if ((i32) (NumLineDefs * WAD_HEXEN_LINEDEF_BYTES) != dir->dir.size)
@@ -310,7 +327,7 @@ if (yg_level_format != YGLF_ALPHA)
 	 rc = 1;
 	 goto byebye;
 	 }
-      if (MainWad == Iwad4)  // Hexen mode
+      if (yg_level_format == YGLF_HEXEN)  // Hexen mode
 	 for (long n = 0; n < NumLineDefs; n++)
 	    {
 	    u8 dummy[6];
@@ -322,6 +339,10 @@ if (yg_level_format != YGLF_ALPHA)
 	    wf->read_i16   (&LineDefs[n].sidedef2);
 	    LineDefs[n].type = dummy[0];
 	    LineDefs[n].tag  = dummy[1];  // arg1 often contains a tag
+		LineDefs[n].arg2 = dummy[2];
+		LineDefs[n].arg3 = dummy[3];
+		LineDefs[n].arg4 = dummy[4];
+		LineDefs[n].arg5 = dummy[5];
 	    if (wf->error ())
 	       {
 	       err ("%s: error reading linedef #%ld", lump_name, n);
@@ -907,6 +928,37 @@ else  // Doom alpha--a wholly different SECTORS format
    }
 }
 
+// Read BEHAVIOR
+if (yg_level_format == YGLF_HEXEN)
+{
+const char *lump_name = "BEHAVIOR";
+verbmsg (" behavior\n");
+dir = FindMasterDir (Level, lump_name);
+if (dir)
+   {
+   BehaviorSize = (int)dir->dir.size;
+   if (BehaviorSize > 0)
+      {
+      Behavior = (u8*) GetFarMemory ((unsigned long) BehaviorSize );
+      const Wad_file *wf = dir->wadfile;
+      wf->seek (dir->dir.start);
+      if (wf->error ())
+         {
+         err ("%s: seek error", lump_name);
+         rc = 1;
+         goto byebye;
+         }
+      wf->read_bytes (Behavior, BehaviorSize);
+      if (wf->error ())
+         {
+         err ("%s: error behavior lump", lump_name);
+         rc = 1;
+         goto byebye;
+         }
+      }
+   }
+}
+
 /* Sanity checking on sidedefs: the sector must exist. I don't
    make this a fatal error, though, because it's not exceptional
    to find wads with unused sidedefs with a sector# of -1. Well
@@ -1011,16 +1063,10 @@ int SaveLevelData (const char *outfile, const char *level_name) /* SWAP! */
 FILE   *file;
 MDirPtr dir;
 int     n;
-long	lump_offset[WAD_LL__];
-size_t	lump_size[WAD_LL__];
+long	lump_offset[WAD_LL__MAX];
+size_t	lump_size[WAD_LL__MAX];
 wad_level_lump_no_t l;
 
-if (yg_level_format == YGLF_HEXEN || ! strcmp (Game, "hexen"))
-   {
-   Notify (-1, -1, "I refuse to save. Hexen mode is still",
-                   "too badly broken. You would lose data.");
-   return 1;
-   }
 if (! level_name || ! levelname2levelno (level_name))
    {
    nf_bug ("SaveLevelData: bad level_name \"%s\", using \"E1M1\" instead.",
@@ -1047,9 +1093,15 @@ bool reuse_nodes = Level
   && ! MadeMapChanges
   && yg_level_format != YGLF_ALPHA;
 
+int NumLumps;
+if (yg_level_format == YGLF_HEXEN)
+   NumLumps = WAD_LL__HEXEN;
+else
+   NumLumps = WAD_LL__DOOM;
+
 // Write the pwad header
 WriteBytes (file, "PWAD", 4);		// Pwad file
-file_write_i32 (file, WAD_LL__);	// Number of entries = 11
+file_write_i32 (file, NumLumps);	// Number of entries = 11
 file_write_i32 (file, 0);		// Fix this up later
 if (Level)
    dir = Level->next;
@@ -1067,11 +1119,30 @@ lump_offset[l] = ftell (file);
 ObjectsNeeded (OBJ_THINGS, 0);
 for (n = 0; n < NumThings; n++)
    {
-   file_write_i16 (file, Things[n].xpos );
-   file_write_i16 (file, Things[n].ypos );
-   file_write_i16 (file, Things[n].angle);
-   file_write_i16 (file, Things[n].type );
-   file_write_i16 (file, Things[n].when );
+   if (yg_level_format == YGLF_HEXEN)
+      {
+      file_write_i16 (file, Things[n].tid  );
+      file_write_i16 (file, Things[n].xpos );
+      file_write_i16 (file, Things[n].ypos );
+      file_write_i16 (file, Things[n].height);
+      file_write_i16 (file, Things[n].angle);
+      file_write_i16 (file, Things[n].type );
+      file_write_i16 (file, Things[n].when );
+      WriteBytes     (file, &Things[n].special, 1);
+      WriteBytes     (file, &Things[n].arg1, 1 );
+      WriteBytes     (file, &Things[n].arg2, 1 );
+      WriteBytes     (file, &Things[n].arg3, 1 );
+      WriteBytes     (file, &Things[n].arg4, 1 );
+      WriteBytes     (file, &Things[n].arg5, 1 );
+	  }
+   else
+      {
+      file_write_i16 (file, Things[n].xpos );
+      file_write_i16 (file, Things[n].ypos );
+      file_write_i16 (file, Things[n].angle);
+      file_write_i16 (file, Things[n].type );
+      file_write_i16 (file, Things[n].when );
+      }
    }
 lump_size[l] = ftell (file) - lump_offset[l];
 if (Level)
@@ -1083,13 +1154,32 @@ lump_offset[WAD_LL_LINEDEFS] = ftell (file);
 ObjectsNeeded (OBJ_LINEDEFS, 0);
 for (n = 0; n < NumLineDefs; n++)
    {
-   file_write_i16 (file, LineDefs[n].start   );
-   file_write_i16 (file, LineDefs[n].end     );
-   file_write_i16 (file, LineDefs[n].flags   );
-   file_write_i16 (file, LineDefs[n].type    );
-   file_write_i16 (file, LineDefs[n].tag     );
-   file_write_i16 (file, LineDefs[n].sidedef1);
-   file_write_i16 (file, LineDefs[n].sidedef2);
+   if (yg_level_format == YGLF_HEXEN)
+      {
+      u8 dummy[6];
+      dummy[0] = LineDefs[n].type;
+      dummy[1] = LineDefs[n].tag;
+      dummy[2] = LineDefs[n].arg2;
+      dummy[3] = LineDefs[n].arg3;
+      dummy[4] = LineDefs[n].arg4;
+      dummy[5] = LineDefs[n].arg5;
+      file_write_i16 (file, LineDefs[n].start   );
+      file_write_i16 (file, LineDefs[n].end     );
+      file_write_i16 (file, LineDefs[n].flags   );
+      WriteBytes     (file, dummy, 6);
+      file_write_i16 (file, LineDefs[n].sidedef1);
+      file_write_i16 (file, LineDefs[n].sidedef2);
+	  }
+   else
+      {
+      file_write_i16 (file, LineDefs[n].start   );
+      file_write_i16 (file, LineDefs[n].end     );
+      file_write_i16 (file, LineDefs[n].flags   );
+      file_write_i16 (file, LineDefs[n].type    );
+      file_write_i16 (file, LineDefs[n].tag     );
+      file_write_i16 (file, LineDefs[n].sidedef1);
+      file_write_i16 (file, LineDefs[n].sidedef2);
+	  }
    }
 lump_size[l] = ftell (file) - lump_offset[l];
 if (Level)
@@ -1221,9 +1311,21 @@ lump_size[l] = ftell (file) - lump_offset[l];
 if (Level)
    dir = dir->next;
 
+ 
+// Write the BEHAVIOR lump
+if (yg_level_format == YGLF_HEXEN)
+{
+   l = WAD_LL_BEHAVIOR;
+   lump_offset[l] = ftell (file);
+   WriteBytes(file, Behavior, BehaviorSize);
+   lump_size[l] = BehaviorSize;
+   if (Level)
+      dir = dir->next;
+}
+
 // Write the actual directory
 long dir_offset = ftell (file);
-for (int L = 0; L < (int) WAD_LL__; L++)
+for (int L = 0; L < (int) NumLumps; L++)
    {
    file_write_i32 (file, lump_offset[L]);
    file_write_i32 (file, lump_size[L]);

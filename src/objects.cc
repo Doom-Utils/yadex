@@ -465,12 +465,28 @@ switch (objtype)
 	 Things[last].type  = Things[copyfrom].type;
 	 Things[last].angle = Things[copyfrom].angle;
 	 Things[last].when  = Things[copyfrom].when;
+	 Things[last].tid   = Things[copyfrom].tid;
+	 Things[last].height = Things[copyfrom].height;
+	 Things[last].special = Things[copyfrom].special;
+	 Things[last].arg1  = Things[copyfrom].arg1;
+	 Things[last].arg2  = Things[copyfrom].arg2;
+	 Things[last].arg3  = Things[copyfrom].arg3;
+	 Things[last].arg4  = Things[copyfrom].arg4;
+	 Things[last].arg5  = Things[copyfrom].arg5;
 	 }
       else
 	 {
 	 Things[last].type = default_thing;
 	 Things[last].angle = 0;
 	 Things[last].when  = 0x07;
+	 Things[last].tid   = 0;
+	 Things[last].height = 0;
+	 Things[last].special = 0;
+	 Things[last].arg1  = 0;
+	 Things[last].arg2  = 0;
+	 Things[last].arg3  = 0;
+	 Things[last].arg4  = 0;
+	 Things[last].arg5  = 0;
 	 }
       break;
 
@@ -508,6 +524,10 @@ switch (objtype)
 	 LineDefs[last].flags = LineDefs[copyfrom].flags;
 	 LineDefs[last].type  = LineDefs[copyfrom].type;
 	 LineDefs[last].tag   = LineDefs[copyfrom].tag;
+	 LineDefs[last].arg2  = LineDefs[copyfrom].arg2;
+	 LineDefs[last].arg3  = LineDefs[copyfrom].arg3;
+	 LineDefs[last].arg4  = LineDefs[copyfrom].arg4;
+	 LineDefs[last].arg5  = LineDefs[copyfrom].arg5;
 	 }
       else
 	 {
@@ -516,6 +536,10 @@ switch (objtype)
 	 LineDefs[last].flags = 1;
 	 LineDefs[last].type  = 0;
 	 LineDefs[last].tag   = 0;
+	 LineDefs[last].arg2  = 0;
+	 LineDefs[last].arg3  = 0;
+	 LineDefs[last].arg4  = 0;
+	 LineDefs[last].arg5  = 0;
 	 }
       LineDefs[last].sidedef1 = OBJ_NO_NONE;
       LineDefs[last].sidedef2 = OBJ_NO_NONE;

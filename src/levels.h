@@ -28,6 +28,8 @@ extern VPtr  Vertices;		/* vertices data */
 extern int   NumSegs;		/* number of segments */
 extern int   NumSectors;	/* number of sectors */
 extern SPtr  Sectors;		/* sectors data */
+extern u8*   Behavior;
+extern int   BehaviorSize;
 
 // FIXME should be somewhere else
 extern int   NumWTexture;	/* number of wall textures */
