@@ -283,7 +283,7 @@ for (;;)
    else if (key == YK_PD || key == 6 || key == 22)	// [Pgdn], ^F, ^V
       { 
       if (n < listsize - listdisp)
-         strcpy (name, list[min (n + listdisp, listsize - 1)]);
+         strcpy (name, list[y_min (n + listdisp, listsize - 1)]);
       else
 	 Beep ();
       }

@@ -255,7 +255,7 @@ switch (e->obj_type)
    Optimization: off-screen vertices are not drawn. */
 if (e->obj_type == OBJ_VERTICES)
    {
-   int r = (int) (OBJSIZE * min (Scale, 1));
+   int r = (int) (OBJSIZE * y_min (Scale, 1));
    set_colour (LIGHTGREEN);
    for (n = 0; n < NumVertices; n++)
       {

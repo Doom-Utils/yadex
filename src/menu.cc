@@ -372,11 +372,11 @@ void menu_c::geom ()
 {
 size_t width_chars = 0;
 if (title && popup)
-   width_chars = max (width_chars, title_len);
+   width_chars = y_max (width_chars, title_len);
 if (force_numbers)
-   width_chars = max (width_chars, items_len + 4);
+   width_chars = y_max (width_chars, items_len + 4);
 else
-   width_chars = max (width_chars, items_ks_len);
+   width_chars = y_max (width_chars, items_ks_len);
 int title_height = title && popup ? (int) (1.5 * FONTH) : 0;
 
 width  = 2 * BOX_BORDER + 2 * WIDE_HSPACING + width_chars * FONTW;

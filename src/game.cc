@@ -75,7 +75,7 @@ thinggroup  = al_lcreate (sizeof (thinggroup_t));
 void LoadGameDefs (const char *game)
 {
 FILE *ygdfile = 0;		/* YGD file descriptor */
-#define YGD_BUF 200		/* max line length + 2 */
+#define YGD_BUF 200		/* max. line length + 2 */
 char readbuf[YGD_BUF];		/* buffer the line is read into */
 #define MAX_TOKENS 10		/* tokens per line */
 int lineno;			/* current line of file */

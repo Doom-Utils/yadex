@@ -74,8 +74,8 @@ if (s[i++] != '\0')
 
 /* force to 8 bits (RGB_DIGITS hex digits) by scaling up or down */
 globaldigits = rdigits;
-globaldigits = max (globaldigits, gdigits);
-globaldigits = max (globaldigits, bdigits);
+globaldigits = y_max (globaldigits, gdigits);
+globaldigits = y_max (globaldigits, bdigits);
 for (; globaldigits < RGB_DIGITS; globaldigits++)
    {
    r <<= 4;

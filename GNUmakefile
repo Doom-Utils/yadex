@@ -44,7 +44,7 @@ HAVE_GETTIMEOFDAY = 1
 # Does your system have nanosleep() ?
 # Current rule: only Linux has it.
 ifneq (,$(findstring $(OS), linux))
-  HAVE_NANOSLEEP = 
+  HAVE_NANOSLEEP = 1
 endif
 
 # Does your system have snprintf() ?
@@ -78,8 +78,8 @@ else
 endif
 
 # Your C and C++ compilers.
-CC = cc
-CXX = c++
+CC = zzgcc
+CXX = zzg++
 
 #
 #	Definitions that only hackers

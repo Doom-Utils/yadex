@@ -90,7 +90,7 @@ int lines = 4;
 for (const char **str = help_text; *str; str++)
    {
    size_t len = strlen (*str);
-   maxlen = max (maxlen, len);
+   maxlen = y_max (maxlen, len);
    lines++;
    }
 width  = (maxlen + 4) * FONTW + 2 * BOX_BORDER;

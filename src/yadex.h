@@ -61,13 +61,6 @@ Place, Suite 330, Boston, MA 02111-1307, USA.
 #define farrealloc realloc
 #define farfree    free
 #endif
-// Not always in stdlib.h
-#ifndef min
-#define min(a,b) ((a) < (b) ? (a) : (b))
-#endif
-#ifndef max
-#define max(a,b) ((a) > (b) ? (a) : (b))
-#endif
 
 
 /*
@@ -131,6 +124,8 @@ const double ANSWER = 42;
 /*
  *	Syntactic sugar
  */
+#define y_min(a,b) ((a) < (b) ? (a) : (b))
+#define y_max(a,b) ((a) > (b) ? (a) : (b))
 //#ifndef Y_X11	// X11/Xlib.h already defines it !
 typedef int Bool;	// Boolean data: true or false
 //#endif

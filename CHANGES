@@ -1,6 +1,21 @@
 
                                     Changes
                                        
+Yadex 1.3.1 (2000-01-12)
+
+     * Build: Fix for "Ras2"'s compile error with g++ 2.7.2.3 :
+  c++ src/disppic.cc
+  In file included from /usr/include/g++-2.7/defalloc.h:24,
+                   from /usr/include/g++-2.7/map.h:21,
+                   from /usr/include/g++-2.7/map:6,
+                   from src/patchdir.h:35,
+                   from src/disppic.cc:33:
+  /usr/include/g++-2.7/algobase.h:47: macro `min' used with too many (3) args
+  /usr/include/g++-2.7/algobase.h:57: macro `max' used with too many (3) args
+  make: *** [obj/0/disppic.o] Error 1
+     * Build: Fix for HAVE_NANOSLEEP being always false. Thanks to "Ras2"
+       for pointing it out.
+       
 Yadex 1.3.0 (2000-01-11)
 
      * Build: The makefile now honours the dependencies in yadex.dep.

@@ -358,7 +358,7 @@ switch (objtype)
    case OBJ_VERTICES:
       ObjectsNeeded (OBJ_VERTICES, 0);
       {
-      int r = (int) (2 * OBJSIZE * min (Scale, 1));
+      int r = (int) (2 * OBJSIZE * y_min (Scale, 1));
       int scrx0 = SCREENX (Vertices[objnum].x) - r;
       int scrx9 = SCREENX (Vertices[objnum].x) + r;
       int scry0 = SCREENY (Vertices[objnum].y) - r;

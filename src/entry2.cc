@@ -581,7 +581,7 @@ int Entry2::fill_in_widgets_info (const char *fmt, va_list args)
         if (buf_max_len[f] == L_OMITTED)
 	  buf_max_len[f] = strlen (buf[f]);  // Bletch !
 	if (box_len[f] == L_OMITTED)
-	  box_len[f] = min (buf_max_len[f], 30);
+	  box_len[f] = y_min (buf_max_len[f], 30);
       }
       else if ((entry_flags[f] & FF_SUBTYPE) == FF_INTEGER)
       {
@@ -640,7 +640,7 @@ void Entry2::do_geom ()
   }
   size_t entry_width  = FONTW * entry_len + 2 * entry_hofs;
   size_t caption_width= FONTW * caption_len + WIDE_HSPACING;
-  size_t inner_width  = max (entry_width + caption_width, FONTW * title_len);
+  size_t inner_width  = y_max (entry_width + caption_width, FONTW * title_len);
   size_t outer_width  = inner_width  + 2 * win_hofs;
 
   // Compute the heights

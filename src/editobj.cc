@@ -153,7 +153,7 @@ entry2_y0 = text_y0 + 5 * FONTH - HOLLOW_BORDER - NARROW_VSPACING;
 
 DrawScreenBox3D (x0, y0,
    x0 + 2 * BOX_BORDER + 2 * WIDE_HSPACING
-      + max (entry_width + 13 * FONTW, maxlen * FONTW) - 1,
+      + y_max (entry_width + 13 * FONTW, maxlen * FONTW) - 1,
    y0 + 2 * BOX_BORDER + 2 * WIDE_VSPACING + 6 * FONTH - 1);
 set_colour (WHITE);
 DrawScreenText (text_x0, text_y0, prompt1);
@@ -242,8 +242,8 @@ switch (objtype)
 	 {
 	 case 1:
 	    val = InputIntegerValue (x0 + 42, subwin_y0,
-               min (MapMinX, -10000),
-               max (MapMaxX, 10000),
+               y_min (MapMinX, -10000),
+               y_max (MapMaxX, 10000),
                Vertices[obj->objnum].x);
 	    if (val != IIV_CANCEL)
 	       {
@@ -257,8 +257,8 @@ switch (objtype)
 
 	 case 2:
 	    val = InputIntegerValue (x0 + 42, subwin_y0,
-               min (MapMinY, -10000),
-               max (MapMaxY, 10000),
+               y_min (MapMinY, -10000),
+               y_max (MapMaxY, 10000),
                Vertices[obj->objnum].y);
 	    if (val != IIV_CANCEL)
 	       {

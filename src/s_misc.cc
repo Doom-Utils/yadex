@@ -171,8 +171,8 @@ for (cur = obj; cur != NULL; cur = cur->next)
   {
   int light;
   light = Sectors[cur->objnum].light + delta;
-  light = max (light, 0);
-  light = min (light, 255);
+  light = y_max (light, 0);
+  light = y_min (light, 255);
   Sectors[cur->objnum].light = light;
   }
 MadeChanges = 1;

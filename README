@@ -1,4 +1,4 @@
-Yadex 1.3.0 (2000-01-11)
+Yadex 1.3.1 (2000-01-12)
 
 WHAT IS YADEX ?
     Yadex is a Doom level (wad) editor for Unix systems running X,
@@ -35,26 +35,26 @@ BUILDING AND INSTALLING
 
     3) Beware, the installation OVERWRITES the following files:
     /usr/local/bin/ybsp
-    /usr/local/bin/ybsp-1.3.0
+    /usr/local/bin/ybsp-1.3.1
     /usr/local/bin/yadex
-    /usr/local/bin/yadex-1.3.0
-    /usr/local/etc/yadex/1.3.0/yadex.cfg
-    /usr/local/share/games/yadex/1.3.0/doom.ygd
-    /usr/local/share/games/yadex/1.3.0/doom02.ygd
-    /usr/local/share/games/yadex/1.3.0/doom04.ygd
-    /usr/local/share/games/yadex/1.3.0/doom05.ygd
-    /usr/local/share/games/yadex/1.3.0/doom2.ygd 
-    /usr/local/share/games/yadex/1.3.0/doompr.ygd
-    /usr/local/share/games/yadex/1.3.0/heretic.ygd
-    /usr/local/share/games/yadex/1.3.0/hexen.ygd
-    /usr/local/share/games/yadex/1.3.0/strife.ygd
-    /usr/local/share/games/yadex/1.3.0/strife10.ygd
+    /usr/local/bin/yadex-1.3.1
+    /usr/local/etc/yadex/1.3.1/yadex.cfg
+    /usr/local/share/games/yadex/1.3.1/doom.ygd
+    /usr/local/share/games/yadex/1.3.1/doom02.ygd
+    /usr/local/share/games/yadex/1.3.1/doom04.ygd
+    /usr/local/share/games/yadex/1.3.1/doom05.ygd
+    /usr/local/share/games/yadex/1.3.1/doom2.ygd 
+    /usr/local/share/games/yadex/1.3.1/doompr.ygd
+    /usr/local/share/games/yadex/1.3.1/heretic.ygd
+    /usr/local/share/games/yadex/1.3.1/hexen.ygd
+    /usr/local/share/games/yadex/1.3.1/strife.ygd
+    /usr/local/share/games/yadex/1.3.1/strife10.ygd
     /usr/local/[share/]man/man6/ybsp.6
     /usr/local/[share/]man/man6/yadex.6
 
 CONFIGURING AND RUNNING
     Before you run Yadex, you need to tell it where to find your iwads.
-    Open /usr/local/etc/yadex/1.3.0/yadex.cfg with your favourite
+    Open /usr/local/etc/yadex/1.3.1/yadex.cfg with your favourite
     text editor and insert the appropriate values for the parameters
     "iwad1", "iwad2", etc. If you don't want Doom II to be the default
     iwad, also change the value of the "game" parameter.

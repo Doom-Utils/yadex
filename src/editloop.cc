@@ -1371,7 +1371,7 @@ cancel_save_as:
             yzoom = .9 * ScrMaxY / (MapMaxY - MapMinY);
          else
             yzoom = 1;
-         edit_set_zoom (&e, min (xzoom, yzoom));
+         edit_set_zoom (&e, y_min (xzoom, yzoom));
          CenterMapAroundCoords ((MapMinX + MapMaxX) / 2,
             (MapMinY + MapMaxY) / 2);
          RedrawMap = 1;

@@ -320,8 +320,8 @@ linedef_t *linedefs;
 linedefs = (linedef_t *) GetMemory (NumLineDefs * sizeof (linedef_t));
 for (ld = 0; ld < NumLineDefs; ld++)
   {
-  linedefs[ld].vertexl = min (LineDefs[ld].start, LineDefs[ld].end);
-  linedefs[ld].vertexh = max (LineDefs[ld].start, LineDefs[ld].end);
+  linedefs[ld].vertexl = y_min (LineDefs[ld].start, LineDefs[ld].end);
+  linedefs[ld].vertexh = y_max (LineDefs[ld].start, LineDefs[ld].end);
   linedefs[ld].linedefno = ld;
   }
 qsort (linedefs, NumLineDefs, sizeof (linedef_t), SortLinedefs);

@@ -86,7 +86,7 @@ switch (obj_type)
       width  = 2 * BOX_BORDER + 3 * WIDE_HSPACING + columns * FONTW
 	                                                        + sprite_width;
       height = 2 * BOX_BORDER + 2 * WIDE_VSPACING
-         + max ((int) (6.5 * FONTH), sprite_height);
+         + y_max ((int) (6.5 * FONTH), sprite_height);
       x0 = 0;
       y0 = out_y1 - height + 1;
       ix0 = x0 + BOX_BORDER + WIDE_HSPACING;
@@ -382,7 +382,7 @@ switch (obj_type)
              + WIDE_HSPACING + DOOM_FLAT_WIDTH;
       height = 2 * BOX_BORDER
              + 2 * WIDE_VSPACING
-             + max ((int) (9.5 * FONTH),
+             + y_max ((int) (9.5 * FONTH),
                     WIDE_HSPACING + 4 * HOLLOW_BORDER + 2 * DOOM_FLAT_HEIGHT);
       x0 = 0;
       y0 = out_y1 - height + 1;

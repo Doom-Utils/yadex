@@ -124,8 +124,8 @@ Place, Suite 330, Boston, MA 02111-1307, USA.
 //ActualBufLen = wad_read_bytes2 (dir->wadfile, ColumnData+1, TEX_COLUMNBUFFERSIZE);
 //
 //{
-//int Column0 = max (0,  - (c->x0 + xofs));
-//int Column9 = min (Columns, c->x1 + 1 - (c->x0 + xofs));
+//int Column0 = y_max (0,  - (c->x0 + xofs));
+//int Column9 = y_min (Columns, c->x1 + 1 - (c->x0 + xofs));
 //for (CurrentColumn = Column0; CurrentColumn < Column9; CurrentColumn++)
 //   {
 //   CurrentOffset  = NeededOffsets[CurrentColumn];
@@ -161,9 +161,9 @@ Place, Suite 330, Boston, MA 02111-1307, USA.
 //
 //      /* Calculate what parts of the segment should be clipped
 //	 (i.e. are not between c->y0 and c->y1) */
-//      above_y0 = max (-y, 0);
+//      above_y0 = y_max (-y, 0);
 //      below_y1 = (y+PostHeight) - (c->y1+1);
-//      below_y1 = max (below_y1, 0);
+//      below_y1 = y_max (below_y1, 0);
 //      ClippedHeight = PostHeight - above_y0 - below_y1;
 //      debmes ("y=%d sh=%d ay0=%d by1=%d ch=%d",
 //       y, PostHeight, above_y0, below_y1, ClippedHeight);
@@ -459,8 +459,8 @@ for (n = 0; n < fields; n++)
    subc.x1 = c->x1 - c->x0;
    subc.y1 = c->y1 - c->y0;
 #else
-   subc.x0 = max (c->x0, c->x0 + xofs);
-   subc.y0 = min (c->y0, c->y0 + yofs);
+   subc.x0 = y_max (c->x0, c->x0 + xofs);
+   subc.y0 = y_min (c->y0, c->y0 + yofs);
    subc.x1 = c->x1;
    subc.x1 = c->y1;
 #endif

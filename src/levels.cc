@@ -498,8 +498,8 @@ verbmsg (" vertices");
 int last_used_vertex = -1;
 for (n = 0; n < NumLineDefs; n++)
    {
-   last_used_vertex = max (last_used_vertex, LineDefs[n].start);
-   last_used_vertex = max (last_used_vertex, LineDefs[n].end);
+   last_used_vertex = y_max (last_used_vertex, LineDefs[n].start);
+   last_used_vertex = y_max (last_used_vertex, LineDefs[n].end);
    }
 NumVertices = last_used_vertex + 1;
 // This block is only here to warn me if (1) is false.

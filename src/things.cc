@@ -79,7 +79,7 @@ for (al_lrewind (thingdef), n = 0; n < nthings; al_lstep (thingdef), n++)
    things_table[n].type   = CUR_THINGDEF->number;
    things_table[n].flags  = CUR_THINGDEF->flags;
    things_table[n].radius = CUR_THINGDEF->radius;
-   _max_radius = max (_max_radius, CUR_THINGDEF->radius);
+   _max_radius = y_max (_max_radius, CUR_THINGDEF->radius);
 
    // Fetch the app colour no. for the thinggroup
    for (al_lrewind (thinggroup); ! al_leol (thinggroup); al_lstep (thinggroup))
