@@ -443,8 +443,6 @@ X11 port
   weird things might happen. I don't like the idea of duplicating the
   whole menus, though. It would be cleaner to split the menu_c class
   into a constant part and a dynamic part but it would be a lot of work.
-- Split sector: the new linedef should go from 1 -> 2, not the other
-  way around.
 - Highlighting sectors: for a constant number of sectors to highlight,
   gets slower as the total number of sectors increases. Might have to
   do with the search for tagged linedefs.
@@ -459,6 +457,15 @@ X11 port
   be "tag != 0" ?
 - When merging superimposed 1S linedefs, the resulting 2S linedef often
   has the middle textures the 1S linedefs had.
+- It's impossible to create a level that does not already exist in the
+  iwad.
+- [Shift]-[Ins] doesn't work.
+- Split linedefs and sector: if there is no sector between the linedefs,
+  they shouldn't be split.
+- Split linedefs and sector: if only one linedef is selected/highlighted,
+  assume that the other linedef is the one opposite.
+- Split linedef: if pointer is somewhere on top of linedef, split it
+  there (not in the middle).
 
 
 ----------------------------------------
@@ -555,4 +562,12 @@ Widget modifiers (override the per-group placement order):
 - ">" right-align
 - "^" place to the top
 - "v" place to the bottom
+
+DRAG-AND-DROP
+When dragging a group of objects, I see two possible policies:
+1. snap position of current object
+2. snap relative displacement
+The inconvenient of (1) is that, if no object was aligned, it is difficult
+to move the group by a whole number of grid steps.
+
 

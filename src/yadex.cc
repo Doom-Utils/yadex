@@ -11,7 +11,7 @@ This file is part of Yadex.
 Yadex incorporates code from DEU 5.21 that was put in the public
 domain in 1994 by Raphaël Quinet and Brendon Wyber.
 
-The rest of Yadex is Copyright © 1997-1998 André Majorel.
+The rest of Yadex is Copyright © 1997-1999 André Majorel.
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -37,6 +37,7 @@ Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 #include "editlev.h"
 #include "gfx.h"
 #include "help1.h"
+#include "mkpalette.h"
 #include "rgb.h"
 #include "sanity.h"
 #include "sprites.h"
@@ -69,6 +70,9 @@ int         screen_lines = 24;  	// Lines that our TTY can display
 int         remind_to_build_nodes = 0;	// Remind user to build nodes
 
 // Set from command line and/or config file
+int       autoscroll                    = 1;
+int       autoscroll_amp                = 10;
+int       autoscroll_edge               = 30;
 char *    config_file;
 int       copy_linedef_reuse_sidedefs   = 0;
 Bool      Debug				= 0;
@@ -102,7 +106,8 @@ int       MouseMickeysV			= 5;
 char **   PatchWads			= NULL;
 Bool      Quiet				= 0;
 Bool      Quieter			= 0;
-int       scroll_normal			= 12;
+int       scroll_less			= 10;
+int       scroll_more			= 90;
 Bool      Select0			= 1;
 int       show_help			= 0;
 Bool      SwapButtons			= 0;
@@ -136,7 +141,7 @@ int main (int argc, char *argv[])
 {
 int r;
 
-// Set <scree_lines>
+// Set <screen_lines>
 if (getenv ("LINES") != NULL)
    screen_lines = atoi (getenv ("LINES"));
 else
@@ -501,6 +506,10 @@ for (;;)
               " to list the directory of a wadfile\n");
       printf ("m[aster] [outfile]                --"
               " to list the master directory\n");
+      printf ("make_gimp_palette <outfile>       --"
+              " to generate a gimp palette file from\n"
+              "                                    "
+              " entry 0 of lump PLAYPAL.\n");
       printf ("q[uit]                            --"
               " to quit\n");
       printf ("r[ead] <WadFile>                  --"
@@ -560,6 +569,16 @@ for (;;)
       else if (level_name == error_non_unique)
          printf ("Both E%dM%d and MAP%02d exist. Use an unambiguous name.\n",
             atoi (com) / 10, atoi (com) % 10, atoi (com));
+      else if (level_name == NULL)
+         {
+         printf ("Level %s not found.", com);
+         if (tolower (*com) == 'e' && ! strcmp (Game, "doom2")
+            || tolower (*com) == 'm' && strcmp (Game, "doom2"))
+            printf (" You are in %s mode.", Game);
+         else if (tolower (*com) == 'e' && com[1] > '1' && ! Registered)
+            printf (" You have the shareware iwad.");
+         putchar ('\n');
+         }
       else
          {
          EditLevel (level_name, newlevel);
@@ -664,6 +683,18 @@ for (;;)
 	 ListMasterDirectory (stdout);
       }
 
+   // make_gimp_palette
+   else if (! strcmp (com, "make_gimp_palette"))
+      {
+      out = strtok (NULL, " ");
+      if (out == NULL)
+         {
+         printf ("Output file name argument missing.\n");
+         continue;
+         }
+      make_gimp_palette (0, out);
+      }
+
    /* user asked to list all options and their values */
    else if (! strcmp (com, "set"))
       {
@@ -676,7 +707,7 @@ for (;;)
       com = strtok (NULL, " ");
       if (com == NULL)
 	 {
-	 printf ("[Wad file name argument missing.]\n");
+	 printf ("Wad file name argument missing.\n");
 	 continue;
 	 }
       out = strtok (NULL, " ");
@@ -886,6 +917,8 @@ for (size_t n = 0; n < NCOLOURS; n++)
       c.set (0, 0, 0x60);
    else if (n == GRID2)
       c.set (0, 0, 0xa0);
+   else if (n == GRID3)
+      c.set (0, 0, 0xe0);
    else if (n == WINFGLABEL)  // Text in window, a bit dimmer
       c.set (0x88, 0x88, 0x88);
    else

@@ -11,7 +11,7 @@ This file is part of Yadex.
 Yadex incorporates code from DEU 5.21 that was put in the public
 domain in 1994 by Raphaël Quinet and Brendon Wyber.
 
-The rest of Yadex is Copyright © 1997-1998 André Majorel.
+The rest of Yadex is Copyright © 1997-1999 André Majorel.
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -220,9 +220,10 @@ const acolour_t WINFG_HL     = 22;
 const acolour_t WINFG_DIM_HL = 23;
 const acolour_t GRID1        = 24;
 const acolour_t GRID2        = 25;
-const acolour_t WINFGLABEL   = 26;
+const acolour_t GRID3        = 26;
+const acolour_t WINFGLABEL   = 27;
 
-const acolour_t NCOLOURS     = 27;
+const acolour_t NCOLOURS     = 28;
 
 
 /*
@@ -363,7 +364,10 @@ extern int remind_to_build_nodes;	// Remind the user to build nodes
 
 // Defined in yadex.c and set from
 // command line and/or config file
-extern char *config_file;		// Name of the configuration file
+extern int   autoscroll;	// Autoscrolling enabled.
+extern int   autoscroll_amp;	// Amplitude in percents of screen/window size.
+extern int   autoscroll_edge;	// Max. dist. in pixels to edge.
+extern char *config_file;	// Name of the configuration file
 extern int   copy_linedef_reuse_sidedefs;
 extern Bool  Debug;			// Are we debugging?
 extern int   default_ceiling_height;	// For new sectors
@@ -395,7 +399,8 @@ extern int   MouseMickeysV;
 extern char **PatchWads;	// List of pwad files
 extern Bool  Quiet;		// Don't beep when an object is selected
 extern Bool  Quieter;		// Don't beep, even on error
-extern int   scroll_normal;	// %s of screenful to scroll by
+extern int   scroll_less;	// %s of screenful to scroll by
+extern int   scroll_more;	// %s of screenful to scroll by
 extern Bool  Select0;		// Autom. select obj. 0 when switching modes
 extern int   show_help;		// Print usage message and exit.
 extern Bool  SwapButtons;	// Swap right and middle mouse buttons

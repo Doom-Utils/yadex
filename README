@@ -1,4 +1,4 @@
-Yadex 1.0.0 (1998-12-26)
+Yadex 1.0.1 (1999-01-02)
 
 WHAT IS YADEX ?
     Yadex is a Doom/Doom II/Heretic level (wad) editor for X.
@@ -68,7 +68,7 @@ STATUS
 LEGAL STATUS
     Yadex is GPL'd free software. It incorporates code from DEU 5.21
     that was put in the public domain in 1994 by Raphaël Quinet and
-    Brendon Wyber. The rest is Copyright © 1997-1998 André Majorel.
+    Brendon Wyber. The rest is Copyright © 1997-1999 André Majorel.
 
     Now comes the part I like best :
     This program is free software; you can redistribute it and/or modify
@@ -93,5 +93,5 @@ CONTACT
     to contact me.
 
 
-AYM 1998-12-20
+AYM 1999-01-01
 

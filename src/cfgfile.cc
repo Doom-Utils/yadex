@@ -10,7 +10,7 @@ This file is part of Yadex.
 Yadex incorporates code from DEU 5.21 that was put in the public
 domain in 1994 by Raphaël Quinet and Brendon Wyber.
 
-The rest of Yadex is Copyright © 1997-1998 André Majorel.
+The rest of Yadex is Copyright © 1997-1999 André Majorel.
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -105,18 +105,39 @@ opt_desc_t options[] =		/* description of the command line options */
   "Patch wad file",
   &PatchWads },
 
+{ "autoscroll",
+  NULL,
+  OPT_BOOLEAN,
+  NULL,
+  "Enable autoscrolling",
+  &autoscroll },
+
+{ "autoscroll_amp",
+  NULL,
+  OPT_INTEGER,
+  NULL,
+  "Amp. of scrolling (% of screen size)",
+  &autoscroll_amp },
+
+{ "autoscroll_edge",
+  NULL,
+  OPT_INTEGER,
+  NULL,
+  "Max. dist. to edge (pixels)",
+  &autoscroll_edge },
+
 { "bgi",
   NULL,
   OPT_STRINGPTR,
   "b",
-  "BGI video driver",
+  "(BGI only) BGI video driver",
   &BGIDriver },
 
 { "cirrus_cursor",
   "cc",
   OPT_BOOLEAN,
   "b",
-  "Cirrus hardware cursor",
+  "(BGI only) Cirrus hardware cursor",
   &CirrusCursor },
 
 { "config_file",
@@ -221,7 +242,7 @@ opt_desc_t options[] =		/* description of the command line options */
   "fc",
   OPT_BOOLEAN,
   NULL,
-  "Fake cursor",
+  "(X11 only) Fake cursor",
   &FakeCursor },
 
 { "file",
@@ -235,7 +256,7 @@ opt_desc_t options[] =		/* description of the command line options */
   "fn",
   OPT_STRINGPTR,
   NULL,
-  "Font name",
+  "(X11 only) Font name",
   &font_name },
 
 { "game",
@@ -249,7 +270,7 @@ opt_desc_t options[] =		/* description of the command line options */
   "h",
   OPT_INTEGER,
   "x",
-  "Initial window height",
+  "(X11 only) Initial window height",
   &initial_window_height },
 
 { "help",
@@ -263,21 +284,21 @@ opt_desc_t options[] =		/* description of the command line options */
   NULL,
   OPT_INTEGER,
   NULL,
-  "Max grid step",
+  "Max grid step (map units)",
   &GridMax },
 
 { "grid_min",
   NULL,
   OPT_INTEGER,
   NULL,
-  "Min grid step",
+  "Min grid step (map units)",
   &GridMin },
 
 { "grid_pixels_min",
   NULL,
   OPT_INTEGER,
   NULL,
-  "Min grid step in pixels",
+  "Min grid step (pixels)",
   &grid_pixels_min },
 
 { "info_bar",
@@ -327,14 +348,14 @@ opt_desc_t options[] =		/* description of the command line options */
   "mh",
   OPT_INTEGER,
   "b",
-  "Mouse horizontal sensitivity",
+  "(BGI only) Mouse horizontal sensitivity",
   &MouseMickeysH },
 
 { "mouse_vertical_sens",
   "mv",
   OPT_INTEGER,
   "b",
-  "Mouse vertical sensitivity",
+  "(BGI only) Mouse vertical sensitivity",
   &MouseMickeysV },
 #endif
 
@@ -349,7 +370,7 @@ opt_desc_t options[] =		/* description of the command line options */
   "P",
   OPT_BOOLEAN,
   NULL,
-  "No pixmap, saves memory, more flicker",
+  "(X11 only) Use no pixmap",
   &no_pixmap },
 
 { "quiet",
@@ -366,12 +387,19 @@ opt_desc_t options[] =		/* description of the command line options */
   "Quieter mode",
   &Quieter },
 
-{ "scroll_normal",
+{ "scroll_less",
   NULL,
   OPT_INTEGER,
   NULL,
-  "Percents of a screenful to scroll by",
-  &scroll_normal },
+  "Amp. of scrolling (% of screen size)",
+  &scroll_less },
+
+{ "scroll_more",
+  NULL,
+  OPT_INTEGER,
+  NULL,
+  "Amp. of scrolling (% of screen size)",
+  &scroll_more },
 
 { "select0",
   "s0",
@@ -419,7 +447,7 @@ opt_desc_t options[] =		/* description of the command line options */
   "V",
   OPT_INTEGER,
   "b",
-  "Video mode",
+  "(BGI only) Video mode",
   &VideoMode },
 
 { "welcome_message",
@@ -433,7 +461,7 @@ opt_desc_t options[] =		/* description of the command line options */
   "w",
   OPT_INTEGER,
   "x",
-  "Initial window width",
+  "(X11 only) Initial window width",
   &initial_window_width },
 
 { "zoom",
@@ -549,7 +577,7 @@ if (cfgfile == NULL)
    return 1;
 
 if (fgets (line, sizeof line, cfgfile) == NULL
-   || strcmp (line, "# Yadex configuration file version 1\n"))
+   || strcmp (line, "# Yadex configuration file version 2\n"))
    {
    report_error ("%s is not a valid Yadex configuration file", filename);
    report_error ("Perhaps a version mismatch ?");

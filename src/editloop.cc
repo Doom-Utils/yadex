@@ -11,7 +11,7 @@ This file is part of Yadex.
 Yadex incorporates code from DEU 5.21 that was put in the public
 domain in 1994 by Raphaël Quinet and Brendon Wyber.
 
-The rest of Yadex is Copyright © 1997-1998 André Majorel.
+The rest of Yadex is Copyright © 1997-1999 André Majorel.
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -1333,6 +1333,7 @@ for (RedrawMap = 1; ; RedrawMap = 0)
          RedrawMap = 1;
          }
 
+#if 0
       /* user wants to move */
       else if (is.key == YK_UP && (is.y - e.move_speed) >= 0)
          {
@@ -1376,27 +1377,51 @@ for (RedrawMap = 1; ; RedrawMap = 0)
 	 else
 	    LogMessage ("px=%d ms=%d smx=%d\n", is.x, e.move_speed, ScrMaxX);
 	 }
+#endif
+
+      // [Left], [Right], [Up], [Down]:
+      // scroll <scroll_less> percents of a screenful.
+      else if (is.key == YK_LEFT && MAPX (ScrCenterX) > -20000)
+         {
+	 OrigX -= (int) ((double) ScrMaxX * scroll_less / 100 / Scale);
+	 RedrawMap = 1;
+	 }
+      else if (is.key == YK_RIGHT && MAPX (ScrCenterX) < 20000)
+         {
+	 OrigX += (int) ((double) ScrMaxX * scroll_less / 100 / Scale);
+	 RedrawMap = 1;
+	 }
+      else if (is.key == YK_UP && MAPY (ScrCenterY) > -20000)
+         {
+	 OrigY += (int) ((double) ScrMaxY * scroll_less / 100 / Scale);
+	 RedrawMap = 1;
+	 }
+      else if (is.key == YK_DOWN && MAPY (ScrCenterY) < 20000)
+         {
+	 OrigY -= (int) ((double) ScrMaxY * scroll_less / 100 / Scale);
+	 RedrawMap = 1;
+	 }
 
       // [Page-up], [Page-down], [Home], [End]:
-      // scroll <scroll_normal> percents of a screenful.
+      // scroll <scroll_more> percents of a screenful.
       else if (is.key == YK_PU && MAPY (ScrCenterY) < /*MapMaxY*/ 20000)
 	 {
-	 OrigY += (int) ((double) ScrMaxY * scroll_normal / 100 / Scale);
+	 OrigY += (int) ((double) ScrMaxY * scroll_more / 100 / Scale);
 	 RedrawMap = 1;
 	 }
       else if (is.key == YK_PD && MAPY (ScrCenterY) > /*MapMinY*/ -20000)
 	 {
-	 OrigY -= (int) ((double) ScrMaxY * scroll_normal / 100 / Scale);
+	 OrigY -= (int) ((double) ScrMaxY * scroll_more / 100 / Scale);
 	 RedrawMap = 1;
 	 }
       else if (is.key == YK_HOME && MAPX (ScrCenterX) > /*MapMinX*/ -20000)
 	 {
-	 OrigX -= (int) ((double) ScrMaxX * scroll_normal / 100 / Scale);
+	 OrigX -= (int) ((double) ScrMaxX * scroll_more / 100 / Scale);
 	 RedrawMap = 1;
 	 }
       else if (is.key == YK_END && MAPX (ScrCenterX) < /*MapMaxX*/ 20000)
 	 {
-	 OrigX += (int) ((double) ScrMaxX * scroll_normal / 100 / Scale);
+	 OrigX += (int) ((double) ScrMaxX * scroll_more / 100 / Scale);
 	 RedrawMap = 1;
 	 }
 
@@ -1683,7 +1708,7 @@ for (RedrawMap = 1; ; RedrawMap = 0)
 	 StretchSelBox = 0;
 	 }
 
-      // [w]: spin thing 1/8 counter-clockwise
+      // [w]: spin things 1/8 turn counter-clockwise
       else if (is.key == 'w' && e.obj_type == OBJ_THINGS
          && (e.Selected || is_obj (e.highlight_obj_no)))
 	 {
@@ -1702,7 +1727,18 @@ for (RedrawMap = 1; ; RedrawMap = 0)
 	 StretchSelBox = 0;
 	 }
 
-      // [x]: spin thing 1/8 clockwise
+      // [w]: split linedefs and sectors
+      else if (is.key == 'w' && e.obj_type == OBJ_LINEDEFS
+         && e.Selected && e.Selected->next && ! e.Selected->next->next)
+         {
+         SplitLineDefsAndSector (e.Selected->next->objnum, e.Selected->objnum);
+         ForgetSelection (&e.Selected);
+         RedrawMap = 1;
+         DragObject = 0;
+         StretchSelBox = 0;
+         }
+
+      // [x]: spin things 1/8 turn clockwise
       else if (is.key == 'x' && e.obj_type == OBJ_THINGS
          && (e.Selected || is_obj (e.highlight_obj_no)))
 	 {
@@ -1720,6 +1756,23 @@ for (RedrawMap = 1; ; RedrawMap = 0)
 	 DragObject = 0;
 	 StretchSelBox = 0;
 	 }
+
+      // [x]: split linedefs
+      else if (is.key == 'x' && e.obj_type == OBJ_LINEDEFS
+         && (e.Selected || is_obj (e.highlight_obj_no)))
+         {
+         if (! e.Selected)
+            {
+            SelectObject (&e.Selected, e.highlight_obj_no);
+            SplitLineDefs (e.Selected);
+            UnSelectObject (&e.Selected, e.highlight_obj_no);
+            }
+         else
+            SplitLineDefs (e.Selected);
+         RedrawMap = 1;
+         DragObject = 0;
+         StretchSelBox = 0;
+         }
 
       /* user wants to delete the current object */
       else if (is.key == YK_DEL
@@ -1981,57 +2034,53 @@ for (RedrawMap = 1; ; RedrawMap = 0)
    // through the menus.
 
    if (is.in_window
+      && autoscroll
       && ! is.scroll_lock
       && e.menubar->pulled_down () < 0)
       {
-      const int max_xmove = 12;	// In percents of screen width
-      const int max_ymove = 8;	// In percents of screen height
-      const int margin = 30;	// In pixels
       int distance;		// In pixels
 
-#define actual_xmove(dist) \
- ((int) (((ScrMaxX * max_xmove / 100) * ((double) (margin - dist) / margin))\
-   / Scale))
-
-#define actual_ymove(dist) \
- ((int) (((ScrMaxY * max_ymove / 100) * ((double) (margin - dist) / margin))\
+#define actual_move(total,dist) \
+   ((int) (((total * autoscroll_amp / 100)\
+   * ((double) (autoscroll_edge - dist) / autoscroll_edge))\
    / Scale))
 
       distance = is.y;
       // The reason for the second member of the condition
       // is that we don't want to scroll when the user is
       // simply reaching for a menu...
-      if (distance <= margin && e.menubar->is_under_menubar_item (is.x) < 0)
+      if (distance <= autoscroll_edge
+         && e.menubar->is_under_menubar_item (is.x) < 0)
 	 {
 	 if (! UseMouse)
 	    is.y += e.move_speed;
 	 if (MAPY (ScrCenterY) < /*MapMaxY*/ 20000)
 	    {
-	    OrigY += actual_ymove (distance);
+	    OrigY += actual_move (ScrMaxY, distance);
 	    RedrawMap = 1;
 	    }
 	 }
 
       distance = ScrMaxY - is.y;
-      if (distance <= margin)
+      if (distance <= autoscroll_edge)
 	 {
 	 if (! UseMouse)
 	    is.y -= e.move_speed;
 	 if (MAPY (ScrCenterY) > /*MapMinY*/ -20000)
 	    {
-	    OrigY -= actual_ymove (distance);
+	    OrigY -= actual_move (ScrMaxY, distance);
 	    RedrawMap = 1;
 	    }
 	 }
 
       distance = is.x;
-      if (distance <= margin)
+      if (distance <= autoscroll_edge)
 	 {
 	 if (! UseMouse)
 	    is.x += e.move_speed;
 	 if (MAPX (ScrCenterX) > /*MapMinX*/ -20000)
 	    {
-	    OrigX -= actual_xmove (distance);
+	    OrigX -= actual_move (ScrMaxX, distance);
 	    RedrawMap = 1;
 	    }
 	 }
@@ -2042,13 +2091,13 @@ for (RedrawMap = 1; ; RedrawMap = 0)
       // Note: the ordinate "3 * FONTH" is of course not
       // critical. It's just a rough approximation.
       distance = ScrMaxX - is.x;
-      if (distance <= margin && is.y >= 3 * FONTH)
+      if (distance <= autoscroll_edge && is.y >= 3 * FONTH)
 	 {
 	 if (! UseMouse)
 	    is.x -= e.move_speed;
 	 if (MAPX (ScrCenterX) < /*MapMaxX*/ 20000)
 	    {
-	    OrigX += actual_xmove (distance);
+	    OrigX += actual_move (ScrMaxX, distance);
 	    RedrawMap = 1;
 	    }
 	 }

@@ -48,7 +48,8 @@ gotoobj		help1		help2		highlt\
 infobar		input		l_align		l_centre\
 l_flags		l_misc		l_prop		l_unlink\
 l_vertices	levels		lists		memory\
-menubar		menu		mouse		names\
+menubar		menu		mkpalette	mouse\
+names\
 nop		objects		objinfo		oldmenus\
 pic2img		prefer		s_centre	s_door\
 s_lift		s_linedefs	s_merge		s_misc\

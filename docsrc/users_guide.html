@@ -83,6 +83,13 @@ Contents :
 	<li>Using external textures and flats
 	<li>Logging of time spent
 	<li>The prompt commands
+	<li>Moving around
+		<ul>
+		<li>Moving the pointer
+		<li>Scrolling
+		<li>Autoscrolling
+		<li>Jumping
+		</ul>
 	<li>Zooming in and out
 	<li>The grid
 	<li>Inserting objects
@@ -115,15 +122,16 @@ Contents :
 	<li>Doom
 	<li>Doom II
 	<li>Heretic
-	<li>Hexen
+	<li>Hexen and Strife
 	<li>Boom
-	<li>Other Doom derivatives and ports
+	<li>Other ports
 	</ul>
 <li>Annex D: Credits
 	<ul>
 	<li>DEU
 	<li>Contributors
 	<li>Testers
+	<li>Other credits
 	</ul>
 <li>Annex E: Miscellaneous information
 	<ul>
@@ -281,8 +289,10 @@ Try to move the pointer around.
 Note that the info bar shows the position of the pointer
 in map coordinates.
 <p>
-If you move near the edge of the window
-or press [<kbd>Home</kbd>], [<kbd>End</kbd>],
+If you move near the edge of the window,
+or press [<kbd>Left</kbd>], [<kbd>Right</kbd>],
+[<kbd>Up</kbd>], [<kbd>Down</kbd>],
+[<kbd>Home</kbd>], [<kbd>End</kbd>],
 [<kbd>Page-up</kbd>] or [<kbd>Page-down</kbd>],
 the map scrolls.
 <p>
@@ -501,7 +511,7 @@ An option is a command line argument that starts with a "<code>-</code>".
 Some options take an argument.
 The argument must be separated from the option by some whitespace.
 <strong>Constructs like "<code>-othingy</code>" are not recognized.
-You have to type "<code>-o thingy</code>".</strong>.
+You have to type "<code>-o thingy</code>".</strong>
 <p>
 The "<code>-file</code>" option takes a variable number
 of arguments. It uses all the non-options up to the next option.
@@ -682,7 +692,7 @@ with a binary editor.
 You don't need Deusf.
 <p>
 Replacing other resources may or may not work.
-<code>COLORMAP</code> very probably does,
+<code>PLAYPAL</code> very probably does,
 sprites probably don't.
 
 		<h3>Logging of time spent</h3>
@@ -708,6 +718,64 @@ with a command such as "<code>touch <i>name</i>.yl</code>".
 
 You can get a summary of the prompt commands
 by typing "<code>?</code>" at the Yadex prompt.
+
+		<h3>Moving around</h3>
+
+			<h4>Moving the pointer</h4>
+
+In the X11 version, the only way to do that is to
+move the pointer device (i.e. the mouse).
+
+			<h4>Scrolling</h4>
+
+The arrow keys [<kbd>Left</kbd>], [<kbd>Right</kbd>],
+[<kbd>Up</kbd>] and [<kbd>Down</kbd>] scroll a little
+at a time, by default 10% of the screen/window width
+or height. You can change the exact amount by setting
+the variable <code>scroll_less</code> in the
+configuration file.
+<p>
+[<kbd>Page-up</kbd>], [<kbd>Page-down</kbd>],
+[<kbd>Home</kbd>] and [<kbd>End</kbd>] scroll more
+at a time, by default 90% of the screen/window width
+or height. You can change the exact amount by setting
+the variable <code>scroll_more</code> in the
+configuration file.
+
+			<h4>Autoscrolling</h4>
+
+When the pointer rests close to the edge of the
+screen/window, the map scrolls automatically.
+The closer you are to the edge, the faster it
+scrolls.
+<p>
+You can fine tune autoscrolling by changing the
+variables <code>autoscroll_amp</code> and
+<code>autoscroll_edge</code>.
+<p>
+Autoscrolling is disabled near the menu bar items
+so that the map does not scroll when you're reaching
+for the menu.
+<p>
+You can disable autoscrolling completely by setting
+<code>autoscroll</code> to <code>false</code> in
+the configuration file.
+
+			<h4>Jumping</h4>
+
+I plan to develop a full set-mark/jump-to-mark
+system similar to the one in <code>vi</code>,
+with <code>m<i>mark-name</i></code>, <code>'<i>mark-name</i></code>
+and <code>`<i>mark-name</i></code>.
+<p>
+For the moment, if you press [<kbd>'</kbd>],
+the map scrolls so that its centre is at the
+centre of the screen/window.
+<p>
+If you press [<kbd>`</kbd>], the map scrolls so
+that its centre is at the centre of the screen/window
+and the zoom factor is adjusted so that the whole
+map is visible and almost fills the screen/window.
 
 		<h3>Zooming in and out</h3>
 
@@ -763,10 +831,10 @@ You can also use [<kbd>H</kbd>] to reset the grid step.
 
 		<h3>Inserting objects</h3>
 
-By pressing $k Ins, you insert a new object under the pointer.
+By pressing [<kbd>Ins</kbd>], you insert a new object under the pointer.
 <p>
 If an object of the same type is highlighted at the moment
-you press $k Ins, the properties of the new object are copied
+you press [<kbd>Ins</kbd>], the properties of the new object are copied
 from the highlighted object.
 In other words, the highlighted object serves as a "model".
 Else the properties of the new object are set to default
@@ -930,6 +998,8 @@ and not used by any linedef or sector.
 <p><dt>Split linedef (add new vertex)
 <dd>Split all selected linedefs, by adding a vertex
 in the middle.
+<p>
+The key [<kbd>x</kbd>] is a shortcut to this function.
 
 <p><dt>Split linedefs and sector
 <dd>Split both selected linedefs in the middle by adding a vertex
@@ -938,14 +1008,16 @@ split the sector with this new linedef.
 There must be exactly 2 selected linedefs and they
 must face a common sector.
 <p>
-The new linedef goes from the second selected linedef to the
-first selected linedef.
-The new sector in on the second sidedef of the new linedef.
+The new linedef goes from the first selected linedef to the
+second selected linedef.
+The new sector is on the second sidedef of the new linedef.
 <p>
 There is a bug in this function ; if the sector
 contains other sectors, some sidedefs are given
 the wrong sector number. Jim Flynn has recently
 fixed this in DETH.
+<p>
+The key [<kbd>w</kbd>] is a shortcut to this function.
 
 <p><dt>Delete linedefs and join sector
 <dd>Dude.
@@ -1100,7 +1172,7 @@ Yadex will try to open
 The first line of the configuration file must contain exactly
 the following string :
 <p>
-"<code># Yadex configuration file version 1</code>"
+"<code># Yadex configuration file version 2</code>"
 <p>
 If it doesn't, Yadex will print an error message and bail out.
 The reason for being so fussy is to avoid headaches when the
@@ -1132,6 +1204,17 @@ Yadex tries those names in order&nbsp;:
 <li><code>/usr/local/share/games/<i>game</i>.ygd</code>
 <li><code>/usr/share/games/<i>game</i>.ygd</code>
 </ol>
+The first line of a game definition file must contain exactly
+the following string :
+<p>
+"<code># Yadex game definition file version 1</code>"
+<p>
+If it doesn't, Yadex will print an error message and bail out.
+The reason for being so fussy is to avoid headaches when the
+game definition file format changes and there are old game
+definition files lying around in your directories.
+<p>
+The contents are pretty self explanatory.
 
 		<h3>The font</h3>
 
@@ -1397,7 +1480,7 @@ to do it, he/she is welcome. See "<code>heretic.ygd</code>".
 
 Not supported. I know that Hexen is based on the Doom engine
 but I don't know how different the data structures are. Is
-it hard to do ? Is there any interest ? Contact the maintainer.
+it hard to do ? Is there any interest ? Contact me.
 
 		<h3>Boom</h3>
 
@@ -1572,7 +1655,7 @@ As for Yadex per se, the contributors are&nbsp;:
 <p>
 <dl>
 <dt>Jean Forget (JF)
-<dd>Provided the base of the <code>youngest</code> perl script.
+<dd>Provided the base of the "<code>youngest</code>" perl script.
 
 <dt>André Majorel (AYM)
 <dd>Did the rest ;-).
@@ -1589,18 +1672,47 @@ are, by alphabetical order&nbsp;:
 	led to the development of the "save image to a file" feature.
 	Gave thorough reports.
 
-<dt>Joe Koperski <code>&lt;joekoperski@hotmail.com&gt;</code> (JK)
+<p><dt>Joe Koperski <code>&lt;joekoperski@hotmail.com&gt;</code> (JK)
 <dd>-
 
-<dt>Josh R. Ray <code>&lt;joshray@prodigy.net&gt;</code> (JRR)
+<p><dt>Udo Munk
+<dd>Requested scrolling with arrow keys
+	and possibility to disable the autoscrolling.
+
+<p><dt>Josh R. Ray <code>&lt;joshray@prodigy.net&gt;</code> (JRR)
 <dd>-
 
-<dt>Jan Van der Veken <code>&lt;jan.van.der.veken@village.uunet.be&gt;</code>
+<p><dt>Vedran Rodic (VR)
+<dd>Reported segfault on "e exmy" in Doom II mode.
+
+<p><dt>Jan Van der Veken <code>&lt;jan.van.der.veken@village.uunet.be&gt;</code>
 	(JVDV)
-<dd>Requested the "brighten or darken sectors" feature.
+<dd>Requested the "brighten or darken sectors" function,
+	single-key linedef splitting,
+	single-key linedefs of sector splitting
+	and scrolling with arrow keys.
 </dl>
 <p>
 Thanks for your feedback !
+
+		<h3>Other credits</h3>
+
+In no particular order, I would like to thank the
+following folks.
+id Software for making Doom and thinking of the "<code>-file</code>"
+option.  And releasing the source code.
+Dave Taylor for porting Doom to Unix against commercial logic.
+The people who created Unix and X
+for giving us one of the best platforms around.
+The thousands who worked on GNU, Linux, *BSD and all the free software
+for giving me a chance to actually use that platform.
+Colin Reed and Lee Killough for writing BSP,
+releasing its source code and kindly allowing me to include it.
+Udo Munk and Colin Phipps for Xdoom and Lxdoom.
+TeamTNT for Boom.
+The authors of the FAQs, specs and tutorials
+from which I learned.
+The makers of the internet for connecting us all.
 
 	</p><hr noshade>
 	<h2>Annex E: Miscellaneous information</h2>

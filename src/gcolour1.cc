@@ -20,7 +20,7 @@ This file is part of Yadex.
 Yadex incorporates code from DEU 5.21 that was put in the public
 domain in 1994 by Raphaël Quinet and Brendon Wyber.
 
-The rest of Yadex is Copyright © 1997-1998 André Majorel.
+The rest of Yadex is Copyright © 1997-1999 André Majorel.
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -67,12 +67,12 @@ if (dir == NULL)
 int playpal_count = dir->dir.size / (3 * DOOM_COLOURS);
 if (playpalnum < 0 || playpalnum >= playpal_count)
    {
-   printf ("Warning: playpalnum %d out of range (0-%d). Using #0 instead.",
+   printf ("Warning: playpalnum %d out of range (0-%d). Using #0 instead.\n",
       playpalnum, playpal_count - 1);
    playpalnum = 0;
    }
 
-dpal = (unsigned char huge *) GetFarMemory (3 * DOOM_COLOURS);
+dpal = (u8 *) GetFarMemory (3 * DOOM_COLOURS);
 wad_seek (dir->wadfile, dir->dir.start);
 for (int n = 0; n <= playpalnum; n++)
    wad_read_bytes (dir->wadfile, dpal, 3 * DOOM_COLOURS);

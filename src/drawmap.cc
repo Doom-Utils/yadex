@@ -10,7 +10,7 @@ This file is part of Yadex.
 Yadex incorporates code from DEU 5.21 that was put in the public
 domain in 1994 by Raphaël Quinet and Brendon Wyber.
 
-The rest of Yadex is Copyright © 1997-1998 André Majorel.
+The rest of Yadex is Copyright © 1997-1999 André Majorel.
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -30,6 +30,7 @@ Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 
 
 #include "yadex.h"
+#include <X11/Xlib.h>
 #include "_edit.h"
 #include "drawmap.h"
 #include "gfx.h"
@@ -43,7 +44,6 @@ Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 
 void draw_map (edit_t *e) /* SWAP! */
 {
-int  n, m;
 int mapx0 = MAPX (0);
 int mapx9 = MAPX (ScrMaxX);
 int mapy0 = MAPY (ScrMaxY);
@@ -60,29 +60,66 @@ if (e->grid_shown)
    int mapy0;
    int mapy1;
    int grid_step2;
+#ifdef NEW_GRID
+   XPoint *points;
+   int npoints;
+#endif
+
+   mapx0 = MAPX (0)                        & ~(e->grid_step - 1);
+   mapx1 = (MAPX (ScrMaxX) + e->grid_step) & ~(e->grid_step - 1);
+   mapy0 = (MAPY (ScrMaxY))                & ~(e->grid_step - 1);
+   mapy1 = (MAPY (0)       + e->grid_step) & ~(e->grid_step - 1);
+
+#ifdef NEW_GRID
+   npoints = (mapx1 - mapx0) / e->grid_step + 1;
+   points = (XPoint *) malloc (npoints * sizeof *points);
+   points[0].x = SCREENX (mapx0);
+   for (int n = 1; n < npoints; n++)
+      {
+      points[n].x = SCREENX (mapx0 + n * e->grid_step)
+                  - SCREENX (mapx0 + (n - 1) * e->grid_step);
+      points[n].y = 0;
+      }
+#endif
 
    for (grid_step2 = 64; grid_step2 < 4 * e->grid_step; grid_step2 *= 4)
       ;
 
-   mapx0 = MAPX (0) & ~(e->grid_step - 1);
-   mapx1 = (MAPX (ScrMaxX) + e->grid_step) & ~(e->grid_step - 1);
-   mapy0 = (MAPY (ScrMaxY)) & ~(e->grid_step - 1);
-   mapy1 = (MAPY (0)       + e->grid_step) & ~(e->grid_step - 1);
-   for (n = mapx0; n <= mapx1; n += e->grid_step)
-      {  /* AYM */
-      new_colour = n % grid_step2 ? GRID1 : GRID2;
-      if (new_colour != current_colour)
-	set_colour (current_colour = new_colour);
-      DrawMapLine (n, mapy0, n, mapy1);
-      }
-   for (n = mapy0; n <= mapy1; n += e->grid_step)
+   for (int n = mapx0; n <= mapx1; n += e->grid_step)
       {
       new_colour = n % grid_step2 ? GRID1 : GRID2;
       if (new_colour != current_colour)
 	set_colour (current_colour = new_colour);
-      DrawMapLine (mapx0, n, mapx1, n);
+#ifdef NEW_GRID
+      if (n % (4 * e->grid_step) == 0)
+#endif
+         DrawMapLine (n, mapy0, n, mapy1);
       }
+   for (int n = mapy0; n <= mapy1; n += e->grid_step)
+      {
+      new_colour = n % grid_step2 ? GRID1 : GRID2;
+      if (new_colour != current_colour)
+	set_colour (current_colour = new_colour);
+#ifdef NEW_GRID
+      if (n % (4 * e->grid_step) == 0)
+#endif
+         DrawMapLine (mapx0, n, mapx1, n);
+#ifdef NEW_GRID
+      else
+         {
+	 set_colour (current_colour = GRID3);
+         points[0].y = SCREENY (n);
+	 XDrawPoints (dpy, drw, gc, points, npoints, CoordModePrevious);
+         }
+#endif
+      }
+
+#ifdef NEW_GRID
+   free (points);
+#endif
    }
+
+int  n, m;
 
 /* Draw the linedefs to form the map.
    Optimization: off-screen lines are not drawn

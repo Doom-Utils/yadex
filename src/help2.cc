@@ -10,7 +10,7 @@ This file is part of Yadex.
 Yadex incorporates code from DEU 5.21 that was put in the public
 domain in 1994 by Raphaël Quinet and Brendon Wyber.
 
-The rest of Yadex is Copyright © 1997-1998 André Majorel.
+The rest of Yadex is Copyright © 1997-1999 André Majorel.
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -57,15 +57,15 @@ static const char *help_text[] =
   "Del   Delete the object(s)      h     Hide/show the grid",
   "Enter Edit object properties    H     Reset grid step to the max",
   "x/w   Spin things cw/ccw        z     Lock the grid step",
-  "a     Set things/ld flags       y     Snap to grid on/off",
-  "b     Toggle things/ld flags    Space Toggle extra zoom",
+  "x     Split linedefs            y     Snap to grid on/off",
+  "w     Split linedefs & sector   Space Toggle extra zoom",
+  "a     Set things/ld flags",
+  "b     Toggle things/ld flags",
   "c     Clear things/ld flags",
   "F8    Misc. operations          F5    Preferences",
   "F9    Insert compound object    F10   Checks"
   "",
   "Mouse :",
-  "- The map scrolls when you move the pointer near the edge of the",
-  "  window.",
   "- Clicking on an object with the left button selects it (and",
   "  unselects everything else unless [Ctrl] is pressed).",
   "- Clicking on an already selected object with the left button with",
@@ -134,7 +134,7 @@ set_colour (WINFG);
 DrawScreenText (x0 + BOX_BORDER + WIDE_HSPACING,
                 y0 + BOX_BORDER + WIDE_VSPACING, what ());
 DrawScreenText (-1, -1, "");
-DrawScreenText (-1, -1, "Copyright © 1997-1998 André Majorel");
+DrawScreenText (-1, -1, "Copyright © 1997-1999 André Majorel");
 DrawScreenText (-1, -1, "Yadex is derived from DEU 5.21 by");
 DrawScreenText (-1, -1, "Raphaël Quinet and Brendon Wyber.");
 DrawScreenText (-1, -1, "");

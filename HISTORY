@@ -253,4 +253,21 @@ Yadex 1.0.0 (AYM 1998-12-26)
   - Removed segfault during fatal_error() on failure to open the iwad.
   - Removed segfault in AlignTexturesX().
 
+Yadex 1.0.1 (AYM 1999-01-02)
+
+  - Fixed segfault on trying to edit MAPnm in Doom/Heretic mode or EnMm in
+    Doom II mode.
+  - Split linedefs and sector: new linedef now goes from 1 to 2 and not the
+    other way around.
+  - Added scrolling with the arrow keys.
+  - [Page-up], [Page-down], [Home] and [End] now scroll one page at a time.
+  - New variable autoscroll to disable autoscrolling.
+  - New variables autoscroll_amp and autoscroll_edge to tweak autoscrolling.
+  - New shortcut [x] to "Split linedef (insert new vertex)".
+  - New shortcut [w] to "Split linedefs and sector".
+  - New sections "Moving around" and "Other credits" in the user's guide.
+  - New prompt command "make_gimp_palette" to generate a gimp palette
+    file from PLAYPAL.
+  - Bumped configuration file version# to 2.
+
 

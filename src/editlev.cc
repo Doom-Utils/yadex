@@ -10,7 +10,7 @@ This file is part of Yadex.
 Yadex incorporates code from DEU 5.21 that was put in the public
 domain in 1994 by Raphaël Quinet and Brendon Wyber.
 
-The rest of Yadex is Copyright © 1997-1998 André Majorel.
+The rest of Yadex is Copyright © 1997-1999 André Majorel.
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -50,23 +50,28 @@ static void WriteYadexLog (const char *file, const char *level,
  *	Look in the master directory for levels that match
  *	the name in <name_given>.
  *
- *	<given_name> can have one of the following formats :
+ *	<name_given> can have one of the following formats :
  *	
- *	  [Ee]x[Mm]y      ExMy
- *	  [Mm][Aa][Pp]xy  MAPxy
- *	  x               MAP0x
- *	  xy              Either ExMy or MAPxy
+ *	  [Ee]n[Mm]m      EnMm
+ *	  [Mm][Aa][Pp]nm  MAPnm
+ *	  n               MAP0n
+ *	  nm              Either EnMn or MAPnm
  *
  *	Return:
- *	- if exactly one match was found, copy its canonical name
- *	  in a freshly malloc'd buffer and return that buffer,
- *	- if none was found, return error_none,
- *	- if the <name_given> is invalid, return error_invalid,
- *	- if several were found, return error_non_unique.
+ *	- If <name_given> is either [Ee]n[Mm]m or [Mm][Aa][Pp]nm,
+ *	  - if the level was found, its canonical (uppercased)
+ *	    name in a freshly malloc'd buffer,
+ *	  - else, NULL.
+ *	- If <name_given> is either n or nm,
+ *	  - if either EnMn or MAPnm was found, the canonical name
+ *	    of the level found, in a freshly malloc'd buffer,
+ *	  - if none was found, <error_none>,
+ *	  - if the <name_given> is invalid, <error_invalid>,
+ *	  - if several were found, <error_non_unique>.
  */
 char *find_level (const char *name_given)
 {
-// If <name_given> is "[Ee]x[Mm]y" or "[Mm][Aa][Pp]xy", look for that
+// If <name_given> is "[Ee]n[Mm]m" or "[Mm][Aa][Pp]nm", look for that
 if (levelname2levelno (name_given))
    {
    char *canonical_name = strdup (name_given);
@@ -75,7 +80,10 @@ if (levelname2levelno (name_given))
    if (FindMasterDir (MasterDir, canonical_name))
       return canonical_name;
    else
+      {
+      free (canonical_name);
       return NULL;
+      }
    }
 
 // So it must be a short name ("1", "23").
@@ -88,23 +96,23 @@ sprintf (name1, "E%dM%d", n / 10, n % 10);
 sprintf (name2, "MAP%02d", n);
 int match1 = FindMasterDir (MasterDir, name1) != NULL;
 int match2 = FindMasterDir (MasterDir, name2) != NULL;
-if (match1 && ! match2)  // Found only ExMy
+if (match1 && ! match2)		// Found only ExMy
    {
    free (name2);
    return name1;
    }
-else if (match2 && ! match1)  // Found only MAPxy
+else if (match2 && ! match1)	// Found only MAPxy
    {
    free (name1);
    return name2;
    }
-else if (match1 && match2)  // Found both
+else if (match1 && match2)	// Found both
    {
    free (name1);
    free (name2);
    return error_non_unique;
    }
-else  // Found none
+else				// Found none
    {
    free (name1);
    free (name2);
