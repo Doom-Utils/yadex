@@ -105,7 +105,7 @@ const char *Menu_data_ldt::operator[] (size_t n) const
  *	Prototypes of private functions
  */
 static char *GetTaggedLineDefFlag (int linedefnum, int flagndx);
-static int InputLinedefType (int x0, int y0, int *number);
+int InputLinedefType (int x0, int y0, int *number);
 static const char *PrintLdtgroup (void *ptr);
 
 
@@ -475,7 +475,7 @@ static char *GetTaggedLineDefFlag (int linedefnum, int flagndx)
  *	Let the user select a linedef type number and return it.
  *	Returns 0 if OK, <>0 if cancelled
  */
-static int InputLinedefType (int x0, int y0, int *number)
+int InputLinedefType (int x0, int y0, int *number)
 {
   int         r;
   int         ldtgno = 0;

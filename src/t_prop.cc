@@ -39,13 +39,12 @@ Place, Suite 330, Boston, MA 02111-1307, USA.
 #include "selectn.h"
 #include "things.h"
 
-
 /*
  *	Private functions prototypes
  */
-static int InputThingType (int x0, int y0, int *number);
 static const char *PrintThinggroup (void *ptr);
 static const char *PrintThingdef (void *ptr);
+int InputThingType (int x0, int y0, int *number);
 
 
 /*
@@ -250,7 +249,7 @@ switch (val)
  *	Let the user select a thing number and return it.
  *	Returns 0 if OK, <>0 if cancelled
  */
-static int InputThingType (int x0, int y0, int *number)
+int InputThingType (int x0, int y0, int *number)
 {
 int         r;
 int         tgno = 0;

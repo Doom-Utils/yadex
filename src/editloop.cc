@@ -343,6 +343,7 @@ e.mb_menu[MBM_SEARCH] = new Menu (NULL,
    "~Next object",       'n',   0,
    "~Prev object",       'p',   0,
    "~Jump to object...", 'j',   0,
+   "~Find by type",	 'f',	0,
    NULL);
 
 e.mb_menu[MBM_MISC_L] = new Menu ("Misc. operations",
@@ -1835,6 +1836,56 @@ cancel_save_as:
 	 RedrawMap = 1;
 	 }
 
+      // [f]: find object by type
+      else if (is.key == 'f' && (! e.global || e.highlighted ())) 
+	 {
+	 Objid find_obj;
+	 int otype;
+	 obj_no_t omax,onum;
+	 find_obj.type = e.highlighted () ? e.highlighted.type : e.obj_type;
+	 onum = find_obj.num  = e.highlighted () ? e.highlighted.num  : 0;
+	 omax = GetMaxObjectNum(find_obj.type);
+         switch (find_obj.type)
+            {
+	    case OBJ_SECTORS:
+               if ( ! InputSectorType( 84, 21, &otype))
+		  {
+	          for (onum = e.highlighted () ? onum + 1 : onum; onum <= omax; onum++)
+	             if (Sectors[onum].special == (wad_stype_t) otype)
+			{
+		        find_obj.num = onum;
+	                GoToObject(find_obj);
+		        break;
+		        }
+		  }
+	    break;
+	    case OBJ_THINGS:
+	       if ( ! InputThingType( 42, 21, &otype))
+	 	  {
+                  for (onum = e.highlighted () ? onum + 1 : onum; onum <= omax; onum++)
+	             if (Things[onum].type == (wad_ttype_t) otype)
+                        {
+		        find_obj.num = onum;
+	                GoToObject(find_obj);
+		        break;
+		        }
+		  }
+	    break;
+	    case OBJ_LINEDEFS:
+	       if ( ! InputLinedefType( 0, 21, &otype))
+		  {
+	          for (onum = e.highlighted () ? onum + 1 : onum; onum <= omax; onum++)
+		     if (LineDefs[onum].type == (wad_ldtype_t) otype)
+			{
+		        find_obj.num = onum;
+	                GoToObject(find_obj);
+			break;
+		        }
+		  }
+	    break;
+	    }
+         RedrawMap = 1;
+         }
 #if 0
       // [c]: clear selection and redraw the map
       else if (is.key == 'c')
