@@ -1,8 +1,9 @@
-# Yadex game definition file version 3
+# Yadex game definition file version 4
 #
 #	doompr.ygd
-#	Yadex Game Definitions for the Doom press release pre-beta
+#	Yadex Game Definitions for Doom press release pre-beta
 #	(ftp://ftp.cdrom.com/pub/idgames/historic/doomprbt.zip)
+#	See doc/ygd.html for the specs.
 #	AYM 1999-07-09
 #
 
@@ -12,6 +13,7 @@
 level_format    doom
 level_name      e1m1
 picture_format  pr
+sky_flat        f_sky1
 texture_format  normal
 texture_lumps   normal
 
@@ -232,7 +234,8 @@ thinggroup s rgb:0/b/d "Special"
 #
 #	Definition of things
 #	Format is :
-#	thing <number> <thinggroup> <flags> <radius> <descr> [<sprite>]
+#	thing <number> <thinggroup> <flags> <radius> <desc> [<sprite>]
+#	<desc> must not exceed 19 characters.
 #
 
 thing 2007 a -  20 "Clip"			CLIP

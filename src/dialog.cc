@@ -38,7 +38,7 @@ Place, Suite 330, Boston, MA 02111-1307, USA.
    ask for confirmation (prompt2 may be NULL)
    Returns zero for "no", non-zero for "yes".
 */
-Bool Confirm (int x0, int y0, const char *prompt1, const char *prompt2)
+bool Confirm (int x0, int y0, const char *prompt1, const char *prompt2)
 {
 const char *const prompt3 = "Press [Y] to confirm, [N] to cancel...";
 size_t maxlen;
@@ -51,7 +51,7 @@ int x1;
 int text_y0;
 int text_y1;
 int y1;
-int rc;
+bool rc;
 
 maxlen = strlen (prompt3);
 if (strlen (prompt1) > maxlen)
@@ -87,12 +87,12 @@ for (bool first_time = true; ; first_time = false)
    get_input_status ();
    if (is.key == 'y' || is.key == 'Y' || is.key == YK_RETURN)
       {
-      rc = 1;
+      rc = true;
       break;
       }
    if (is.key == 'n' || is.key == 'N' || is.key == YK_ESC)
       {
-      rc = 0;
+      rc = false;
       break;
       }
    }

@@ -41,7 +41,7 @@ static void SliceLinedef (int linedefno, int times);
    flip one or several LineDefs
 */
 
-void FlipLineDefs ( SelPtr obj, Bool swapvertices) /* SWAP! */
+void FlipLineDefs ( SelPtr obj, bool swapvertices) /* SWAP! */
 {
 SelPtr cur;
 int    tmp;

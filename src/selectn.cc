@@ -37,14 +37,14 @@ Place, Suite 330, Boston, MA 02111-1307, USA.
    test if an object is in the selection list
 */
 
-Bool IsSelected (SelPtr list, int objnum)
+bool IsSelected (SelPtr list, int objnum)
 {
 SelPtr cur;
 
 for (cur = list; cur; cur = cur->next)
    if (cur->objnum == objnum)
-      return 1;
-return 0;
+      return true;
+return false;
 }
 
 

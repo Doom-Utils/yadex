@@ -36,6 +36,20 @@ Place, Suite 330, Boston, MA 02111-1307, USA.
 
 
 /*
+ *	bv_vertices_of_sector
+ *	Return a bit vector of all vertices used by a sector.
+ *	It's up to the caller to delete the bit vector after use.
+ */
+bitvec_c *bv_vertices_of_sector (obj_no_t s)
+{
+bitvec_c *linedefs = linedefs_of_sector (s);
+bitvec_c *vertices = bv_vertices_of_linedefs (linedefs);
+delete linedefs;
+return vertices;
+}
+
+
+/*
  *	bv_vertices_of_sectors
  *	Return a bit vector of all vertices used by the sectors.
  *	It's up to the caller to delete the bit vector after use.

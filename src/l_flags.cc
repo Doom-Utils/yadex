@@ -59,9 +59,10 @@ for (cur = list; cur; cur = cur->next)
    else
       {
       nf_bug ("frob_linedef_flags: op=%02X", op);
-      break;
+      return;
       }
    }
+MadeChanges = 1;
 }
 
 

@@ -227,6 +227,51 @@ switch (ev.type)
       is.time = ev.xmotion.time;
       is.x    = ev.xmotion.x;
       is.y    = ev.xmotion.y;
+#ifdef DEBUG
+      {
+	static bool first_time = true;
+	static int dxmin = INT_MAX;
+	static int dxmax = INT_MIN;
+	static int dymin = INT_MAX;
+	static int dymax = INT_MIN;
+	static int prevx = 0;
+	static int prevy = 0;
+	bool change = false;
+	if (! first_time)
+	{
+	  int dx = prevx - ev.xmotion.x;
+	  int dy = prevy - ev.xmotion.y;
+
+	  if (dx < dxmin)
+	  {
+	    dxmin = dx;
+	    change = true;
+	  }
+	  if (dx > dxmax)
+	  {
+	    dxmax = dx;
+	    change = true;
+	  }
+	  if (dy < dymin)
+	  {
+	    dymin = dy;
+	    change = true;
+	  }
+	  if (dy > dymax)
+	  {
+	    dymax = dy;
+	    change = true;
+	  }
+	}
+	prevx = ev.xmotion.x;
+	prevy = ev.xmotion.y;
+	first_time = false;
+	if (change)
+	  printf ("Mouse: xmin=%d, xmax=%d, ymin=%d, ymax=%d\n",
+	    dxmin, dxmax, dymin, dymax);
+      }
+#endif
+      // DEBUG
       break;
 
    /* Mouse buttons */

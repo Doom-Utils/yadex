@@ -51,6 +51,7 @@ Place, Suite 330, Boston, MA 02111-1307, USA.
 #include "help2.h"
 #include "l_flags.h"
 #include "levels.h"
+#include "lists.h"
 #include "menubar.h"
 #include "menu.h"
 #include "modpopup.h"
@@ -73,7 +74,10 @@ Place, Suite 330, Boston, MA 02111-1307, USA.
 
 
 
-extern Bool InfoShown;		/* should we display the info bar? */
+static int zoom_fit (edit_t&);
+
+
+extern bool InfoShown;		/* should we display the info bar? */
 #if defined Y_BGI && defined CIRRUS_PATCH
 extern char HWCursor[];		/* Cirrus hardware cursor data */
 #endif /* Y_BGI && CIRRUS_PATCH */
@@ -197,50 +201,62 @@ void EditorLoop (const char *levelname) /* SWAP! */
 edit_t e;
 /* FIXME : all these variables should be moved to edit_t : */
 int    RedrawMap;
-Bool   DragObject = 0;
+bool   DragObject = false;
 int    oldbuttons;
 
-Bool   StretchSelBox = 0;
+bool   StretchSelBox = false;  // FIXME apparently not used anymore...
 
 int object = OBJ_NO_NONE;  /* The object under the pointer */
 
 memset (&e, 0, sizeof e);	/* Catch-all */
-e.move_speed         = 20;
-e.extra_zoom         = 0;
+e.move_speed          = 20;
+e.extra_zoom          = 0;
 // If you change this, don't forget to change
 // the initialisation of the menu bar below.
-e.obj_type           = OBJ_THINGS;
-e.tool               = TOOL_NORMAL;
-e.grid_step          = 128;
-e.grid_step_min      = GridMin;
-e.grid_step_max      = GridMax;
-e.grid_step_locked   = 0;
-e.grid_shown         = 1;
-e.grid_snap          = 1;
-e.infobar_shown      = InfoShown;
-e.show_object_numbers= 0;
-e.rulers_shown       = 0;
-e.click_obj_no       = OBJ_NO_NONE;
-e.click_obj_type     = -1;
-e.click_ctrl         = 0;
-e.highlight_obj_no   = OBJ_NO_NONE;
-e.highlight_obj_type = -1;
-e.Selected           = 0;
-e.selbox             = new selbox_c;
-e.edisplay           = new edisplay_c (&e);
-e.menubar            = new menubar_c;
-e.spot               = new spot_c;
-e.modpopup           = new modpopup_c;
-e.modal              = '\0';
+e.obj_type            = OBJ_THINGS;
+e.tool                = TOOL_NORMAL;
+e.grid_step           = 128;
+e.grid_step_min       = GridMin;
+e.grid_step_max       = GridMax;
+e.grid_step_locked    = 0;
+e.grid_shown          = 1;
+e.grid_snap           = 1;
+e.infobar_shown       = InfoShown;
+e.show_object_numbers = false;
+e.show_things_squares = false;
+e.show_things_sprites = true;
+e.rulers_shown        = 0;
+e.click_obj_no        = OBJ_NO_NONE;
+e.click_obj_type      = -1;
+e.click_ctrl          = 0;
+e.highlight_obj_no    = OBJ_NO_NONE;
+e.highlight_obj_type  = -1;
+e.Selected            = 0;
+e.selbox              = new selbox_c;
+e.edisplay            = new edisplay_c (&e);
+e.menubar             = new menubar_c;
+e.spot                = new spot_c;
+e.modpopup            = new modpopup_c;
+e.modal               = '\0';
 
 MadeChanges = 0;
 MadeMapChanges = 0;
-if (InitialScale < 1)
-   InitialScale = 1;
-else if (InitialScale > 20)
-   InitialScale = 20;
-edit_set_zoom (&e, 1.0 / InitialScale);
-CenterMapAroundCoords ((MapMinX + MapMaxX) / 2, (MapMinY + MapMaxY) / 2);
+
+// Sane defaults
+Scale = 1.0;
+OrigX = 0;
+OrigY = 0;
+
+if (zoom_default == 0)
+   {
+   zoom_fit (e);
+   }
+else
+   {
+   int r = edit_set_zoom (&e, zoom_default / 100.0);
+   if (r == 0)
+      CenterMapAroundCoords ((MapMinX + MapMaxX) / 2, (MapMinY + MapMaxY) / 2);
+   }
 if (UseMouse)
    {
    ResetMouseLimits ();
@@ -256,7 +272,7 @@ if (UseMouse)
    oldbuttons = 0;
    }
 else
-  FakeCursor = 1;
+  FakeCursor = true;
 
 /* Create the menu bar */
 {
@@ -275,21 +291,27 @@ e.mb_menu[MBM_EDIT] = new menu_c (NULL,
    "Delete object(s)",        0, YK_DEL, 0,
    "Exchange object numbers", 0, 24,     0,
    "Preferences",             0, YK_F5,  0,
+   "Snap to grid",            0, 'y',    MEN_TICK, !! e.grid_snap,
+   "Lock grid step",          0, 'z',    MEN_TICK, !! e.grid_step_locked,
    NULL);
 
 // If you change the order of modes here, don't forget
 // to modify the <modes> array.
 e.mb_menu[MBM_VIEW] = new menu_c (NULL,
-   "Things",              0, 't',        MEN_TICK, e.obj_type==OBJ_THINGS,
-   "Linedefs & sidedefs", 0, 'l',        MEN_TICK, e.obj_type==OBJ_LINEDEFS,
-   "Vertices",            0, 'v',        MEN_TICK, e.obj_type==OBJ_VERTICES,
-   "Sectors",             0, 's',        MEN_TICK, e.obj_type==OBJ_SECTORS,
-   "Next mode",           0, YK_TAB,     0,
-   "Prev mode",           0, YK_BACKTAB, 0,
-   "Zoom in",             5, '+',        0,
-   "Zoom out",            5, '-',        0,
-   "Extra zoom",          6, ' ',        MEN_TICK, !! e.extra_zoom,
-// "3D preview",          0, '3',        MEN_GRAY,
+   "Things",               0, 't',        MEN_TICK, e.obj_type==OBJ_THINGS,
+   "Linedefs & sidedefs",  0, 'l',        MEN_TICK, e.obj_type==OBJ_LINEDEFS,
+   "Vertices",             0, 'v',        MEN_TICK, e.obj_type==OBJ_VERTICES,
+   "Sectors",              0, 's',        MEN_TICK, e.obj_type==OBJ_SECTORS,
+   "Next mode",            0, YK_TAB,     0,
+   "Prev mode",            0, YK_BACKTAB, 0,
+   "Zoom in",              5, '+',        0,
+   "Zoom out",             5, '-',        0,
+   "Extra zoom",           6, ' ',        MEN_TICK, !! e.extra_zoom,
+   "Whole level",          0, '`',        0,
+   "Show object numbers", -1, '&',        MEN_TICK, !! e.show_object_numbers,
+   "Show sprites",        -1, '%',        MEN_TICK, !! e.show_things_sprites,
+   "Show grid",            5, 'h',        MEN_TICK, !! e.grid_shown,
+// "3D preview",           0, '3',        MEN_GRAY,
    NULL);
 
 e.mb_menu[MBM_SEARCH] = new menu_c (NULL,
@@ -333,6 +355,7 @@ e.mb_menu[MBM_MISC_S] = new menu_c ("Misc. operations",
    "Unlink room",			 0, -1, 0,
    "Mirror horizontally",		 0, -1, 0,
    "Mirror vertically",			 0, -1, 0,
+   "Swap flats",			 0, -1, 0,
    NULL);
 
 e.mb_menu[MBM_MISC_T] = new menu_c ("Misc. operations",
@@ -552,8 +575,8 @@ for (RedrawMap = 1; ; RedrawMap = 0)
 		  UnSelectObject (&e.Selected, e.highlight_obj_no);
 	       }
 	    e.highlight_obj_no = OBJ_NO_NONE;
-	    DragObject = 0;
-	    StretchSelBox = 0;
+	    DragObject = false;
+	    StretchSelBox = false;
 	    RedrawMap = 1;
 	    }
 	 else if (menu_no == e.mb_ino[MBI_OBJECTS])
@@ -568,8 +591,8 @@ for (RedrawMap = 1; ; RedrawMap = 0)
 	       for (int i = savednum; i < NumLineDefs; i++)
 		  SelectObject (&e.Selected, i);
 	       e.highlight_obj_no = OBJ_NO_NONE;
-	       DragObject = 0;
-	       StretchSelBox = 0;
+	       DragObject = false;
+	       StretchSelBox = false;
 	       }
 	    RedrawMap = 1;
             }
@@ -637,8 +660,8 @@ for (RedrawMap = 1; ; RedrawMap = 0)
 	       UnSelectObject (&e.Selected, e.highlight_obj_no);
 	    }
 	 e.highlight_obj_no = OBJ_NO_NONE;
-	 DragObject = 0;
-	 StretchSelBox = 0;
+	 DragObject = false;
+	 StretchSelBox = false;
 	 goto done2;
 	 }
       }
@@ -683,8 +706,8 @@ for (RedrawMap = 1; ; RedrawMap = 0)
 	    for (int i = savednum; i < NumLineDefs; i++)
 	       SelectObject (&e.Selected, i);
 	    e.highlight_obj_no = OBJ_NO_NONE;
-	    DragObject = 0;
-	    StretchSelBox = 0;
+	    DragObject = false;
+	    StretchSelBox = false;
 	    }
          goto done2;
 	 }
@@ -1107,15 +1130,15 @@ for (RedrawMap = 1; ; RedrawMap = 0)
       else if (is.key == YK_ESC || is.key == 'q')
          {
 	 if (DragObject)
-	    DragObject = 0;
+	    DragObject = false;
 	 else if (StretchSelBox)
-	    StretchSelBox = 0;
+	    StretchSelBox = false;
 	 else
 	    {
 	    ForgetSelection (&e.Selected);
 	    if (!MadeChanges
 	     || Confirm (-1, -1, "You have unsaved changes."
-				"  Do you really want to quit?", 0))
+				" Do you really want to quit?", 0))
 	       break;
 	    RedrawMap = 1;
 	    }
@@ -1331,27 +1354,31 @@ cancel_save_as:
       // [+], [=], wheel: zooming in
       else if (is.key == '+' || is.key == '=' || is.key == YE_WHEEL_UP)
          {
-         edit_zoom_in (&e);
-	 RedrawMap = 1;
+         int r = edit_zoom_in (&e);
+	 if (r == 0)
+	   RedrawMap = 1;
          }
 
       // [-], [_], wheel: zooming out
       else if (is.key == '-' || is.key == '_' || is.key == YE_WHEEL_DOWN)
          {
-         edit_zoom_out (&e);
-	 RedrawMap = 1;
+         int r = edit_zoom_out (&e);
+	 if (r == 0)
+	   RedrawMap = 1;
          }
 
       // [0], [1], ... [9]: set the zoom factor
       else if (is.key >= '0' && is.key <= '9')
          {
-         edit_set_zoom (&e, is.key == '0' ? 0.1 : 1.0 / dectoi (is.key));
-	 RedrawMap = 1;
+         int r = edit_set_zoom (&e, is.key == '0' ? 0.1 : 1.0 / dectoi(is.key));
+	 if (r == 0)
+	   RedrawMap = 1;
          }
 
       // [']: centre window on centre of map
       else if (is.key == '\'')
          {
+	 update_level_bounds ();
          CenterMapAroundCoords ((MapMinX + MapMaxX) / 2,
             (MapMinY + MapMaxY) / 2);
          RedrawMap = 1;
@@ -1361,20 +1388,9 @@ cancel_save_as:
       // and set zoom to view the entire map
       else if (is.key == '`')
          {
-         double xzoom;
-         if (MapMaxX - MapMinX)
-            xzoom = .95 * ScrMaxX / (MapMaxX - MapMinX);
-         else
-            xzoom = 1;
-         double yzoom;
-         if (MapMaxY - MapMinY)
-            yzoom = .9 * ScrMaxY / (MapMaxY - MapMinY);
-         else
-            yzoom = 1;
-         edit_set_zoom (&e, y_min (xzoom, yzoom));
-         CenterMapAroundCoords ((MapMinX + MapMaxX) / 2,
-            (MapMinY + MapMaxY) / 2);
-         RedrawMap = 1;
+	 int r = zoom_fit (e);
+	 if (r == 0)
+	   RedrawMap = 1;
          }
 
 #if 0
@@ -1616,8 +1632,8 @@ cancel_save_as:
 	    e.highlight_obj_no = OBJ_NO_NONE;
          e.highlight_obj_type = e.obj_type;
 
-	 DragObject = 0;
-	 StretchSelBox = 0;
+	 DragObject = false;
+	 StretchSelBox = false;
 	 RedrawMap = 1;
 	 }
 
@@ -1683,6 +1699,7 @@ cancel_save_as:
       else if (is.key == 'h')
 	 {
 	 e.grid_shown = ! e.grid_shown;
+         e.mb_menu[MBM_VIEW]->set_ticked (11, e.grid_shown);
 	 RedrawMap = 1;
 	 }
 
@@ -1697,12 +1714,14 @@ cancel_save_as:
       else if (is.key == 'y')
          {
          e.grid_snap = ! e.grid_snap;
+         e.mb_menu[MBM_EDIT]->set_ticked (5, e.grid_snap);
          }
 
       // [z]: toggle the lock_grip_step flag
       else if (is.key == 'z')
          {
          e.grid_step_locked = ! e.grid_step_locked;
+         e.mb_menu[MBM_EDIT]->set_ticked (6, e.grid_step_locked);
          }
  
       // [r]: toggle the rulers
@@ -1753,8 +1772,8 @@ cancel_save_as:
 	 {
 	 ForgetSelection (&e.Selected);
 	 RedrawMap = 1;
-	 DragObject = 0;
-	 StretchSelBox = 0;
+	 DragObject = false;
+	 StretchSelBox = false;
 	 }
 #endif
 
@@ -1769,7 +1788,7 @@ cancel_save_as:
 	    SelectObject (&e.Selected, e.highlight_obj_no);
 	 CopyObjects (e.obj_type, e.Selected);
 	 /* enter drag mode */
-	 //DragObject = 1;
+	 //DragObject = true;
          /* AYM 19980619 : got to look into this!! */
 	 //e.highlight_obj_no = e.Selected->objnum;
 
@@ -1784,7 +1803,7 @@ cancel_save_as:
          MoveObjectsToCoords (e.obj_type, e.Selected,
             e.pointer_x, e.pointer_y, 0);
 	 RedrawMap = 1;
-	 StretchSelBox = 0;
+	 StretchSelBox = false;
 	 }
 
       // [Return]: edit the properties of the current object.
@@ -1800,8 +1819,8 @@ cancel_save_as:
 	    UnSelectObject (&e.Selected, e.highlight_obj_no);
 	    }
 	 RedrawMap = 1;
-	 DragObject = 0;
-	 StretchSelBox = 0;
+	 DragObject = false;
+	 StretchSelBox = false;
 	 }
 
       // [w]: spin things 1/8 turn counter-clockwise
@@ -1819,8 +1838,8 @@ cancel_save_as:
 	    spin_things (e.Selected, 45);
 	    }
 	 RedrawMap = 1;  /* FIXME: should redraw only the things */
-	 DragObject = 0;
-	 StretchSelBox = 0;
+	 DragObject = false;
+	 StretchSelBox = false;
 	 }
 
       // [w]: split linedefs and sectors
@@ -1830,8 +1849,8 @@ cancel_save_as:
          SplitLineDefsAndSector (e.Selected->next->objnum, e.Selected->objnum);
          ForgetSelection (&e.Selected);
          RedrawMap = 1;
-         DragObject = 0;
-         StretchSelBox = 0;
+         DragObject = false;
+         StretchSelBox = false;
          }
 
       // [x]: spin things 1/8 turn clockwise
@@ -1849,8 +1868,8 @@ cancel_save_as:
 	    spin_things (e.Selected, -45);
 	    }
 	 RedrawMap = 1;  /* FIXME: should redraw only the things */
-	 DragObject = 0;
-	 StretchSelBox = 0;
+	 DragObject = false;
+	 StretchSelBox = false;
 	 }
 
       // [x]: split linedefs
@@ -1866,8 +1885,8 @@ cancel_save_as:
          else
             SplitLineDefs (e.Selected);
          RedrawMap = 1;
-         DragObject = 0;
-         StretchSelBox = 0;
+         DragObject = false;
+         StretchSelBox = false;
          }
 
       // [Ctrl][x]: exchange objects numbers
@@ -1911,8 +1930,8 @@ cancel_save_as:
          // (though it doesn't fix the problem : if the object has been
          // deleted, HighlightObject is still called with a bad object#).
          e.highlight_obj_no = OBJ_NO_NONE;
-	 DragObject = 0;
-	 StretchSelBox = 0;
+	 DragObject = false;
+	 StretchSelBox = false;
 	 RedrawMap = 1;
 	 }
 
@@ -2099,8 +2118,8 @@ cancel_save_as:
 	       e.mb_menu[modes[new_mode].menu_no]);
 	    }
 
-	 DragObject = 0;
-	 StretchSelBox = 0;
+	 DragObject = false;
+	 StretchSelBox = false;
 	 RedrawMap = 1;
 	 }
 
@@ -2178,9 +2197,19 @@ cancel_save_as:
       // [&] Show object numbers
       else if (is.key == '&')
          {
-         RedrawMap = 1;
          e.show_object_numbers = ! e.show_object_numbers;
+         e.mb_menu[MBM_VIEW]->set_ticked (9, e.show_object_numbers);
+         RedrawMap = 1;
          }
+
+      // [%] Show things sprites
+      else if (is.key == '%')
+	 {
+	 e.show_things_sprites = ! e.show_things_sprites;
+	 e.show_things_squares = ! e.show_things_sprites;  // Not a typo !
+         e.mb_menu[MBM_VIEW]->set_ticked (10, e.show_things_sprites);
+	 RedrawMap = 1;
+	 }
 
       /* user likes music */
       else if (is.key)
@@ -2299,6 +2328,36 @@ for (size_t n = 0; n < MBM_HELP; n++)
 
 delete menu_linedef_flags;
 delete menu_thing_flags;
+}
+
+
+/*
+ *	zoom_fit - adjust zoom factor to make level fit in window
+ *
+ *	Return 0 on success, non-zero on failure.
+ */
+static int zoom_fit (edit_t& e)
+{
+  // Empty level, 100% will be fine.
+  if (NumVertices == 0)
+    return edit_set_zoom (&e, 1.0);
+
+  update_level_bounds ();
+  double xzoom;
+  if (MapMaxX - MapMinX)
+     xzoom = .95 * ScrMaxX / (MapMaxX - MapMinX);
+  else
+     xzoom = 1;
+  double yzoom;
+  if (MapMaxY - MapMinY)
+     yzoom = .9 * ScrMaxY / (MapMaxY - MapMinY);
+  else
+     yzoom = 1;
+  int r = edit_set_zoom (&e, y_min (xzoom, yzoom));
+  if (r != 0)
+    return 1;
+  CenterMapAroundCoords ((MapMinX + MapMaxX) / 2, (MapMinY + MapMaxY) / 2);
+  return 0;
 }
 
 

@@ -6,22 +6,31 @@ TO-DO LIST FOR YADEX
 
 
 General
-- Better support for changing of configuration variables from the
-  editor.
 - Automatically adapt to level to edit; if it's a Doom level (ExMy),
   reread doom.wad, if it's a Doom II level (MAPnn), reread doom2.wad.
   what if it's a Heretic level ? It must be possible to tell a Heretic
   level by the special sector & thing types.
-- DOS: do more modules splitting (deu.c, ReadConfigFile, menus.c). In
-  gfx.c, move InitGfx() in a separate module.
-- DOS: be able to handle large levels.
-- DOS: switch to DJGPP
-- DOS: dig *.wad...
-- DOS: maybe compress the sidedef struct (30 B -> 12 B).
-- DOS: try to waste less space with in-core image of wad directories.
-- DOS: respect screen ;
-  - restore contents
-  - restore proper number of lines/columns
+
+Command line
+- Add option -e like in sed and Perl. Auto quit at end or not ?
+- Add option -f like in sed ?
+
+Configuration file
+- Add operator ".=" (E.G. "iwad_dir .= ,/foo/bar"). Perhaps implement
+  real lists. Perhaps not.
+
+Variables
+- Make variables objects instead of C++ variables. It should not be
+  necessary to recompile everything each time you want to add a
+  variable. Still be able to generate a list of all known variables...
+- Better support for changing of configuration variables from the
+  editor.
+- Add a way to set variables from the command line ("-sname=value" or
+  something like that).
+- Setting options: add a "set name value" prompt command.
+- Setting options: make "set" stop after each screenful.
+- Setting options: modify the "Preferences" menu so that all options can
+  be changed from there and modifications are saved.
 
 Game definitions
 - Move thing groups colour from .ygd to .cfg.
@@ -39,29 +48,59 @@ Game definitions
   the screen. DisplayMenu() should fix the y-offset if necessary.
 - It is possible to define the same group twice or use a non existing
   group.
-- LoadGameDefs : try to waste less memory if possible.
-- LoadGameDefs : at present, FreeGameDefs does NOT unallocate what
-  LoadGameDefs allocated.
-- YGD: enter two iwad names for the same game (E.G. doom.wad and
-  doom1.wad).
-- YGD: add list of animated flats and textures
-- YGD: add sprite names for things [partly done]
-- YGD: add player height
-- YGD: add flat width and height
-- YGD: add min and max player and deathmatch starts
-- YGD: an attempt to define twice the same thing/linedef/sector type
-  should be detected and reported.
-- Thing name: "Radiation shielding suit" is too long for the window.
+- LoadGameDefs: try to waste less memory if possible.
 - FreeGameDefs(): apparently does not unallocate everything. It's
   immaterial since it's only called just before exiting but I'll have to
   fix it one day.
-- heretic.ygd: some things radius must be wrong (gargoyles and
-  molotaurs)
-- Hexen: generate the "thing" directives by either parsing info.c or
-  ripping off the one in DETH.
-- YGD: add default level names.
-- YGD: Gadget: add level names (E.G. "E1M1" -> "Hangar").
-- YGD: names of sky flats (for Strife : F_SKY001)
+- Enter two iwad names for the same game (E.G. doom.wad and doom1.wad).
+- Add list of animated flats and textures.
+- Add "height" and "is_obstacle" fields to things definitions.
+- Add flat width and height.
+- Add min and max player and deathmatch starts.
+- Add default level names.
+- Move the definition of special sector tags out of the exe and into the
+  ygd files.
+- Gadget: add level names (E.G. "E1M1" -> "Hangar").
+- An attempt to define twice the same thing/linedef/sector type
+  should be detected and reported.
+- The basename need not be in the configuration file; it should be in
+  the ygd (E.G. iwad_base = "doom.wad,doom1.wad")
+- The .ygd collection has grown so large that it has become difficult to
+  maintain. For example, changes made to strife.ygd must be propagated
+  to strife10.ygd by hand. There is a lot of duplication : the 150 kB of
+  game definition data boil down to 30 kB after piping into sort | uniq.
+  I would like to implement an include directive and reorganize
+  accordingly :
+    _boom.ygd     in Boom but not in Doom*
+    _doom.ygd     in all versions of Doom >= 1.0
+    _doom16.ygd   in Doom 1.666 and above (linedef types)
+    _doom2.ygd    in Doom II (things)
+    _heretic.ygd  in Heretic only (things, sector types)
+    _mbf.ygd      in MBF but not in Boom
+    _strife.ygd   in all versions of Strife
+    _tgroups.ygd  all things groups ?
+    _zdoom.ygd    in ZDoom but not in Boom
+    doom.ygd      include _doom; include _doom16
+    doom04.ygd    ?
+    doom04.ygd    ?
+    doompr.ygd    ?
+    doom2.ygd     include _doom; include _doom16; include _doom2
+    hacx.ygd      ??
+    heretic.ygd   include _doom; include _doom16/_doom2 (?); include _heretic
+    hexen.ygd     no change
+    plutonia.ygd  include doom2: iwad_base plutonia.wad [solves Colin's pb]
+    strife.ygd    include _strife; texture_format strife11
+    strife10.ygd  include _strife; texture_format normal
+    tnt.ygd       include doom2: iwad_base tnt.wad [solves Colin's pb]
+  The rules for locating of relative includes :
+    1. search the current directory,
+    2. search the directory where the parent ygd file is,
+    3. search the standard directories.
+  If an include has a bad magic, don't abort, just keep searching for
+  one that has the appropriate magic (but warn). If an include was not
+  found just print a warning and continue ?
+- Allow overriding of a previous linedef type / thing type / sector type
+  definition (currently it just *adds*).
 
 Game and wad support
 - Some wads have sidedefs with a sector# of -1. Apparently, those are
@@ -77,46 +116,10 @@ Game and wad support
   phobos, 2wad/dks_e1l1, 2wad/dks_e1l3, amanda2 (no tail !), atica,
   badblu35, dmdv (tail 76% unused 45/469), drdeath (unused 69/1382),
   spit e1m2 unused 661/816 tail 0
-- Handle sprites between SS_START and S_END/SS_END (cf. basilica.wad,
-  alitcsf.wad, strifed1.wad) properly. The problem is that
-  FindMasterDir() searches the master directory from beginning to end,
-  while Doom does the reverse. Therefore, replacement entries never
-  replace old entries, except when OpenPatchWad() has explicitly
-  replaced them, which does not occur for lumps framed by *_START/*_END
-  labels. The problem is not visible for flats because
-  ReadFTextureNames() explicitly merges and sorts all the
-  F*_START/F*_END sequences.  It's a mess. There are several approaches
-  to fix that :
-  - (1) Don't try to replace anything, just read the directory from the
-    end like Doom does.
-  - (2) Fix OpenPatchWad() to replace patch and sprite lumps where
-    appropriate.
-  - (3) Create ReadSpriteNames() and ReadPatchNames() and use the tables
-    they generate instead of searching the master directory.  There are
-    some drawbacks to (1). Directory lookups are long (E.G. 1936 flats
-    for eternall.wad). When loading a pwad that replaces lots of
-    resources, you waste memory by having every entry duplicated. Also,
-    I'm skeptical about that way of doing because we know it does not
-    work too well with sprites.
+- Perhaps it would make sense to forget the directory completely when
+  it's not needed ? Each entry takes 16+4+4 = 24 bytes. Here are the
+  number of entries in the iwads' directories :
 
-  I'm not sure about how to do (2). I suspect that the right thing is to
-  replace anything that has the same name. That is, there is only one
-  namespace in a wad directory. The long lookups problem remains.
-
-  Method (3) has the inconvenient of wasting even more memory than (1).
-  But it allows us to sort the entries and eliminate the duplicates.
-  Since it can effectively merge several blocks into one, it makes the
-  downstream code independant of *_START/*_END considerations, which is
-  a Good Thing.
-
-  One important criterion for me is that the chosen approach makes it
-  easy to switch iwads without quitting Yadex and to freely add or
-  remove pwads.
-
-  Perhaps it would make more sense to forget the directory completely
-  when it's not needed ? Each entry takes 16+4+4 = 24 bytes. Here are
-  the number of entries in the iwads' directories :
-  
   Iwad     Total entries  Level entries
   Doom     2306  54 kB    36  9 kB
   Doom II  2956  69 kB    32  8 kB
@@ -124,7 +127,6 @@ Game and wad support
   Hexen    4249  99 kB    32  9 kB
 
   That's a lot. When do we use the directory ?
-  - During an editing session, to display the sprites.
   - During an editing session, to display the flats.
   - During an editing session, to display the textures (TEXTURE1,
     TEXTURE2, PNAMES, patches).
@@ -134,13 +136,14 @@ Game and wad support
   All the levels are kept in memory all the time, even though they're
   used only when saving and reading. The sounds, musics and graphics are
   never unused (about 450 entries = 10 kB).
-
 - The message "Use F_END instead" should be displayed only once, when
   the pwad is loaded, not each time you open an edit window.
 - Fix OpenPatchWad() so that, if a pwad contains FF_START ... FF_END
   F_END (mm2.wad), the F_END does not replace the F_END from the iwad,
   as this causes a spurious "this wad uses FF_END" warning.
 - icarus.wad uses F_END + FF_END. Sigh.
+- Gothic2 uses F_END but not F*_START. Therefore, the custom flats don't
+  show. FMH !
 - When a pwad contains F_START F1_START ... F3_END F_END, the F_END
   replaces the one from the iwad and this causes Yadex to think all
   following lumps are flats (sod.wad).
@@ -148,12 +151,43 @@ Game and wad support
   labels, get a "No matching P_END for P_START in hacxsw.wad". Surely
   the same problem as with F_END ; OpenPatchWad() uses the P_END from
   the pwad to replace the P_END from the iwad.
+- viewpat: mm.wad and mm2.wad put patches directly in the master
+  directory, without any surrounding P_START/P_END. viewpat sees the
+  replacement patches but not the new ones of course.
+- Now that wad_read_i16() and wad_read_i32() don't abort anymore, check
+  the code that uses them.
+- Add definition for sector tag 667 (MAP07).
+- Colin wants to be able to use the Final Doom iwads without having to
+  type "yadex -iwad2 /foo/bar/tnt.wad". He suggests either (1) adding a
+  new game or (2) changing the code so that "yadex -iwad2 tnt.wad" looks
+  for tnt.wad in the iwad2 directory defined in the config file.
+- Graphics: Yadex uses no COLORMAP, instead of COLORMAP 0. In practice
+  COLORMAP 0 is very close to no COLORMAP but...
+- Be able to edit levels with silly names like "QD2" (cf. qdoomtst.wad).
+  This implies not replacing entries in the master directory anymore !
+
+Doom alpha
+- Fix wrong things definitions and add missing ones.
+- When loading a pwad with several contiguous levels, every second level
+  is discarded. See wads2.cc.
+
+Doom press release pre-beta
+- Matt says there is a separate resource file named texture2.lmp.
+
+Hexen
+- Hexen has some flats with a size of 8 kB.
+- Generate the "thing" directives by either parsing info.c or ripping
+  off the one in DETH.
+
+Heretic
 - Heretic has some flats with a size of 4160. Is this why DeuTex accepts
   64x65 flats ?
-- Hexen has some flats with a size of 8 kB.
-- Alpha: fix wrong things definitions and add missing ones.
-- Doom alpha: when loading a pwad with several contiguous levels, every
-  second level is discarded. See wads2.cc.
+
+Strife
+- Extract the radii from the exe.
+- Matt says sector tag 999 means "slam shut on alarm".
+- Matt wonders what RIFLB0 is and what's the difference with RIFLA0.
+- Incorporate what's only in the USS.
 
 Messages and reports
   The reason for emitting messages :
@@ -224,14 +258,12 @@ Old bugs to fix
 - When merging sectors, linedefs sometimes get only 1 sidedef...
 - InputInteger limits numbers to [-32749,+32749].
 - InputInteger doesn't accept hexadecimal numbers.
-- DOS: numeric keypad "." means Del even if Numlock is on.
 - If you do "delete linedef and merge sectors" when it's the same sector
   on both sides of the linedef, the sector is deleted.
 - Check that all sectors are closed : chokes on pseudo sectors (s1=s2).
   I've verified that unclosed sectors, whether single ou double sided
   don't disturb Doom. However, some look ugly. The checking function
   should be modified so that only ugly unclosed sectors are reported.
-- DOS: fake pointer: make it an arrow and not flickering (Ben Davies).
 - Create new sector from linedefs: should be smarter.
 
 Editing in general
@@ -245,7 +277,6 @@ Editing in general
 - Move object to nth next grid position in direction ...
 - Move object to nth next Grid position in direction ...
 - Flip info window on either side of the screen.
-- Toggle key to zoom in temporarily (press once -> x4, press again -> /4)
 - Gadget: show level with different orientations, i.e. with logical
   north not always being at the top. And rotate the sprite images
   accordingly.
@@ -263,16 +294,25 @@ Editing in general
   we're overflowing/underflowing the objects arrays ?
 - Bug: my tests indicate that out-of-memory conditions are badly handled
   (E.G. segfault upon switching to sector mode).
+- For very large levels, the lower limit on the zoom factor is too high
+  to allow showing the whole level.
+- Bug: for very large levels, the automatic zoom factor setting is hosed
+  (instead of using the lowest allowed zoom factor, it falls back on a
+  rather high value).
+- Bug: for very large levels (very low zoom factors), the upper limit on
+  the grid step is too restrictive.
+- Strife's MAP29 is so much to the west (-23,000 or so) that the current
+  limit to -20,000 prevents from seeing the whole map.
+- Cut and paste between wads. at least in a limited way: insert the
+  contents of a wad at the cursor. involves renumbering all items by
+  adding the number of such items already existing. E.G. if there are
+  already 50 vertices, increment the vertex numbers in all the linedefs
+  by 50. Same thing for sidedefs numbers in linedefs, sector tags (DON'T
+  increment those above 900!). increment sector# in sidedefs too. that's
+  all ?
 
 Editing things:
 - Thing info box:
-  - It's a waste of time to scan all the sprites each time; should
-    do a dichotomic search or prepare sprite names each time either
-    the game is changed or a pwad is loaded/unloaded. Better yet,
-    copy offset and length of lump to avoid a FindMasterDir().
-  - Should not match S?_START and S?_END.
-  - What if there are several S_ blocks ?
-  - Should sort the sprite names before searching.
   - Eye candy: animate the sprites.
   - Eye candy: show the sprites according to their angle.
   - Numeric thing type : make it optional. Give choice of format between
@@ -290,15 +330,29 @@ Editing things:
   be spinned.
 - Thing properties -> type : on selecting group with 0 things, fatal
   error PTD1.
-- Sprite: if only the root of the sprite name is given, shows the
-  first sprite _found_, as opposed to the first _in_alphabetical_
-  order_. In the Strife iwad, BARWB0 comes before BARWA0.
+- Maintain a list of all things on the level, sorted by increasing
+  radius. To determine which thing is under the pointer, scan that list
+  and highlight the first thing such that the pointer in inside the
+  square of half-side (scale x radius + slack). Possible refinement ; if
+  several things would be highlighted, highlight the one whose centre is
+  closest to the pointer.
+- Check Doom's behaviour w.r.t. negative angles.
+- On the map, if the thing has a root but no sprite by that root was
+  found, display the root ? (instead of the type)
+- On the map, show things according to their angles ?
+- On the map, switch between displaying the sprite, the type in decimal,
+  the type in hex, the root, etc.
+- Option to show both the sprite and the square. Or maybe the sprite and
+  a cross, à la WinDEU ?
+- Perhaps choose between sprite and square automatically depending on
+  zoom factor ?
 
 Editing vertices:
+- Change the highlighting algorithm so that it's more bearable at low
+  zoom factors.
 
 Editing linedefs and sidedefs
 - Linedef type : show long name.
-- When ceiling is F_SKY1, do not mark upper textures as missing.
 - Paint linedef with colour depending on difference of floor height...
 - Show several textures at a time ?
 - Insert window/corridor/door between sectors. exactly 2 linedefs must
@@ -323,7 +377,6 @@ Editing linedefs and sidedefs
 		   |    |                  |    |
 
   also "45° embrasure" and "fancy embrasure" (sides are L-shaped).
-
 - Nooks and bosses: add a way to specify width and depth. Maybe have
   several predefined dimensions plus user-defined dimensions (set in the
   config file). Maybe set textures automatically (EG DOORSTOP and
@@ -337,13 +390,6 @@ Editing linedefs and sidedefs
   set texture. mostly on 1st sidedef set normal texture copy lower+upper
   texture = normal texture of adjacent linedef, set lower+upper texture
   unpegged, normaltx = -
-- Cut and paste between wads. at least in a limited way: insert the
-  contents of a wad at the cursor. involves renumbering all items by
-  adding the number of such items already existing. E.G. if there are
-  already 50 vertices, increment the vertex numbers in all the linedefs
-  by 50. Same thing for sidedefs numbers in linedefs, sector tags (DON'T
-  increment those above 900!). increment sector# in sidedefs too. that's
-  all ?
 - Select all linedefs that in same path as the highlighted one.  This
   can be hairy when the same vertex is shared by more than 2 sidedefs.
   Ideas that come to mind :
@@ -390,6 +436,10 @@ Editing linedefs and sidedefs
   decimal, hexadecimal. Default format is specified by config parameter
   format_thing_type. Also have a key binding to cycle between the three.
 - Linedef tag : same thing.
+- Linedef flags : give choice between string, signed decimal, unsigned
+  decimal and hexadecimal.
+- If a linedef has a type that requires a tag but its tag is set to 0,
+  draw the linedef in red.
 
 Editing sectors
 - Set floor height to ceiling height - headroom.
@@ -413,7 +463,6 @@ Editing sectors
 	|  +----+	      +-+--+
 	|			|
 
-
 - Sector type : give choice of format between signed decimal, unsigned
   decimal, hexadecimal. Default format is specified by config parameter
   format_thing_type. Also have a key binding to cycle between the three.
@@ -424,6 +473,11 @@ Editing sectors
   regarding subsectors. [>] is not subject to this problem because then
   [Shift] is on. [If you're confused by this entry, look at the layout
   for a french PC keyboard in xkeycaps.]
+- Place the sector number correctly. Account for convex sectors
+  and fractioned sectors. Avoid sloping due to an excess of
+  vertices on one side. One strategy that comes to mind is
+  placing it at the centre of the largest area (where
+  "largeness" is a compound of "surface" and "squareness").
 
 Keyboard interface
 - Proposition: in linedef mode, <letter><letter> gives access to
@@ -445,25 +499,36 @@ Flat/sprite/texture viewer
 - Use other palettes than #0 (also when saving).
 - Use COLORMAPs (also when saving).
 - Reimplement "save image to file" with PPM, PNG and perhaps XPM.
-- Zoom.
+- Zoom and scrollbars.
 - Add binding to toggle between SW1* and SW2*, cycle through the frames
   of an animation. For Hexen, it's much more complicated (3-frame
   switches...).
 - Display number of patches (and posts, and patch list...).
 - Show several pictures at a time.
-- Texture viewer: wide textures (such as the SKY in darken2d.wad) are
-  not clipped.
-- PNAMES should probably be cached (if available memory permits).
 - Add a flag somewhere to allow choosing a flat/texture that's not in
   the list.
 - Support pictures higher than 255 and textures higher than 128.
 - If the "view" command is given a lower case argument, the positionning
   in the list of sprite names is wrong.
-- If the "view" command is given an argument that is the name of an
-  inexisting sprite, a random size is displayed.
-- When viewing patches or sprites, the entire 320x200 view window is
-  refreshed even though, in most of the cases, the picture to display is
-  much smaller than that.
+- When viewing patches or sprites, the entire view window is refreshed
+  even though, in most of the cases, the picture to display is much
+  smaller than that.
+
+DOS/BGI port
+- Do more modules splitting (deu.c, ReadConfigFile, menus.c). In
+  gfx.c, move InitGfx() in a separate module.
+- Be able to handle large levels.
+- Switch to DJGPP
+- Dig *.wad...
+- Maybe compress the sidedef struct (30 B -> 12 B).
+- Try to waste less space with in-core image of wad directories.
+- Respect screen ;
+  - restore contents
+  - restore proper number of lines/columns
+- Replace putimage() by calls to display_game_image().  Implement the
+  BGI version of display_game_image().
+- Old bug: numeric keypad "." means Del even if Numlock is on.
+- Old bug: fake pointer: make it an arrow and not flickering (Ben Davies).
 
 X11 port
 - Implement -geometry and -display.
@@ -486,12 +551,10 @@ X11 port
 - After a resize, pointer_x/y are not updated so the wrong object is
   highlighted.
 - After a resize, the map is redrawn 3 TIMES !  I know why : the window
-  manager (FVWM) send three sets of exposure events. Making drawmap()
+  manager (FVWM) sends three sets of exposure events. Making drawmap()
   and refresh in general able to do partial drawings will eliminate this
   problem. And give better performance when moving a thing, or flipping
   through the menus.
-- Replace putimage() by calls to display_game_image().  Implement the
-  BGI version of display_game_image().
 - Fonts: allow several font names in the config file. The first font
   found is used. If none is found, use the default font.
 - Fonts: be able to use variable-width fonts.
@@ -506,6 +569,22 @@ X11 port
   I've trapped it in colour4.cc :
     Warning: error freeing colour <hex number> (<cause>)
   If you can reproduce this error, mail me.
+- I've heard on comp.windows.x Mattias Engdegård say that bitmap_pad is
+  relevant. What are the constraints on it, then ?
+- Use XShm.
+- Perhaps optimize transparency :
+    pic -> img -> img(scaled) -> ximage, ximage -> pixmap, pixmap
+    pic -----------------------> ximage, ximage -> pixmap, pixmap
+- Time spent within Yadex and time spent within the X server
+- When moving sprites at large scale factor, we waste a lot of time in
+  Sprite::make_bitmap, scale_img and, above all, Sprite::make_ximage.
+  Making sprites persistent across iterations helps enormously. Do it.
+
+Prompt
+- Add access to the prompt from an editing window (":" like in vi).
+- Use readline.
+- "e" command (and possibly others): warn if too many arguments.
+- "e" command: perhaps accept "e 4 2" as synonym to "e e4m2".
 
 Misc.
 - Implement several windows at once ?
@@ -520,8 +599,6 @@ Misc.
   the same spot, when you're "in" the small thing, it should be
   highlighted, even if it's higher-numbered. At the moment, it's the
   lowest-numbered thing that's highlighted.
-- Grid: draws one line too many to the right, two lines too many to the
-  bottom and one line too few to the top. [fixed ?]
 - Externalize occurrences of ".wad".
 - Externalize occurrences of ".bak".
 - Let the selection include objects of different types.
@@ -542,9 +619,9 @@ Misc.
   way to access any one of them. Or maybe implement planes ?
 - When doing drag-n-drop, should the snap-to-grid be applied to A.
   relative position since started dragging B. or to the highlighted
-  object ?  If A, you can't use drag-n-drop to snap-to-grid objects that
-  aren't.  If B, you can't drag correctly objects that are not aligned
-  on grid.
+  object ? If A, you can't use drag-n-drop to snap-to-grid objects that
+  aren't. If B, you can't drag correctly objects that are not aligned on
+  grid.
 - Object number: the type should be "i16", not "int" (cf. SelPtr).
 - Object number: the test for "none" should not be hard-coded "< 0".
 - Browse mode, as in xv and psp, to browse through a large number of
@@ -613,7 +690,6 @@ Misc.
   them, Yadex thinks you are starting a new selection because
   is_selected (highlight) is false.
 - objects.cc: GetObjectCoords(): should use center_of_objects() instead.
-- Grid: have a choice between lines and dots
 - Permanently show a 64-wide object to scale ?
 - Right-button menus: access to many different menus (no modifier,
   [Shift], [Ctrl], [Alt], several of them).
@@ -644,17 +720,12 @@ Misc.
 - Change the way the menu_c class is defined so that it wastes less
   space. Should probably look into other classes too. Why not using
   bitvectors instead of arrays of ints used as booleans ?
-- Setting options: add a "set name value" prompt command.
-- Setting options: make "set" stop after each screenful.
-- Setting options: modify the "Preferences" menu so that all options can
-  be changed from there and modifications are saved.
 - The popup menus should get the pointer position event when there is no
   motion event. It's an issue when, to close a submenu, you click on the
   parent menu; until you move, the parent menu still highlights the old
   line.
 - Object info box: if the box is already drawn, don't draw it again; it
-  makes the strings and, more importantly, the sprite window flash
-  (black -> WINBG -> black).
+  makes the strings flicker slightly.
 - [Alt] alone should highlight the menu bar.
 - Minor glitch: when a popup menu is active, the spot is still shown
 - Minor glitch: when a popup menu becomes active (active again) it does
@@ -694,16 +765,22 @@ Misc.
   the map off-centre.
 - Moving/scrolling: centre view around spot under pointer (binding :
   perhaps [Ctrl][But2]).
-- BUG: ['] and [`] don't go to the current centre of the map but to
-  where it was when the level was loaded.
 - Instead of { Beep(); Notify (); }, should have a specialized function.
 - Somehow unify configuration variables and game definition variables,
-  at least so that "set" displays both.
+  at least so that "set" displays both. AYM 2000-07-11: mmm...
 - Palette viewer: better cursor.
 - Textures: load the texture descriptions (TEXTURE[12]) once for all
   at startup.
 - Textures: don't abort if the TEXTURE[12] lumps have weird things in
   them.
+- There is a way to trigger the "Callback %p did not set disp_" bug
+  message. Don't remember where. Perphaps in the texture viewer. Had to
+  do with missing patches ?
+- James Caldwell says that, with v1.4, if you create a polygon, delete
+  the sector inside it and try to draw a selection box around the
+  linedefs, Yadex segfaults. James was not able to give me a backtrace
+  and, apparently, no one has been able to reproduce that bug. Does it
+  still occur with v1.5 ?
 
 To do soon
 - Try to restore the "save image to file" function. The data should

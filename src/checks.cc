@@ -31,6 +31,7 @@ Place, Suite 330, Boston, MA 02111-1307, USA.
 #include "yadex.h"
 #include "checks.h"
 #include "dialog.h"
+#include "gamesky.h"
 #include "gfx.h"
 #include "gotoobj.h"
 #include "levels.h"
@@ -168,9 +169,8 @@ DisplayMessage (-1, -1, "Grinding...");
    display a message, then ask if the check should continue (prompt2 may be NULL)
 */
 
-Bool CheckFailed (int x0, int y0, char *prompt1, char *prompt2, Bool fatal,
+bool CheckFailed (int x0, int y0, char *prompt1, char *prompt2, bool fatal,
     bool &first_time)
-
 {
 int key;
 size_t maxlen;
@@ -604,7 +604,9 @@ LogMessage ("\nVerifying textures...\n");
 ObjectsNeeded (OBJ_SECTORS, 0);
 for (n = 0; n < NumSectors; n++)
    {
-   if (Sectors[n].ceilt[0] == '-' && Sectors[n].ceilt[1] == '\0')
+   if (strcmp (Sectors[n].ceilt, "-") == 0
+     || strcmp (Sectors[n].ceilt, "") == 0
+     || memcmp (Sectors[n].ceilt, "        ", 8) == 0)
       {
       sprintf (msg1, "Error: sector #%d has no ceiling texture", n);
       sprintf (msg2, "You probably used a brain-damaged editor to do that...");
@@ -612,7 +614,9 @@ for (n = 0; n < NumSectors; n++)
       GoToObject (OBJ_SECTORS, n);
       return;
       }
-   if (Sectors[n].floort[0] == '-' && Sectors[n].floort[1] == '\0')
+   if (strcmp (Sectors[n].floort, "-") == 0
+     || strcmp (Sectors[n].floort, "") == 0
+     || memcmp (Sectors[n].floort, "        ", 8) == 0)
       {
       sprintf (msg1, "Error: sector #%d has no floor texture", n);
       sprintf (msg2, "You probably used a brain-damaged editor to do that...");
@@ -623,13 +627,14 @@ for (n = 0; n < NumSectors; n++)
    if (Sectors[n].ceilh < Sectors[n].floorh)
       {
       sprintf (msg1,
-	"Error: Sector #%d has its ceiling lower than its floor", n);
+	"Error: sector #%d has its ceiling lower than its floor", n);
       sprintf (msg2,
 	"The textures will never be displayed if you cannot go there");
       CheckFailed (-1, -1, msg1, msg2, 1, first_time);
       GoToObject (OBJ_SECTORS, n);
       return;
       }
+#if 0  /* AYM 2000-08-13 */
    if (Sectors[n].ceilh - Sectors[n].floorh > 1023)
       {
       sprintf (msg1, "Error: sector #%d has its ceiling too high", n);
@@ -638,6 +643,7 @@ for (n = 0; n < NumSectors; n++)
       GoToObject (OBJ_SECTORS, n);
       return;
       }
+#endif
    }
 
 for (n = 0; n < NumLineDefs; n++)
@@ -675,8 +681,7 @@ for (n = 0; n < NumLineDefs; n++)
    if (is_obj (s1) && is_obj (s2) && Sectors[s1].ceilh > Sectors[s2].ceilh)
       {
       if (SideDefs[sd1].tex1[0] == '-' && SideDefs[sd1].tex1[1] == '\0'
-	  && (strncmp (Sectors[s1].ceilt, "F_SKY1", WAD_TEX_NAME)
-	   || strncmp (Sectors[s2].ceilt, "F_SKY1", WAD_TEX_NAME)))
+	  && (! is_sky (Sectors[s1].ceilt) || ! is_sky (Sectors[s2].ceilt)))
 	 {
 	 sprintf (msg1, "Error in first sidedef of linedef #%d:"
 	   " sidedef #%d has no upper texture", n, sd1);
@@ -713,8 +718,7 @@ for (n = 0; n < NumLineDefs; n++)
    if (is_obj (s1) && is_obj (s2) && Sectors[s2].ceilh > Sectors[s1].ceilh)
       {
       if (SideDefs[sd2].tex1[0] == '-' && SideDefs[sd2].tex1[1] == '\0'
-	  && (strncmp (Sectors[s1].ceilt, "F_SKY1", WAD_TEX_NAME)
-	   || strncmp (Sectors[s2].ceilt, "F_SKY1", WAD_TEX_NAME)))
+	  && (! is_sky (Sectors[s1].ceilt) || ! is_sky (Sectors[s2].ceilt)))
 	 {
 	 sprintf (msg1, "Error in second sidedef of linedef #%d:"
 	   " sidedef #%d has no upper texture", n, sd2);
@@ -756,14 +760,14 @@ for (n = 0; n < NumLineDefs; n++)
    check if a texture name matches one of the elements of a list
 */
 
-Bool IsTextureNameInList (char *name, char **list, int numelems)
+bool IsTextureNameInList (char *name, char **list, int numelems)
 {
 int n;
 
 for (n = 0; n < numelems; n++)
    if (! y_strnicmp (name, list[n], WAD_TEX_NAME))
-      return 1;
-return 0;
+      return true;
+return false;
 }
 
 
@@ -779,8 +783,11 @@ bool first_time = true;
 
 CheckingObjects ();
 LogMessage ("\nVerifying texture names...\n");
+
+// AYM 2000-07-24: could someone explain this one ?
 if (! FindMasterDir (MasterDir, "F2_START"))
    NumThings--;
+
 ObjectsNeeded (OBJ_SECTORS, 0);
 for (n = 0; n < NumSectors; n++)
    {
@@ -856,13 +863,13 @@ for (n = 0; n < NumSideDefs; n++)
    check for players starting points
 */
 
-Bool CheckStartingPos () /* SWAP! */
+bool CheckStartingPos () /* SWAP! */
 {
 char msg1[80], msg2[80];
-Bool p1 = 0;
-Bool p2 = 0;
-Bool p3 = 0;
-Bool p4 = 0;
+bool p1 = false;
+bool p2 = false;
+bool p3 = false;
+bool p4 = false;
 size_t dm = 0;
 int  t;
 
@@ -870,13 +877,13 @@ ObjectsNeeded (OBJ_THINGS, 0);
 for (t = 0; t < NumThings; t++)
    {
    if (Things[t].type == THING_PLAYER1)
-      p1 = 1;
+      p1 = true;
    if (Things[t].type == THING_PLAYER2)
-      p2 = 1;
+      p2 = true;
    if (Things[t].type == THING_PLAYER3)
-      p3 = 1;
+      p3 = true;
    if (Things[t].type == THING_PLAYER4)
-      p4 = 1;
+      p4 = true;
    if (Things[t].type == THING_DEATHMATCH)
       dm++;
    }
@@ -885,12 +892,12 @@ if (! p1)
    Beep ();
    if (! Confirm (-1, -1, "Warning: there is no player 1 starting point. The"
        " game", "will crash if you play with this level. Save anyway ?"))
-      return 0;
+      return false;
    else 
-      return 1;  // No point in doing further checking !
+      return true;  // No point in doing further checking !
    }
 if (Expert)
-   return 1;
+   return true;
 if (! p2 || ! p3 || ! p4)
    {
    if (! p4)
@@ -904,9 +911,9 @@ if (! p2 || ! p3 || ! p4)
    sprintf (msg2, "to use this level for multi-player games."
      " Save anyway ?");
    if (! Confirm (-1, -1, msg1, msg2))
-      return 0;
+      return false;
    else
-      return 1;  // No point in doing further checking !
+      return true;  // No point in doing further checking !
    }
 if (dm < DOOM_MIN_DEATHMATCH_STARTS)
    {
@@ -922,9 +929,9 @@ if (dm < DOOM_MIN_DEATHMATCH_STARTS)
    sprintf (msg2, "deathmatch starts to play deathmatch games."
      " Save anyway ?");
    if (! Confirm (-1, -1, msg1, msg2))
-     return 0;
+     return false;
    }
-return 1;
+return true;
 }
 
 

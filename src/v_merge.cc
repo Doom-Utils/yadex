@@ -149,11 +149,11 @@ MadeMapChanges = 1;
    Returns a non-zero value if the screen needs to be redrawn.
 */
 
-Bool AutoMergeVertices (SelPtr *list, int obj_type, char operation) /* SWAP! */
+bool AutoMergeVertices (SelPtr *list, int obj_type, char operation) /* SWAP! */
 {
 SelPtr ref, cur;
-Bool   redraw;
-Bool   flipped, mergedone, isldend;
+bool   redraw;
+bool   flipped, mergedone, isldend;
 int    v, refv;
 int    ld, sd;
 int    oldnumld;
@@ -166,13 +166,13 @@ confirm_t confirm_flag;
      all the vertices used by those sectors/linedefs and
      proceed as usually. */
 if (obj_type != OBJ_VERTICES)
-   return 0;
+   return false;
 
 ObjectsNeeded (OBJ_VERTICES, 0);
-redraw = 0;
+redraw = false;
 //redraw = 1;
-mergedone = 0;
-isldend = 0;
+mergedone = false;
+isldend = false;
 
 if (operation == 'i')
    confirm_flag = insert_vertex_merge_vertices;
@@ -192,14 +192,14 @@ while (ref)
 	 && Vertices[refv].y == Vertices[v].y)
          {
          char buf[81];
-	 redraw = 1;
+	 redraw = true;
          sprintf (buf, "Vertices %d and %d occupy the same position", refv, v);
 	 if (Confirm2 (-1, -1, &confirm_flag,
             buf,
 	    "Do you want to merge them into one?"))
 	    {
 	    /* merge the two vertices */
-	    mergedone = 1;
+	    mergedone = true;
 	    cur = NULL;
 	    SelectObject (&cur, refv);
 	    SelectObject (&cur, v);
@@ -247,7 +247,7 @@ while (ref)
       if (LineDefs[ld].start == refv || LineDefs[ld].end == refv)
          {
 	 /* one Vertex had a LineDef bound to it -- check it later */
-	 isldend = 1;
+	 isldend = true;
          }
       else if (IsLineDefInside (ld, Vertices[refv].x - tolerance,
 				    Vertices[refv].y - tolerance, 
@@ -255,14 +255,14 @@ while (ref)
 				    Vertices[refv].y + tolerance))
          {
          char buf[81];
-	 redraw = 1;
+	 redraw = true;
          sprintf (buf, "Vertex %d is on top of linedef %d", refv, ld);
 	 if (Confirm2 (-1, -1, &confirm_flag,
             buf,
             "Do you want to split the linedef there?"))
 	    {
 	    /* split the LineDef */
-	    mergedone = 1;
+	    mergedone = true;
 	    InsertObject (OBJ_LINEDEFS, ld, 0, 0);
 	    LineDefs[ld].end = refv;
 	    LineDefs[NumLineDefs - 1].start = refv;
@@ -332,18 +332,22 @@ for (ld = 0; ld+1 < NumLineDefs; ld++)
    if (linedefs[ld+1].vertexl != linedefs[ld].vertexl
     || linedefs[ld+1].vertexh != linedefs[ld].vertexh)
      continue;
-   redraw = 1;
+   int ld1 = linedefs[ld].linedefno;
+   int ld2 = linedefs[ld+1].linedefno;
+   char prompt[81];
+   y_snprintf (prompt, sizeof prompt, "Linedefs %d and %d are superimposed",
+      ld1, ld2);
+   redraw = true;
    if (Expert || Confirm2 (-1, -1, &confirm_flag,
-      "Some linedefs are superimposed",
-      "Do you want to merge them into one?"))
+      prompt, "(and perhaps others too). Merge them ?"))
       {
-      LDPtr ldo = LineDefs+linedefs[ld].linedefno;
-      LDPtr ldn = LineDefs+linedefs[ld+1].linedefno;
+      LDPtr ldo = LineDefs + ld1;
+      LDPtr ldn = LineDefs + ld2;
       /* Test if the LineDefs have the same orientation */
       if (ldn->start == ldo->end)
-	 flipped = 1;
+	 flipped = true;
       else
-	 flipped = 0;
+	 flipped = false;
       /* Merge linedef ldo (ld) into linedef ldn (ld+1) */
       /* FIXME When is this done ? Most of the time when adding a
 	 door/corridor/window between two rooms, right ? So we should
@@ -380,7 +384,7 @@ for (ld = 0; ld+1 < NumLineDefs; ld++)
          }
       if (ldn->sidedef1 >= 0 && ldn->sidedef2 >= 0 && (ldn->flags & 0x04) == 0)
 	 ldn->flags = 0x04;
-      DeleteObject (OBJ_LINEDEFS, linedefs[ld].linedefno);
+      DeleteObject (OBJ_LINEDEFS, ld1);
       }
    }
 

@@ -31,6 +31,7 @@ Place, Suite 330, Boston, MA 02111-1307, USA.
 #include "yadex.h"
 #include "acolours.h"
 #include "game.h"
+#include "gamesky.h"
 #include "macro.h"
 #include "things.h"
 #include "trace.h"
@@ -49,7 +50,7 @@ static const char *standard_directories[] =
    };
 
 
-const char ygd_file_magic[] = "# Yadex game definition file version 3";
+const char ygd_file_magic[] = "# Yadex game definition file version 4";
 
 
 /*
@@ -238,6 +239,7 @@ for (lineno = 2; fgets (readbuf, sizeof readbuf, ygdfile); lineno++)
       else
 	 fatal_error ("%s(%d): invalid argument \"%.32s\" (alpha|doom|hexen)",
             filename, lineno, token[1]);
+      free (buf);
       }
    else if (! strcmp (token[0], "level_name"))
       {
@@ -252,6 +254,7 @@ for (lineno = 2; fgets (readbuf, sizeof readbuf, ygdfile); lineno++)
       else
 	 fatal_error ("%s(%d): invalid argument \"%.32s\" (e1m1|e1m10|map01)",
             filename, lineno, token[1]);
+      free (buf);
       }
    else if (! strcmp (token[0], "picture_format"))
       {
@@ -266,6 +269,13 @@ for (lineno = 2; fgets (readbuf, sizeof readbuf, ygdfile); lineno++)
       else
 	 fatal_error ("%s(%d): invalid argument \"%.32s\" (alpha|pr|normal)",
 	    filename, lineno, token[1]);
+      free (buf);
+      }
+   else if (! strcmp (token[0], "sky_flat"))
+      {
+      if (ntoks != 2)
+	 fatal_error (bad_arg_count, filename, lineno, token[0], 1);
+      sky_flat = token[1];
       }
    else if (! strcmp (token[0], "st"))
       {
@@ -293,6 +303,7 @@ for (lineno = 2; fgets (readbuf, sizeof readbuf, ygdfile); lineno++)
 	 fatal_error (
 	    "%s(%d): invalid argument \"%.32s\" (normal|nameless|strife11)",
 	    filename, lineno, token[1]);
+      free (buf);
       }
    else if (! strcmp (token[0], "texture_lumps"))
       {
@@ -308,6 +319,7 @@ for (lineno = 2; fgets (readbuf, sizeof readbuf, ygdfile); lineno++)
 	 fatal_error (
 	    "%s(%d): invalid argument \"%.32s\" (normal|textures|none)",
 	    filename, lineno, token[1]);
+      free (buf);
       }
    else if (! strcmp (token[0], "thing"))
       {
@@ -342,13 +354,17 @@ for (lineno = 2; fgets (readbuf, sizeof readbuf, ygdfile); lineno++)
 	 fatal_error ("LGD5 (%s)", al_astrerror (al_aerrno));
       }
    else
+      {
+      free (buf);
       fatal_error ("%s(%d): unknown directive \"%.32s\"",
 	 filename, lineno, token[0]);
+      }
    }
 
 fclose (ygdfile);
 
 /* Verify that all the mandatory directives are present. */
+{
 bool abort = false;
 if (yg_level_format == YGLF__)
    {
@@ -365,6 +381,7 @@ if (yg_level_name == YGLN__)
 // FIXME and same thing for texture_format and texture_lumps ?
 if (abort)
    exit (2);
+}
 
 /*
  *	Second pass

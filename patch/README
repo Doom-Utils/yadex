@@ -1,0 +1,23 @@
+Patches for Yadex
+-----------------
+
+gcc-2.7.diff	To compile Yadex 1.5.0 with GCC 2.7. To apply,
+		
+		  cd yadex-1.5.0
+		  patch -p1 <patch/gcc-2.7.diff
+
+		GCC 2.7 is not recommended to compile C++. It's
+		shipped with a very old version of STL, hence
+		conflict on "times" and missing clear(). It
+		insists on having default constructors for
+		classes used in conjunction with the STL
+		containers. It wants three arguments for map<>.
+		It barfs if you use -> on the right hand of an
+		iterator. It's a pain.
+
+		I consider GCC 2.7 obsolete, and not a supported
+		compiler for Yadex. This patch will rot or go
+		away. Please upgrade. More recent versions of
+		EGCS and GCC work fine.
+
+-- AYM 2000-08-27

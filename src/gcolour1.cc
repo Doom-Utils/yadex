@@ -39,8 +39,10 @@ Place, Suite 330, Boston, MA 02111-1307, USA.
 
 #include "yadex.h"
 #include "gcolour1.h"
+#include "gcolour2.h"
 #include "gfx.h"
 #include "rgb.h"
+#include "wads.h"
 
 
 /*
@@ -93,6 +95,23 @@ for (size_t n = 0; n < DOOM_COLOURS; n++)
    rgb_values[n].b = (u8) dpal[3 * n + 2];
    }
 game_colours = alloc_colours (rgb_values, DOOM_COLOURS);
+
+// Find the colour closest to colour 0
+{
+  colour0 = 0;
+  int smallest_delta = INT_MAX;
+
+  for (size_t n = 1; n < DOOM_COLOURS; n++)
+  {
+    int delta = rgb_values[0] - rgb_values[n];
+    if (delta < smallest_delta)
+    {
+      colour0 = n;
+      smallest_delta = delta;
+    }
+  }
+  verbmsg ("Colour 0 remapped to %d (delta %d)\n", colour0, smallest_delta);
+}
 
 #endif
 FreeFarMemory (dpal);

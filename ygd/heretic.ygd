@@ -1,7 +1,8 @@
-# Yadex game definition file version 3
+# Yadex game definition file version 4
 #
 #	heretic.ygd
 #	Yadex Game Definitions for Heretic
+#	See doc/ygd.html for the specs.
 #	AYM 1998-10-20
 #
 
@@ -12,6 +13,7 @@
 level_format    doom
 level_name      e1m1
 picture_format  normal
+sky_flat        f_sky1
 texture_format  normal
 texture_lumps   normal
 
@@ -258,7 +260,9 @@ thinggroup s rgb:0/b/d "Ambient sound"
 
 #
 #	Definition of things
-#	Format is : thing <number> <thinggroup> <radius> <description>
+#	Format is :
+#	thing <number> <thinggroup> <flags> <radius> <desc> [<sprite>]
+#	<desc> must not exceed 19 characters.
 #
 
 thing    1 p -   16 "Player 1 start"		PLAY
@@ -266,95 +270,95 @@ thing    2 p -   16 "Player 2 start"		PLAY
 thing    3 p -   16 "Player 3 start"		PLAY
 thing    4 p -   16 "Player 4 start"		PLAY
 thing   11 p -   16 "Deathmatch start"		PLAYF1
-thing   14 p -   16 "Teleport exit"
+thing   14 p -   20 "Teleport exit"		TELE
 
-thing   66 m -   25 "Gargoyle"			IMPX
-thing    5 m -   25 "Gargoyle leader"		IMPX
-thing   68 m -   20 "Golem"			MUMM
-thing   69 m -   20 "Golem ghost"		MUMM
-thing   45 m -   20 "Golem leader"		MUMM
-thing   46 m -   20 "Golem leader ghost"	MUMM
-thing   64 m -   20 "Undead warrior"		KNIG
-thing   65 m -   20 "Undead warrior ghost"	KNIG
-thing   15 m -   20 "Disciple"			WZRD
-thing   70 m -   17 "Weredragon"		BEAS
-thing   90 m -   23 "Sabre claw"		CLNK
-thing    6 m -   17 "Ironlich"			HEAD
-thing    9 m -    9 "Maulotaur"			MNTR
-thing   92 m -   17 "Ophidian"			SNKE
-thing    7 m -   17 "D'Sparil"			SRCR
+thing   66 m -   16 "Gargoyle"			IMPX
+thing    5 m -   16 "Gargoyle leader"		IMPXD
+thing   68 m -   22 "Golem"			MUMM
+thing   69 m s   22 "Golem ghost"		MUMM
+thing   45 m -   22 "Golem leader"		MUMMY
+thing   46 m s   22 "Golem leader ghost"	MUMMY
+thing   64 m -   24 "Undead warrior"		KNIG
+thing   65 m s   24 "Undead warrior ghost"	KNIG
+thing   15 m -   16 "Disciple"			WZRD
+thing   70 m -   32 "Weredragon"		BEAS
+thing   90 m -   20 "Sabre claw"		CLNK
+thing    6 m -   40 "Ironlich"			HEAD
+thing    9 m -   28 "Maulotaur"			MNTR
+thing   92 m -   22 "Ophidian"			SNKE
+thing    7 m -   28 "D'Sparil"			SRCR
 thing   56 m -   17 "D'Sparil spot"		SOR2H
 
-thing 2005 w -   16 "Gauntlets"			WGNT
-thing 2001 w -   16 "Ethereal cross bow"	WBOW
-thing   53 w -   16 "Dragon claw"		WBLS
-thing 2004 w -   16 "Hellstaff"			WSKL
-thing 2003 w -   16 "Phoenix rod"		WPHX
-thing 2002 w -   16 "Mace"			WMCE
+thing 2005 w -   20 "Gauntlets"			WGNT
+thing 2001 w -   20 "Ethereal cross bow"	WBOW
+thing   53 w -   20 "Dragon claw"		WBLS
+thing 2004 w -   20 "Hellstaff"			WSKL
+thing 2003 w -   20 "Phoenix rod"		WPHX
+thing 2002 w -   20 "Mace"			WMCE
 
-thing   10 a -   16 "Wand crystal"		AMG1
-thing   12 a -   16 "Wand geode"		AMG2
-thing   18 a -   16 "Ethereal arrows"		AMC1
-thing   19 a -   16 "Ethereal quiver"		AMC2
-thing   54 a -   16 "Claw orb"			AMB1
-thing   55 a -   16 "Energy orb"		AMB2
-thing   20 a -   17 "Lesser runes"		AMS1
-thing   21 a -   17 "Greater runes"		AMS2
-thing   22 a -   17 "Flame orb"			AMP1
-thing   23 a -   17 "Inferno orb"		AMP2
-thing   13 a -   17 "Mace spheres"		AMM1
-thing   16 a -   17 "Pile of mace spheres"	AMM2
+thing   10 a -   20 "Wand crystal"		AMG1
+thing   12 a -   20 "Wand geode"		AMG2
+thing   18 a -   20 "Ethereal arrows"		AMC1
+thing   19 a -   20 "Ethereal quiver"		AMC2
+thing   54 a -   20 "Claw orb"			AMB1
+thing   55 a -   20 "Energy orb"		AMB2
+thing   20 a -   20 "Lesser runes"		AMS1
+thing   21 a -   20 "Greater runes"		AMS2
+thing   22 a -   20 "Flame orb"			AMP1
+thing   23 a -   20 "Inferno orb"		AMP2
+thing   13 a -   20 "Mace spheres"		AMM1
+thing   16 a -   20 "Pile of mace spheres"	AMM2
 
-thing   32 h -   17 "Mystic urn"
-thing   81 h -   17 "Crystal vial"		PTN1
-thing   82 h -   17 "Quartz flask"		PTN2
-thing   85 h -   17 "Silver shield"		SHLD
-thing   31 h -   17 "Shield 2"
+thing   32 h -   20 "Mystic urn"		SPHL
+thing   81 h -   20 "Crystal vial"		PTN1
+thing   82 h -   20 "Quartz flask"		PTN2
+thing   85 h -   20 "Silver shield"		SHLD
+thing   31 h -   20 "Enchanted shield"		SHD2
 
-thing    8 b -   17 "Bag of holding"		BAGH
-thing   30 b -   17 "Morph ovum"		EGGC
-thing   34 b -   17 "Time bomb"			FBMB
-thing   83 b -   17 "Wings of wrath"		SOAR
-thing   75 b -   17 "Shadowsphere"		INVS
-thing   84 b -   17 "Ring of invuln."		INVU
-thing   35 b -   17 "Map scroll"		SPMP
-thing   36 b -   17 "Chaos device"		ATLP
-thing   86 b -   17 "Tome of power"		PWBK
-thing   33 b -   17 "Torch"			TRCH
+thing    8 b -   20 "Bag of holding"		BAGH
+thing   30 b -   20 "Morph ovum"		EGGC
+thing   34 b -   20 "Time bomb"			FBMB
+thing   83 b -   20 "Wings of wrath"		SOAR
+thing   75 b -   20 "Shadowsphere"		INVS
+thing   84 b -   20 "Ring of invuln."		INVU
+thing   35 b -   20 "Map scroll"		SPMP
+thing   36 b -   20 "Chaos device"		ATLP
+thing   86 b -   20 "Tome of power"		PWBK
+thing   33 b -   20 "Torch"			TRCH
 
-thing   73 k -   16 "Green key"			AKYY
-thing   79 k -   16 "Blue key	"		BKYY
-thing   80 k -   16 "Yellow key"		CKYY
+thing   73 k -   20 "Green key"			AKYY
+thing   79 k -   20 "Blue key	"		BKYY
+thing   80 k -   20 "Yellow key"		CKYY
 
-thing   44 d -   16 "Barrel"			BARL
-thing   47 d -   17 "Brown pillar"		BRPL
-thing   28 d -   28 "Chandelier"		CHDL
+thing   44 d -   12 "Barrel"			BARL
+thing   47 d -   14 "Brown pillar"		BRPL
+thing   28 d -   20 "Chandelier"		CHDL
 thing   76 d -   16 "Fire brazier"		KFR1
-thing   51 d -   17 "Hanging corpse"		HCOR
+thing   51 d -    8 "Hanging corpse"		HCOR
 thing   94 d -   16 "Blue key statue"		KGZB
 thing   95 d -   16 "Green key statue"		KGZG
 thing   96 d -   16 "Yellow key statue"		KGZY
 thing   48 d -   20 "Moss 1"			MOS1
-thing   49 d -   15 "Moss 2"			MOS2
-thing   27 d -   16 "Serpent torch"		SRTC
-thing   26 d -    8 "Hanging skull 35"		SKH4
-thing   25 d -    8 "Hanging skull 45"		SKH3
-thing   24 d -    8 "Hanging skull 60"		SKH2
-thing   17 d -    8 "Hanging skull 70"		SKH1
-thing   29 d -   17 "Small pillar"		SMPL
-thing   50 d -    5 "Wall torch"		WTRH
-thing   74 d -    5 "Teleport glitter"		TGLTA
-thing   52 d -    5 "Exit glitter"		TGLTF
-thing   87 d -   17 "Volcano"			VLCO
-thing   37 d -   17 "Small stalagmite"		STGS
-thing   38 d -   17 "Large stalagmite"		STGL
-thing   39 d -   17 "Small stalactite"		STCS
-thing   40 d -   17 "Large stalactite"		STCL
-thing 2035 d -   17 "Pod"			PPOD
-thing   43 d -   17 "Pod generator"
+thing   49 d -   20 "Moss 2"			MOS2
+thing   27 d -   12 "Serpent torch"		SRTC
+thing   26 d -   20 "Hanging skull 35"		SKH4
+thing   25 d -   20 "Hanging skull 45"		SKH3
+thing   24 d -   20 "Hanging skull 60"		SKH2
+thing   17 d -   20 "Hanging skull 70"		SKH1
+thing   29 d -   16 "Small pillar"		SMPL
+thing   50 d -   20 "Wall torch"		WTRH
+thing   74 d -   20 "Teleport glitter"		TGLTA
+thing   52 d -   20 "Exit glitter"		TGLTF
+thing   87 d -   12 "Volcano"			VLCO
+thing   37 d -    8 "Small stalagmite"		STGS
+thing   38 d -   12 "Large stalagmite"		STGL
+thing   39 d -    8 "Small stalactite"		STCS
+thing   40 d -   12 "Large stalactite"		STCL
+thing 2035 d -   16 "Pod"			PPOD
+thing   43 d -   20 "Pod generator"
 
-thing   41 e -   16 "Waterfall"
-thing   42 e -   16 "Wind"
+thing   41 e -   20 "Waterfall"
+thing   42 e -   20 "Wind"
 
 thing 1200 s -   16 "Scream"
 thing 1201 s -   16 "Squish"

@@ -51,12 +51,12 @@ class rgb_c
          set (red, green, blue);
          }
 
-      int operator == (const rgb_c rgb2) const
+      int operator == (const rgb_c& rgb2) const
          {
          return rgb2.r == r && rgb2.g == g && rgb2.b == b;
          }
 
-      int operator - (const rgb_c rgb2) const
+      int operator - (const rgb_c& rgb2) const
          {
          return abs (rgb2.r - r) + abs (rgb2.g - g) + abs (rgb2.b - b);
          }

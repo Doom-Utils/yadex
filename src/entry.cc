@@ -39,7 +39,7 @@ Place, Suite 330, Boston, MA 02111-1307, USA.
 int InputInteger (int x0, int y0, int *valp, int minv, int maxv)
 {
 int  key, val;
-Bool neg, ok, firstkey;
+bool neg, ok, firstkey;
 int entry_out_x0;
 int entry_out_y0;
 int entry_out_x1;
@@ -60,7 +60,7 @@ entry_out_y1  = entry_text_y1 + HOLLOW_BORDER + NARROW_VSPACING;
 DrawScreenBoxHollow (entry_out_x0, entry_out_y0, entry_out_x1, entry_out_y1, BLACK);
 neg = (*valp < 0);
 val = neg ? -(*valp) : *valp;
-firstkey = 1;
+firstkey = true;
 for (;;)
    {
    ok = (neg ? -val : val) >= minv && (neg ? -val : val) <= maxv;
@@ -78,15 +78,15 @@ for (;;)
    if (firstkey && is_ordinary (key) && key != ' ')
       {
       val = 0;
-      neg = 0;
+      neg = false;
       }
-   firstkey = 0;
+   firstkey = false;
    if (val < 3275 && key >= '0' && key <= '9')
       val = val * 10 + dectoi (key);
    else if (val > 0 && key == YK_BACKSPACE)
       val = val / 10;
    else if (neg && key == YK_BACKSPACE)
-      neg = 0;
+      neg = false;
    else if (key == '-')
       neg = !neg;
    else if (ok && key == YK_RETURN)
@@ -97,7 +97,7 @@ for (;;)
       break; /* return "val", even if not valid */
    else if (key == YK_ESC)
       {
-      neg = 0;
+      neg = false;
       val = IIV_CANCEL; /* return a value out of range */
       break;
       }
@@ -149,7 +149,7 @@ void InputFileName (int x0, int y0, const char *prompt, size_t maxlen,
 int   key;
 size_t l;
 size_t boxlen;
-Bool  firstkey;
+bool  firstkey;
 int width;
 int title_y0;
 int entry_out_x0;
@@ -203,7 +203,7 @@ DrawScreenBox3D (x0, y0, x0 + width - 1, entry_out_y1 + WIDE_VSPACING);
 DrawScreenBoxHollow (entry_out_x0, entry_out_y0, entry_out_x1, entry_out_y1, BLACK);
 set_colour (YELLOW);
 DrawScreenText (entry_out_x0, title_y0, prompt);
-firstkey = 1;
+firstkey = true;
 for (;;)
    {
    l = strlen (filename);
@@ -224,7 +224,7 @@ for (;;)
 	 filename[l] = '\0';
       l = 0;
       }
-   firstkey = 0;
+   firstkey = false;
    if (l < maxlen && is_ordinary (key))
       {
       filename[l] = key;

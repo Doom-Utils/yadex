@@ -37,6 +37,7 @@ Place, Suite 330, Boston, MA 02111-1307, USA.
 #include "wstructs.h"
 #include "things.h"
 #include "wads.h"
+#include "wads2.h"
 
 
 /*
@@ -68,9 +69,10 @@ int MapMaxX = -32767;		/* maximum X value of map */
 int MapMaxY = -32767;		/* maximum Y value of map */
 int MapMinX = 32767;		/* minimum X value of map */
 int MapMinY = 32767;		/* minimum Y value of map */
-Bool MadeChanges;		/* made changes? */
-Bool MadeMapChanges;		/* made changes that need rebuilding? */
-
+bool MadeChanges;		/* made changes? */
+bool MadeMapChanges;		/* made changes that need rebuilding? */
+unsigned long things_angles;	// See levels.h for description.
+unsigned long things_types;	// See levels.h for description.
 char Level_name[WAD_NAME + 1];	/* The name of the level (E.G.
 				   "MAP01" or "E1M1"), followed by a
 				   NUL. If the Level has been created as
@@ -95,6 +97,8 @@ void EmptyLevelData (const char *levelname)
 {
 Things = 0;
 NumThings = 0;
+things_angles++;
+things_types++;
 LineDefs = 0;
 NumLineDefs = 0;
 SideDefs = 0;
@@ -210,6 +214,8 @@ if (dir)
    }
 else
    NumThings = 0;
+things_angles++;
+things_types++;
 if (NumThings > 0)
    {
    Things = (TPtr) GetFarMemory ((unsigned long) NumThings
@@ -717,6 +723,8 @@ NumThings = 0;
 if (Things)
    FreeFarMemory (Things);
 Things = 0;
+things_angles++;
+things_types++;
 
 /* forget the vertices */
 ObjectsNeeded (OBJ_VERTICES, 0);
@@ -995,21 +1003,7 @@ CloseUnusedWadFiles ();
 /* Update MapMinX, MapMinY, MapMaxX, MapMaxY */
 // Probably not necessary anymore -- AYM 1999-04-05
 ObjectsNeeded (OBJ_VERTICES, 0);
-MapMaxX = -32767;
-MapMaxY = -32767;
-MapMinX = 32767;
-MapMinY = 32767;
-for (n = 0; n < NumVertices; n++)
-   {
-   if (Vertices[n].x < MapMinX)
-      MapMinX = Vertices[n].x;
-   if (Vertices[n].x > MapMaxX)
-      MapMaxX = Vertices[n].x;
-   if (Vertices[n].y < MapMinY)
-      MapMinY = Vertices[n].y;
-   if (Vertices[n].y > MapMaxY)
-      MapMaxY = Vertices[n].y;
-   }
+update_level_bounds ();
 return 0;
 }
 #else
@@ -1237,21 +1231,7 @@ CloseUnusedWadFiles ();
 /* Update MapMinX, MapMinY, MapMaxX, MapMaxY */
 // Probably not necessary anymore -- AYM 1999-04-05
 ObjectsNeeded (OBJ_VERTICES, 0);
-MapMaxX = -32767;
-MapMaxY = -32767;
-MapMinX = 32767;
-MapMinY = 32767;
-for (n = 0; n < NumVertices; n++)
-   {
-   if (Vertices[n].x < MapMinX)
-      MapMinX = Vertices[n].x;
-   if (Vertices[n].x > MapMaxX)
-      MapMaxX = Vertices[n].x;
-   if (Vertices[n].y < MapMinY)
-      MapMinY = Vertices[n].y;
-   if (Vertices[n].y > MapMaxY)
-      MapMaxY = Vertices[n].y;
-   }
+update_level_bounds ();
 return 0;
 }
 #endif  /* NEW_SAVE_METHOD */
@@ -1519,21 +1499,23 @@ verbmsg ("\n");
 /* sort the flats by names */
 qsort (flat_list, NumFTexture, sizeof *flat_list, flat_list_entry_cmp);
 
-/* AYM 19970817: eliminate all but the last duplicates of a flat */
-for (size_t n = 0; n < NumFTexture; n++)
+/* Eliminate all but the last duplicates of a flat. Suboptimal.
+   Would be smarter to start by the end. */
+for (int n = 0; n < NumFTexture; n++)
    {
-   if (n + 1 < NumFTexture
-       && ! flat_list_entry_cmp (flat_list + n, flat_list + n + 1))
+   int m = n;
+   while (m + 1 < NumFTexture
+     && ! flat_list_entry_cmp (flat_list + n, flat_list + m + 1))
+       m++;
+   // m now contains the index of the last duplicate
+   int nduplicates = m - n;
+   if (m > n)
       {
-      size_t m;
-      for (m = n; m + 1 < NumFTexture; m++)
-	 flat_list[m] = flat_list[m + 1];
-
-      // Not strictly necessary but could help catching bugs
-      strcpy (flat_list[m].name, "deleted");
-      flat_list[m].wadfile = NULL;
-      flat_list[m].offset  = 0;
-      NumFTexture--;       /* I don't bother resizing flat_list */
+      //printf ("Flat %.8s: %d duplicates\n", flat_list[n].name, m - n);//DEBUG
+      memmove (flat_list + n, flat_list + m,
+                                      (NumFTexture - m) * sizeof *flat_list);
+      NumFTexture -= m - n;
+      // Note that I'm too lazy to resize flat_list...
       }
    }
 }
@@ -1545,12 +1527,12 @@ for (size_t n = 0; n < NumFTexture; n++)
  */
 int is_flat_name_in_list (const char *name)
 {
-if (! flat_list)
+  if (! flat_list)
+    return 0;
+  for (size_t n = 0; n < NumFTexture; n++)
+    if (! y_strnicmp (name, flat_list[n].name, WAD_FLAT_NAME))
+      return 1;
   return 0;
-for (size_t n = 0; n < NumFTexture; n++)
-  if (! y_strnicmp (name, flat_list[n].name, WAD_FLAT_NAME))
-    return 1;
-return 0;
 }
 
 
@@ -1565,4 +1547,28 @@ FreeMemory (flat_list);
 flat_list = 0;
 }
 
+
+/*
+ *	update_level_bounds - update Map{Min,Max}{X,Y}
+ */
+void update_level_bounds ()
+{
+MapMaxX = -32767;
+MapMaxY = -32767;
+MapMinX = 32767;
+MapMinY = 32767;
+for (obj_no_t n = 0; n < NumVertices; n++)
+   {
+   int x = Vertices[n].x;
+   if (x < MapMinX)
+      MapMinX = x;
+   if (x > MapMaxX)
+      MapMaxX = x;
+   int y = Vertices[n].y;
+   if (y < MapMinY)
+      MapMinY = y;
+   if (y > MapMaxY)
+      MapMaxY = y;
+   }
+}
 

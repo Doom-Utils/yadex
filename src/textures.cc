@@ -29,185 +29,19 @@ Place, Suite 330, Boston, MA 02111-1307, USA.
 
 
 #include "yadex.h"
+#ifdef Y_X11
+#include <X11/Xlib.h>
+#endif
 #include "dialog.h"
-#include "clearimg.h"
-#include "dispimg.h"
 #include "game.h"      /* yg_picture_format */
 #include "gfx.h"
+#include "lists.h"
 #include "patchdir.h"
 #include "pic2img.h"
+#include "sticker.h"
+#include "textures.h"
 #include "wads.h"
 #include "wstructs.h"
-
-
-#if 0
-///*
-//   display the picture named c->name
-//   at coords c->x0, c->y0 and not beyond c->x1, c->y1
-//*/
-//
-//void DisplayPic (hookfunc_comm_t *c)
-//{
-//MDirPtr	dir;
-//i16	xsize, ysize, xofs, yofs;
-//u8	*ColumnData;
-//u8	*Column;
-//i32	*NeededOffsets;
-//int	Columns, CurrentColumn;
-//i32	CurrentOffset;
-//int	ColumnInMemory;
-//long	ActualBufLen;
-//
-//c->flags = 0;
-//
-//if (have_key ())
-//   return; /* speedup */
-//
-//dir = FindMasterDir (MasterDir, c->name);
-//if (dir == NULL)
-//   {
-//   set_colour (DARKGRAY);
-//   DrawScreenLine (c->x0, c->y0, c->x1, c->y1);
-//   DrawScreenLine (c->x0, c->y1, c->x1, c->y0);
-//   return;
-//   }
-//wad_seek (dir->wadfile, dir->dir.start);
-//wad_read_i16 (dir->wadfile, &xsize);
-//wad_read_i16 (dir->wadfile, &ysize);
-//wad_read_i16 (dir->wadfile, &xofs );
-//wad_read_i16 (dir->wadfile, &yofs );
-//c->width    = xsize;
-//c->height   = ysize;
-//c->flags   |= HOOK_SIZE_VALID | HOOK_DISP_SIZE;
-///* Ignore the picture offsets (they're always 0 anyway) */
-//xofs = 0;
-//yofs = 0;
-//
-///* AYM 19971202: 17 kB is large enough for 128x128 patches. */
-//#define TEX_COLUMNBUFFERSIZE (17L * 1024L)
-///* AYM 19971202, updated 1999-05-17 : where does 512 come from ?
-//   For a 128-high picture, I think that the worst case (every
-//   second pixel transparent except the last) is 63 * 5 + 6 + 1 =
-//   322. Anyway, I'll have to bump this up to accomodate the
-//   maximum theoretical height which is 510. */
-//#define TEX_COLUMNSIZE	     512L
-//
-//Columns = xsize;
-//
-///* Note from CJS:
-//   I tried to use far memory originally, but kept getting out-of-mem errors
-//   that is really strange - I assume that the wad dir et al uses all
-//   the far mem, and there is only near memory available. NEVER seen
-//   this situation before..... I'll keep them huge pointers anyway,
-//   in case something changes later */
-///* AYM 1997-12-02:
-//   Noticing how slow it was to display mono-patch textures like
-//   BROWN96, I tried to optimize this function. I supposed that
-//   putpixel() was the bottleneck so I modified the code to draw
-//   a whole segment at a time with only one call to putimage().
-//   I was wrong ; it brought no visible speedup :(
-//   Is putimage() really slow ? Or is there a large overhead per
-//   putimage() call ? Or is there something else I overlooked ? */
-//ColumnData    = (u8 *) GetMemory (TEX_COLUMNBUFFERSIZE+1);
-//NeededOffsets = (i32 *) GetMemory (Columns * 4L);
-//
-//wad_read_i32 (dir->wadfile, NeededOffsets, Columns);
-//
-///* read first column data, and subsequent column data */
-//if (NeededOffsets[0] != 8 + 4L * Columns)
-//   wad_seek (dir->wadfile, dir->dir.start + NeededOffsets[0]);
-///* AYM 19971201:
-//   They used wad_read_bytes() and that was the cause of the bug
-//   with custom textures ("Error reading from file" when trying
-//   to display the texture if the patch was within 60 kB of EOF).
-//   The -deu option in DeuTex is now pointless :) */
-//ActualBufLen = wad_read_bytes2 (dir->wadfile, ColumnData+1, TEX_COLUMNBUFFERSIZE);
-//
-//{
-//int Column0 = y_max (0,  - (c->x0 + xofs));
-//int Column9 = y_min (Columns, c->x1 + 1 - (c->x0 + xofs));
-//for (CurrentColumn = Column0; CurrentColumn < Column9; CurrentColumn++)
-//   {
-//   CurrentOffset  = NeededOffsets[CurrentColumn];
-//   ColumnInMemory = CurrentOffset >= NeededOffsets[0]
-//    && CurrentOffset < (long)(NeededOffsets[0] + ActualBufLen - TEX_COLUMNSIZE);
-//   if (ColumnInMemory)
-//      Column = &ColumnData[CurrentOffset - NeededOffsets[0]];
-//   else
-//      {
-//      Column = (unsigned char *) GetFarMemory (TEX_COLUMNSIZE + 1);
-//      wad_seek (dir->wadfile, dir->dir.start + CurrentOffset);
-//      wad_read_bytes2 (dir->wadfile, Column + 1, TEX_COLUMNSIZE);
-//      }
-//
-//   /* we now have the needed column data, one way or another, so write it */
-//
-//   /* the column may contain several posts... */
-//   {
-   //u8 *Post;
-//   for (Post = Column; Post[1] != 255; )
-//      {
-//      int RowStart;       /* y-offset of segment on texture */
-//      int PostHeight;     /* height of post */
-//      int ClippedHeight;  /* part that is actually drawn on screen */
-//      int x, y;           /* where start of segment is to be displayed */
-//      int above_y0;       /* length of part of segment that is above c->y0 */
-//      int below_y1;       /* length of part of segment that is below c->y1 */
-//
-//      RowStart   = (int) Post[1];
-//      PostHeight = (int) Post[2];
-//      x = c->x0 + xofs + CurrentColumn;
-//      y = c->y0 + yofs + RowStart;
-//
-//      /* Calculate what parts of the segment should be clipped
-//	 (i.e. are not between c->y0 and c->y1) */
-//      above_y0 = y_max (-y, 0);
-//      below_y1 = (y+PostHeight) - (c->y1+1);
-//      below_y1 = y_max (below_y1, 0);
-//      ClippedHeight = PostHeight - above_y0 - below_y1;
-//      debmes ("y=%d sh=%d ay0=%d by1=%d ch=%d",
-//       y, PostHeight, above_y0, below_y1, ClippedHeight);
-//
-//      /* If clipping leaves nothing to display, skip this segment
-//	 (yes, it does happen (in BROWN144)) */
-//      if (ClippedHeight < 1)
-//	goto cont;
-//
-//      {
-//      /* For the sake of putimage(), insert image height and width
-//	 as two words just before the first pixel to display.
-//	 The first pixel of the segment is at Post[4]. Therefore,
-//	 the first pixel to display is at Post[4+above_y0].
-//	 80x86-ism: assumes that any (char *) is also a valid (int *). */
-//      unsigned int save1, save2;
-//#define BASE ((unsigned int huge *)(Post+4+above_y0))
-//      save1    = BASE[-2];
-//      save2    = BASE[-1];
-//      BASE[-2] = 1             - (GfxMode < -1);
-//      BASE[-1] = ClippedHeight - (GfxMode < -1);
-//
-//#if 0
-//      putimage (x, y+above_y0, BASE-2, COPY_PUT);
-//#endif
-//
-//      BASE[-2] = save1;    /* restore what we clobbered */
-//      BASE[-1] = save2;
-//      }
-//
-      //cont:
-//      Post += PostHeight + 4;
-//      }
-//   }
-//
-//   if (!ColumnInMemory)
-//      FreeFarMemory (Column);
-//   }
-//}
-//FreeMemory (ColumnData);
-//FreeMemory (NeededOffsets);
-//c->flags |= HOOK_DRAWN;
-//}
-#endif
 
 
 /*
@@ -225,7 +59,6 @@ i32      numtex;	/* number of texture names in TEXTURE* list */
 i32      texofs;	/* offset in the wad file to the texture data */
 char     tname[WAD_TEX_NAME + 1];	/* texture name */
 char     picname[WAD_PIC_NAME + 1];	/* wall patch name */
-game_image_pixel_t *texbuf = 0;
 bool     have_dummy_bytes;
 int      header_size;
 int      item_size;
@@ -385,32 +218,29 @@ if (have_dummy_bytes)
    wad_read_i16 (dir->wadfile, &dummy);
    }
 wad_read_i16 (dir->wadfile, &npatches);
+
 c->width    = width;
 c->height   = height;
 c->npatches = npatches;
 c->flags   |= HOOK_SIZE_VALID | HOOK_DISP_SIZE;
+
+/* Clip the texture to size. Done *after* setting c->width and
+   c->height so that the selector shows the unclipped size. */
+width  = y_min (width,  c->x1 - c->x0 + 1);
+height = y_min (height, c->y1 - c->y0 + 1);
 
 #ifndef Y_X11
 if (have_key ())
    return; /* speedup */
 #endif
 
-if (c->x1 - c->x0 > width)
-   c->x1 = c->x0 + width;
-if (c->y1 - c->y0 > height)
-   c->y1 = c->y0 + height;
 #ifdef Y_BGI
 /* not really necessary, except when xofs or yofs < 0 */
 setviewport (c->x0, c->y0, c->x1, c->y1, 1);
 #endif  /* FIXME ! */
 
 /* Compose the texture */
-texbuf =
-   (game_image_pixel_t *) GetMemory ((unsigned long) width * height);
-/* Fill the buffer with whatever pixel value is to appear
-   through transparent textures. That pixel value is the
-   "transparent colour". */
-clear_game_image (texbuf, width, height);
+Img texbuf (width, height);
 
 /* Paste onto the buffer all the patches that the texture is
    made of. */
@@ -475,20 +305,19 @@ for (n = 0; n < npatches; n++)
 #endif
    subc.name = picname;
 
-   if (LoadPicture (texbuf, width, height, picname, loc, xofs, yofs, 0, 0))
+   if (LoadPicture (texbuf, picname, loc, xofs, yofs, 0, 0))
       warn ("texture \"%.*s\": patch \"%.*s\" not found.\n",
 	  WAD_TEX_NAME, tname, WAD_PIC_NAME, picname);
    }
 
 /* Display the texture */
-display_game_image (texbuf, width, height, c->x0, c->y0,
-   c->x1 + 1 - c->x0, c->y1 + 1 - c->y0);
+Sticker sticker (texbuf, true);  // Use opaque because it's faster
+sticker.draw (drw, 't', c->x0, c->y0);
 c->flags |= HOOK_DRAWN;
 c->disp_x0 = c->x0 + c->xofs;
 c->disp_y0 = c->y0 + c->yofs;
 c->disp_x1 = c->disp_x0 + width - 1;
 c->disp_y1 = c->disp_y0 + height - 1;
-free (texbuf);
 
 /* restore the normal viewport */
 #ifdef Y_BGI
@@ -627,7 +456,7 @@ if (GfxMode > -2)
    y0 = -1;
    }
 InputNameFromListWithFunc (x0, y0, prompt, listsize, list, 9, name,
-  256, 128, DisplayWallTexture);
+  512, 256, DisplayWallTexture);
 SwitchToVGA16 ();
 
 ShowMousePointer ();

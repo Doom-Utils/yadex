@@ -51,6 +51,7 @@ for (cur = obj; cur; cur = cur->next)
    while (Things[cur->objnum].angle < 0)  /* (negatives...) */
       Things[cur->objnum].angle += 360;
    }
+things_angles++;
 MadeChanges = 1;
 }
 

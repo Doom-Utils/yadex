@@ -425,10 +425,20 @@ switch (objtype)
    {
    case OBJ_THINGS:
       ObjectsNeeded (OBJ_THINGS, 0);
+      if (*list)
+	 {
+	 things_angles++;
+	 things_types++;
+	 }
       while (*list)
 	 {
 	 objnum = (*list)->objnum;
-	 /* delete the Thing */
+	 if (objnum < 0 || objnum >= NumThings)  // Paranoia
+	 {
+	    nf_bug ("attempt to delete non-existent thing #%d", objnum);
+	    goto next_thing;
+	 }
+	 // Delete the thing
 	 NumThings--;
 	 if (NumThings > 0)
 	    {
@@ -445,15 +455,22 @@ switch (objtype)
 	 for (cur = (*list)->next; cur; cur = cur->next)
 	    if (cur->objnum > objnum)
 	       cur->objnum--;
+	 next_thing:
 	 UnSelectObject (list, objnum);
 	 }
       break;
+
    case OBJ_VERTICES:
       if (*list)
          MadeMapChanges = 1;
       while (*list)
 	 {
 	 objnum = (*list)->objnum;
+	 if (objnum < 0 || objnum >= NumVertices)  // Paranoia
+	 {
+	    nf_bug ("attempt to delete non-existent vertex #%d", objnum);
+	    goto next_vertex;
+	 }
 	 // Delete the linedefs bound to this vertex and change the references
 	 ObjectsNeeded (OBJ_LINEDEFS, 0);
 	 for (n = 0; n < NumLineDefs; n++)
@@ -468,7 +485,7 @@ switch (objtype)
 		  LineDefs[n].end--;
 	       }
 	    }
-	 /* delete the vertex */
+	 // Delete the vertex
 	 ObjectsNeeded (OBJ_VERTICES, 0);
 	 NumVertices--;
 	 if (NumVertices > 0)
@@ -486,9 +503,11 @@ switch (objtype)
 	 for (cur = (*list)->next; cur; cur = cur->next)
 	    if (cur->objnum > objnum)
 	       cur->objnum--;
+	 next_vertex:
 	 UnSelectObject (list, objnum);
 	 }
       break;
+
    case OBJ_LINEDEFS:
       /* In DEU, deleting a linedef was not considered to be a
       map change. Deleting a _sidedef_ was. In Yadex, sidedefs
@@ -505,8 +524,12 @@ switch (objtype)
 	 {
 	 ObjectsNeeded (OBJ_LINEDEFS, 0);
 	 objnum = (*list)->objnum;
-
-	 /* delete the linedef */
+	 if (objnum < 0 || objnum >= NumLineDefs)  // Paranoia
+	 {
+	    nf_bug ("attempt to delete non-existent linedef #%d", objnum);
+	    goto next_linedef;
+	 }
+	 // delete the linedef
 	 NumLineDefs--;
 	 if (NumLineDefs > 0)
 	    {
@@ -523,15 +546,22 @@ switch (objtype)
 	 for (cur = (*list)->next; cur; cur = cur->next)
 	    if (cur->objnum > objnum)
 	       cur->objnum--;
+	 next_linedef:
 	 UnSelectObject (list, objnum);
 	 }
       break;
+
    case OBJ_SIDEDEFS:
       if (*list)
          MadeMapChanges = 1;
       while (*list)
 	 {
 	 objnum = (*list)->objnum;
+	 if (objnum < 0 || objnum >= NumSideDefs)  // Paranoia
+	 {
+	    nf_bug ("attempt to delete non-existent sidedef #%d", objnum);
+	    goto next_sidedef;
+	 }
 	 /* change the linedefs references */
 	 ObjectsNeeded (OBJ_LINEDEFS, 0);
 	 for (n = 0; n < NumLineDefs; n++)
@@ -563,6 +593,7 @@ switch (objtype)
 	 for (cur = (*list)->next; cur; cur = cur->next)
 	    if (cur->objnum > objnum)
 	       cur->objnum--;
+	 next_sidedef:
 	 UnSelectObject (list, objnum);
 	 }
       break;
@@ -570,6 +601,11 @@ switch (objtype)
       while (*list)
 	{
 	objnum = (*list)->objnum;
+	 if (objnum < 0 || objnum >= NumSectors)  // Paranoia
+	 {
+	    nf_bug ("attempt to delete non-existent sector #%d", objnum);
+	    goto next_sector;
+	 }
 	// Delete the sidedefs bound to this sector and change the references
 	// AYM 19980203: Hmm, hope this is OK with multiply used sidedefs...
 	ObjectsNeeded (OBJ_SIDEDEFS, 0);
@@ -596,6 +632,7 @@ switch (objtype)
 	for (cur = (*list)->next; cur; cur = cur->next)
 	   if (cur->objnum > objnum)
 	      cur->objnum--;
+	next_sector:
 	UnSelectObject (list, objnum);
 	}
       break;
@@ -636,6 +673,8 @@ switch (objtype)
 	 Things = (TPtr) GetFarMemory (sizeof (struct Thing));
       Things[last].xpos = xpos;
       Things[last].ypos = ypos;
+      things_angles++;
+      things_types++;
       if (is_obj (copyfrom))
 	 {
 	 Things[last].type  = Things[copyfrom].type;
@@ -649,6 +688,7 @@ switch (objtype)
 	 Things[last].when  = 0x07;
 	 }
       break;
+
    case OBJ_VERTICES:
       last = NumVertices++;
       if (last > 0)
@@ -668,6 +708,7 @@ switch (objtype)
 	 MapMaxY = Vertices[last].y;
       MadeMapChanges = 1;
       break;
+
    case OBJ_LINEDEFS:
       last = NumLineDefs++;
       if (last > 0)
@@ -694,6 +735,7 @@ switch (objtype)
       LineDefs[last].sidedef1 = OBJ_NO_NONE;
       LineDefs[last].sidedef2 = OBJ_NO_NONE;
       break;
+
    case OBJ_SIDEDEFS:
       last = NumSideDefs++;
       if (last > 0)
@@ -721,6 +763,7 @@ switch (objtype)
 	 }
       MadeMapChanges = 1;
       break;
+
    case OBJ_SECTORS:
       last = NumSectors++;
       if (last > 0)
@@ -749,6 +792,7 @@ switch (objtype)
 	 Sectors[last].tag     = 0;
 	 }
       break;
+
    default:
       nf_bug ("InsertObject: bad objtype %d", (int) objtype);
    }
@@ -760,7 +804,7 @@ switch (objtype)
    check if a (part of a) LineDef is inside a given block
 */
 
-Bool IsLineDefInside (int ldnum, int x0, int y0, int x1, int y1) /* SWAP - needs Vertices & LineDefs */
+bool IsLineDefInside (int ldnum, int x0, int y0, int x1, int y1) /* SWAP - needs Vertices & LineDefs */
 {
 int lx0 = Vertices[LineDefs[ldnum].start].x;
 int ly0 = Vertices[LineDefs[ldnum].start].y;
@@ -777,27 +821,27 @@ if ((ly0 > y0) != (ly1 > y0))
    {
    i = lx0 + (int) ((long) (y0 - ly0) * (long) (lx1 - lx0) / (long) (ly1 - ly0));
    if (i >= x0 && i <= x1)
-      return 1; /* the linedef crosses the y0 side (left) */
+      return true; /* the linedef crosses the y0 side (left) */
    }
 if ((ly0 > y1) != (ly1 > y1))
    {
    i = lx0 + (int) ((long) (y1 - ly0) * (long) (lx1 - lx0) / (long) (ly1 - ly0));
    if (i >= x0 && i <= x1)
-      return 1; /* the linedef crosses the y1 side (right) */
+      return true; /* the linedef crosses the y1 side (right) */
    }
 if ((lx0 > x0) != (lx1 > x0))
    {
    i = ly0 + (int) ((long) (x0 - lx0) * (long) (ly1 - ly0) / (long) (lx1 - lx0));
    if (i >= y0 && i <= y1)
-      return 1; /* the linedef crosses the x0 side (down) */
+      return true; /* the linedef crosses the x0 side (down) */
    }
 if ((lx0 > x1) != (lx1 > x1))
    {
    i = ly0 + (int) ((long) (x1 - lx0) * (long) (ly1 - ly0) / (long) (lx1 - lx0));
    if (i >= y0 && i <= y1)
-      return 1; /* the linedef crosses the x1 side (up) */
+      return true; /* the linedef crosses the x1 side (up) */
    }
-return 0;
+return false;
 }
 
 
@@ -807,7 +851,7 @@ return 0;
    (returns -1 if it cannot be found)
 */
 
-int GetOppositeSector (int ld1, Bool firstside) /* SWAP! */
+int GetOppositeSector (int ld1, bool firstside) /* SWAP! */
 {
 int x0, y0, dx0, dy0;
 int x1, y1, dx1, dy1;
@@ -1162,7 +1206,7 @@ switch (objtype)
  *
  *	Returns <>0 iff an object was moved.
  */
-Bool MoveObjectsToCoords (
+bool MoveObjectsToCoords (
    int objtype,
    SelPtr obj,
    int newx,
@@ -1185,7 +1229,7 @@ if (! obj)
    {
    refx = newx;
    refy = newy;
-   return 1;
+   return true;
    }
 
 /* compute the displacement */
@@ -1193,7 +1237,7 @@ dx = newx - refx;
 dy = newy - refy;
 /* nothing to do? */
 if (dx == 0 && dy == 0)
-   return 0;
+   return false;
 
 /* move the object(s) */
 switch (objtype)
@@ -1231,7 +1275,7 @@ switch (objtype)
       ForgetSelection (&vertices);
       break;
    }
-return 1;
+return true;
 }
 
 
@@ -1327,25 +1371,25 @@ switch (objtype)
 int FindFreeTag () /* SWAP! */
 {
 int  tag, n;
-Bool ok;
+bool ok;
 
 ObjectsNeeded (OBJ_LINEDEFS, OBJ_SECTORS, 0);
 tag = 1;
-ok = 0;
+ok = false;
 while (! ok)
    {
-   ok = 1;
+   ok = true;
    for (n = 0; n < NumLineDefs; n++)
       if (LineDefs[n].tag == tag)
 	 {
-	 ok = 0;
+	 ok = false;
 	 break;
 	 }
    if (ok)
       for (n = 0; n < NumSectors; n++)
 	 if (Sectors[n].tag == tag)
 	    {
-	    ok = 0;
+	    ok = false;
 	    break;
 	    }
    tag++;

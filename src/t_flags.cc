@@ -57,8 +57,12 @@ for (cur = list; cur; cur = cur->next)
    else if (op == YO_TOGGLE)
       Things[cur->objnum].when ^= mask;
    else
-      fatal_error ("frob_things_flags: op=%02X", op);
+      {
+      nf_bug ("frob_things_flags: op=%02X", op);
+      return;
+      }
    }
+MadeChanges = 1;
 }
 
 

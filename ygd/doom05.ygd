@@ -1,7 +1,8 @@
-# Yadex game definition file version 3
+# Yadex game definition file version 4
 #
 #	doom05.ygd
-#	Yadex Game Definitions for the Doom alpha 0.5
+#	Yadex Game Definitions for Doom alpha 0.5
+#	See doc/ygd.html for the specs.
 #	AYM 1999-07-09
 #
 
@@ -11,6 +12,7 @@
 level_format    alpha
 level_name      e1m10
 picture_format  alpha
+sky_flat        f_sky1
 texture_format  normal
 texture_lumps   textures
 
@@ -231,8 +233,19 @@ thinggroup s rgb:0/b/d "Special"
 #
 #	Definition of things
 #	Format is :
-#	thing <number> <thinggroup> <flags> <radius> <descr> [<sprite>]
+#	thing <number> <thinggroup> <flags> <radius> <desc> [<sprite>]
+#	<desc> must not exceed 19 characters.
 #
+
+# FIXME
+#   10 wrong sprite, perhaps wrong description (E1M1)
+# 2020 missing (E1M2)
+# 2021 missing (E1M2)
+# 2024 wrong sprite, perhaps wrong description (E1M5)
+# 2027 missing (E1M3)
+# 2032 missing (E1M11)
+# 2036 missing (E1M1)
+# 2037 missing (E1M3)
 
 thing 2007 a -  20 "Clip"			CLIP
 thing 2048 a -  20 "Box of bullets"		AMMO

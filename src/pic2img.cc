@@ -30,20 +30,21 @@ Place, Suite 330, Boston, MA 02111-1307, USA.
 
 
 #include "yadex.h"
+#include "gcolour2.h"  /* colour0 */
 #include "pic2img.h"
 #include "wads.h"
 
 
-typedef enum { _MT_BADOFS, _MT_TOOLONG } _msg_type_t;
+typedef enum { _MT_BADOFS, _MT_TOOLONG, _MT_TOOMANY } _msg_type_t;
 
 
-static void add_msg (char type, int arg);
+static int add_msg (char type, int arg);
+static void do_add_msg (char type, int arg);
 static void flush_msg (const char *picname);
 
 
 /*
- *	LoadPicture
- *	Read a picture from a wad file and store it into a buffer.
+ *	LoadPicture - read a picture from a wad file into an Img object
  *
  *	LoadPicture() does not allocate the buffer itself. The buffer
  *	and the picture don't have to have the same dimensions. Thanks
@@ -52,13 +53,13 @@ static void flush_msg (const char *picname);
  *	LoadPicture() on it once for each patch. LoadPicture() takes
  *	care of all the necessary clipping.
  *
+ *	Return 0 on success, non-zero on failure.
+ *
  *	If pic_x_offset == INT_MIN, the picture is centred horizontally.
  *	If pic_y_offset == INT_MIN, the picture is centred vertically.
  */
 int LoadPicture (
-   game_image_pixel_t *buffer,	/* Buffer to load picture into */
-   int buf_width,		/* Dimensions of the buffer */
-   int buf_height,
+   Img& img,		/* Game image to load picture into */
    const char *picname,		/* Picture lump name */
    const Lump_loc& picloc,	/* Picture lump location */
    int pic_x_offset,		/* Coordinates of top left corner of picture */
@@ -67,7 +68,6 @@ int LoadPicture (
    int *pic_height)		/* (can be NULL) */
 {
 MDirPtr	dir;
-MasterDirectory dirbuf;
 i16	_pic_width;
 i16	_pic_height;
 i16	pic_intrinsic_x_ofs;
@@ -84,11 +84,13 @@ int	pic_x1;
 int	pic_y0;
 int	pic_y1;
 u8      *buf;	/* This variable is set to point to the element of
-		   <buffer> where the top of the current column
-		   should be pasted. It can be off <buffer>! */
+		   the image buffer where the top of the current column
+		   should be pasted. It can be off the image buffer! */
 
+// Locate the lump where the picture is
 if (picloc.wad != 0)
    {
+   MasterDirectory dirbuf;
    dirbuf.wadfile   = picloc.wad;
    dirbuf.dir.start = picloc.ofs;
    dirbuf.dir.size  = picloc.len;
@@ -104,26 +106,33 @@ else
       }
    }
 
+// Read the picture header
 if (wad_seek2 (dir->wadfile, dir->dir.start))
    {
-   warn ("picture %.*s: can't seek to %s(%08lXh)."
-      " Bailing out.\n",
+   warn ("picture %.*s: can't seek to %s(%08lXh). Giving up.\n",
          WAD_PIC_NAME, picname,
 	 dir->wadfile->filename,
 	 (unsigned long) dir->dir.start);
    return 1;
    }
-
 bool dummy_bytes  = dir->wadfile->pic_format == YGPF_NORMAL;
 bool long_header  = dir->wadfile->pic_format != YGPF_ALPHA;
 bool long_offsets = dir->wadfile->pic_format == YGPF_NORMAL;
-
 if (long_header)
    {
+   dir->wadfile->error = false;
    wad_read_i16 (dir->wadfile, &_pic_width         );
    wad_read_i16 (dir->wadfile, &_pic_height        );
    wad_read_i16 (dir->wadfile, &pic_intrinsic_x_ofs);  // Read but ignored
    wad_read_i16 (dir->wadfile, &pic_intrinsic_y_ofs);  // Read but ignored
+   if (dir->wadfile->error)
+      {
+      warn ("picture %.*s: read error in header at %s(%08Xlh). Giving up.\n",
+	    WAD_PIC_NAME, picname,
+	    dir->wadfile->filename,
+	    (unsigned long) dir->dir.start);
+      return 1;
+      }
    }
 else
    {
@@ -133,25 +142,44 @@ else
    pic_intrinsic_y_ofs = getc (dir->wadfile->fd);  // Read but ignored
    if (feof (dir->wadfile->fd))
       {
-      warn ("picture %.*s: unexpected EOF in header at %s(%08lXh)."
-	 " Bailing out.\n",
+      warn ("picture %.*s: read error in header at %s(%08lXh). Giving up.\n",
 	    WAD_PIC_NAME, picname,
 	    dir->wadfile->filename,
 	    (unsigned long) dir->dir.start);
       return 1;
       }
    }
-#if 0
-c->width  = _pic_width;
-c->height = _pic_height;
-c->flags  |= HOOK_SIZE_VALID | HOOK_DISP_SIZE;
-#endif
 
-// Centre the picture
+// If no buffer given by caller, allocate one.
+if (img.is_null ())
+   {
+   // Sanity checks
+   if (_pic_width  < 1 || _pic_height < 1)
+      {
+      warn ("picture %.*s: delirious dimensions %dx%d. Giving up.\n",
+	    WAD_PIC_NAME, picname, (int) _pic_width, (int) _pic_height);
+      }
+   if (_pic_width > 1024)
+      {
+      warn ("picture %.*s: too wide (%d). Clipping to 1024.\n",
+	    WAD_PIC_NAME, picname, (int) _pic_width);
+      _pic_width = 1024;
+      }
+   if (_pic_height > 1024)
+      {
+      warn ("picture %.*s: too high (%d). Clipping to 1024.\n",
+	    WAD_PIC_NAME, picname, (int) _pic_height);
+      _pic_height = 1024;
+      }
+   img.resize (_pic_width, _pic_height);
+   }
+int img_width = img.width ();
+
+// Centre the picture.
 if (pic_x_offset == INT_MIN)
-   pic_x_offset = (buf_width - _pic_width) / 2;
+   pic_x_offset = (img_width - _pic_width) / 2;
 if (pic_y_offset == INT_MIN)
-   pic_y_offset = (buf_height - _pic_height) / 2;
+   pic_y_offset = (img.height () - _pic_height) / 2;
 
 /* AYM 19971202: 17 kB is large enough for 128x128 patches. */
 #define TEX_COLUMNBUFFERSIZE ((long) 17 * 1024)
@@ -165,6 +193,7 @@ ColumnData    = (u8 *) GetMemory (TEX_COLUMNBUFFERSIZE);
 /* FIXME DOS and _pic_width > 16000 */
 NeededOffsets = (i32 *) GetMemory ((long) _pic_width * 4);
 
+dir->wadfile->error = false;
 if (long_offsets)
    wad_read_i32 (dir->wadfile, NeededOffsets, _pic_width);
 else
@@ -174,19 +203,41 @@ else
       wad_read_i16 (dir->wadfile, &ofs);
       NeededOffsets[n] = ofs;
       }
+if (dir->wadfile->error)
+   {
+   warn ("picture %.*s: read error in ofstbl at %s(%08lXh). Giving up.\n",
+	 WAD_PIC_NAME, picname,
+	 dir->wadfile->filename,
+	 (unsigned long) ftell (dir->wadfile->fd));
+   FreeMemory (ColumnData);
+   FreeMemory (NeededOffsets);
+   return 1;
+   }
 
 /* Read first column data, and subsequent column data */
 if (long_offsets && NeededOffsets[0] != 8 + (long) _pic_width * 4
 || !long_offsets && NeededOffsets[0] != 4 + (long) _pic_width * 2)
-   wad_seek (dir->wadfile, dir->dir.start + NeededOffsets[0]);
-ActualBufLen = wad_read_bytes2 (dir->wadfile, ColumnData, TEX_COLUMNBUFFERSIZE);
+   {
+   int r = wad_seek2 (dir->wadfile, dir->dir.start + NeededOffsets[0]);
+   if (r)
+      {
+      warn ("picture %.*s: can't seek to %s(%08lXh). Giving up.\n",
+         WAD_PIC_NAME, picname,
+	 dir->wadfile->filename,
+	 (unsigned long) dir->dir.start + NeededOffsets[0]);
+      FreeMemory (ColumnData);
+      FreeMemory (NeededOffsets);
+      return 1;
+      }
+   }
+ActualBufLen = wad_read_vbytes (dir->wadfile, ColumnData, TEX_COLUMNBUFFERSIZE);
 
 /* Clip the picture horizontally and vertically. */
 pic_x0 = - pic_x_offset;
 if (pic_x0 < 0)
   pic_x0 = 0;
 
-pic_x1 = buf_width - pic_x_offset - 1;
+pic_x1 = img_width - pic_x_offset - 1;
 if (pic_x1 >= _pic_width)
   pic_x1 = _pic_width - 1;
 
@@ -194,13 +245,13 @@ pic_y0 = - pic_y_offset;
 if (pic_y0 < 0)
   pic_y0 = 0;
 
-pic_y1 = buf_height - pic_y_offset - 1;
+pic_y1 = img.height () - pic_y_offset - 1;
 if (pic_y1 >= _pic_height)
   pic_y1 = _pic_height - 1;
 
 /* For each (non clipped) column of the picture... */
 for (pic_x = pic_x0,
-   buf = buffer + al_amax (pic_x_offset, 0) + buf_width * pic_y_offset;
+   buf = img.wbuf () + al_amax (pic_x_offset, 0) + img_width * pic_y_offset;
    pic_x <= pic_x1;
    pic_x++, buf++)
    {
@@ -216,11 +267,13 @@ for (pic_x = pic_x0,
       Column = (u8 *) GetFarMemory (TEX_COLUMNSIZE);
       if (wad_seek2 (dir->wadfile, dir->dir.start + CurrentOffset))
          {
-	 add_msg (_MT_BADOFS, (short) pic_x);
-         FreeFarMemory (Column);
+	 int too_many = add_msg (_MT_BADOFS, (short) pic_x);
+	 FreeFarMemory (Column);
+	 if (too_many)  // This picture has too many errors. Give up.
+	    goto pic_end;
 	 continue;  // Give up on this column
          }
-      wad_read_bytes2 (dir->wadfile, Column, TEX_COLUMNSIZE);
+      wad_read_vbytes (dir->wadfile, Column, TEX_COLUMNSIZE);
       }
    filedata = Column;
 
@@ -240,7 +293,13 @@ for (pic_x = pic_x0,
 
       if (post - filedata > TEX_COLUMNSIZE)
          {
-	 add_msg (_MT_TOOLONG, (short) pic_x);
+	 int too_many = add_msg (_MT_TOOLONG, (short) pic_x);
+	 if (too_many)  // This picture has too many errors. Give up.
+	    {
+	    if (! ColumnInMemory)
+	       FreeFarMemory (Column);
+	    goto pic_end;
+	    }
 	 break;  // Give up on this column
 	 }
 
@@ -265,19 +324,24 @@ for (pic_x = pic_x0,
 
       /* "Paste" the post onto the buffer */
       {
-      register game_image_pixel_t *b;
-      register int post_y;
-      for (b = buf + buf_width * (post_y_offset + post_y0), post_y = post_y0;
-	 post_y <= post_y1;
-	 b += buf_width, post_y++)
+      register img_pixel_t *b;
+      register const u8 *p          = post + post_y0;
+               const u8 *const pmax = post + post_y1;
+      int buf_width = img_width;
+
+      for (b = buf + buf_width * (post_y_offset + post_y0);
+	 p <= pmax;
+	 b += buf_width, p++)
          {
-         if (b < buffer)
+#ifdef PARANOIA
+         if (b < img.buf ())
 	    {
             nf_bug ("Picture %.*s(%d): b < buffer",
 		WAD_PIC_NAME, picname, (int) pic_x);
 	    goto next_column;
 	    }
-	 *b = (game_image_pixel_t) post[post_y];
+#endif
+	 *b = (*p == IMG_TRANSP) ? colour0 : *p;
          }
       }
 
@@ -287,10 +351,14 @@ for (pic_x = pic_x0,
       }  // Post loop
    }
 
+#ifdef PARANOIA
 next_column :
+#endif
    if (!ColumnInMemory)
       FreeFarMemory (Column);
    }  // Column loop
+
+pic_end:
 FreeMemory (ColumnData);
 FreeMemory (NeededOffsets);
 flush_msg (picname);
@@ -313,16 +381,33 @@ typedef struct
    char type;
    short arg;
 } _msg_t;
-static _msg_t *_msg_list = 0;
-static size_t _nmsg = 0;
+static _msg_t *_msg_list  = 0;
+static size_t _nmsg       = 0;
 const size_t _granularity = 128;
+const size_t _max_msg     = 20;
 
 
 /*
  *	add_msg
  *	Add a warning message to the list
+ *
+ *	Return 0 on success, <>0 if the max number of messages
+ *	has been reached.
  */
-static void add_msg (char type, int arg)
+static int add_msg (char type, int arg)
+{
+if (_nmsg >= _max_msg)
+   {
+   if (_nmsg == _max_msg)  // Test in case the caller ignores our return value
+      do_add_msg (_MT_TOOMANY, arg);
+   return 1;
+   }
+do_add_msg (type, arg);
+return 0;
+}
+
+
+static void do_add_msg (char type, int arg)
 {
 if ((_nmsg + 1) % _granularity == 1)  // Grow list if necessary
    {
@@ -335,6 +420,7 @@ if ((_nmsg + 1) % _granularity == 1)  // Grow list if necessary
 _msg_list[_nmsg].type = type;
 _msg_list[_nmsg].arg  = arg;
 _nmsg++;
+return;
 }
 
 
@@ -354,7 +440,7 @@ for (_msg_type_t t = _MT_BADOFS; t <= _MT_TOOLONG; ((int &) t)++)
    const char *str = "unknown error";
    if (t == _MT_BADOFS)
       str = "bad file offset";
-   else
+   else if (t == _MT_TOOLONG)
       str = "post too long";
 
    for (size_t n = 0; n < _nmsg; n++)
@@ -392,6 +478,9 @@ for (_msg_type_t t = _MT_BADOFS; t <= _MT_TOOLONG; ((int &) t)++)
       warn ("): %s. Corrupt wad ?\n", str);
       }
    }
+
+if (_msg_list[_nmsg - 1].type == _MT_TOOMANY)
+   warn ("picture %.*s: too many errors. Giving up.\n", WAD_PIC_NAME, picname);
 _nmsg = 0;
 free (_msg_list);
 _msg_list = 0;

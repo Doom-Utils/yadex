@@ -28,10 +28,16 @@ Place, Suite 330, Boston, MA 02111-1307, USA.
 
 
 #include "yadex.h"
+#ifdef Y_X11
+#include <X11/Xlib.h>
+#endif
 #include "flats.h"
 #include "gfx.h"
+#include "img.h"
 #include "levels.h"
-#include "dispimg.h"
+#include "lists.h"
+#include "sticker.h"
+#include "wads.h"
 
 
 /*
@@ -87,8 +93,6 @@ return y_strnicmp ((const char *) key,
 
 void DisplayFloorTexture (hookfunc_comm_t *c)
 {
-unsigned char *pixels;	/* array of pixels that hold the image */
-
 c->width  = DOOM_FLAT_WIDTH;  // Big deal !
 c->height = DOOM_FLAT_HEIGHT;
 c->flags  = HOOK_SIZE_VALID;
@@ -106,15 +110,17 @@ if (! flat)  // Not found in list
    pop_colour ();
    return;
    }
+c->lump_loc.wad = flat->wadfile;
+c->lump_loc.ofs = flat->offset;
+c->lump_loc.len = DOOM_FLAT_WIDTH * DOOM_FLAT_HEIGHT;  // Sorry.
+c->flags |= HOOK_LOC_VALID;
 WadPtr wadfile = flat->wadfile;
 wad_seek (wadfile, flat->offset);
 
-#if defined Y_X11
-pixels = (unsigned char huge *) GetFarMemory (c->width * c->height);
-wad_read_bytes (wadfile, pixels, (long) c->width * c->height);
-display_game_image (pixels, c->width, c->height, c->x0, c->y0,
-   c->x1 - c->x0 + 1, c->y1 - c->y0 + 1);
-#elif defined Y_BGI
+// Optimization for BGI
+#if defined Y_BGI
+unsigned char *pixels;	/* array of pixels that hold the image */
+
 pixels = GetFarMemory (c->width * c->height + 4);
 wad_read_bytes (wadfile, pixels + 4, (long) c->width * c->height);
 if (GfxMode < -1)
@@ -130,13 +136,18 @@ else
    ((unsigned short huge *)pixels)[1] = c->height;
    }
 putimage (c->x0, c->y0, pixels, COPY_PUT);
+FreeFarMemory (pixels);
+#else
+Img img (c->width, c->height);
+wad_read_bytes (wadfile, img.wbuf (), (long) c->width * c->height);
+Sticker sticker (img, true);  // Use opaque because it's faster
+sticker.draw (drw, 't', c->x0, c->y0);
 #endif
 c->disp_x0 = c->x0;
 c->disp_y0 = c->y0;
 c->disp_x1 = c->x1;
 c->disp_y1 = c->y1;
 
-FreeFarMemory (pixels);
 c->flags |= HOOK_DRAWN;
 }
 

@@ -34,9 +34,10 @@ Place, Suite 330, Boston, MA 02111-1307, USA.
 #include "levels.h"
 #include "macro.h"
 #include "trace.h"
+#include "windim.h"
 
 
-const char config_file_magic[] = "# Yadex configuration file version 2";
+const char config_file_magic[] = "# Yadex configuration file version 3";
 
 
 /*
@@ -45,8 +46,8 @@ const char config_file_magic[] = "# Yadex configuration file version 2";
 typedef enum
    {
    // Boolean (toggle)
-   // Receptacle is of type Bool
-   // data_ptr is of type (Bool *)
+   // Receptacle is of type bool
+   // data_ptr is of type (bool *)
    OPT_BOOLEAN,
 
    // "yes", "no", "ask"
@@ -58,6 +59,12 @@ typedef enum
    // Receptacle is of type int
    // data_ptr is of type (int *)
    OPT_INTEGER,
+
+   // Window dimension, either integer (pixels) or integer%
+   // (percentage of total display dimension)
+   // Receptacle is of type ...
+   // data_ptr is of type ...
+   OPT_WINDIM,
 
    // String
    // Receptacle is of type (char[9])
@@ -127,6 +134,13 @@ opt_desc_t options[] =		/* description of the command line options */
   NULL,
   "Max. dist. to edge (pixels)",
   &autoscroll_edge },
+
+{ NULL,
+  "b",
+  OPT_STRINGPTR,
+  NULL,
+  "Run benchmark and exit successfully",
+  &bench },
 
 { "bgi",
   NULL,
@@ -234,7 +248,7 @@ opt_desc_t options[] =		/* description of the command line options */
   &double_click_timeout },
 
 { "expert",
-  "e",
+  NULL,
   OPT_BOOLEAN,
   NULL,
   "Expert mode",
@@ -270,7 +284,7 @@ opt_desc_t options[] =		/* description of the command line options */
 
 { "height",
   "h",
-  OPT_INTEGER,
+  OPT_WINDIM,
   "x",
   "(X11 only) Initial window height",
   &initial_window_height },
@@ -466,6 +480,13 @@ opt_desc_t options[] =		/* description of the command line options */
   "Automatic selection of 0th object",
   &Select0 },
 
+{ "sprite_scale",
+  NULL,
+  OPT_INTEGER,
+  NULL,
+  "Relative scale of sprites",
+  &sprite_scale },
+
 { "swap_buttons",
   "sb",
   OPT_BOOLEAN,
@@ -517,17 +538,24 @@ opt_desc_t options[] =		/* description of the command line options */
 
 { "width",
   "w",
-  OPT_INTEGER,
+  OPT_WINDIM,
   "x",
   "(X11 only) Initial window width",
   &initial_window_width },
 
-{ "zoom",
+{ "zoom_default",
   "z",
   OPT_INTEGER,
   NULL,
   "Initial zoom factor",
-  &InitialScale },
+  &zoom_default },
+
+{ "zoom_step",
+  NULL,
+  OPT_INTEGER,
+  NULL,
+  "Step between zoom factors (in %)",
+  &zoom_step },
 
 { NULL,
   NULL,
@@ -578,9 +606,9 @@ static const char *confirm_i2e (confirm_t internal);
  */
 int parse_config_file (const char *filename)
 {
-bool is_absolute = filename && *filename == '/';
+bool absolute = filename && is_absolute (filename);
 
-if (is_absolute)
+if (absolute)
    {
    printf ("Using config file \"%s\".\n", filename);
    int failure = parse_one_config_file (filename);
@@ -612,8 +640,8 @@ else
 	 }
       trace ("cfgloc", "%s: miss (%s)", name, strerror (errno));
       }
-   printf ("No config file found.\n");
-   return 1;
+   warn ("No config file found.\n");
+   return 0;
    }
 }
 
@@ -653,6 +681,7 @@ if (fgets (line, sizeof line, cfgfile) == NULL
    RETURN_FAILURE;
    }
 
+/* Execute one line on each iteration. */
 for (unsigned lnum = 2; fgets (line, sizeof line, cfgfile) != NULL; lnum++)
    {
    /* Skip leading whitespace */
@@ -712,10 +741,11 @@ for (unsigned lnum = 2; fgets (line, sizeof line, cfgfile) != NULL; lnum++)
       {
       if (o->opt_type == OPT_END)
          {
-         report_error ("%s(%u): invalid option \"%s\"", filename, lnum, option);
-	 RETURN_FAILURE;
+	 warn ("%s(%u): invalid variable \"%s\" - skipping\n",
+	   filename, lnum, option);
+	 goto next_line;
          }
-      if (! strcmp (option, o->long_name))
+      if (o->long_name && ! strcmp (option, o->long_name))
 	 {
 	 if (o->flags != NULL && strchr (o->flags, '1'))
 	    break;
@@ -734,13 +764,13 @@ for (unsigned lnum = 2; fgets (line, sizeof line, cfgfile) != NULL; lnum++)
 	        || ! strcmp (value, "on") || ! strcmp (value, "1"))
 		  {
 		  if (o->data_ptr)
-		     *((Bool *) (o->data_ptr)) = 1;
+		     *((bool *) (o->data_ptr)) = true;
 		  }
 	       else if (! strcmp (value, "no") || ! strcmp (value, "false")
 	             || ! strcmp (value, "off") || ! strcmp (value, "0"))
 		  {
 		  if (o->data_ptr)
-		     *((Bool *) (o->data_ptr)) = 0;
+		     *((bool *) (o->data_ptr)) = false;
 		  }
 	       else
                   {
@@ -756,6 +786,15 @@ for (unsigned lnum = 2; fgets (line, sizeof line, cfgfile) != NULL; lnum++)
 	    case OPT_INTEGER:
 	       if (o->data_ptr)
 	          *((int *) (o->data_ptr)) = atoi (value);
+	       break;
+	    case OPT_WINDIM:
+	       if (o->data_ptr)
+		  if (((Win_dim *) (o->data_ptr))->set (value))
+		     {
+		     report_error ("%s(%u): bad dimension spec \"%s\"",
+		        filename, lnum, value);
+		     RETURN_FAILURE;
+		     }
 	       break;
             case OPT_STRINGBUF8:
                if (o->data_ptr)
@@ -800,6 +839,7 @@ for (unsigned lnum = 2; fgets (line, sizeof line, cfgfile) != NULL; lnum++)
 	 break;
 	 }
       }
+   next_line:;
    }
 
 byebye:
@@ -840,8 +880,8 @@ while (argc > 0)
 	    report_error ("invalid option: \"%s\"", argv[0]);
 	    return 1;
 	    }
-	 if (o->short_name != NULL && ! strcmp (argv[0]+1, o->short_name)
-	  || o->long_name  != NULL && ! strcmp (argv[0]+1, o->long_name))
+	 if (o->short_name && ! strcmp (argv[0]+1, o->short_name)
+	  || o->long_name  && ! strcmp (argv[0]+1, o->long_name))
             break;
          }
 
@@ -855,12 +895,12 @@ while (argc > 0)
 	 if (argv[0][0] == '-')
 	    {
 	    if (o->data_ptr && ! ignore)
-	       *((Bool *) (o->data_ptr)) = 1;
+	       *((bool *) (o->data_ptr)) = true;
 	    }
 	 else
 	    {
 	    if (o->data_ptr && ! ignore)
-	       *((Bool *) (o->data_ptr)) = 0;
+	       *((bool *) (o->data_ptr)) = false;
 	    }
 	 break;
       case OPT_CONFIRM:
@@ -884,6 +924,21 @@ while (argc > 0)
 	 argc--;
 	 if (o->data_ptr && ! ignore)
 	    *((int *) (o->data_ptr)) = atoi (argv[0]);
+	 break;
+      case OPT_WINDIM:
+         if (argc <= 1)
+	    {
+	    report_error ("missing argument after \"%s\"", argv[0]);
+	    return 1;
+	    }
+	 argv++;
+	 argc--;
+	 if (o->data_ptr && ! ignore)
+	    if (((Win_dim *) (o->data_ptr))->set (argv[0]))
+	       {
+	       report_error ("bad dimension spec \"%s\"", argv[0]);
+	       return 1;
+	       }
 	 break;
       case OPT_STRINGBUF8:
          if (argc <= 1)
@@ -949,7 +1004,7 @@ return 0;
  *	dump_parameters
  *	Print a list of the parameters with their current value.
  */
-void dump_parameters (FILE *fd)
+void dump_parameters (FILE *fp)
 {
 const opt_desc_t *o;
 int desc_maxlen = 0;
@@ -959,29 +1014,39 @@ for (o = options + 1; o->opt_type != OPT_END; o++)
    {
    int len = strlen (o->desc);
    desc_maxlen = al_amax (desc_maxlen, len);
-   len = strlen (o->long_name);
-   name_maxlen = al_amax (name_maxlen, len);
+   if (o->long_name)
+      {
+      len = strlen (o->long_name);
+      name_maxlen = al_amax (name_maxlen, len);
+      }
    }
 
 for (o = options + 1; o->opt_type != OPT_END; o++)
    {
-   fprintf (fd, "%-*s  %-*s  ",
-      name_maxlen, o->long_name, desc_maxlen, o->desc);
+   if (! o->long_name)
+      continue;
+   fprintf (fp, "%-*s  %-*s  ",name_maxlen, o->long_name, desc_maxlen, o->desc);
    if (o->opt_type == OPT_BOOLEAN)
-      fprintf (fd, "%s", *((int *)o->data_ptr) ? "enabled" : "disabled");
+      fprintf (fp, "%s", *((int *)o->data_ptr) ? "enabled" : "disabled");
    else if (o->opt_type == OPT_CONFIRM)
-      fputs (confirm_i2e (*((confirm_t *) o->data_ptr)), fd);
+      fputs (confirm_i2e (*((confirm_t *) o->data_ptr)), fp);
    else if (o->opt_type == OPT_STRINGBUF8)
-      fprintf (fd, "\"%s\"", (char *) o->data_ptr);
+      fprintf (fp, "\"%s\"", (char *) o->data_ptr);
    else if (o->opt_type == OPT_STRINGPTR)
       {
       if (o->data_ptr)
-         fprintf (fd, "\"%s\"", *((char **) o->data_ptr));
+         fprintf (fp, "\"%s\"", *((char **) o->data_ptr));
       else
-         fprintf (fd, "--none--");
+         fprintf (fp, "--none--");
       }
    else if (o->opt_type == OPT_INTEGER)
-      fprintf (fd, "%d", *((int *)o->data_ptr));
+      fprintf (fp, "%d", *((int *)o->data_ptr));
+   else if (o->opt_type == OPT_WINDIM)
+      {
+      char buf[50];  // Much slack
+      ((Win_dim *) (o->data_ptr))->string (buf, sizeof buf);
+      fputs (buf, fp);
+      }
    else if (o->opt_type == OPT_STRINGPTRACC
          || o->opt_type == OPT_STRINGPTRLIST)
       {
@@ -989,14 +1054,14 @@ for (o = options + 1; o->opt_type != OPT_END; o++)
          {
          char **list;
          for (list = *((char ***) o->data_ptr); list && *list; list++)
-            fprintf (fd, "\"%s\" ", *list);
+            fprintf (fp, "\"%s\" ", *list);
          if (list == *((char ***) o->data_ptr))
-            fprintf (fd, "--none--");
+            fprintf (fp, "--none--");
          }
       else
-         fprintf (fd, "--none--");
+         fprintf (fp, "--none--");
       }
-   fputc ('\n', fd);
+   fputc ('\n', fp);
    }
 }
 
@@ -1014,31 +1079,34 @@ int name_maxlen = 0;
 for (o = options + 1; o->opt_type != OPT_END; o++)
    {
    int len;
-   if (o->short_name == NULL)
+   if (! o->short_name)
       continue;
    len = strlen (o->desc);
    desc_maxlen = al_amax (desc_maxlen, len);
-   len = strlen (o->long_name);
-   name_maxlen = al_amax (name_maxlen, len);
+   if (o->long_name)
+      {
+      len = strlen (o->long_name);
+      name_maxlen = al_amax (name_maxlen, len);
+      }
    }
 
 for (o = options; o->opt_type != OPT_END; o++)
    {
-   if (o->short_name == NULL)
+   if (! o->short_name)
       continue;
 #if ! defined Y_BGI
-   if (o->flags != NULL && strchr (o->flags, 'b'))
+   if (o->flags && strchr (o->flags, 'b'))
       continue;
 #endif
 #if ! defined Y_X11
-   if (o->flags != NULL && strchr (o->flags, 'x'))
+   if (o->flags && strchr (o->flags, 'x'))
       continue;
 #endif
-   if (o->short_name != NULL)
-      fprintf (fd, " -%-2s ", o->short_name);
+   if (o->short_name)
+      fprintf (fd, " -%-3s ", o->short_name);
    else
-      fprintf (fd, "     ");
-   if (o->long_name != NULL)
+      fprintf (fd, "      ");
+   if (o->long_name)
       fprintf (fd, "-%-*s ", name_maxlen, o->long_name);
    else
       fprintf (fd, "%*s", name_maxlen + 2, "");
@@ -1050,6 +1118,7 @@ for (o = options; o->opt_type != OPT_END; o++)
       case OPT_STRINGPTR:
       case OPT_STRINGPTRACC:  fprintf (fd, "<string>    "); break;
       case OPT_INTEGER:       fprintf (fd, "<integer>   "); break;
+      case OPT_WINDIM:        fprintf (fd, "<integer>[%%]"); break;
       case OPT_STRINGPTRLIST: fprintf (fd, "<string> ..."); break;
       case OPT_END: ;  // This line is here only to silence a GCC warning.
       }

@@ -1,6 +1,7 @@
 /*
- *	clearimg.cc
- *	AYM 1998-11-23
+ *	wadres.h
+ *	Wadres class
+ *	AYM 2000-04-06
  */
 
 
@@ -27,30 +28,32 @@ Place, Suite 330, Boston, MA 02111-1307, USA.
 */
 
 
-#include "yadex.h"
-#include "clearimg.h"
+#ifndef YH_WADRES  /* DO NOT INSERT ANYTHING BEFORE THIS LINE */
+#define YH_WADRES
 
 
-/*
- *	clear_game_image
- *	Clear a game image buffer (fill it
- *	with the game image background colour)
- */
-void clear_game_image (game_image_pixel_t *buf, int width, int height)
+#include "spritdir.h"
+
+
+/* This class is mostly a collection of other class. It does not
+   much more than neatly grouping all objects that have the same
+   lifetime and dependencies. */
+class Wad_res
 {
-unsigned long bytes_total = (unsigned long) width * height * sizeof *buf;
-size_t bytes_this_time = AL_ASIZE_T_MAX;
-
-// Under DOS, memset() is limited to 64 kB.
-while (bytes_total > 0)
-   {
-   if (bytes_total <= AL_ASIZE_T_MAX)
-      bytes_this_time = (size_t) bytes_total;
-   // FIXME should be parameterized, not hard-coded 0.
-   memset (buf, 0, bytes_this_time);
-   bytes_total -= bytes_this_time;
-   buf += bytes_this_time / sizeof *buf;
-   }
-}
+  public :
+    Wad_res (MDirPtr *md);
+    Sprite_dir sprites;
+    /* To be added here :
+       - Lump_dir patches
+       - Lump_dir flats
+       - Lump_cache textures (TEXTURE[12])
+       - Lump_cache pnames   (PNAMES)
+       - Lump_cache palette  (PLAYPAL, first 768 bytes) */
+  private :
+};
 
 
+extern Wad_res wad_res;
+
+
+#endif  /* DO NOT ADD ANYTHING AFTER THIS LINE */

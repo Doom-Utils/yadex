@@ -99,10 +99,10 @@ MadeChanges = 1;
 void RaiseOrLowerSectors (SelPtr obj)
 {
 SelPtr cur;
-int  x0;          /* left hand (x) window start     */
-int  y0;          /* top (y) window start           */
-int  key;         /* holds value returned by InputInteger */
-int  delta = 0;   /* user input for delta */
+int  x0;          // left hand (x) window start
+int  y0;          // top (y) window start
+int  key;         // holds value returned by InputInteger
+int  delta = 0;   // user input for delta
 
 
 HideMousePointer ();
@@ -141,10 +141,10 @@ MadeChanges = 1;
 void BrightenOrDarkenSectors (SelPtr obj)
 {
 SelPtr cur;
-int  x0;          /* left hand (x) window start     */
-int  y0;          /* top (y) window start           */
-int  key;         /* holds value returned by InputInteger */
-int  delta = 0;   /* user input for delta */
+int  x0;          // left hand (x) window start
+int  y0;          // top (y) window start
+int  key;         // holds value returned by InputInteger
+int  delta = 0;   // user input for delta
 
 
 HideMousePointer ();

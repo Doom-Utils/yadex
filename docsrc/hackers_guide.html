@@ -36,7 +36,7 @@ If you want to improve it, be my guest.
 			<h3>Introduction</h3>
 
 Yadex is written in a mixture of C and C++.
-The Unix version interfaces with X through Xlib directly ;
+The Unix version interfaces with X through Xlib directly&nbsp;;
 it uses no toolkit.
 The DOS version uses BGI (Borland Graphics Interface),
 a rather low-level API to set the video mode, draw lines, text, etc.
@@ -670,17 +670,17 @@ TBD
 
 		<h2>Game graphics</h2>
 
-			<h3>Viewing graphics</h3>
+			<h3>Doom graphics basics</h3>
 
-Doom has two formats for graphics&nbsp;: pictures and plain
-bitmaps. Pictures are made of columns which are in turn made of
-one or more posts. If there are several posts in a column, they
-can be separated by void space and thus the picture can have
-transparent areas. Pictures are used for patches, sprites and
-the rest of the graphics (but Yadex doesn't use them). Plain
-bitmaps are just arrays of pixels and cannot contain transparent
-areas. That latter format is used only for flats, which are all
-64&times;64 bitmaps.
+Doom and its derivatives have two main formats for
+graphics&nbsp;: pictures and plain bitmaps. Pictures are made of
+columns which are in turn made of one or more posts. If there
+are several posts in a column, they can be separated by void
+space and thus the picture can have transparent areas. Pictures
+are used for patches, sprites and the rest of the graphics (but
+Yadex doesn't use them). Plain bitmaps are just arrays of pixels
+and cannot contain transparent areas. That latter format is used
+only for flats, which are all 64&times;64 bitmaps.
 
 <p>Textures are made by pasting one or more patches onto a
 rectangular buffer. The resulting image can be of course
@@ -693,26 +693,55 @@ to know the actual RGB colour of a pixel, it is necessary to
 look up its value in the <code>PLAYPAL</code> (normally, only
 the first palette is used).
 
+			<h3>The <code>Img</code> class</h3>
+
+<p>The <code>Img</code> class is used to store and manipulate
+all game graphics (flats, patches, sprites and textures). It's a
+palette-encoded rectangular array of pixels. The type
+<code>img_pixel_t</code> is the type of a pixel; it's the same
+as in the wad, that is a byte. The value of the elements of the
+array is also the same as in the wad, that is an index into
+<code>PLAYPAL</code>. Transparent areas are filled with colour
+number 0 (which translates to black with all known iwads).
+Unfortunately, colour 0 is also used in certain graphics which
+causes them to be rendered with holes in them. This needs to be
+fixed.
+
+<p>The related functions are&nbsp;:
+<pre>Img::Img             - default constructor
+Img::Img             - constructor with dimensions
+Img::~Img            - dtor
+Img::is_null         - return true iff this is a null image
+Img::width           - return the current width
+Img::height          - return the current height
+Img::buf             - return a const pointer on the buffer
+Img::wbuf            - return a writable pointer on the buffer
+Img::resize          - resize the image
+clear_img            - clear a game image buffer
+display_img          - display a game image
+scale_img            - scale a game image
+spectrify_img        - make a game image look vaguely like a spectre
+LoadPicture          - read a picture from a wad file into an Img object</pre>
+
+			<h3>Viewing graphics</h3>
+
 <p>As is the case with saving graphics to a file, viewing
 graphics would involve a lot of coding to do it in an optimized
 fashion. Therefore it's done in a somewhat wasteful way&nbsp;:
+
 <ol>
-<li>the image is put into a buffer
-<li>the buffer is pasted onto the window or screen
+  <li>the image is put into an <code>Img</code> object
+  <li>the <code>Img</code> is pasted onto the window or screen
 </ol>
-The buffer is an array of bytes, one byte per pixel. The value
-of a pixel is, as in Doom, an index into the
-<code>PLAYPAL</code> palette. There is no notion of transparent
-colour in the buffer&nbsp;: it is opaque.
 
 <p>The first step is done with
 <code>DisplayFloorTexture()</code> (for flats) and
 <code>LoadPicture()</code> (for other graphics). For textures,
-<code>LoadPicture()</code> is called repeatedly on the same game
-image buffer, once for each flat.
+<code>LoadPicture()</code> is called repeatedly on the same
+<code>Img</code> object, once for each flat.
 
 <p>The second step is done with
-<code>display_game_image()</code>. It takes care of converting
+<code>display_img()</code>. It takes care of converting
 Doom pixel values into actual pixel values needed by the
 graphical API (which depend on a lot of factors like the video
 mode, type and depth of visual, byte order of X server, etc.)
@@ -722,20 +751,20 @@ screen.
 <p><code>display_pic()</code> combines fetching the image into
 the game image buffer and displaying it.
 
-<p><code>spectrify_game_image()</code> can be used on a game
+<p><code>spectrify_img()</code> can be used on a game
 image buffer to make it look more or less like a spectre.
 
 			<h3>Saving graphics to file (screenshots etc.)</h3>
 
 The basic idea is to
+
 <ol>
-<li>get the image to save in an <code>Rgbbmp</code> buffer (with
-<code>window_to_rgbbmp()</code>),
-
-<li>save the <code>Rgbbmp</code> buffer to a file (with
-<code>rgbbmp_to_ppm()</code>).
-
+  <li>get the image to save in an <code>Rgbbmp</code> buffer (with
+    <code>window_to_rgbbmp()</code>),
+  <li>save the <code>Rgbbmp</code> buffer to a file (with
+    <code>rgbbmp_to_ppm()</code>).
 </ol>
+
 This is inefficient because, in many cases, the image could be
 saved directly from the window to the file. This two-step
 algorithm wastes memory (the buffer can be quite large) and
@@ -803,6 +832,9 @@ define this and Yadex will draw squares instead.
 <dd>Misc. obsolete stuff I didn't want to delete at the time.
 Never define it or you'll break Yadex&nbsp;!
 Code under <code>#ifdef OLD</code> should probably be removed.
+<p>
+<dt>$c OLD_GRID
+<dd>Pre-1.5 grid (no dots, only lines).
 <p>
 <dt>$c OLD_METHOD
 <dd>My cruft. Code thus <code>#ifdef</code>'d should probably be removed.

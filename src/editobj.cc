@@ -38,6 +38,7 @@ Place, Suite 330, Boston, MA 02111-1307, USA.
 #include "gfx.h"
 #include "levels.h"
 #include "oldmenus.h"
+#include "s_swapf.h"
 #include "selectn.h"
 #include "t_spin.h"
 #include "x_mirror.h"
@@ -78,7 +79,7 @@ return val;
    ask for an object number and display a warning message
 */
 
-int InputObjectXRef (int x0, int y0, int objtype, Bool allownone, int curobj)
+int InputObjectXRef (int x0, int y0, int objtype, bool allownone, int curobj)
 {
 int val, key;
 char prompt[80];
@@ -118,7 +119,7 @@ return val;
    ask for two vertex numbers and check for maximum valid number
 */
 
-Bool Input2VertexNumbers (int x0, int y0, const char *prompt1, int *v1, int *v2)
+bool Input2VertexNumbers (int x0, int y0, const char *prompt1, int *v1, int *v2)
 {
 int  key;
 int  maxlen, first;
@@ -287,12 +288,12 @@ switch (objtype)
    Yuck!  Dirty piece of code...
 */
 
-Bool Input2Numbers (int x0, int y0, const char *name1, const char *name2,
+bool Input2Numbers (int x0, int y0, const char *name1, const char *name2,
    int v1max, int v2max, int *v1, int *v2)
 {
 int  key;
 int  maxlen, first;
-Bool ok;
+bool ok;
 char prompt[80];
 // FIXME copied from InputInteger()...
 int  entry_width = 2 * HOLLOW_BORDER + 2 * NARROW_HSPACING + 7 * FONTW;
@@ -345,13 +346,13 @@ first = 1;
 key = 0;
 for (;;)
    {
-   ok = 1;
+   ok = true;
    DrawScreenBoxHollow (entry1_out_x0, entry1_out_y0,
       entry1_out_x1, entry1_out_y1, BLACK);
    if (*v1 < 0 || *v1 > v1max)
       {
       set_colour (DARKGRAY);
-      ok = 0;
+      ok = false;
       }
    else
       set_colour (LIGHTGRAY);
@@ -361,7 +362,7 @@ for (;;)
    if (*v2 < 0 || *v2 > v2max)
       {
       set_colour (DARKGRAY);
-      ok = 0;
+      ok = false;
       }
    else
       set_colour (LIGHTGRAY);
@@ -852,6 +853,9 @@ switch (val)
       // Linedef -> Make rectangular boss
       if (objtype == OBJ_LINEDEFS)
 	 MakeRectangularNook (*list, 32, 16, 1);
+      // Sector -> Swap flats
+      else if (objtype == OBJ_SECTORS)
+	 swap_flats (*list);
       break;
 
    case 13:

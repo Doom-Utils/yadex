@@ -5,8 +5,10 @@
  */
 
 
-#ifndef YH_EDWIDGET
+#ifndef YH_EDWIDGET  /* DO NOT INSERT ANYTHING BEFORE THIS LINE */
 #define YH_EDWIDGET
+
+
 class edwidget_c
    {
    public :
@@ -27,5 +29,6 @@ class edwidget_c
       int  const get_x1        ();	// Tell me where's your bottom right c.
       int  const get_y1        ();
    };
-#endif
 
+
+#endif  /* DO NOT ADD ANYTHING AFTER THIS LINE */

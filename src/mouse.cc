@@ -39,7 +39,7 @@ Place, Suite 330, Boston, MA 02111-1307, USA.
 #define MOUSE 0x33
 
 /* the global data */
-Bool UseMouse;			/* is there a mouse driver? */
+bool UseMouse;			/* is there a mouse driver? */
 
 
 /*
@@ -55,7 +55,7 @@ regs.x.ax = 0x0000;
 int86(MOUSE, &regs, &regs);
 if (regs.x.ax == 0xffff)
    {
-   UseMouse = 1; /* mouse */
+   UseMouse = true; /* mouse */
 #if defined Y_BGI && defined CIRRUS_PATCH
    /*
       note from RQ:
@@ -84,7 +84,7 @@ if (regs.x.ax == 0xffff)
 #endif  /* AYM_MOUSE_HACKS */
    }
 else
-UseMouse = 0; /* no mouse */
+UseMouse = false; /* no mouse */
 }
 
 

@@ -29,59 +29,58 @@ Place, Suite 330, Boston, MA 02111-1307, USA.
 
 
 #include "yadex.h"
+#include <math.h>
 #include "_edit.h"
 #include "editzoom.h"
 #include "events.h"
 #include "gfx.h"
 
 
-void edit_zoom_in (edit_t *e)
+int edit_zoom_in (edit_t *e)
 {
-if (! e) return;  // Prevent the compiler from emitting warning about unused .p.
-if (Scale >= 8.0)
-   return;
-
-OrigX += (int) ((is.x - ScrCenterX) / Scale);
-OrigY += (int) ((ScrCenterY - is.y) / Scale);
-if (Scale < 1.0)
-   Scale = 1.0 / ((1.0 / Scale) - 1.0);
-else
-   Scale = Scale * 2.0;
-OrigX -= (int) ((is.x - ScrCenterX) / Scale);
-OrigY -= (int) ((ScrCenterY - is.y) / Scale);
-send_event (YE_ZOOM_CHANGED);
+  if (! e) return 1;  // Prevent compiler warning about unused .p.
+  double step = zoom_step != 0 ? (zoom_step + 100.0) / 100 : sqrt (2);
+  if (Scale * step > 10.0)
+    return 1;
+  OrigX += (int) ((is.x - ScrCenterX) / Scale);
+  OrigY += (int) ((ScrCenterY - is.y) / Scale);
+  Scale *= step;
+  OrigX -= (int) ((is.x - ScrCenterX) / Scale);
+  OrigY -= (int) ((ScrCenterY - is.y) / Scale);
+  send_event (YE_ZOOM_CHANGED);
+  return 0;
 }
 
 
-void edit_zoom_out (edit_t *e)
+int edit_zoom_out (edit_t *e)
 {
-if (! e) return;  // Prevent the compiler from emitting warning about unused .p.
-if (Scale <= 0.05)
-   return;
-
-OrigX += (int) ((is.x - ScrCenterX) / Scale);
-OrigY += (int) ((ScrCenterY - is.y) / Scale);
-if (Scale < 1.0)
-   Scale = 1.0 / ((1.0 / Scale) + 1.0);
-else
-   Scale = Scale / 2.0;
-OrigX -= (int) ((is.x - ScrCenterX) / Scale);
-OrigY -= (int) ((ScrCenterY - is.y) / Scale);
-send_event (YE_ZOOM_CHANGED);
+  if (! e) return 1;  // Prevent compiler warning about unused .p.
+  double step = zoom_step != 0 ? (zoom_step + 100.0) / 100 : sqrt (2);
+  if (Scale / step < 0.05)
+    return 1;
+  OrigX += (int) ((is.x - ScrCenterX) / Scale);
+  OrigY += (int) ((ScrCenterY - is.y) / Scale);
+  Scale /= step;
+  OrigX -= (int) ((is.x - ScrCenterX) / Scale);
+  OrigY -= (int) ((ScrCenterY - is.y) / Scale);
+  send_event (YE_ZOOM_CHANGED);
+  return 0;
 }
 
 
-void edit_set_zoom (edit_t *e, double zoom_factor)
+int edit_set_zoom (edit_t *e, double zoom_factor)
 {
-if (! e) return;  // Prevent the compiler from emitting warning about unused .p.
-OrigX += (int) ((is.x - ScrCenterX) / Scale);
-OrigY += (int) ((ScrCenterY - is.y) / Scale);
-Scale = zoom_factor;
-OrigX -= (int) ((is.x - ScrCenterX) / Scale);
-OrigY -= (int) ((ScrCenterY - is.y) / Scale);
-send_event (YE_ZOOM_CHANGED);
+  if (! e) return 1;  // Prevent compiler warning about unused .p.
+  if (zoom_factor < 0.05)
+    zoom_factor = 0.05;
+  if (zoom_factor > 10.0)
+    zoom_factor = 10.0;
+  OrigX += (int) ((is.x - ScrCenterX) / Scale);
+  OrigY += (int) ((ScrCenterY - is.y) / Scale);
+  Scale = zoom_factor;
+  OrigX -= (int) ((is.x - ScrCenterX) / Scale);
+  OrigY -= (int) ((ScrCenterY - is.y) / Scale);
+  send_event (YE_ZOOM_CHANGED);
+  return 0;
 }
-
-
-
 

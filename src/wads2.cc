@@ -29,8 +29,10 @@ Place, Suite 330, Boston, MA 02111-1307, USA.
 
 
 #include "yadex.h"
-#include "game.h"  /* yg_picture_format */
+#include "game.h"	/* yg_picture_format */
+#include "serialnum.h"
 #include "wads.h"
+#include "wads2.h"
 
 
 static char *locate_pwad (const char *filename);
@@ -38,11 +40,14 @@ static int level_name_order (const void *p1, const void *p2);
 
 
 /*
-   open the main wad file, read in its directory and create the
-   master directory
-*/
-
-void OpenMainWad (const char *filename)
+ *	OpenMainWad - open the iwad
+ *
+ *	Open the main wad file, read in its directory and create
+ *	the master directory.
+ *
+ *	Return 0 on success, non-zero on failure.
+ */
+int OpenMainWad (const char *filename)
 {
 MDirPtr lastp, newp;
 long n;
@@ -51,13 +56,10 @@ WadPtr wad;
 /* open the wad file */
 printf ("Loading iwad: %s...\n", filename);
 wad = BasicWadOpen (filename, yg_picture_format);
-if (! strncmp (wad->type, "IWAD", 4))
-   ;  // OK
-else if (! strncmp (wad->type, "PWAD", 4))
-   warn ("\"%.256s\", that you're trying to use as an iwad, is a pwad.\n",
-       filename);
-else
-   fatal_error ("\"%s\" is not a wad", filename);
+if (! wad)
+   return 1;
+if (strncmp (wad->type, "IWAD", 4))
+   warn ("%.128s: is a pwad, not an iwad. Will use it anyway.\n", filename);
 
 /* create the master directory */
 lastp = NULL;
@@ -73,6 +75,7 @@ for (n = 0; n < wad->dirsize; n++)
       MasterDir = newp;
    lastp = newp;
    }
+master_dir_serial.bump ();
 
 /* check if registered version */
 if (FindMasterDir (MasterDir, "E2M1") == NULL
@@ -88,20 +91,23 @@ if (FindMasterDir (MasterDir, "E2M1") == NULL
    printf ("   |     You won't be allowed to save your changes.      |\n");
    printf ("   |       PLEASE REGISTER YOUR COPY OF THE GAME.        |\n");
    printf ("   *-----------------------------------------------------*\n");
-   Registered = 0; /* If you remove this, bad things will happen to you... */
+   Registered = false; // If you remove this, bad things will happen to you...
    }
 else
-   Registered = 1;
+   Registered = true;
+return 0;
 }
 
 
-
 /*
-   open a patch wad file, read in its directory and alter the master
-   directory
-*/
-
-void OpenPatchWad (const char *filename)
+ *	OpenPatchWad - add a pwad
+ *
+ *	Open a patch wad file, read in its directory and alter
+ *	the master directory.
+ *
+ *	Return 0 on success, non-zero on failure.
+ */
+int OpenPatchWad (const char *filename)
 {
 WadPtr wad;
 MDirPtr mdir = 0;
@@ -115,17 +121,19 @@ int nitems = 0;		// Number of items in group of flats/patches/sprites
 real_name = locate_pwad (filename);
 if (real_name == NULL)
    {
-   warn ("patch wad file \"%s\" doesn't exist. Ignored.\n", filename);
-   return;
+   warn ("%.128s: not found.\n", filename);
+   return 1;
    }
 
 /* open the wad file */
 printf ("Loading pwad: %s...\n", real_name);
 // By default, assume pwads use the normal picture format.
 wad = BasicWadOpen (real_name, YGPF_NORMAL);
-if (strncmp (wad->type, "PWAD", 4))
-   fatal_error ("\"%s\" is not a pwad file", real_name);
 FreeMemory (real_name);
+if (! wad)
+   return 1;
+if (strncmp (wad->type, "PWAD", 4))
+   warn ("%.128s: is an iwad, not a pwad. Will use it anyway.\n", filename);
 
 /* alter the master directory */
 
@@ -308,6 +316,7 @@ for (n = 0; n < wad->dirsize; n++)
       state--;
    }
 verbmsg ("\n");
+master_dir_serial.bump ();
 
 // Print list of levels found in this pwad
 if (level_list != 0)
@@ -331,9 +340,13 @@ if (level_list != 0)
    putchar ('\n');
    free (level_list);
    }
+return 0;
 }
 
 
+/*
+ *	level_name_order - -cmp-style comparison of two level names
+ */
 static int level_name_order (const void *p1, const void *p2)
 {
 return levelname2rank ((const char *) p1)
@@ -342,9 +355,10 @@ return levelname2rank ((const char *) p1)
 
 
 /*
-   close all the wad files, deallocating the wad file structures
-*/
-
+ *	CloseWadFiles - close all wads
+ *
+ *	Close all the wad, deallocating the wad file structures.
+ */
 void CloseWadFiles ()
 {
 WadPtr curw, nextw;
@@ -375,14 +389,13 @@ while (curd)
    FreeMemory (curd);
    curd = nextd;
    }
+master_dir_serial.bump ();
 }
 
 
-
 /*
-   forget unused patch wad files
-*/
-
+ *	CloseUnusedWadFiles - forget unused patch wad files
+ */
 void CloseUnusedWadFiles ()
 {
 WadPtr curw, prevw;
@@ -415,18 +428,22 @@ while (curw)
 }
 
 
-
 /*
-   basic opening of wad file and creation of node in Wad linked list
-*/
-
+ *	BasicWadOpen - open a wad
+ *
+ *	Basic opening of wad file and creation of node in Wad
+ *	linked list.
+ *
+ *	Return a null pointer on error.
+ */
 WadPtr BasicWadOpen (const char *filename, ygpf_t pic_format)
 {
-WadPtr curw, prevw;
+bool e;  // Error flag
 
-
-/* find the wad file in the wad file list */
-prevw = WadFileList;
+// Look for the wad in the wad list.
+bool new_wad = true;
+WadPtr curw  = 0;
+WadPtr prevw = WadFileList;
 if (prevw)
    {
    curw = prevw->next;
@@ -435,66 +452,110 @@ if (prevw)
       prevw = curw;
       curw = prevw->next;
       }
+   if (curw != 0)
+      new_wad = false;
    }
-else
-   curw = NULL;
 
-/* if this entry doesn't exist, add it to the WadFileList */
-if (curw == NULL)
+// Doesn't exist. Create a new WadFileInfo structure for it.
+if (new_wad)
    {
    curw = (WadPtr) GetMemory (sizeof (struct WadFileInfo));
-   curw->error = false;
+   curw->error      = false;
    curw->pic_format = pic_format;
+   curw->next       = 0;	// NULL
+   curw->directory  = 0;	// NULL
+   curw->filename   = (char *) GetMemory (strlen (filename) + 1);
+   strcpy (curw->filename, filename);
+   }
+
+// Open the wad and read its header.
+FILE *new_fd = fopen (filename, "rb");
+if (new_fd == NULL)
+   {
+   printf ("%.128s: can't open (%s)\n", filename, strerror (errno));
+   if (new_wad)
+      {
+      FreeMemory (curw->filename);
+      FreeMemory (curw);
+      }
+   return 0;
+   }
+e  = file_read_bytes (new_fd, curw->type, 4);
+e |= file_read_i32   (new_fd, &curw->dirsize);
+e |= file_read_i32   (new_fd, &curw->dirstart);
+if (e || strncmp (curw->type, "IWAD", 4) && strncmp (curw->type, "PWAD", 4))
+   {
+   printf ("%.128s: not a wad (bad header)\n", filename);
+   fclose (new_fd);
+   if (new_wad)
+      {
+      FreeMemory (curw->filename);
+      FreeMemory (curw);
+      }
+   return 0;
+   }
+verbmsg ("  Type %.4s, directory has %ld entries at offset %08lXh\n",
+   curw->type, (long) curw->dirsize, (long) curw->dirstart);
+
+// Load the directory of the wad
+curw->directory = (DirPtr) GetMemory ((long) sizeof (struct Directory)
+   * curw->dirsize);
+e = fseek (new_fd, curw->dirstart, SEEK_SET);
+if (e)
+   {
+   printf ("%.128s: can't seek to directory at %08lXh\n",
+      filename, curw->dirstart);
+   fclose (new_fd);
+   if (new_wad)
+      {
+      FreeMemory (curw->filename);
+      FreeMemory (curw);
+      }
+   return 0;
+   }
+DirPtr d = curw->directory;
+for (i32 n = 0; n < curw->dirsize; n++)
+   {
+   e  = file_read_i32   (new_fd, &d->start);
+   e |= file_read_i32   (new_fd, &d->size );
+   e |= file_read_bytes (new_fd, d->name, WAD_NAME);
+   if (e)
+      {
+      printf ("%.128s: read error on directory entry %ld\n", filename, (long)n);
+      fclose (new_fd);
+      if (new_wad)
+	 {
+	 FreeMemory (curw->filename);
+	 FreeMemory (curw);
+	 }
+      return 0;
+      }
+   d++;
+   }
+
+// Successfully opened. Append the WadFileInfo struct to WadFileList.
+if (new_wad)
+   {
    if (prevw == NULL)
       WadFileList = curw;
    else
       prevw->next = curw;
-   curw->next = 0;	// NULL
-   curw->directory = 0;	// NULL
+   }
+if (! new_wad)
    {
-   static int time;
-   time++;
+   if (curw->fd == 0)
+      nf_bug ("BasicWadOpen: null old fp");
+   else
+      fclose (curw->fd);
    }
-   curw->filename = (char *) GetMemory (strlen (filename) + 1);
-   strcpy (curw->filename, filename);
-   }
-
-
-/* open the file */
-if ((curw->fd = fopen (filename, "rb")) == NULL)
-   fatal_error ("Can't open \"%s\" (%s)", filename, strerror (errno));
-
-/* read in the wad directory info */
-wad_read_bytes (curw, curw->type, 4);
-if (strncmp (curw->type, "IWAD", 4) && strncmp (curw->type, "PWAD", 4))
-   fatal_error ("\"%s\" is not a valid wad file", filename);
-wad_read_i32 (curw, &curw->dirsize );
-wad_read_i32 (curw, &curw->dirstart);
-verbmsg ("  Type %.4s, directory has %ld entries at offset %08lXh\n",
-   curw->type, (long) curw->dirsize, (long) curw->dirstart);
-
-/* read in the wad directory itself */
-curw->directory = (DirPtr) GetMemory ((long) sizeof (struct Directory)
-   * curw->dirsize);
-wad_seek (curw, curw->dirstart);
-DirPtr d = curw->directory;
-for (i32 n = 0; n < curw->dirsize; n++)
-   {
-   wad_read_i32 (curw, &d->start);
-   wad_read_i32 (curw, &d->size );
-   wad_read_bytes (curw, d->name, WAD_NAME);
-   d++;
-   }
-
-/* all done */
+curw->fd = new_fd;
 return curw;
 }
 
 
 /*
-   list the master directory
-*/
-
+ *	ListMasterDirectory - list the master directory
+ */
 void ListMasterDirectory (FILE *file)
 {
 char dataname[WAD_NAME + 1];
@@ -517,7 +578,7 @@ for (dir = MasterDir; dir; dir = dir->next)
       lines = 0;
       printf ("['Q' followed by Return to abort, Return only to continue]");
       key = getchar ();
-      printf ("\r                                                         \r");
+      printf ("\r%57s\r", "");
       if (key == 'Q' || key == 'q')
 	 {
          getchar ();  // Read the '\n'
@@ -528,11 +589,9 @@ for (dir = MasterDir; dir; dir = dir->next)
 }
 
 
-
 /*
-   list the directory of a file
-*/
-
+ *	ListFileDirectory - list the directory of a wad
+ */
 void ListFileDirectory (FILE *file, WadPtr wad)
 {
 char dataname[WAD_NAME + 1];
@@ -558,7 +617,7 @@ for (n = 0; n < wad->dirsize; n++)
       lines = 0;
       printf ("['Q' followed by Return to abort, Return only to continue]");
       key = getchar ();
-      printf ("\r                                                         \r");
+      printf ("\r%57s\r", "");
       if (key == 'Q' || key == 'q')
          {
          getchar ();  // Read the '\n'
@@ -569,12 +628,12 @@ for (n = 0; n < wad->dirsize; n++)
 }
 
 
-
 /*
-   build a new wad file from master dictionary
-*/
-
-void BuildNewMainWad (const char *filename, Bool patchonly)
+ *	BuildNewMainWad - build a new iwad (or pwad)
+ *
+ *	Build a new wad file from master directory.
+ */
+void BuildNewMainWad (const char *filename, bool patchonly)
 {
 FILE *file;
 long counter = 12;
@@ -606,7 +665,7 @@ else
 file_write_i32 (file, 0xdeadbeef);      /* put true value in later */
 file_write_i32 (file, 0xdeadbeef);      /* put true value in later */
 
-/* output the directory data chuncks */
+/* output the directory data chunks */
 for (cur = MasterDir; cur; cur = cur->next)
    {
    if (patchonly && cur->wadfile == WadFileList)
@@ -651,9 +710,10 @@ fclose (file);
 
 
 /*
-   dump a directory entry in hex
-*/
-
+ *	DumpDirectoryEntry - hexadecimal dump of a lump
+ *
+ *	Dump a directory entry in hex
+ */
 void DumpDirectoryEntry (FILE *file, const char *entryname)
 {
 MDirPtr entry;
@@ -682,7 +742,7 @@ while (entry)
 	 long bytes_to_read = entry->dir.size - n;
 	 if (bytes_to_read > bytes_per_line)
 	    bytes_to_read = bytes_per_line;
-	 long nbytes = wad_read_bytes2 (entry->wadfile, buf, bytes_to_read);
+	 long nbytes = wad_read_vbytes (entry->wadfile, buf, bytes_to_read);
 	 n += nbytes;
 
 	 for (i = 0; i < nbytes; i++)
@@ -712,7 +772,7 @@ while (entry)
 		" S + Return to skip this entry,"
 		" Return to continue]", (int) (n * 100 / entry->dir.size));
 	    key = getchar ();
-	    printf ("\r                                                                    \r");
+	    printf ("\r%68s\r", "");
 	    if (key == 'S' || key == 's')
                {
                getchar ();  // Read the '\n'
@@ -738,9 +798,10 @@ if (! n)
 
 
 /*
-   save a directory entry to disk
-*/
-
+ *	SaveDirectoryEntry - write the contents of a lump to a new pwad
+ *
+ *	Save a directory entry to disk
+ */
 void SaveDirectoryEntry (FILE *file, const char *entryname)
 {
 MDirPtr entry;
@@ -772,11 +833,11 @@ else
 }
 
 
-
 /*
-   save a directory entry to disk, without a pwad header
-*/
-
+ *	SaveEntryToRawFile - write the contents of a lump to a new file
+ *
+ *	Save a directory entry to disk, without a pwad header
+ */
 void SaveEntryToRawFile (FILE *file, const char *entryname)
 {
 MDirPtr entry;
@@ -800,9 +861,10 @@ else
 
 
 /*
-   encapsulate a raw file in a pwad file
-*/
-
+ *	SaveEntryFromRawFile - encapsulate a raw file in a pwad
+ *
+ *	Encapsulate a raw file in a pwad file
+ */
 void SaveEntryFromRawFile (FILE *file, FILE *raw, const char *entryname)
 {
 long    size;
@@ -882,15 +944,13 @@ if (is_absolute (filename))
    return real_name;
    }
 
-// It's a relative name.
-// If no extension given, append ".wad"
+// It's a relative name. If no extension given, append ".wad"
 real_basename = (char *) GetMemory (strlen (filename) + 1 + (*ext ? 0 : 4));
 strcpy (real_basename, filename);
 if (! *ext)
    strcat (real_basename, ".wad");
 
-// Then search for a file of that
-// name in the standard directories.
+// Then search for a file of that name in the standard directories.
 real_name = (char *) GetMemory (Y_FILE_NAME + 1);
 for (dirname = standard_directories; *dirname; dirname++)
    {

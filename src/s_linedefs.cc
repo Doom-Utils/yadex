@@ -35,26 +35,38 @@ Place, Suite 330, Boston, MA 02111-1307, USA.
 
 
 /*
+ *	linedefs_of_sector
+ *	Return a bit vector of all linedefs used by the sector.
+ *	It's up to the caller to delete the bit vector after use.
+ */
+bitvec_c *linedefs_of_sector (obj_no_t s)
+{
+bitvec_c *linedefs = new bitvec_c (NumLineDefs);
+for (int n = 0; n < NumLineDefs; n++)
+   if (is_sidedef (LineDefs[n].sidedef1)
+       && SideDefs[LineDefs[n].sidedef1].sector == s
+    || is_sidedef (LineDefs[n].sidedef2)
+       && SideDefs[LineDefs[n].sidedef2].sector == s)
+      linedefs->set (n);
+return linedefs;
+}
+
+
+/*
  *	linedefs_of_sectors
  *	Return a bit vector of all linedefs used by the sectors.
  *	It's up to the caller to delete the bit vector after use.
  */
 bitvec_c *linedefs_of_sectors (SelPtr list)
 {
-bitvec_c *sectors;
-bitvec_c *linedefs;
-int n;
-
-sectors = list_to_bitvec (list, NumSectors);
-linedefs = new bitvec_c (NumLineDefs);
-
-for (n = 0; n < NumLineDefs; n++)
+bitvec_c *sectors  = list_to_bitvec (list, NumSectors);
+bitvec_c *linedefs = new bitvec_c (NumLineDefs);
+for (int n = 0; n < NumLineDefs; n++)
    if (   is_sidedef (LineDefs[n].sidedef1)
           && sectors->get (SideDefs[LineDefs[n].sidedef1].sector)
        || is_sidedef (LineDefs[n].sidedef2)
           && sectors->get (SideDefs[LineDefs[n].sidedef2].sector))
       linedefs->set (n);
-
 delete sectors;
 return linedefs;
 }

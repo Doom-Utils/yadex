@@ -35,10 +35,10 @@ class objinfo_c : public edwidget_c
    public :
       objinfo_c ();
       void set (int obj_type, int obj_no)
-	 {
-	 this->obj_no   = obj_no;
-	 this->obj_type = obj_type;
-	 }
+      {
+        this->obj_no   = obj_no;
+	this->obj_type = obj_type;
+      }
 
       void set_y1 (int y1)
 	 { out_y1 = y1; }
@@ -59,10 +59,15 @@ class objinfo_c : public edwidget_c
 	 { return is_obj (obj_no_disp) && ! is_obj (obj_no); }
 
       void clear ()
-	 { box_disp = false; obj_no_disp = OBJ_NO_NONE; }
+      {
+	for (int n = 0; n < MAX_BOXES; n++)
+	  box_disp[n] = false;
+	obj_no_disp = OBJ_NO_NONE;
+      }
 
    private :
-      bool box_disp;     // Is the box already drawn ?
+      static const int MAX_BOXES = 10;
+      bool box_disp[MAX_BOXES];	// Is the box already drawn ?
       int obj_no;        // The no. of the object we should display info about
       int obj_type;      // The type of the object we should display info about
       int obj_no_disp;	 // The no. and type of the object for which info

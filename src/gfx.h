@@ -45,12 +45,12 @@ extern int font_yofs;
 
 /* Parameters set by command line args and configuration file */
 extern const char *BGIDriver;	// BGI: default extended BGI driver
-extern Bool  CirrusCursor;	// use HW cursor on Cirrus Logic VGA cards
-extern Bool  FakeCursor;	// use a "fake" mouse cursor
+extern bool  CirrusCursor;	// use HW cursor on Cirrus Logic VGA cards
+extern bool  FakeCursor;	// use a "fake" mouse cursor
 extern const char *font_name;	// X: the name of the font to load
 				// (if NULL, use the default)
-extern int   initial_window_width;// X: the name says it all
-extern int   initial_window_height;// X: the name says it all
+extern Win_dim initial_window_width;// X: the name says it all
+extern Win_dim initial_window_height;// X: the name says it all
 extern int   no_pixmap;		// X: use no pixmap -- direct window output
 extern int   VideoMode;		// BGI: default video mode for VESA cards
 
@@ -73,14 +73,14 @@ extern Visual  *win_vis;	// The visual for win
 extern int      win_depth;	// The depth of win in bits
 extern int      win_bpp;	// The depth of win in bytes
 extern int	x_server_big_endian;	// Is the X server big-endian ?
+extern int      ximage_bpp;	// Number of bytes per pixels in XImages
+extern int      ximage_quantum;	// Pad XImage lines to a mult of that many B.
 #endif  // ifdef X_PROTOCOL
 #endif  // ifdef Y_X11
 extern int	text_dot;     // DrawScreenText()/DrawScreenString() debug flag
 
 /* gfx.cc */
-/* Only the functions that are not used by many modules are here.
-   The others are in yadex.h */
-void InitGfx (void);
+int InitGfx (void);
 void SwitchToVGA256 (void);
 void SwitchToVGA16 (void);
 void TermGfx (void);
@@ -88,6 +88,25 @@ void SetWindowSize (int width, int height);
 void ClearScreen (void);
 void update_display ();
 void force_window_not_pixmap ();
+void set_colour (acolour_t);
+void SetLineThickness (int thick);
+void SetDrawingMode (int _xor);
+void DrawMapCircle (int, int, int);
+void DrawMapLine (int mapx1, int mapy1, int mapx2, int mapy2);
+void DrawMapVector (int, int, int, int);
+void DrawMapArrow (int, int, unsigned);
+void DrawScreenLine (int, int, int, int);
+void DrawScreenRect (int x, int y, int width, int height);
+void DrawScreenBox (int, int, int, int);
+void DrawScreenBoxwh (int scrx0, int scry0, int width, int height);
+void DrawScreenBox3D (int, int, int, int);
+void DrawScreenBox3DShallow (int, int, int, int);
+void DrawScreenBoxHollow (int x0, int y0, int x1, int y1, acolour_t colour);
+void draw_box_border (int x, int y, int width, int height,
+   int thickness, int raised);
+void DrawScreenText (int, int, const char *, ...);
+void DrawScreenString (int, int, const char *);
+void DrawPointer (bool);
 void DrawScreenMeter (int, int, int, int, float);
 void DrawScreenLineLen (int x, int y, int width, int height);
 int TranslateToDoomColor (int);
@@ -101,6 +120,7 @@ void set_pcolour (pcolour_t colour);
 #endif
 void push_colour (acolour_t colour);
 void pop_colour (void);
+void draw_point (int x, int y);
 void draw_map_point (int mapx, int mapy);
 
 

@@ -102,7 +102,7 @@ return r + 1;
 
 /*
  *	DisplayMenuList
- *	Display and execute a memu contained in a list. Each menu item
+ *	Display and execute a menu contained in a list. Each menu item
  *	string is obtained by calling (*getstr)() with a pointer on
  *	the list item.
  *	Return the number of the selected item (0-based)

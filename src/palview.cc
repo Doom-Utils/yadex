@@ -35,6 +35,7 @@ Place, Suite 330, Boston, MA 02111-1307, USA.
 #include "gfx.h"
 #include "palview.h"
 #include "rgb.h"
+#include "wads.h"
 #include "ytime.h"
 
 
@@ -216,7 +217,7 @@ for (;;)
 	else
 	  set_pcolour (game_colour[(n + ofs) % ncolours]);
       }
-      DrawScreenBox (x, y, x + pixels - 1, y + pixels - 1);
+      DrawScreenBoxwh (x, y, pixels, pixels);
     }
     is_drawn |= YID_PALETTE;
     set_colour (WINFG_DIM);  // Just to force the next set_colour() to do sth
@@ -226,7 +227,7 @@ for (;;)
   if (! (is_drawn & YID_TEXT))
   {
     set_colour (WINBG);
-    DrawScreenBox (tx0, ty0, tx0 + pwidth - 1, ty0 + 7 * FONTH - 1);
+    DrawScreenBoxwh (tx0, ty0, pwidth, 7 * FONTH);
     set_colour (WINFG);
     DrawScreenText (tx0, ty0, "Index        %3d", i);
     push_colour (mapping ? WINFG : WINFG_DIM);

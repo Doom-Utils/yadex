@@ -1,7 +1,8 @@
-# Yadex game definition file version 3
+# Yadex game definition file version 4
 #
 #	doom04.ygd
-#	Yadex Game Definitions for the Doom alpha 0.4
+#	Yadex Game Definitions for Doom alpha 0.4
+#	See doc/ygd.html for the specs.
 #	AYM 1999-07-09
 #
 
@@ -11,6 +12,7 @@
 level_format    alpha
 level_name      e1m10
 picture_format  alpha
+sky_flat        f_sky1
 texture_format  nameless
 texture_lumps   textures
 
@@ -231,7 +233,8 @@ thinggroup s rgb:0/b/d "Special"
 #
 #	Definition of things
 #	Format is :
-#	thing <number> <thinggroup> <flags> <radius> <descr> [<sprite>]
+#	thing <number> <thinggroup> <flags> <radius> <desc> [<sprite>]
+#	<desc> must not exceed 19 characters.
 #
 
 thing 2007 a -  20 "Clip"			CLIP
@@ -239,8 +242,9 @@ thing 2048 a -  20 "Box of bullets"		AMMO
 thing 2008 a -  20 "4 shotgun shells"		SHEL
 thing 2049 a -  20 "Box shotgun shells"		SBOX
 thing 2010 a -  20 "Rocket"			ROCK
-thing 2046 a -  20 "Box of rockets"		BROK
+thing 2046 a -  20 "Box of rockets"		MISL
 thing 2047 a -  20 "Energy cell"		CELL
+thing 2020 a -  16 "Energy cell ? [Alpha]"	SHI1
 thing   17 a -  20 "Energy cell pack"		CELP
 thing    8 a -  20 "Backpack full ammo"		BPAK
 
@@ -261,16 +265,15 @@ thing   21 c -  16 "Dead demon"			SARGN
 thing   22 c -  16 "Dead cacodemon"		HEADL
 thing   23 c -  16 "Dead lost soul"
 
-#thing 2020 d -  16 "Unknown [Alpha]"
 #thing 2021 d -  16 "Unknown [Alpha]"
 thing 2027 d -  10 "Bronze barrel [Alpha]"	GBAR
 thing 2029 d -  16 "Whatever [Alpha]"		FLG
 thing 2030 d -  16 "Whatever [Alpha]"		FLG
 #thing 2032 d -  16 "Unknown [Alpha]"
 thing 2035 d -  10 "Steel barrel"		BBAR
-#thing 2036 d -  16 "Unknown [Alpha]"
+thing 2036 d -  16 "Chair [Alpha]"		CHAI
 #thing 2037 d -  16 "Unknown [Alpha]"
-#thing 2038 d -  16 "Unknown [Alpha]"
+thing 2038 d -  16 "Cannister [Alpha]"		CANI
 thing   48 d -  16 "Technical column"		ELEC
 thing   30 d -  16 "Tall green pillar"		COL1
 thing   32 d -  16 "Tall red pillar"		COL3

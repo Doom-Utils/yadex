@@ -69,7 +69,7 @@ Patch_dir::~Patch_dir ()
  */
 void Patch_dir::refresh (MDirPtr master_dir)
 {
-  /* refresh() can be called more than once one the same object.
+  /* refresh() can be called more than once on the same object.
      And usually is ! */
   if (pnames != 0)
   {
@@ -153,10 +153,10 @@ void Patch_dir::refresh (MDirPtr master_dir)
       {
 	if (! dir)
 	{
-	  warn ("No matching %s for %.*s in %.128s\n",
+	  warn ("%.128s: no matching %s for %.*s\n",
+	      start_label->wadfile->filename,
 	      end_label,
-	      (int) WAD_NAME, start_label->dir.name,
-	      start_label->wadfile->filename);
+	      (int) WAD_NAME, start_label->dir.name);
 	  break;
 	}
 	if (! y_strnicmp (dir->dir.name, end_label, WAD_NAME))

@@ -1,6 +1,187 @@
 
                                     Changes
                                        
+Yadex 1.5.0 (2000-08-27)
+
+     * Build: Changed the way the diffs are generated after reading more
+       carefully the patch(1) man page and learning the hard way that
+       it's a very bad idea to put absolute paths in patches.
+     * Build: Made it easier to add or remove individual options in
+       CFLAGS and friends.
+     * Command-line: New option -b to benchmark parts of Yadex. For
+       hackers only.
+     * Command-line: Removed option -e in prevision of reuse for another
+       function.
+     * Doc: Completed ygd.html.
+     * Doc: Documented the usage of the LINES and YADEX_DIR environment
+       variables.
+     * Editing: Things that have an illegal angle are now shown with the
+       angle Doom would see, instead of just a dot in the middle. The
+       emulation is believed to be accurate for angles comprised between
+       0 and 359. Values outside that range have not been tested.
+     * Editing: Things flags and linedefs flags now grouped by 4 for
+       readability. For linedefs, the decimal value of the flags field is
+       not shown anymore.
+     * Editing: In the object info box, the type and description of the
+       current thing are now display in red if the type is invalid (i.e.
+       not defined in the .ygd).
+     * Editing: The things and linedefs flags operations ([a], [b], [c])
+       now set MadeChanges as they should have from the start.
+     * Editing: The View menu now contains entries for "Show object
+       numbers" [&] and "Show grid" [h].
+     * Editing: The Edit menu now contains entries for "Snap to grid" [y]
+       and "Loc grid step" [z].
+     * Editing: Rearranged the sidedef object info windows so that the
+       textures are listed in a more intuitive order (upper, middle,
+       lower instead of middle, upper, lower). Made labels shorter in
+       preparation of the hypothetical inclusion of texture swatches in
+       the future.
+     * Editing: Fixed long-standing buglet with the sidedef info saying
+       there are missing upper/lower textures even though both sectors
+       have a "sky" ceiling/floor.
+     * Editing: Implemented showing object numbers for linedefs and
+       sectors. The placement of sector numbers is naive and inadequate
+       for sectors that don't have a simple convex shape, but it's still
+       better than nothing. Picked a somewhat brighter colour for object
+       numbers.
+     * Editing: Linedef object info box: if the first sidedef is missing,
+       the message "(no first sidedef)" is printed in red instead of dim
+       gray. Same thing for the second sidedef if the "2" flag is set.
+     * Editing: Removed careless dereferencing of SideDefs[] for bad
+       sidedef numbers in the sector selection code. I don't think this
+       is what caused the mysterious unreproducible segfault James
+       Caldwell reported, though. Made the object deletion function
+       paranoid (checks that the objects to delete actually exist).
+     * Editing: When found superimposed linedefs after merging vertices,
+       the dialog box that asks whether they should be merged now
+       mentions the numbers of the first two superimposed linedefs found
+       instead of a laconic "Some linedefs are superimposed".
+     * Editing: Zooming: the zoom factor is now displayed in percent,
+       100% being 1/1.
+     * Editing: Zooming: the zoom factors are now regularly spaced, with
+       a ratio of 1.414 between them. This removes the annoying "jump"
+       between the zoom factors greater than 1/2. It also fixes the
+       oddities that happened when zooming in after [`]. The ratio
+       between zoom factors can be controlled through the new parameter
+       "zoom_step".
+     * Editing: Zooming: the "zoom" parameter has been replaced by the
+       new parameter "zoom_default". The latter is expressed in percent,
+       not in 1/n units. It's now possible to specify an initial zoom
+       factor of more than 1/1. When opening a new window, Yadex now
+       adjusts the zoom factor so that the level fills the window. Should
+       you want to revert to the old behaviour, you can do it by setting
+       zoom_default to 12.
+     * Editing: ['] and [`] now go to the current centre of the level
+       (they used to go to where the centre was when the level was opened
+       or created).
+     * Editing: [`] now has a menu item (View -> Whole level).
+     * Editing: The grid has changed. There are now dots every step map
+       units, dim lines every 4×step units, normal lines every 16×step
+       units and bold lines every 64×step units. The new grid is supposed
+       to be less obtrusive visually, faster to display and more distinct
+       when scrolling.
+     * Editing: New function to swap floor and ceiling flats of selected
+       sectors (Misc. operations -> Swap flats).
+     * Editing: When not in things mode, things are drawn in a dimmer
+       shade of gray and do not hide the linedefs anymore.
+     * Game/wad: Removed the "-g wolf" bit. [For those who still haven't
+       got it : the support for Wolfenstein 3D announced in the CHANGES
+       for version 1.4.0 was of course a hoax, 1.4.0 having been released
+       on April 1st.] Hope you've been having as much fun as I have. :-)
+     * Game/wad: Heretic: made the golem leader ghost, undead warrior
+       ghost and golem ghost look a little more ghostly. Made the
+       gargoyle leader, golem leader and golem leader ghost look
+       different from their vanilla counterparts by using sprites IMPXD
+       and MUMMY. Assigned a sprite to things 31 and 32 (enchanted
+       shield, SHD2 and mystic urn, SPHL).
+     * Game/wad: Heretic: corrected things radii in heretic.ygd, using
+       [1]info2ygd and the Heretic source as a reference. Almost all
+       radii were wrong, a few grossly so (maulotaur, ironlich and
+       gargoyle).
+     * Game/wad: Strife: many new things and linedef types thanks to
+       [2]Matt Miller.
+     * Game/wad: Doom alpha 0.4: definitions for thing types 2020, 2036,
+       2038 and 2046.
+     * Game/wad: Updated format comments in *.ygd.
+     * Game/wad: Sprites in pwads now supported (between S_START/S_END or
+       SS_START/SS_END or SS_START/S_END). This fixes Yadex's failure to
+       show redefined sprites in [3]alitcsf.wad, [4]basilica.wad and
+       [5]strifed1.wad. A few Aliens TC sprites don't work yet but it's
+       for a different reason (DEH).
+     * Game/wad: Sprites now shown on the map when in things mode. You
+       can switch between sprites and squares with View -> Show sprites
+       [%]. New config file parameter "sprite_scale" to adjust the scale
+       at which sprites are displayed (default 100%).
+     * Game/wad: The right sprite is shown, even if the sprites are not
+       in alphabetical order in the wad (cf BARWA0 in Strife).
+     * Game/wad: The function to add pwads (be it from the command line
+       or with the "r" command) has been heavily reworked. It's more
+       robust and handles errors better. It does not leak file handles
+       anymore when you add the same pwad more than once. It also accepts
+       to add iwads, modulo a warning (though you should expect problems
+       later if you do that). The merging of the pwad directory into the
+       master directory is still lousy.
+     * Game/wad: Fixed duplicate entries in the flat selector. This bug
+       was found by "Ras2". It happened whenever you added the same flat
+       thrice or more.
+     * Game/wad: EDGE: added definitions for EDGE linedef types and
+       things types to doom.ygd and doom2.ygd. Thanks to [6]Andrew Apted
+       for providing the ygd data.
+     * Game/wad: EDGE: in sector mode, show information for EDGE
+       extrafloors if there are any.
+     * Misc: A couple of calls to fatal_error() were turned into calls to
+       report_error() (don't abort).
+     * Misc: New game definition file directive "sky_flat" to specify the
+       name of the "sky" flat. Replaced all occurrences of F_SKY1 by
+       references to this parameter. Fixes Check -> Check for missing
+       textures for Hexen and Strife. Bumped game definition file
+       version# to 4.
+     * Misc: Because it seems to disturb people (and for the pleasure of
+       proving Matt wrong), I've made the texture selector clip textures
+       to size. Since there's no scrolling/zooming system yet, I also
+       enlarged the viewing area from 256×128 to 512×256 to alleviate the
+       lossage on large textures.
+     * Misc: Removed the "Press Shift-F1 to save image to file" text in
+       the selector. It's been a no-op ever since 1.0, anyway.
+     * Misc: In the selectors, pressing [F1] prints the location of the
+       current item to stdout (file name and offset). Works with flats,
+       patches and sprites but not textures. It's there to help trace
+       Ras' bug.
+     * Misc: Made LoadPicture() nicer and safer. It gracefully bails out
+       if there are more than 20 errors on a single picture. It does not
+       make Yadex abort anymore on read errors in the header or column
+       offset table. I've done this by modifying wad_read_i16() and
+       wad_read_i32() so other functions might have been impacted.
+     * Misc: Config file: commented out most settings (this has no
+       visible effect since those settings were just reiterations of the
+       default values built into the executable). Also changed the
+       initialization code so that Yadex can run without a config file.
+     * Misc: Config file: unknown variables are ignored with a warning
+       instead of triggering a fatal error. The intent is to facilitate
+       sharing config files between versions.
+     * Misc: Config file: bumped version# to 3.
+     * Misc: Made Yadex use YADEX_GAME as documented and not Y_GAME.
+       Oops !
+     * Misc: New feature in the flat/picture/sprite selector to show
+       where the current image comes from (file name and file offset).
+       For debugging.
+     * Misc: The window size (width/height and -w/-h) can now be
+       expressed in percent of the screen size, by appending a "%" to the
+       value. The default size, instead of being 640×480 in the
+       executable and 900×600 in the config file is now 90%×90%. It's
+       still possible to give absolute width and heights, of course.
+     * Misc: No tantrum thrown if the game definition file contains no
+       thing directive.
+     * Misc: Removed the check for sector headroom being < 1024 in Checks
+       -> Check for missing textures. It was sometimes annoying and
+       inaccurate anyway.
+     * Platform: Images display correctly on packed 24-bit X servers
+       (i.e. bits_per_pixel actually is 24 and not 32). The scanline_pad
+       member of the ScreenFormat structure is now honoured (not that
+       XFree86 seemed to mind much when it wasn't).
+     * Platform: Began to clean the code up to make porting less
+       difficult.
+       
 Yadex 1.4.0 (2000-04-01)
 
      * Command-line: The parsing of the command line arguments is now
@@ -198,12 +379,12 @@ Yadex 1.2.0 (1999-11-23)
        
 Yadex 1.1.0 (1999-08-22)
 
-     * BSP: Included Colin Phipps' [1]fix for the bugs in
-       [2]bsp23bug.zip.
+     * BSP: Included Colin Phipps' [7]fix for the bugs in
+       [8]bsp23bug.zip.
      * BSP: Renamed the executable and the man page as ybsp, to avoid
        having Yadex and Xwadtools overwrite each other's BSP.
      * BSP: The whirling baton is now disabled if stderr is not a TTY.
-       This is the same thing Udo Munk did for [3]Xwadtools' BSP with the
+       This is the same thing Udo Munk did for [9]Xwadtools' BSP with the
        -noprog option except that here it's automatic.
      * BSP: Made the man page spell out exactly which version of BSP this
        is.
@@ -553,6 +734,12 @@ Yadex 1.0.0_alpha1 (1998-12-17)
 
 References
 
-   1. http://lxdoom.linuxgames.com/notes.html#bsp
-   2. http://www.teaser.fr/~amajorel/doom/bsp23bug.zip
-   3. ftp://ftp.cdrom.com/pub/idgames/source/
+   1. http://www.teaser.fr/~amajorel/info2ygd/
+   2. http://my.ohio.voyager.net/~mattm/
+   3. ftp://ftp.cdrom.com/pub/idgames/themes/aliens/alntc19a.zip
+   4. ftp://ftp.cdrom.com/pub/idgames/levels/doom/a-c/basilica.zip
+   5. ftp://ftp.cdrom.com/pub/idgames/levels/doom2/Ports/s-u/strifed1.zip
+   6. http://www.netspace.net.au/~ajapted/
+   7. http://lxdoom.linuxgames.com/notes.html#bsp
+   8. http://www.teaser.fr/~amajorel/doom/bsp23bug.zip
+   9. ftp://ftp.cdrom.com/pub/idgames/source/

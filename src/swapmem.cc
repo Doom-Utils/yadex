@@ -73,11 +73,11 @@ typedef char SwapHandle[128];	/* name of the temporary disk file */
 #endif /* SWAP_TO_XMS */
 
 /* global variables */
-Bool NeedThings = 0;
-Bool NeedLineDefs = 0;
-Bool NeedSideDefs = 0;
-Bool NeedVertices = 0;
-Bool NeedSectors = 0;
+bool NeedThings = false;
+bool NeedLineDefs = false;
+bool NeedSideDefs = false;
+bool NeedVertices = false;
+bool NeedSectors = false;
 SwapHandle ThingsH;
 SwapHandle LineDefsH;
 SwapHandle SideDefsH;
@@ -259,30 +259,30 @@ void ObjectsNeeded (int objtype, ...)
 va_list args;
 
 /* get the list of objects */
-NeedThings = 0;
-NeedLineDefs = 0;
-NeedSideDefs = 0;
-NeedVertices = 0;
-NeedSectors = 0;
+NeedThings = false;
+NeedLineDefs = false;
+NeedSideDefs = false;
+NeedVertices = false;
+NeedSectors = false;
 va_start (args, objtype);
 while (objtype > 0)
 {
    switch (objtype)
    {
    case OBJ_THINGS:
-      NeedThings = 1;
+      NeedThings = true;
       break;
    case OBJ_LINEDEFS:
-      NeedLineDefs = 1;
+      NeedLineDefs = true;
       break;
    case OBJ_SIDEDEFS:
-      NeedSideDefs = 1;
+      NeedSideDefs = true;
       break;
    case OBJ_VERTICES:
-      NeedVertices = 1;
+      NeedVertices = true;
       break;
    case OBJ_SECTORS:
-      NeedSectors = 1;
+      NeedSectors = true;
       break;
    }
    objtype = va_arg (args, int);

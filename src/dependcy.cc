@@ -1,6 +1,7 @@
 /*
- *	spectimg.cc
- *	AYM 1999-03-09
+ *	dependcy.cc
+ *	Dependency class
+ *	AYM 2000-04-09
  */
 
 
@@ -27,24 +28,27 @@ Place, Suite 330, Boston, MA 02111-1307, USA.
 */
 
 
-#include "yadex.h"
-#include "spectimg.h"
+#include "dependcy.h"
+#include "serialnum.h"
 
 
-/*
- *	spectrify_game_image
- *	Make a game image look vaguely like a spectre
- */
-void spectrify_game_image (game_image_pixel_t *buf, int width, int height)
+Dependency::Dependency (Serial_num *sn)
 {
-int x,y;
-for (y = 0; y < height; y++)
-   {
-   game_image_pixel_t *row = buf + y * width;
-   for (x = 0; x < width; x++)
-      if (row[x] != 0)  // FIXME hard-coded 0
-         row[x] = 104 + (rand () >> 6) % 7;  // FIXME hard-coded 104
-   }
+  serial_num  = sn;
+  token_valid = false;
 }
 
 
+bool Dependency::outdated ()
+{
+  if (! token_valid)
+    return true;
+  return serial_num->outdated (token);
+}
+
+
+void Dependency::update ()
+{
+  serial_num->update (token);
+  token_valid = true;
+}

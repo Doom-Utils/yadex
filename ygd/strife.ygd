@@ -1,8 +1,9 @@
-# Yadex game definition file version 3
+# Yadex game definition file version 4
 #
 #	strife.ygd
-#	Yadex Game Definitions for Strife
+#	Yadex Game Definitions for Strife (version 1.1 and above)
 #	AYM 1999-02-27
+#	mattm 2000.05.05 05.29
 #
 
 # FIXME this file contains many inaccuracies and
@@ -18,6 +19,7 @@
 level_format    doom
 level_name      map01
 picture_format  normal
+sky_flat        f_sky001
 texture_format  strife11
 texture_lumps   normal
 
@@ -31,6 +33,7 @@ ldtgroup r "Door (red key)"
 ldtgroup y "Door (yellow key)"
 ldtgroup b "Door (blue key)"
 ldtgroup D "Door (turbo)"
+ldtgroup a "Door (animated)"
 ldtgroup l "Lift"
 ldtgroup F "Floor (raise)"
 ldtgroup f "Floor (lower)"
@@ -41,6 +44,7 @@ ldtgroup L "Light"
 ldtgroup e "End level"
 ldtgroup m "Moving floor"
 ldtgroup s "Raising stair"
+#ldtgroup B "Force fields"
 ldtgroup x "Misc."
 
 #
@@ -97,7 +101,7 @@ ldt  44 c "W1 Ceil dn flr+8" "W1  Lower ceiling to floor + 8"
 ldt  45 f "SR Floor dn HEF"  "SR  Lower floor to HEF"
 ldt  46 d "GR Open door (O)" "GR  Open  door (stays open)"
 ldt  47 F "G1 F. up nhEF TX" "G1  Raise floor to nhEF (TX)"
-ldt  48 x "-- Animated wall" "--  Animated wall (scrolls horizontally)"
+ldt  48 x "-- Scroll left"   "--  Animated wall (scrolls leftward)"
 ldt  49 c "S1 Ceil dn flr+8" "S1  Lower ceiling to floor + 8"
 ldt  50 d "S1 Close door"    "S1  Close door"
 ldt  51 e "S- Secret level"  "S-  End level, go to secret level"
@@ -192,7 +196,16 @@ ldt 139 L "SR Light to 0"    "SR  Light level goes to 0 [v1.6]"
 ldt 140 F "S1 Floor up 512"  "S1  Raise floor by 512, medium speed [v1.6]"
 ldt 141 C "W1& Crush SS sil" "W1& Start slow crushing, slow hurt, silent [v1.6]"
 ldt 143 x "-- Scroll down"   "--  Animated wall (scrolls downward)"
+ldt 144 a "XR Open animated" "XR  Open animated door"
+ldt 147 x "S1 Deac. FField"  "S1  Deactivate force field"
+ldt 148 x "-- Force Field"   "--  Force field, attempting to 'use' hurts"
+ldt 150 x "WR Sound alarms"  "WR  Sound alarms; alert Acolytes, Templars, etc"
+ldt 155 l "SR Raise lift"    "SR  Raise lift"
+ldt 165 x "-- Doesn't work"  "--  Print 'That doesn't seem to work' message"
 ldt 182 x "G1 Smashable"     "--  Smashable"
+ldt 185 t "W? STport ?"      "W?  Silent teleport <?>"
+ldt 195 t "W? STport, Aco."  "W?  Silent teleport <?>, become dummy Acolyte"
+ldt 205 x "SR 'Reg. only'"   "SR  Print 'registered version only' message"
 
 #
 #	Definition of sector types
@@ -224,38 +237,54 @@ st 18 "  Push objects" "  Push objects (speed and angle depend on tag)"
 #	Format is : thinggroup <thinggroup> <colour> <description>
 #
 
-thinggroup p rgb:4/f/4 "Player"
-thinggroup f rgb:4/f/4 "Friend"
+thinggroup p rgb:0/f/0 "Player"
+thinggroup f rgb:0/b/0 "Friend"
 thinggroup e rgb:f/0/0 "Enemy"
+#thinggroup E rgb:f/8/8 "Enemy w/key"
 thinggroup n rgb:d/d/0 "Other character"
 thinggroup h rgb:2/8/0 "Health & armour"
-thinggroup d rgb:6/6/c "Misc. decoration"
-thinggroup l rgb:6/6/c "Light source"
 thinggroup w rgb:f/a/0 "Weapon"
 thinggroup a rgb:8/5/0 "Ammunition"
 thinggroup b rgb:2/8/0 "Misc. bonus"
-#thinggroup k rgb:f/0/f "Key"
-#thinggroup c rgb:6/6/c "Corpse"
+thinggroup k rgb:f/0/f "Key/trinket"
+thinggroup t rgb:0/a/0 "Cross-map teleport"
 #thinggroup s rgb:0/b/d "Special"
+thinggroup d rgb:6/6/c "Decoration"
+thinggroup l rgb:6/6/c "Lighting"
+thinggroup c rgb:6/6/c "Corpse"
 
 #
 #	Definition of things
-#	Format is : thing <number> <thinggroup> <radius> <description>
+#	Format is : thing <number> <thinggroup> <flags> <radius> <description>
+#	<description> must not exceed 19 characters  --mattm
 #
 
+thing   22 d -   10 "Crusader wreck"		ROB2P
 thing   24 d -   10 "Siren"			KLAX
 thing   33 d -   16 "Dead tree"			TRE1
-thing   51 d -   16 "Funny tree"		TREEA
+thing   44 d -   16 "Statue"			STAT
+thing   48 d -   16 "Electrical column"		MONI
+thing   51 d -   16 "Palm tree"			TREEA
 thing   60 d -   10 "Small shrub"		BUSH
 thing   62 d -   10 "Shrub"			SHRB
-# Have to specify "A0" because of a bug in
-# Yadex (expects sprites to be sorted by name)
-thing   82 d -   10 "Wood barrel"		BARWA0
+thing   82 d -   10 "Wood barrel"		BARW
 thing   94 d -   10 "Barrel"			BART
+thing  112 d -   10 "Fountain"			WTFT
 thing  165 d -   10 "Mug"			MUGG
 thing  194 d -   20 "Anvil"			ANVL
 thing  202 d -   16 "Tree"			TREEB
 thing  215 d -   16 "Wood in water"		LOGG
+#thing widths below are guesses  --mattm
+# Mine are even worse: they're just random. --AYM
+thing   23 d -   32 "Teleporter marker"		TELP
+thing   70 d -   16 "Flaming barrel?"		BARL
+thing  103 d -    4 "Dripping water pt 1?"	DRIPC
+thing   53 d -    4 "Dripping water pt 2?"	DRIPC
+thing  204 d -   16 "Holographic monk"		NEAL
+thing  208 d -   16 "Gun range target"		HOGN
+thing   85 d -   12 "Rat"			RATTB2B8
+thing  189 d -   16 "Three-Legged stool"	STOL
+thing  117 d -   16 "Medical device"		CRAB
 
 thing 2011 h -   20 "Med patch"			STMP
 thing 2012 h -   20 "Medical kit"		MDKT
@@ -264,12 +293,31 @@ thing 2024 h -   20 "Shadow armor"		SHD1
 thing   34 l -   16 "Candle"			CNDL
 thing   95 l -    8 "Grey FT lamp"		LITS
 thing  107 l -    8 "Wall torch"		TRCH
+#thing widths below are guesses  --mattm
+thing  225 l -   16 "Alien lamp"		SPDL
+thing  106 l -   16 "Brazier"			BRAZ
+thing  105 l -   16 "Bowl with fire"		BOWL
 
-thing   58 e -   20 "Beige guard"		AGRD
-thing  147 e -   20 "Green guard"		AGRD
-thing  148 e -   20 "Guard (red ?)"		AGRD
-thing 3002 e -   20 "Beige guard"		AGRD
-thing  143 e -   20 "Brown guard"		AGRD
+thing   58 e -   20 "Beige Acolyte"		AGRD
+thing  147 e -   20 "Green Acolyte"		AGRD
+thing  148 e -   20 "Acolyte (red ?)"		AGRD
+thing 3002 e -   20 "Beige Acolyte"		AGRD
+thing  143 e -   20 "Brown Acolyte"		AGRD
+#thing widths below are guesses  --mattm
+thing  146 e -   20 "Aggressive Acolyte"	AGRDF8
+thing  142 e -   20 "Acolyte w/key"		AGRD
+thing  186 e -   16 "Stalker"			SPIDJ #1st rightsideup --mattm
+thing 3006 e -   20 "Sentinel"			SEWRC1
+thing 3003 e -   20 "Templar"			PGRD
+thing 3001 e -   20 "Reaver"			ROB1
+thing 3005 e -   24 "Crusader"			ROB2
+thing   16 e -   32 "Inquisitor"		ROB3
+thing   71 e -   20 "Programmer?"		PRGRH0
+thing  187 e -   20 "Bishop?"			MLDR
+thing   76 e -   20 "Oracle's specter"		ALN1
+thing   12 e -   20 "Loremaster"		PRST
+thing   26 e -   20 "Entity nest? (pod?)"       NEST
+thing  198 e -   20 "Entity pod? (nest?)"       PODD
 
 thing   72 n -   16 "Bar keeper"		MRBD # Brownish, sandy brown
 thing   73 n -   16 "Armourer"			MRBD # Nat, nat
@@ -281,32 +329,49 @@ thing  169 n -   20 "Spawned peasant"		PEAS # Red
 thing  170 n -   20 "Peasant spawner"		PEAS # Red
 thing  181 n -   20 "Governor Mourel"		PEAS # Cyan
 thing 3004 n -   20 "Peasant, standing"		PEAS # Greenish beige
+thing  172 n -   20 "Richter"			PEAS # Dark green
+#Thing widths below are guesses  --mattm
+thing  141 n -   20 "MacGuffin/beggar"		BEGR
+thing  199 n -   20 "Oracle"			ORCL
 
 thing    9 f -   20 "Rebel"			HMN1
-thing   64 f -   20 "Macil"			LEAD
+thing   64 f -   20 "Macil (unkillable)"	LEDR
+thing  200 f -   20 "Macil (killable)"		LEAD
 thing   66 f -   20 "Advisor"			PEAS # Grey
 thing   67 f -   20 "Person"			PEAS # Brown
 thing   74 f -   20 "Gerard"			MRBD # Beige ?
 thing  134 f -   20 "Macil's advisor"		PEAS # Grey
 thing  135 f -   20 "Advisor"			PEAS # Grey
 thing  136 f -   20 "Person"			PEAS # Brown
+thing  144 f -   20 "Rebel (operator?)"		HMN1
 thing  145 f -   20 "Rebel"			HMN1
 thing  150 f -   20 "Rebel"			HMN1
 
-thing    1 p -   16 "Player 1 start"		PLAY
-thing    2 p -   16 "Player 2 start"		PLAY
-thing    3 p -   16 "Player 3 start"		PLAY
-thing    4 p -   16 "Player 4 start"		PLAY
+thing    1 p -   16 "Player 1 start"		PLAYA1
+thing    2 p -   16 "Player 2 start"		PLAYB1
+thing    3 p -   16 "Player 3 start"		PLAYC1
+thing    4 p -   16 "Player 4 start"		PLAYD1
 thing   11 p -   16 "Deathmatch start"		PLAYF1
 thing   14 p -   16 "Teleport exit"		TFOG
+
+#thing widths below are guesses  --mattm
+thing   69 t -   16 "Level-change marker"	PLAYA5
+thing  118 t -   16 "Scoot spot 1"		PLAYE1
+thing  119 t -   16 "Scoot spot 2"		PLAYE2
+thing  120 t -   16 "Scoot spot 3"		PLAYE3
+thing  121 t -   16 "Scoot spot 4"		PLAYE4
+thing  122 t -   16 "Scoot spot 5"		PLAYE5
+thing  123 t -   16 "Scoot spot 6"		PLAYE6
+thing  124 t -   16 "Scoot spot 7"		PLAYE7
+thing  125 t -   16 "Scoot spot 8"		PLAYE8
 
 thing 2001 w -   16 "Cross bow"			CBOW
 thing 2002 w -   16 "Assault gun"		RIFL
 thing 2003 w -   16 "Mini-missile launcher"	MMSL
-thing 2004 w -   16 "Blaster"			TRPD
 thing 2005 w -   16 "Flame thrower"		FLAM
-thing 2006 w -   16 "Pulse rifle"		RIFLB0
 thing  154 w -   16 "Grenade launcher"		GRND
+thing 2004 w -   16 "Mauler"			TRPD
+thing 2006 w -   16 "Pulse rifle"		RIFLB0
 
 thing 2007 a -   16 "Clip of bullets"		BLIT
 thing 2048 a -   16 "Box of ammo"		BBOX
@@ -317,7 +382,26 @@ thing  153 a -   16 "Phosphorous grenades"	GRN2
 thing 2010 a -   16 "Rocket"			MSSL
 thing 2046 a -   16 "Box of rockets"		ROKT
 thing 2047 a -   16 "Energy pod"		BRY1 #ok
+#thing widths below are guesses  --mattm
+thing   17 a -   16 "Energy pack"		CPAC
 
 thing  207 b -   20 "Targeter"			TARG
 thing 2025 b -   20 "Environmental suit"	MASK
+
+#Thing widths below are guesses  --mattm
+thing   59 k -   20 "Degnin ore"		XPRK
+thing  205 k -   20 "Chalice"			RELC
+thing  220 k -   20 "The Front's coupling"      COUPA0
+thing  226 k -   20 "Junked coupling"		COUPC0
+thing   52 k -   20 "Officer's uniform"		OFIC
+
+#thing widths below are guesses  --mattm
+thing  113 c -   16 "Preserved hearts"		HERT
+thing  213 c -   16 "Preserved spine"		TNK4
+thing  229 c -   16 "Preserved brain"		TNK6
+thing  201 c -   16 "Partial Acolyte"		ARMR
+#sprites below are *also* guesses, but they look similar anyway
+thing  209 c -   20 "Tank of bodies 1"		TNK1
+thing  210 c -   20 "Tank of bodies 2"		TNK2
+thing  211 c -   20 "Tank of bodies 3"		TNK3
 

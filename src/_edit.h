@@ -97,7 +97,9 @@ typedef struct
    int grid_shown;		// Whether the grid is shown
    int grid_snap;		// Whether objects forced to be on the grid
    int infobar_shown;		// Whether the info bar is shown
-   int show_object_numbers;	// Whether the object numbers are shown
+   bool show_object_numbers;	// Whether the object numbers are shown
+   bool show_things_squares;	// Whether the things squares are shown
+   bool show_things_sprites;	// Whether the things sprites are shown
    int rulers_shown;		// Whether the rulers are shown (unused ?)
    int pointer_x;		// Map coordinates of pointer
    int pointer_y;

@@ -28,6 +28,10 @@ Place, Suite 330, Boston, MA 02111-1307, USA.
 */
 
 
+#ifndef YH_YADEX  /* DO NOT INSERT ANYTHING BEFORE THIS LINE */
+#define YH_YADEX
+
+
 // Sanity checks
 #if ! (defined Y_BGI ^ defined Y_X11)
 #error "You must #define either Y_BGI or Y_X11"
@@ -73,6 +77,7 @@ Place, Suite 330, Boston, MA 02111-1307, USA.
 #include "bitvec.h"  /* bv_set, bv_clear, bv_toggle */
 #include "yerror.h"
 #include "aym.h"     /* Needs yerror.h */
+#include "windim.h"
 #include "ymemory.h"
 
 
@@ -126,9 +131,6 @@ const double ANSWER = 42;
  */
 #define y_min(a,b) ((a) < (b) ? (a) : (b))
 #define y_max(a,b) ((a) > (b) ? (a) : (b))
-//#ifndef Y_X11	// X11/Xlib.h already defines it !
-typedef int Bool;	// Boolean data: true or false
-//#endif
 const char *const Y_NULL = 0;  // NULL (const char *)
 
 
@@ -194,10 +196,13 @@ struct Lump_loc
    {
    Lump_loc () { wad = 0; }
    Lump_loc (WadPtr w, i32 o, i32 l) { wad = w; ofs = o; len = l; }
+   bool operator == (const Lump_loc& other) const
+     { return wad == other.wad && ofs == other.ofs && len == other.len; }
    WadPtr wad;
    i32 ofs;
    i32 len;
    };
+#include "wstructs.h"
 
 
 /*
@@ -245,62 +250,26 @@ const acolour_t WINBG_HL     = 21;
 const acolour_t WINFG_HL     = 22;
 const acolour_t WINFG_DIM_HL = 23;
 const acolour_t GRID1        = 24;
-const acolour_t GRID2        = 25;
-const acolour_t GRID3        = 26;
-const acolour_t WINFGLABEL   = 27;
+const acolour_t GRID2H       = 25;
+const acolour_t GRID2V       = 26;
+const acolour_t GRID3H       = 27;
+const acolour_t GRID3V       = 28;
+const acolour_t GRID4H       = 29;
+const acolour_t GRID4V       = 30;
+const acolour_t WINFGLABEL   = 31;
+const acolour_t LINEDEF_NO   = 32;
+const acolour_t SECTOR_NO    = 33;
+const acolour_t THING_NO     = 34;
+const acolour_t VERTEX_NO    = 35;
+const acolour_t CLR_ERROR    = 36;
+const acolour_t THING_REM    = 37;	// Things when not in things mode
 
-const acolour_t NCOLOURS     = 28;
+const acolour_t NCOLOURS     = 38;
 
 
 /*
  *	More stuff
  */
-/* AYM 19980112
-This is the format of the block that the callback function (*hookfunc)()
-and its caller InputNameFromListWithFunc() use to communicate. It
-includes the old hookfunc parameters (x0, y0, x1, y1, name) plus a
-couple of new parameters. The purpose of those new parameters is
-fourfold :
-  1. Give the caller an easy way to know the actual size of the
-     image (for shift-F1).
-  2. Hence let the caller display the size (remember "yes you
-     can laugh at the way I did it..." ?).
-  3. Provide the caller with various statistics such as number of
-     patches in current texture etc. Good tourist information :)
-  4. Give the caller a way to know whether the image has been
-     drawn (i.e. "ready for shift-F1 ?")
-Why did I create a structure instead of just adding parameters to the
-hookfunc ? Just for the sake of streamlining the prototype of
-InputNameFromListWithFunc() :)
-In the following,
-- "expected" means "set by caller, read by callee"
-- "returned" means "set by callee, read by caller"
-- "both"     means... both :-)
-*/
-typedef struct
-   {
-   int x0;           // [expected] Top left corner of where to draw image
-   int y0;
-   int x1;           // [expected] Bottom right corner
-   int y1;
-   int disp_x0;      // [returned] Top left corner and bottom right corner
-   int disp_y0;      // of area that was drawn on by callee. This is so that
-   int disp_x1;      // the caller knows what needs to be cleared...
-   int disp_y1;
-   int xofs;         // [expected] Top left corner of image in buffer
-   int yofs;
-   const char *name; // [expected] Name of image to display
-   int flags;        // [both] Flags
-   int width;        // [returned] Width of image
-   int height;       // [returned] Height of image
-   int npatches;     // [returned] Textures only : number of patches
-   } hookfunc_comm_t;
-const int HOOK_DRAWN      = 1 << 0;	// image is completely drawn
-const int HOOK_SIZE_VALID = 1 << 1;	// width and height are valid
-const int HOOK_DISP_SIZE  = 1 << 2;	// caller should display "widthxheight"
-const int HOOK_SPECTRAL   = 1 << 3;	// Render picture with a spectral look
-const int HOOK_PATCH      = 1 << 4;	// Use patch_dir.loc_by_name()
-
 // The actual definition is in selectn.h
 typedef struct SelectionList *SelPtr;
 // Operations on the selection :
@@ -328,8 +297,6 @@ const int YO_OR     = 'o';  // Argument = mask
 const int YO_SET    = 's';  // Argument = bit#
 const int YO_TOGGLE = 't';  // Argument = bit#
 const int YO_XOR    = 'x';  // Argument = mask
-
-typedef u8 game_image_pixel_t;
 
 /*
  *	Even more stuff ("the macros and constants")
@@ -398,7 +365,7 @@ extern char error_invalid[1];     // Invalid parameter
 // Defined in yadex.cc
 extern const char *install_dir; 	// Where yadex is installed
 extern FILE *logfile;			// Filepointer to the error log
-extern Bool  Registered;		// Registered or shareware iwad ?
+extern bool  Registered;		// Registered or shareware iwad ?
 extern int screen_lines;		// Lines that our TTY can display
 extern int remind_to_build_nodes;	// Remind the user to build nodes
 
@@ -410,7 +377,7 @@ extern int   autoscroll_edge;	// Max. dist. in pixels to edge.
 extern const char *config_file;	// Name of the configuration file
 extern int   copy_linedef_reuse_sidedefs;
 extern int   cpu_big_endian;	// Am I running on a big-endian CPU ?
-extern Bool  Debug;			// Are we debugging?
+extern bool  Debug;			// Are we debugging?
 extern int   default_ceiling_height;			// For new sectors
 extern char  default_ceiling_texture[WAD_FLAT_NAME + 1];// For new sectors
 extern int   default_floor_height;			// For new sectors
@@ -421,13 +388,14 @@ extern char  default_middle_texture[WAD_TEX_NAME + 1];	// For new linedefs
 extern int   default_thing;				// For new THINGS
 extern char  default_upper_texture[WAD_TEX_NAME + 1];	// For new linedefs
 extern int   double_click_timeout;// Max ms between clicks of double click.
-extern Bool  Expert;		// Don't ask for confirmation for some ops.
+extern bool  Expert;		// Don't ask for confirmation for some ops.
 extern const char *Game;	// Name of game "doom", "doom2", "heretic", ...
 extern int   grid_pixels_min;   // Minimum grid step in pixels when not locked
 extern int   GridMin;	 	// Minimum grid step in map units
 extern int   GridMax;		// Maximum grid step in map units
 extern int   idle_sleep_ms;	// Time to sleep after empty XPending()
-extern int   InitialScale;	// Initial zoom factor for map
+extern int   zoom_default;	// Initial zoom factor for map
+extern int   zoom_step;		// Step between zoom factors in percent
 extern confirm_t insert_vertex_merge_vertices;
 extern confirm_t insert_vertex_split_linedef;
 extern const char *Iwad1;	// Name of the Doom iwad
@@ -446,19 +414,21 @@ extern int   MouseMickeysH;
 extern int   MouseMickeysV; 
 #endif
 extern char **PatchWads;	// List of pwad files
-extern Bool  Quiet;		// Don't beep when an object is selected
-extern Bool  Quieter;		// Don't beep, even on error
+extern bool  Quiet;		// Don't beep when an object is selected
+extern bool  Quieter;		// Don't beep, even on error
 extern int   scroll_less;	// %s of screenful to scroll by
 extern int   scroll_more;	// %s of screenful to scroll by
-extern Bool  Select0;		// Autom. select obj. 0 when switching modes
+extern bool  Select0;		// Autom. select obj. 0 when switching modes
 extern int   show_help;		// Print usage message and exit.
-extern Bool  SwapButtons;	// Swap right and middle mouse buttons
+extern int   sprite_scale;	// Relative scale used to display sprites
+extern bool  SwapButtons;	// Swap right and middle mouse buttons
 extern int   thing_fudge;	// How near to a thing you need to be to
 				// highlight it, in percents of its radius.
 extern int   verbose;		// Verbose mode
 extern int   vertex_fudge;	// How near to a vertex you need to be to
 				// highlight it, in percents of its radius.
 extern int   welcome_message;	// Print the welcome message on startup.
+extern const char *bench;	// Benchmark to run
 
 // Defined in gfx.cc
 extern int   ScrMaxX;		// Maximum display X-coord of screen/window
@@ -466,15 +436,17 @@ extern int   ScrMaxY;		// Maximum display Y-coord of screen/window
 extern float Scale;		// Scale to draw map 20 to 1
 
 // Defined in wads.cc
-extern WadPtr  WadFileList;	// List of wad files
-extern MDirPtr MasterDir;	// The master directory
+extern WadPtr    WadFileList;	// List of wad files
+extern MDirPtr   MasterDir;	// The master directory
+class Serial_num;
+extern Serial_num master_dir_serial;	// The revision# thereof
 
 // Defined in edit.cc
-extern Bool InfoShown;          // Is the bottom line displayed?
+extern bool InfoShown;          // Is the bottom line displayed?
 
 // Defined in mouse.cc
 #if defined Y_BGI
-extern Bool UseMouse;		// Is there a mouse driver?
+extern bool UseMouse;		// Is there a mouse driver?
 #elif defined Y_X11
 #define UseMouse 1
 #endif
@@ -491,7 +463,7 @@ extern Bool UseMouse;		// Is there a mouse driver?
 
 /* checks.cc (previously in editobj.cc) */
 void CheckLevel (int, int, int pulldown); /* SWAP! */
-Bool CheckStartingPos (void); /* SWAP! */
+bool CheckStartingPos (void); /* SWAP! */
 
 /* colour1.cc */
 int getcolour (const char *s, rgb_c *rgb);
@@ -504,8 +476,8 @@ void irgb2rgb (int c, rgb_c *rgb);
 
 /* editobj.cc */
 int InputObjectNumber (int, int, int, int);
-int InputObjectXRef (int, int, int, Bool, int);
-Bool Input2VertexNumbers (int, int, const char *, int *, int *);
+int InputObjectXRef (int, int, int, bool, int);
+bool Input2VertexNumbers (int, int, const char *, int *, int *);
 void EditObjectsInfo (int, int, int, SelPtr);
 void InsertStandardObject (int, int, int choice); /* SWAP! */
 void MiscOperations (int, SelPtr *, int choice); /* SWAP! */
@@ -519,26 +491,6 @@ void FreeGameDefs (void);
 unsigned ComputeAngle (int, int);
 unsigned ComputeDist (int, int);
 
-/* gfx.cc */
-void set_colour (acolour_t);
-void SetLineThickness (int thick);
-void SetDrawingMode (int _xor);
-void DrawMapCircle (int, int, int);
-void DrawMapLine (int mapx1, int mapy1, int mapx2, int mapy2);
-void DrawMapVector (int, int, int, int);
-void DrawMapArrow (int, int, unsigned);
-void DrawScreenLine (int, int, int, int);
-void DrawScreenRect (int x, int y, int width, int height);
-void DrawScreenBox (int, int, int, int);
-void DrawScreenBox3D (int, int, int, int);
-void DrawScreenBox3DShallow (int, int, int, int);
-void DrawScreenBoxHollow (int x0, int y0, int x1, int y1, acolour_t colour);
-void draw_box_border (int x, int y, int width, int height,
-   int thickness, int raised);
-void DrawScreenText (int, int, const char *, ...);
-void DrawScreenString (int, int, const char *);
-void DrawPointer (Bool);
-
 /* input.cc */
 #include "input.h"
 
@@ -547,7 +499,7 @@ void AlignTexturesY (SelPtr *); /* SWAP! */
 void AlignTexturesX (SelPtr *); /* SWAP! */
 
 /* l_misc.cc (previously in objects.cc) */
-void FlipLineDefs (SelPtr, Bool); /* SWAP! */
+void FlipLineDefs (SelPtr, bool); /* SWAP! */
 void SplitLineDefs (SelPtr); /* SWAP! */
 void MakeRectangularNook (SelPtr obj, int width, int depth, int convex); /* SWAP! */
 void SetLinedefLength (SelPtr obj, int length, int move_2nd_vertex);
@@ -567,14 +519,6 @@ void ForgetFTextureNames (void);
 int is_flat_name_in_list (const char *name);
 void ReadFTextureNames (void);
 void ForgetWTextureNames (void);
-
-/* list.cc */
-void InputNameFromListWithFunc (int, int, const char *, size_t,
-   const char *const *, int, char *, int, int,
-   void (*hookfunc)(hookfunc_comm_t *),
-   char flags_to_pass_to_callback = 0);
-void InputNameFromList (int, int, const char *, size_t, const char *const *,
-   char *);
 
 /* mouse.cc (this module is entirely DOS-specific) */
 #if defined Y_BGI
@@ -618,10 +562,10 @@ void HighlightObject (int, int, int); /* SWAP! */
 void DeleteObject (int, int); /* SWAP! */
 void DeleteObjects (int, SelPtr *); /* SWAP! */
 void InsertObject (int, int, int, int); /* SWAP! */
-Bool IsLineDefInside (int, int, int, int, int); /* SWAP - needs Vertices & LineDefs */
-int GetOppositeSector (int, Bool); /* SWAP! */
+bool IsLineDefInside (int, int, int, int, int); /* SWAP - needs Vertices & LineDefs */
+int GetOppositeSector (int, bool); /* SWAP! */
 void CopyObjects (int, SelPtr); /* SWAP! */
-Bool MoveObjectsToCoords (int, SelPtr, int, int, int); /* SWAP! */
+bool MoveObjectsToCoords (int, SelPtr, int, int, int); /* SWAP! */
 void GetObjectCoords (int, int, int *, int *); /* SWAP! */
 int FindFreeTag (void); /* SWAP! */
 
@@ -660,15 +604,10 @@ void ScreenShot (void);
 /* t_prop.c (previously in editobj.c) */
 void ThingProperties (int x0, int y0, SelPtr obj);
 
-/* textures.cc */
-void DisplayPic (hookfunc_comm_t *c);
-void ChooseWallTexture (int, int, const char *, int, char **, char *);
-void GetWallTextureSize (i16 *, i16 *, const char *);
-
 /* v_merge.cc */
 void DeleteVerticesJoinLineDefs (SelPtr ); /* SWAP! */
 void MergeVertices (SelPtr *); /* SWAP! */
-Bool AutoMergeVertices (SelPtr *, int obj_type, char operation); /* SWAP! */
+bool AutoMergeVertices (SelPtr *, int obj_type, char operation); /* SWAP! */
 
 /* v_polyg.cc */
 void InsertPolygonVertices (int, int, int, int);
@@ -681,26 +620,8 @@ extern const char *const yadex_version;
 extern const char *const yadex_source_date;
 
 /* wads.cc */
-void OpenMainWad (const char *);
-void OpenPatchWad (const char *);
-void CloseWadFiles (void);
-void CloseUnusedWadFiles (void);
-WadPtr BasicWadOpen (const char *, ygpf_t pic_format);
-void wad_read_bytes (WadPtr wadfile, void huge *buf, long count);
-long wad_read_bytes2 (WadPtr wadfile, void huge *buf, long count);
-void wad_seek (WadPtr, long);
-int  wad_seek2 (WadPtr wadfile, long offset);
 MDirPtr FindMasterDir (MDirPtr, const char *);
 MDirPtr FindMasterDir (MDirPtr, const char *, const char *);
-void ListMasterDirectory (FILE *);
-void ListFileDirectory (FILE *, WadPtr);
-void BuildNewMainWad (const char *, Bool);
-void WriteBytes (FILE *, const void huge *, long);
-void CopyBytes (FILE *, FILE *, long);
-void DumpDirectoryEntry (FILE *, const char *);
-void SaveDirectoryEntry (FILE *, const char *);
-void SaveEntryToRawFile (FILE *, const char *);
-void SaveEntryFromRawFile (FILE *, FILE *, const char *);
 int entryname_cmp (const char *entry1, const char *entry2);
 
 /* warning.cc */
@@ -712,3 +633,5 @@ void Beep (void);
 void PlaySound (int, int);
 void LogMessage (const char *, ...);
 
+
+#endif  /* DO NOT ADD ANYTHING AFTER THIS LINE */

@@ -102,10 +102,16 @@ switch (objtype)
          v2 = Vertices + ld->end;
 
          // Get the numbers of the sectors on both sides of the linedef
-         s1 = is_sector (SideDefs[ld->sidedef1].sector)
-            ? SideDefs[ld->sidedef1].sector : OBJ_NO_NONE;
-         s2 = is_sector (SideDefs[ld->sidedef2].sector)
-            ? SideDefs[ld->sidedef2].sector : OBJ_NO_NONE;
+	 if (is_sidedef (ld->sidedef1)
+	  && is_sector (SideDefs[ld->sidedef1].sector))
+	    s1 = SideDefs[ld->sidedef1].sector;
+	 else
+	    s1 = OBJ_NO_NONE;
+	 if (is_sidedef (ld->sidedef2)
+	  && is_sector (SideDefs[ld->sidedef2].sector))
+	    s2 = SideDefs[ld->sidedef2].sector;
+	 else
+	    s2 = OBJ_NO_NONE;
 
          // The linedef is entirely within bounds.
          // The sectors it touches _might_ be within bounds too.

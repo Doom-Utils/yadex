@@ -5,5 +5,5 @@
 
 
 char *find_level (const char *name_given);
-void EditLevel (const char *, Bool);
+void EditLevel (const char *, bool);
 

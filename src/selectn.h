@@ -19,7 +19,7 @@ struct SelectionList
    int objnum;			/* object number */
    };
 
-Bool IsSelected (SelPtr, int);
+bool IsSelected (SelPtr, int);
 void DumpSelection (SelPtr list);
 void SelectObject (SelPtr *, int);
 void select_unselect_obj (SelPtr *list, int objnum);

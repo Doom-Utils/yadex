@@ -84,6 +84,7 @@ switch (val)
 	{
 	for (cur = obj; cur; cur = cur->next)
 	   Things[cur->objnum].type = val;
+	things_types++;
 	MadeChanges = 1;
 	}
      break;
@@ -103,41 +104,49 @@ switch (val)
 	case 1:
 	   for (cur = obj; cur; cur = cur->next)
 	      Things[cur->objnum].angle = 90;
+	   things_angles++;
 	   MadeChanges = 1;
 	   break;
 	case 2:
 	   for (cur = obj; cur; cur = cur->next)
 	      Things[cur->objnum].angle = 45;
+	   things_angles++;
 	   MadeChanges = 1;
 	   break;
 	case 3:
 	   for (cur = obj; cur; cur = cur->next)
 	      Things[cur->objnum].angle = 0;
+	   things_angles++;
 	   MadeChanges = 1;
 	   break;
 	case 4:
 	   for (cur = obj; cur; cur = cur->next)
 	      Things[cur->objnum].angle = 315;
+	   things_angles++;
 	   MadeChanges = 1;
 	   break;
 	case 5:
 	   for (cur = obj; cur; cur = cur->next)
 	      Things[cur->objnum].angle = 270;
+	   things_angles++;
 	   MadeChanges = 1;
 	   break;
 	case 6:
 	   for (cur = obj; cur; cur = cur->next)
 	      Things[cur->objnum].angle = 225;
+	   things_angles++;
 	   MadeChanges = 1;
 	   break;
 	case 7:
 	   for (cur = obj; cur; cur = cur->next)
 	      Things[cur->objnum].angle = 180;
+	   things_angles++;
 	   MadeChanges = 1;
 	   break;
 	case 8:
 	   for (cur = obj; cur; cur = cur->next)
 	      Things[cur->objnum].angle = 135;
+	   things_angles++;
 	   MadeChanges = 1;
 	   break;
 	}

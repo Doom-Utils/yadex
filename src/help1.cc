@@ -55,8 +55,8 @@ fprintf (fd, "%s\n", what ());
 fprintf (fd, "Usage: yadex [options] [<pwad_file> ...]\n");
 fprintf (fd, "Options:\n");
 dump_command_line_options (fd);
-fprintf (fd, " %-32sSame as -?\n", "--help");
-fprintf (fd, " %-32sPrint version and exit\n", "--version");
+fprintf (fd, " %-33sSame as -?\n", "--help");
+fprintf (fd, " %-33sPrint version and exit\n", "--version");
 fprintf (fd, "Put a \"+\" instead of a \"-\" before boolean options"
              " to reverse their effect.\n");
 }

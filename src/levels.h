@@ -45,8 +45,25 @@ extern int   MapMaxX;		/* maximum X value of map */
 extern int   MapMaxY;		/* maximum Y value of map */
 extern int   MapMinX;		/* minimum X value of map */
 extern int   MapMinY;		/* minimum Y value of map */
-extern Bool  MadeChanges;	/* made changes? */
-extern Bool  MadeMapChanges;	/* made changes that need rebuilding? */
+extern bool  MadeChanges;	/* made changes? */
+extern bool  MadeMapChanges;	/* made changes that need rebuilding? */
+
+extern unsigned long things_angles;  /* Used to know whether a list of
+				   things sorted by type and angle would
+				   need to be rebuilt. Incremented
+				   whenever a thing is created, deleted
+				   or has its type or angle changed.
+				   Presently, no such list exists but
+				   there will be one if
+				   draw_things_sprites() ever draws
+				   sprites according to their angles. */
+
+extern unsigned long things_types;  /* Used to know whether the list of
+				   things sorted by type that drawmap.cc
+				   maintains should be rebuilt.
+				   Incremented whenever a thing is
+				   created, deleted or has its type
+				   changed. */
 
 extern char Level_name[WAD_NAME + 1]; /* The name of the level (E.G.
 				   "MAP01" or "E1M1"), followed by a
@@ -69,4 +86,7 @@ extern y_file_name_t Level_file_name_saved;  /* The name of the file in
 				   an empty string. */
 
 void EmptyLevelData (const char *levelname);
+void update_level_bounds ();
+
+
 #endif	/* DO NOT ADD ANYTHING AFTER THIS LINE */

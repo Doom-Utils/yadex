@@ -34,6 +34,7 @@ Place, Suite 330, Boston, MA 02111-1307, USA.
 #include "levels.h"
 #include "oldmenus.h"
 #include "prefer.h"
+#include "textures.h"
 
 
 /*

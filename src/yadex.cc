@@ -31,6 +31,7 @@ Place, Suite 330, Boston, MA 02111-1307, USA.
 #include "yadex.h"
 #include <time.h>
 #include "acolours.h"
+#include "bench.h"
 #include "cfgfile.h"
 #include "disppic.h"  /* Because of "p" */
 #include "editlev.h"
@@ -41,13 +42,17 @@ Place, Suite 330, Boston, MA 02111-1307, USA.
 #include "gfx2.h"
 #include "help1.h"
 #include "levels.h"    /* Because of "viewtex" */
+#include "lists.h"
 #include "mkpalette.h"
 #include "palview.h"
 #include "patchdir.h"  /* Because of "p" */
 #include "rgb.h"
 #include "sanity.h"
-#include "sprites.h"
+#include "textures.h"
 #include "x11.h"
+#include "wadname.h"
+#include "wadres.h"
+#include "wads2.h"
 
 
 /*
@@ -72,9 +77,10 @@ char error_invalid[1];     // Invalid parameter
  */
 const char *install_dir = 0;		// Where Yadex is installed
 FILE *      logfile     = NULL;		// Filepointer to the error log
-Bool        Registered  = 0;		// Registered or shareware game?
+bool        Registered  = false;	// Registered or shareware game?
 int         screen_lines = 24;  	// Lines that our TTY can display
 int         remind_to_build_nodes = 0;	// Remind user to build nodes
+Wad_res     wad_res (&MasterDir);
 
 // Set from command line and/or config file
 int       autoscroll			= 0;
@@ -83,7 +89,7 @@ int       autoscroll_edge		= 30;
 const char *config_file;
 int       copy_linedef_reuse_sidedefs	= 0;
 int       cpu_big_endian		= 0;
-Bool      Debug				= 0;
+bool      Debug				= false;
 int       default_ceiling_height	= 128;
 char      default_ceiling_texture[WAD_FLAT_NAME + 1]	= "CEIL3_5";
 int       default_floor_height				= 0;
@@ -94,14 +100,15 @@ char      default_middle_texture[WAD_TEX_NAME + 1]	= "STARTAN3";
 char      default_upper_texture[WAD_TEX_NAME + 1]	= "STARTAN3";
 int       default_thing			= 3004;
 int       double_click_timeout		= 200;
-Bool      Expert			= 0;
+bool      Expert			= false;
 const char *Game			= NULL;
 int       grid_pixels_min		= 10;
-int       GridMin			= 4;
-int       GridMax			= 256;
+int       GridMin			= 2;
+int       GridMax			= 128;
 int       idle_sleep_ms			= 50;
-Bool      InfoShown			= 1;
-int       InitialScale			= 8;
+bool      InfoShown			= true;
+int       zoom_default			= 0;  // 0 means fit
+int       zoom_step			= 0;  // 0 means sqrt(2)
 confirm_t insert_vertex_split_linedef	= YC_ASK_ONCE;
 confirm_t insert_vertex_merge_vertices	= YC_ASK_ONCE;
 const char *Iwad1			= NULL;
@@ -120,17 +127,19 @@ int       MouseMickeysH			= 5;
 int       MouseMickeysV			= 5;
 #endif
 char **   PatchWads			= NULL;
-Bool      Quiet				= 0;
-Bool      Quieter			= 0;
+bool      Quiet				= false;
+bool      Quieter			= false;
 int       scroll_less			= 10;
 int       scroll_more			= 90;
-Bool      Select0			= 1;
+bool      Select0			= false;
 int       show_help			= 0;
-Bool      SwapButtons			= 0;
+int       sprite_scale                  = 100;
+bool      SwapButtons			= false;
 int       thing_fudge			= 400;
 int       verbose			= 0;
-int       vertex_fudge			= 400;
+int       vertex_fudge			= 200;
 int       welcome_message		= 1;
+const char *bench			= 0;
 
 // Global variables declared in game.h
 yglf_t yg_level_format   = YGLF__;
@@ -143,6 +152,7 @@ al_llist_t *ldtgroup     = NULL;
 al_llist_t *stdef        = NULL;
 al_llist_t *thingdef     = NULL;
 al_llist_t *thinggroup   = NULL;
+Wad_name sky_flat;
 
 
 /*
@@ -208,7 +218,7 @@ printf ("%s\n"
 #if defined Y_DOS
 install_dir = spec_path (argv[0]);
 #elif defined Y_UNIX
-install_dir = getenv ("Y_DIR");
+install_dir = getenv ("YADEX_DIR");
 #endif
 
 // The config file provides some values.
@@ -226,7 +236,7 @@ if (! r)
 if (r)
    {
    syntax_error :
-   fprintf (stderr, "Try \"yadex -help\" or \"man yadex\".\n");
+   fprintf (stderr, "Try \"yadex --help\" or \"man yadex\".\n");
    exit (1);
    }
 
@@ -340,11 +350,6 @@ else if (Game != NULL && ! strcmp (Game, "strife10"))
       }
    MainWad = Iwad10;
    }
-else if (Game != NULL && ! strcmp (Game, "wolf"))
-   {
-   printf ("April fool ! :-)\n");
-   exit (42);
-   }
 else
    {
    if (Game == NULL)
@@ -366,7 +371,7 @@ if (Debug)
    LogMessage (": Welcome to Yadex!\n");
    }
 if (Quieter)
-   Quiet = 1;
+   Quiet = true;
 
 // Sanity checks (useful when porting).
 check_types ();
@@ -381,7 +386,8 @@ InitGameDefs ();
 LoadGameDefs (Game);
 
 // Load the iwad and the pwads.
-OpenMainWad (MainWad);
+if (OpenMainWad (MainWad))
+   fatal_error ("If you don't give me an iwad, I'll quit. I'm serious.");
 if (PatchWads)
    {
    const char * const *pwad_name;
@@ -391,22 +397,33 @@ if (PatchWads)
 /* sanity check */
 CloseUnusedWadFiles ();
 
-if (welcome_message)
-   print_welcome (stdout);
+// BRANCH 1 : benchmarking (-b)
+if (bench != 0)
+   {
+   benchmark (bench);
+   return 0;  // Exit successfully
+   }
 
-if (! strcmp (Game, "hexen"))
-   printf (
+// BRANCH 2 : normal use ("yadex:" prompt)
+else
+   {
+   if (welcome_message)
+      print_welcome (stdout);
+
+   if (! strcmp (Game, "hexen"))
+      printf (
    "WARNING: Hexen mode is experimental. Don't expect to be able to do any\n"
    "real Hexen editing with it. You can edit levels but you can't save them.\n"
    "And there might be other bugs... BE CAREFUL !\n\n");
 
-if (! strcmp (Game, "strife"))
-   printf (
+   if (! strcmp (Game, "strife"))
+      printf (
    "WARNING: Strife mode is experimental. Many thing types, linedef types,\n"
    "etc. are missing or wrong. And be careful, there might be bugs.\n\n");
 
-/* all systems go! */
-MainLoop ();
+   /* all systems go! */
+   MainLoop ();
+   }
 
 /* that's all, folks! */
 CloseWadFiles ();
@@ -432,7 +449,7 @@ static int parse_environment_vars ()
 {
 char *value;
 
-value = getenv ("Y_GAME");
+value = getenv ("YADEX_GAME");
 if (value != NULL)
    Game = value;
 return 0;
@@ -497,10 +514,29 @@ return;
  */
 void fatal_error (const char *fmt, ...)
 {
-va_list args;
+// With BGI, we have to switch back to text mode
+// before printing the error message so do it now...
+#ifdef Y_BGI
+if (GfxMode)
+   {
+   sleep (1);
+   TermGfx ();
+   }
+#endif
 
+va_list args;
 va_start (args, fmt);
 print_error_message (fmt, args);
+
+// ... on the other hand, with X, we don't have to
+// call TermGfx() before printing so we do it last so
+// that a segfault occuring in TermGfx() does not
+// prevent us from seeing the stderr message.
+#ifdef Y_X11
+if (GfxMode)
+   TermGfx ();  // Don't need to sleep (1) either.
+#endif
+
 // Clean up things and free swap space
 ForgetLevelData ();
 ForgetWTextureNames ();
@@ -529,18 +565,6 @@ print_error_message (fmt, args);
  */
 static void print_error_message (const char *fmt, va_list args)
 {
-//Beep (); Beep ();
-
-// With BGI, we have to switch back to text mode
-// before printing the error message so do it now...
-#ifdef Y_BGI
-if (GfxMode)
-   {
-   sleep (1);
-   TermGfx ();
-   }
-#endif
-
 fflush (stdout);
 fputs ("Yadex: Error: ", stderr);
 vfprintf (stderr, fmt, args);
@@ -553,15 +577,6 @@ if (Debug && logfile != NULL)
    fputc ('\n', logfile);
    fflush (logfile);
    }
-
-// ... on the other hand, with X, we don't have to
-// call TermGfx() before printing so we do it last so
-// that a segfault occuring in TermGfx() does not
-// prevent us from seeing the stderr message.
-#ifdef Y_X11
-if (GfxMode)
-   TermGfx ();  // Don't need to sleep (1) either.
-#endif
 }
 
 
@@ -678,42 +693,42 @@ for (;;)
    else if (!strcmp (com, "?") || !strcmp (com, "h") || !strcmp (com, "help"))
       {
       printf ("? | h | help                      --"
-              " to display this text\n");
+              " display this text\n");
       printf ("b[uild] <WadFile>                 --"
-              " to build a new iwad\n");
+              " build a new iwad\n");
       printf ("c[reate] <levelname>              --"
-              " to create and edit a new (empty) level\n");
+              " create and edit a new (empty) level\n");
       printf ("d[ump] <DirEntry> [outfile]       --"
-              " to dump a directory entry in hex\n");
+              " dump a directory entry in hex\n");
       printf ("e[dit] <levelname>                --"
-              " to edit a game level saving results to\n");
+              " edit a game level saving results to\n");
       printf ("                                          a patch wad file\n");
       printf ("g[roup] <WadFile>                 --"
-              " to group all patch wads in a file\n");
+              " group all patch wads in a file\n");
       printf ("i[nsert] <RawFile> <DirEntry>     --"
-              " to insert a raw file in a patch wad file\n");
+              " insert a raw file in a patch wad file\n");
       printf ("l[ist] <WadFile> [outfile]        --"
-              " to list the directory of a wadfile\n");
+              " list the directory of a wadfile\n");
       printf ("m[aster] [outfile]                --"
-              " to list the master directory\n");
+              " list the master directory\n");
       printf ("make_gimp_palette <outfile>       --"
-              " to generate a gimp palette file from\n"
+              " generate a gimp palette file from\n"
               "                                    "
               " entry 0 of lump PLAYPAL.\n");
       printf ("make_palette_ppm <outfile>        --"
-              " to generate a palette image from\n"
+              " generate a palette image from\n"
               "                                    "
               " entry 0 of lump PLAYPAL.\n");
       printf ("q[uit]                            --"
-              " to quit\n");
+              " quit\n");
       printf ("r[ead] <WadFile>                  --"
-              " to read a new wad patch file\n");
+              " read a new wad patch file\n");
       printf ("s[ave] <DirEntry> <WadFile>       --"
-              " to save one object to a separate file\n");
+              " save one object to a separate file\n");
       printf ("set                               --"
-              " to list all options and their values\n");
+              " list all options and their values\n");
       printf ("v[iew] [<spritename>]             --"
-              " to display the sprites\n");
+              " display the sprites\n");
       printf ("viewflat [<flatname>]             --"
 	      " flat viewer\n");
       printf ("viewpal                           --"
@@ -723,9 +738,9 @@ for (;;)
       printf ("viewtex [<texname>]               --"
 	      " texture viewer\n");
       printf ("w[ads]                            --"
-              " to display the open wads\n");
+              " display the open wads\n");
       printf ("x[tract] <DirEntry> <RawFile>     --"
-              " to save (extract) one object to a raw file\n");
+              " save (extract) one object to a raw file\n");
       }
 
    /* user asked for list of open wad files */
@@ -984,21 +999,38 @@ for (;;)
    // "v"/"view" - view the sprites
    else if (!strcmp (com, "view") || !strcmp (com, "v"))
       {
-      InitGfx ();
+      if (InitGfx ())
+	 goto v_end;
       init_input_status ();
       do
 	 get_input_status ();
       while (is.key != YE_EXPOSE);
-      com = strtok (NULL, " ");
       force_window_not_pixmap ();  // FIXME quick hack
-      ChooseSprite (-1, -1, "Sprite viewer", com);
+      {
+      Lump_list list;
+      wad_res.sprites.list (list);
+      char buf[WAD_PIC_NAME + 1];
+      const char *sprite = strtok (NULL, " ");
+      *buf = '\0';
+      if (sprite != 0)
+      {
+	strncat (buf, sprite, sizeof buf - 1);
+	for (char *p = buf; *p != '\0'; p++)
+	  *p = toupper (*p);
+      }
+      InputNameFromListWithFunc (-1, -1, "Sprite viewer", list.size (),
+	list.data (), 10, buf, 320, 200, display_pic,
+	HOOK_DISP_SIZE | HOOK_SPRITE);
+      }
       TermGfx ();
+      v_end:;
       }
 
    // "viewflat" - view the flats
    else if (! strcmp (com, "viewflat"))
       {
-      InitGfx ();
+      if (InitGfx ())
+	goto viewflat_end;
       init_input_status ();
       do
 	 get_input_status ();
@@ -1010,6 +1042,7 @@ for (;;)
       if (com != 0)
 	strncat (buf, com, sizeof buf - 1);
       ReadFTextureNames ();
+      {
       char **flat_names =
 	(char **) GetMemory (NumFTexture * sizeof *flat_names);
       for (size_t n = 0; n < NumFTexture; n++)
@@ -1017,28 +1050,35 @@ for (;;)
       ChooseFloorTexture (-1, -1, "Flat viewer",
 	NumFTexture, flat_names, buf);
       FreeMemory (flat_names);
+      }
       ForgetFTextureNames ();
       TermGfx ();
+      viewflat_end:;
       }
 
    // "viewpal" - view the palette (PLAYPAL and COLORMAP)
    else if (! strcmp (com, "viewpal"))
       {
-      InitGfx ();
+      if (InitGfx ())
+	goto viewpal_end;
       init_input_status ();
       do
 	 get_input_status ();
       while (is.key != YE_EXPOSE);
       force_window_not_pixmap ();  // FIXME quick hack
+      {
       Palette_viewer pv;
       pv.run ();
+      }
       TermGfx ();
+      viewpal_end:;
       }
    
    // "viewpat" - view the patches
    else if (! strcmp (com, "viewpat"))
       {
-      InitGfx ();
+      if (InitGfx ())
+	goto viewpat_end;
       init_input_status ();
       do
 	 get_input_status ();
@@ -1058,12 +1098,14 @@ for (;;)
 	       HOOK_DISP_SIZE | HOOK_PATCH);
       }
       TermGfx ();
+      viewpat_end:;
       }
 
    // "viewtex" - view the textures
    else if (! strcmp (com, "viewtex"))
       {
-      InitGfx ();
+      if (InitGfx ())
+	goto viewtex_end;
       init_input_status ();
       do
 	 get_input_status ();
@@ -1082,6 +1124,7 @@ for (;;)
 	 ForgetWTextureNames ();
       }
       TermGfx ();
+      viewtex_end:;
       }
 
    /* user asked to save an object to a separate pwad file */
@@ -1234,7 +1277,7 @@ for (size_t n = 0; n < NCOLOURS; n++)
  //     c.set (0x50, 0x46, 0x40);  //0xc0 //0xa8 //0x80
       c.set (0x48, 0x42, 0x3c);  //0xc0 //0xa8 //0x80
    else if (n == WINBG_DARK)
-      c.set (0x20, 0x1b, 0x16);  //0x40 //0x38 //0x30
+      c.set (0x20, 0x1b, 0x12);  //0x40 //0x38 //0x30
    else if (n == WINFG)
       c.set (0xa0, 0xa0, 0xa0);
    else if (n == WINFG_DIM)
@@ -1246,13 +1289,33 @@ for (size_t n = 0; n < NCOLOURS; n++)
    else if (n == WINFG_DIM_HL)
       c.set (0x70, 0x70, 0x70);
    else if (n == GRID1)
-      c.set (0, 0, 0x60);
-   else if (n == GRID2)
-      c.set (0, 0, 0xa0);
-   else if (n == GRID3)
-      c.set (0, 0, 0xe0);
+      c.set (0, 0, 0xc0);
+   else if (n == GRID2H)
+      c.set (0, 0, 0x30);
+   else if (n == GRID2V)
+      c.set (0, 0, 0x40);
+   else if (n == GRID3H)
+      c.set (0, 0, 0x50);
+   else if (n == GRID3V)
+      c.set (0, 0, 0x70);
+   else if (n == GRID4H)
+      c.set (0, 0, 0x80);
+   else if (n == GRID4V)
+      c.set (0, 0, 0xc0);
    else if (n == WINFGLABEL)  // Text in window, a bit dimmer
       c.set (0x88, 0x88, 0x88);
+   else if (n == LINEDEF_NO)
+      c.set (0x40, 0xd0, 0xf0);
+   else if (n == SECTOR_NO)
+      c.set (0x40, 0xd0, 0xf0);
+   else if (n == THING_NO)
+      c.set (0x40, 0xd0, 0xf0);
+   else if (n == VERTEX_NO)
+      c.set (0x40, 0xd0, 0xf0);
+   else if (n == CLR_ERROR)
+      c.set (0xff, 0, 0);
+   else if (n == THING_REM)
+      c.set (0x40, 0x40, 0x40);
    else
       fatal_error ("Wrong acn %d", n);
 

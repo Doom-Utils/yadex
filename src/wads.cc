@@ -29,66 +29,58 @@ Place, Suite 330, Boston, MA 02111-1307, USA.
 
 
 #include "yadex.h"
+#include "serialnum.h"
 #include "wads.h"
 
 
 /* global variables */
-WadPtr WadFileList = NULL;       /* linked list of wad files */
-MDirPtr MasterDir = NULL;        /* the master directory */
+WadPtr WadFileList = NULL;	// Linked list of wad files
+MDirPtr MasterDir = NULL;	// The master directory
+Serial_num master_dir_serial;	// The revision# thereof
 
 
 /*
- *	wad_seek
- *	Go to position <offset> of wad file.
- *	If a seek error occurs, calls fatal_error().
+ *	file_read_i16
+ *	Read <count> little-endian 16-bit signed integers from
+ *	file <fp>.
+ *
+ *	Return 0 on success, non-zero on failure.
  */
-void wad_seek (WadPtr wadfile, long offset)
+int file_read_i16 (FILE *fp, i16 *buf, long count)
 {
-if (fseek (wadfile->fd, offset, 0))
-   fatal_error ("%s: can't seek to %lXh", wadfile->filename, offset);
+while (count-- > 0)
+   *buf = getc (fp) | (getc (fp) << 8);
+return feof (fp) || ferror (fp);
 }
 
 
 /*
- *	wad_seek2
- *	Like wad_seek() but simply returns non-zero on error.
+ *	file_read_i32
+ *	Read <count> little-endian 32-bit signed integers from
+ *	file <fp>.
+ *
+ *	Return 0 on success, non-zero on failure.
  */
-int wad_seek2 (WadPtr wadfile, long offset)
+int file_read_i32 (FILE *fp, i32 *buf, long count)
 {
-if (fseek (wadfile->fd, offset, 0))
-   return 1;
-return 0;
+while (count-- > 0)
+   {
+   *buf++ =    getc (fp)
+      | (      getc (fp) << 8)
+      | ((i32) getc (fp) << 16)
+      | ((i32) getc (fp) << 24);
+   }
+return feof (fp) || ferror (fp);
 }
 
 
 /*
- *	wad_read_bytes
- *	Read <count> bytes from wad file <wadfile>
- *	and store them into buffer <buf>.
- *	<count> is _not_ limited to size_t.
- *	If a read error occurs, calls fatal_error().
+ *	file_read_vbytes
+ *	Read up to <count> bytes from file <fp>.
+ *
+ *	Return the number of bytes read.
  */
-void wad_read_bytes (WadPtr wadfile, void huge *buf, long count)
-{
-long ofs = ftell (wadfile->fd);
-long bytes_read;
-
-bytes_read = wad_read_bytes2 (wadfile, buf, count);
-if (bytes_read != count)
-   fatal_error ("%s(%lXh): tried to read %ld B, got only %ld",
-      wadfile->filename, ofs, count, bytes_read);
-}
-
-
-/*
- *	wad_read_bytes2
- *	Read <count> bytes from wad file <wadfile>
- *	and store them into buffer <buf>.
- *	<count> is _not_ limited to size_t.
- *	Unlike wad_read_bytes2(), keeps quiet even if a read error occurs.
- *	Returns the number of bytes read.
- */
-long wad_read_bytes2 (WadPtr wadfile, void *buf, long count)
+long file_read_vbytes (FILE *fp, void *buf, long count)
 {
 long bytes_read_total;
 size_t bytes_read;
@@ -100,11 +92,11 @@ while (count > 0)
    {
    if (count <= 0x8000)
       bytes_to_read = (size_t) count;
-   bytes_read = fread (buf, 1, bytes_to_read, wadfile->fd);
+   bytes_read = fread (buf, 1, bytes_to_read, fp);
    bytes_read_total += bytes_read;
    if (bytes_read != bytes_to_read)
       break;
-   buf = (char huge *) buf + bytes_read;
+   buf = (char *) buf + bytes_read;
    count -= bytes_read;
    }
 return bytes_read_total;
@@ -112,63 +104,14 @@ return bytes_read_total;
 
 
 /*
- *	wad_read_i16
- *	Read a little-endian 16-bit signed integer
- *	from wad file <wadfile>.
- *	If a read error occurs, sets wadfile->error.
+ *	file_read_bytes
+ *	Read <count> bytes from file <fp>.
+ *
+ *	Return 0 on success, non-zero on failure.
  */
-i16 wad_read_i16 (WadPtr wadfile)
+int file_read_bytes (FILE *fp, void *buf, long count)
 {
-const size_t nbytes = 2;
-u8 buf[nbytes];
-if (fread (buf, 1, nbytes, wadfile->fd) != nbytes)
-   {
-   if (! wadfile->error)
-      {
-      //wadfile->err_ofs = ftell (wadfile->fd);
-      wadfile->error = true;
-      }
-   return EOF;  // Whatever
-   }
-return buf[0] | buf[1] << 8;
-}
-
-
-/*
- *	wad_read_i16
- *	Same thing as above but the value read is not
- *	returned but stored in *buf.
- *	If a read error occurs, calls fatal_error().
- */
-void wad_read_i16 (WadPtr wadfile, i16 *buf)
-{
-*buf = getc (wadfile->fd) | (getc (wadfile->fd) << 8);
-
-if (feof (wadfile->fd) || ferror (wadfile->fd))
-   fatal_error ("%s(%lXh): read error or unexpected EOF",
-      wadfile->filename, ftell (wadfile->fd));
-}
-
-
-/*
- *	wad_read_i32
- *	Read <count> little-endian 32-bit signed integers
- *	from wad file <wadfile>.
- *	If a read error occurs, calls fatal_error().
- */
-void wad_read_i32 (WadPtr wadfile, i32 *buf, long count)
-{
-while (count-- > 0)
-   {
-   *buf++ =    getc (wadfile->fd)
-      | (      getc (wadfile->fd) << 8)
-      | ((i32) getc (wadfile->fd) << 16)
-      | ((i32) getc (wadfile->fd) << 24);
-   }
-
-if (feof (wadfile->fd) || ferror (wadfile->fd))
-   fatal_error ("%s(%lXh): read error or unexpected EOF",
-      wadfile->filename, ftell (wadfile->fd));
+return file_read_vbytes (fp, buf, count) != count;
 }
 
 
@@ -234,6 +177,143 @@ for (; p - p0 < (ptrdiff_t) WAD_NAME; p++)
 
 
 /*
+ *	wad_seek
+ *	Go to position <offset> of wad file.
+ *	If a seek error occurs, calls fatal_error().
+ */
+void wad_seek (WadPtr wadfile, long offset)
+{
+if (fseek (wadfile->fd, offset, 0))
+   fatal_error ("%s: can't seek to %lXh", wadfile->filename, offset);
+}
+
+
+/*
+ *	wad_seek2
+ *	Like wad_seek() but simply returns non-zero on error.
+ */
+int wad_seek2 (WadPtr wadfile, long offset)
+{
+if (fseek (wadfile->fd, offset, 0))
+   return 1;
+return 0;
+}
+
+
+/*
+ *	wad_read_i16
+ *	Read a little-endian 16-bit signed integer
+ *	from wad file <wadfile>.
+ *	If a read error occurs, sets wadfile->error.
+ */
+i16 wad_read_i16 (WadPtr wadfile)
+{
+const size_t nbytes = 2;
+u8 buf[nbytes];
+if (fread (buf, 1, nbytes, wadfile->fd) != nbytes)
+   {
+   if (! wadfile->error)
+      {
+      //wadfile->err_ofs = ftell (wadfile->fd);
+      wadfile->error = true;
+      }
+   return EOF;  // Whatever
+   }
+return buf[0] | buf[1] << 8;
+}
+
+
+/*
+ *	wad_read_i16
+ *	Same thing as above but the value read is not
+ *	returned but stored in *buf.
+ *	If a read error occurs, calls fatal_error().
+ */
+void wad_read_i16 (WadPtr wadfile, i16 *buf)
+{
+*buf = getc (wadfile->fd) | (getc (wadfile->fd) << 8);
+
+if (feof (wadfile->fd) || ferror (wadfile->fd))
+   wadfile->error = true;
+   //fatal_error ("%s(%lXh): read error or unexpected EOF",
+   //   wadfile->filename, ftell (wadfile->fd));
+}
+
+
+/*
+ *	wad_read_i32
+ *	Read <count> little-endian 32-bit signed integers
+ *	from wad file <wadfile>.
+ *	If a read error occurs, calls fatal_error().
+ */
+void wad_read_i32 (WadPtr wadfile, i32 *buf, long count)
+{
+while (count-- > 0)
+   {
+   *buf++ =    getc (wadfile->fd)
+      | (      getc (wadfile->fd) << 8)
+      | ((i32) getc (wadfile->fd) << 16)
+      | ((i32) getc (wadfile->fd) << 24);
+   }
+
+if (feof (wadfile->fd) || ferror (wadfile->fd))
+   wadfile->error = true;
+   //fatal_error ("%s(%lXh): read error or unexpected EOF",
+   //   wadfile->filename, ftell (wadfile->fd));
+}
+
+
+/*
+ *	wad_read_bytes
+ *	Read <count> bytes from wad file <wadfile> and store
+ *	them into buffer <buf>. <count> is _not_ limited to
+ *	size_t. If a read error occurs, calls fatal_error().
+ */
+void wad_read_bytes (WadPtr wadfile, void *buf, long count)
+{
+long ofs = ftell (wadfile->fd);
+long bytes_read;
+
+bytes_read = wad_read_vbytes (wadfile, buf, count);
+if (bytes_read != count)
+   fatal_error ("%s(%lXh): tried to read %ld B, got only %ld",
+      wadfile->filename, ofs, count, bytes_read);
+}
+
+
+/*
+ *	wad_read_vbytes
+ *	Read up to <count> bytes from wad file <wadfile> and
+ *	store them into buffer <buf>. <count> is _not_ limited
+ *	to size_t. Unlike wad_read_bytes2(), keeps quiet even if
+ *	a read error occurs.
+ *
+ *	Returns the number of bytes read.
+ */
+long wad_read_vbytes (WadPtr wadfile, void *buf, long count)
+{
+long bytes_read_total;
+size_t bytes_read;
+size_t bytes_to_read;
+
+bytes_read_total = 0;
+bytes_to_read    = 0x8000;
+while (count > 0)
+   {
+   if (count <= 0x8000)
+      bytes_to_read = (size_t) count;
+   bytes_read = fread (buf, 1, bytes_to_read, wadfile->fd);
+   bytes_read_total += bytes_read;
+   if (bytes_read != bytes_to_read)
+      break;
+   buf = (char *) buf + bytes_read;
+   count -= bytes_read;
+   }
+return bytes_read_total;
+}
+
+
+/*
    find an entry in the master directory
 */
 
@@ -269,7 +349,7 @@ return from;
    output bytes to a binary file with error checking
 */
 
-void WriteBytes (FILE *file, const void huge *buf, long size)
+void WriteBytes (FILE *file, const void *buf, long size)
 {
 if (! Registered)
    return;
@@ -277,7 +357,7 @@ while (size > 0x8000)
    {
    if (fwrite (buf, 1, 0x8000, file) != 0x8000)
       fatal_error ("error writing to file");
-   buf = (const char huge *) buf + 0x8000;
+   buf = (const char *) buf + 0x8000;
    size -= 0x8000;
    }
 if (fwrite (buf, 1, size, file) != (size_t) size)
@@ -295,7 +375,7 @@ if (fwrite (buf, 1, size, file) != (size_t) size)
 
 void CopyBytes (FILE *dest, FILE *source, long size)
 {
-void huge *data;
+void *data;
 
 if (! Registered)
    return;

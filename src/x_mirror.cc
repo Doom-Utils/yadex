@@ -140,6 +140,12 @@ void flip_mirror (SelPtr list, int obj_type, char op)
     /* Change the coordinates of the
        things and adjust the angles. */
     if (operation == flip)
+    {
+      if (list)
+      {
+	things_angles++;
+	MadeChanges = 1;
+      }
       for (SelPtr cur = list; cur; cur = cur->next)
       {
 	TPtr t = Things + cur->objnum;
@@ -147,7 +153,14 @@ void flip_mirror (SelPtr list, int obj_type, char op)
 	if (t->angle != 0)
 	  t->angle = 360 - t->angle;
       }
+    }
     else if (operation == mirror)
+    {
+      if (list)
+      {
+	things_angles++;
+	MadeChanges = 1;
+      }
       for (SelPtr cur = list; cur; cur = cur->next)
       {
 	TPtr t = Things + cur->objnum;
@@ -157,9 +170,7 @@ void flip_mirror (SelPtr list, int obj_type, char op)
 	else
 	  t->angle = 180 - t->angle;
       }
-
-    if (list)
-      MadeChanges = 1;
+    }
   }
 }
 

@@ -37,6 +37,7 @@ Place, Suite 330, Boston, MA 02111-1307, USA.
 #include "acolours.h"
 #include "gcolour1.h"
 #include "gcolour2.h"
+#include "gcolour3.h"
 #include "gfx.h"
 #include "levels.h"  // Level
 #include "x11.h"
@@ -57,11 +58,11 @@ Place, Suite 330, Boston, MA 02111-1307, USA.
 
 /* Parameters set by the command line args and config file */
 const char *BGIDriver = "VESA";	// BGI: default extended BGI driver
-Bool  CirrusCursor = 0;		// use HW cursor on Cirrus Logic VGA cards
-Bool  FakeCursor = 0;		// use a "fake" mouse cursor
+bool  CirrusCursor = false;	// use HW cursor on Cirrus Logic VGA cards
+bool  FakeCursor = false;	// use a "fake" mouse cursor
 const char *font_name = NULL;	// X: the name of the font to load
-int   initial_window_width =640;// X: the name says it all
-int   initial_window_height=480;// X: the name says it all
+Win_dim initial_window_width ("90%");	// X: the name says it all
+Win_dim initial_window_height ("90%");	// X: the name says it all
 int   no_pixmap;		// X: use no pixmap -- direct window output
 int   VideoMode = 2;		// BGI: default video mode for VESA cards
 
@@ -86,14 +87,6 @@ int font_yofs;
 Display *dpy;		// The X display
 int      scn;		// The X screen number
 Colormap cmap = 0;	// The X colormap
-#ifdef MANY_GC
-			// The GCs for the application colours.
-			// The first NCOLOURS have the "copy" function.
-			// The following NCOLOURS have the "xor" function.
-			// The 2 x NCOLOURS following are the same as the
-			// above except that line is thick instead of thin.
-GC       std_gc[2][2][NCOLOURS];
-#endif  /* MANY_GC */
 GC       gc;		// Default GC as set by set_colour(), SetDrawingMode()
                         // and SetLineThickness()
 GC       pixmap_gc;	// The GC used to clear the pixmap
@@ -121,6 +114,8 @@ VisualID win_vis_id;	// The ID of win's visual
 int      win_depth;	// The depth of win in bits
 int      win_bpp;	// The depth of win in bytes
 int      x_server_big_endian = 0;	// Is the X server big endian ?
+int      ximage_bpp;	// Number of bytes per pixels in XImages
+int      ximage_quantum;// Pad XImages lines to a multiple of that many bytes
 static pcolour_t *app_colour = 0;	// Pixel values for the app. colours
 static int DrawingMode    = 0;		// 0 = copy, 1 = xor
 static int LineThickness  = 0;		// 0 = thin, 1 = thick
@@ -180,16 +175,18 @@ static int cooked_installuserdriver (const char far *__name,
 #endif
 
 /*
-   initialize the graphics display
-*/
-
-void InitGfx (void)
+ *	InitGfx - initialize the graphics display
+ *
+ *	Return 0 on success, non-zero on failure
+ */
+int InitGfx (void)
 {
-int width = initial_window_width;
-int height = initial_window_height;
+// Initialization is in fact not necessary
+int width;
+int height;
 
 #if defined Y_BGI
-static Bool firsttime = 1;
+static bool firsttime = true;
 static int  gdriver;
 static int  gmode;
 int         errorcode = grNoInitGraph;
@@ -232,7 +229,7 @@ verbmsg ("GfxMode=%d\n", GfxMode);
 setlinestyle (0, 0, 1);
 setbkcolor (TranslateToDoomColor (BLACK));
 settextstyle (0, 0, 1);
-firsttime = 0;
+firsttime = false;
 width = getmaxx () + 1;
 height = getmaxy () + 1;
 
@@ -243,7 +240,10 @@ height = getmaxy () + 1;
  */
 dpy = XOpenDisplay (0);
 if (! dpy)
-   fatal_error ("Can't open display");
+   {
+   report_error ("Can't open display");
+   return 1;
+   }
 scn = DefaultScreen (dpy);
 {
 verbmsg ("X server endianness: ");
@@ -266,12 +266,15 @@ else
    x_server_big_endian = cpu_big_endian;
    }
 }
-
+int screen_width  = DisplayWidth  (dpy, scn);
+int screen_height = DisplayHeight (dpy, scn);
 
 
 /*
  *	Create the window
  */
+width  = initial_window_width.pixels  (screen_width);
+height = initial_window_height.pixels (screen_height);
 win = XCreateSimpleWindow (dpy, DefaultRootWindow (dpy),
    10, 10, width, height, 0, 0, 0);
 //win = DefaultRootWindow (dpy);
@@ -280,7 +283,6 @@ XWindowAttributes wa;
 XVisualInfo model;
 XVisualInfo *vis_info;
 int nvisuals;
-xpv_t mask;
 
 XGetWindowAttributes (dpy, win, &wa);
 win_vis   = wa.visual;
@@ -342,6 +344,7 @@ verbmsg (" colours %d  masks %08lX %08lX %08lX\n",
    and >> sign extends. */
 if (win_r_mask)
    {
+   xpv_t mask;
    for (mask = win_r_mask, win_r_ofs = 0; ! (mask & 1); mask >>= 1)
       win_r_ofs++;
    for (win_r_bits = 0; mask & 1; mask >>= 1)
@@ -349,6 +352,7 @@ if (win_r_mask)
    }
 if (win_g_mask)
    {
+   xpv_t mask;
    for (mask = win_g_mask, win_g_ofs = 0; ! (mask & 1); mask >>= 1)
       win_g_ofs++;
    for (win_g_bits = 0; mask & 1; mask >>= 1)
@@ -356,6 +360,7 @@ if (win_g_mask)
    }
 if (win_b_mask)
    {
+   xpv_t mask;
    for (mask = win_b_mask, win_b_ofs = 0; ! (mask & 1); mask >>= 1)
       win_b_ofs++;
    for (win_b_bits = 0; mask & 1; mask >>= 1)
@@ -365,6 +370,76 @@ verbmsg ("r_ofs %d  r_bits %d  ", win_r_ofs, win_r_bits);
 verbmsg ("g_ofs %d  g_bits %d  ", win_g_ofs, win_g_bits);
 verbmsg ("b_ofs %d  b_bits %d\n", win_b_ofs, win_b_bits);
 }
+
+/*
+ *	Get info relevant to XImages
+ */
+ximage_bpp     = 0;
+ximage_quantum = 0;
+{
+int nformats = 0;
+XPixmapFormatValues *format = XListPixmapFormats (dpy, &nformats);
+if (format == 0 || nformats < 1)
+   {
+   warn ("XListPixmapFormats() trouble (ret=%p, n=%d).\n", format, nformats);
+   goto ximage_done;
+   }
+/* Pick the best possible pixmap format. It must have the same
+   depth as the drawable. Should there be several formats that
+   satisfy that requirement (I don't think that ever happens),
+   prefer the one where the line quantum is equal to the number
+   of bits per pixel, as that is easier to work with. */
+{
+const XPixmapFormatValues *best = 0;
+for (int n = 0; n < nformats; n++)
+   {
+   if (format[n].depth != win_depth)
+      continue;
+   best = format + n;
+   if (format[n].scanline_pad == format[n].bits_per_pixel)
+      break;
+   }
+if (best != 0)
+   {
+   int bits_per_pixel = best->bits_per_pixel;
+   if (bits_per_pixel % 8)  // Paranoia
+      {
+      round_up (bits_per_pixel, 8);
+      warn ("XImage format has bad bits_per_pixel %d. Rounding up to %d.\n",
+	 best->bits_per_pixel, bits_per_pixel);
+      }
+   int scanline_pad = best->scanline_pad;
+   if (best->scanline_pad % 8)  // Paranoia
+      {
+      round_up (scanline_pad, 8);
+      warn ("XImage format has bad scanline_pad %d. Rounding up to %d.\n",
+	 best->scanline_pad, scanline_pad);
+      }
+   ximage_bpp     = bits_per_pixel / 8;
+   ximage_quantum = scanline_pad   / 8;
+   }
+}
+if (ximage_bpp == 0 || ximage_quantum == 0)
+   {
+   warn ("XListPixmapFormats() returned not suitable formats.\n"); 
+   goto ximage_done;
+   }
+ximage_done:
+if (format != 0)
+   XFree (format);
+}
+/* Could not obtain authoritative/good values. Warn and guess
+   plausible values. */
+if (ximage_bpp == 0 || ximage_quantum == 0)
+   {
+   if (ximage_bpp == 0)
+      ximage_bpp = win_bpp;
+   if (ximage_quantum == 0)
+      ximage_quantum = 4;
+   warn ("guessing format. Images will probably not be displayed correctly\n");
+   }
+verbmsg ("XImage format: %d B per pixel, %d B quantum.\n",
+   ximage_bpp, ximage_quantum);
 
 /*
  *	Further configure the window
@@ -443,43 +518,12 @@ else
 XSetWindowColormap (dpy, win, cmap);
 game_colour = alloc_game_colours (0);
 app_colour = commit_app_colours ();
+if (win_depth == 24)
+   game_colour_24.refresh (game_colour, x_server_big_endian);
 
 /*
  *	Create the GC
  */
-#ifdef MANY_GC
-for (size_t acn = 0; acn < NCOLOURS; acn++)
-   {
-   XGCValues gcv;
-   unsigned long mask;
-
-   mask = GCForeground | GCFunction | GCLineWidth;
-   if (! default_font)
-      {
-      mask |= GCFont;
-      gcv.font = font_xfont;
-      }
-
-   gcv.foreground = app_colour[acn];
-
-   // For each colour, create 4 GC
-   gcv.line_width    = 0;
-   gcv.function      = GXcopy;
-   std_gc[0][0][acn] = XCreateGC (dpy, win, mask, &gcv);
-
-   gcv.line_width    = 1;  // Important! See note 1
-   gcv.function      = GXxor;
-   std_gc[0][1][acn] = XCreateGC (dpy, win, mask, &gcv);
-
-   gcv.line_width    = 3;
-   gcv.function      = GXcopy;
-   std_gc[1][0][acn] = XCreateGC (dpy, win, mask, &gcv);
-
-   gcv.function      = GXxor;
-   std_gc[1][1][acn] = XCreateGC (dpy, win, mask, &gcv);
-   }
-gc = std_gc[0][0][0];
-#else
 {
 XGCValues gcv;
 unsigned long mask;
@@ -494,8 +538,9 @@ gcv.foreground = app_colour[0];  // Default colour
 gcv.line_width = 0;
 gcv.function   = GXcopy;
 gc = XCreateGC (dpy, win, mask, &gcv);
+if (gc == 0)
+   fatal_error ("XCreateGC() returned NULL");
 }
-#endif
 
 
 /*
@@ -519,11 +564,12 @@ else
    drw = win;
    drw_mods = 0;  // Force display the first time
    }
-//XSync (dpy, False);
+XSync (dpy, False);
 GfxMode = - VideoMode;
 #endif
 
 SetWindowSize (width, height);
+return 0;
 }
 
 
@@ -563,18 +609,8 @@ if (GfxMode)
       verbmsg ("  Unloading font\n");
       XUnloadFont (dpy, font_xfont);
       }
-#ifdef MANY_GC
-   for (int n = 0; n < NCOLOURS; n++)
-      {
-      XFreeGC (dpy, std_gc[0][0][n]);
-      XFreeGC (dpy, std_gc[0][1][n]);
-      XFreeGC (dpy, std_gc[1][0][n]);
-      XFreeGC (dpy, std_gc[1][1][n]);
-      }
-#else
    XFreeGC (dpy, gc);
    gc = 0;
-#endif
    /* FIXME there is surely more to do ... */
    XCloseDisplay (dpy);
 #endif
@@ -782,6 +818,9 @@ XSetForeground (dpy, gc, (xpv_t) colour);
 
 // Last application colour set by set_colour()
 static acolour_t current_acolour = 0;
+#ifdef Y_BGI
+static int current_bgicolour = 0;
+#endif
 
 
 /*
@@ -792,19 +831,17 @@ static acolour_t current_acolour = 0;
 void set_colour (acolour_t colour)
 {
 #if defined Y_BGI
-if (GfxMode < 0)
-   setcolor (TranslateToDoomColor (colour));
-else
-   setcolor (colour);
+if (colour != current_acolour)
+   {
+   current_acolour = colour;
+   current_bgicolour = (GfxMode < 0) ? TranslateToDoomColor (colour) : colour;
+   setcolor (current_bgicolour);
+   }
 #elif defined Y_X11
 if (colour != current_acolour)
    {
    current_acolour = colour;
-#ifdef MANY_GC
-   // gc = std_gc[LineThickness][DrawingMode][colour];
-#else
    XSetForeground (dpy, gc, app_colour[colour]);
-#endif
    }
 #endif
 }
@@ -856,16 +893,12 @@ setlinestyle (SOLID_LINE, 0, thick ? THICK_WIDTH : NORM_WIDTH);
 if (!! thick != LineThickness)
    {
    LineThickness = !! thick;
-#ifdef MANY_GC
-   gc = std_gc[LineThickness][DrawingMode][current_acolour];
-#else
    XGCValues gcv;
    gcv.line_width = LineThickness ? 3 : (DrawingMode ? 1 : 0);
    // ^ It's important to use a line_width of 1 when in xor mode.
    // See note (1) in the hacker's guide.
    XChangeGC (dpy, gc, GCLineWidth, &gcv);
    }
-#endif
 #endif
 }
 
@@ -882,9 +915,6 @@ setwritemode (_xor ? XOR_PUT : COPY_PUT);
 if (!! _xor != DrawingMode)
    {
    DrawingMode = !! _xor;
-#ifdef MANY_GC
-   gc = std_gc[LineThickness][DrawingMode][current_acolour];
-#else
    XGCValues gcv;
    gcv.function = DrawingMode ? GXxor : GXcopy;
    gcv.line_width = LineThickness ? 3 : (DrawingMode ? 1 : 0);
@@ -893,18 +923,31 @@ if (!! _xor != DrawingMode)
    XChangeGC (dpy, gc, GCFunction | GCLineWidth, &gcv);
    }
 #endif
+}
+
+
+/*
+ *	draw_point - draw a point at display coordinates (<x>, <y>)
+ */
+void draw_point (int x, int y)
+{
+#if defined Y_BGI
+putpixel (x, y, current_bgicolour);
+#elif defined Y_X11
+XDrawPoint (dpy, drw, gc, x, y);
 #endif
 }
 
 
 /*
+
  *	draw_map_point
  *	Draw a point at map coordinates <mapx>, <mapy>
  */
 void draw_map_point (int mapx, int mapy)
 {
 #if defined Y_BGI
-printf ("draw_map_point unimplemented\n");
+putpixel (SCREENX (mapx), SCREENY (mapy), current_bgicolour);
 #elif defined Y_X11
 XDrawPoint (dpy, drw, gc, SCREENX (mapx), SCREENY (mapy));
 drw_mods++;
@@ -964,15 +1007,14 @@ int    scrYoff = (r >= 1.0) ? (int) ((scry1 - scry2) * 8.0 / r * (Scale < 1 ? Sc
 
 #if defined Y_BGI
 line (scrx1, scry1, scrx2, scry2);
-#elif defined Y_X11
-XDrawLine (dpy, drw, gc, scrx1, scry1, scrx2, scry2);
-#endif
 scrx1 = scrx2 + 2 * scrXoff;
 scry1 = scry2 + 2 * scrYoff;
-#if defined Y_BGI
 line (scrx1 - scrYoff, scry1 + scrXoff, scrx2, scry2);
 line (scrx1 + scrYoff, scry1 - scrXoff, scrx2, scry2);
 #elif defined Y_X11
+XDrawLine (dpy, drw, gc, scrx1, scry1, scrx2, scry2);
+scrx1 = scrx2 + 2 * scrXoff;
+scry1 = scry2 + 2 * scrYoff;
 XDrawLine (dpy, drw, gc, scrx1 - scrYoff, scry1 + scrXoff, scrx2, scry2);
 XDrawLine (dpy, drw, gc, scrx1 + scrYoff, scry1 - scrXoff, scrx2, scry2);
 drw_mods++;
@@ -999,15 +1041,14 @@ int    scrYoff = (r >= 1.0) ? (int) ((scry1 - scry2) * 8.0 / r * (Scale < 1 ? Sc
 
 #if defined Y_BGI
 line (scrx1, scry1, scrx2, scry2);
-#elif defined Y_X11
-XDrawLine (dpy, drw, gc, scrx1, scry1, scrx2, scry2);
-#endif
 scrx1 = scrx2 + 2 * scrXoff;
 scry1 = scry2 + 2 * scrYoff;
-#if defined Y_BGI
 line (scrx1 - scrYoff, scry1 + scrXoff, scrx2, scry2);
 line (scrx1 + scrYoff, scry1 - scrXoff, scrx2, scry2);
 #elif defined Y_X11
+XDrawLine (dpy, drw, gc, scrx1, scry1, scrx2, scry2);
+scrx1 = scrx2 + 2 * scrXoff;
+scry1 = scry2 + 2 * scrYoff;
 XDrawLine (dpy, drw, gc, scrx1 - scrYoff, scry1 + scrXoff, scrx2, scry2);
 XDrawLine (dpy, drw, gc, scrx1 + scrYoff, scry1 - scrXoff, scrx2, scry2);
 drw_mods++;
@@ -1076,19 +1117,40 @@ drw_mods++;
 
 void DrawScreenBox (int scrx1, int scry1, int scrx2, int scry2)
 {
+if (scrx2 < scrx1 || scry2 < scry1)
+  return;
 #if defined Y_BGI
 setfillstyle (1, getcolor ());
 bar (scrx1, scry1, scrx2, scry2);
 #elif defined Y_X11
-if (scrx2 < scrx1 || scry2 < scry1)
-  return;
-/* FIXME missing gc fill_style */
+// FIXME missing gc fill_style
 XFillRectangle (dpy, drw, gc, scrx1, scry1,
   scrx2 - scrx1 + 1, scry2 - scry1 + 1);
 drw_mods++;
 #endif
 }
 
+
+/*
+ *	DrawScreenBoxwh
+ *	Draw a filled rectangle of width x height pixels
+ *	(scrx0, scry0) is the top left corner
+ *	(width, height) is the obvious
+ *	If width < 1 or height < 1, does nothing.
+ */
+void DrawScreenBoxwh (int scrx0, int scry0, int width, int height)
+{
+if (width < 1 || height < 1)
+   return;
+#if defined Y_BGI
+setfillstyle (1, getcolor ());
+bar (scrx0, scry0, scrx0 + width - 1, scry0 + height - 1);
+#elif defined Y_X11
+// FIXME missing gc fill_style
+XFillRectangle (dpy, drw, gc, scrx0, scry0, width, height);
+drw_mods++;
+#endif
+}
 
 
 /*
@@ -1165,6 +1227,7 @@ void draw_box_border (int x, int y, int width, int height,
    int thickness, int raised)
 {
 #if defined Y_BGI
+#error "You need to write the BGI version of draw_box_border()"
 #elif defined Y_X11
 int n;
 XPoint points[3];
@@ -1271,8 +1334,15 @@ printf ("DrawScreenMeter()\n");  /* FIXME ! */
 
 
 // Shared by DrawScreenText() and DrawScreenString()
-static int lastX;
-static int lastY;
+
+/* Coordinates of first character of last string drawn with
+   DrawScreenText() or DrawScreenString(). */
+static int lastx0;
+static int lasty0;
+
+/* Where the last DrawScreen{Text,String}() left the "cursor". */
+static int lastxcur;
+static int lastycur;
 
 
 /*
@@ -1294,10 +1364,16 @@ va_list args;
 // <msg> == NULL: print nothing, just set the coordinates.
 if (msg == NULL)
    {
-   if (scrx != -1)
-      lastX = scrx;
-   if (scry != -1)
-      lastY = scry;  // Note: no "+ FONTH"
+   if (scrx != -1 && scrx != -2)
+      {
+      lastx0   = scrx;
+      lastxcur = scry;
+      }
+   if (scry != -1 && scry != -2)
+      {
+      lasty0   = scry;  // Note: no "+ FONTH"
+      lastycur = scry;
+      }
    return;
    }
 
@@ -1314,24 +1390,40 @@ DrawScreenString (scrx, scry, temp);
  */
 void DrawScreenString (int scrx, int scry, const char *str)
 {
+int x;
+int y;
+
 /* FIXME originally, the test was "< 0". Because it broke
    when the screen was too small, I changed it to a more
    specific "== -1". A quick and very dirty hack ! */
 if (scrx == -1)
-   scrx = lastX;
+   x = lastx0;
+else if (scrx == -2)
+   x = lastxcur;
+else
+   x = scrx;
 if (scry == -1)
-   scry = lastY;
+   y = lasty0;
+else if (scry == -2)
+   y = lastycur;
+else
+   y = scry;
+const size_t len = strlen (str);
 #if defined Y_BGI
-outtextxy (scrx, scry, str);
+outtextxy (x, y, str);
 #elif defined Y_X11
-XDrawString (dpy, drw, gc, scrx - font_xofs, scry + font_yofs,
-    str, strlen (str));
+XDrawString (dpy, drw, gc, x - font_xofs, y + font_yofs, str, len);
 if (text_dot)
-   XDrawPoint (dpy, drw, gc, scrx, scry);
+   XDrawPoint (dpy, drw, gc, x, y);
 drw_mods++;
 #endif
-lastX = scrx;
-lastY = scry + FONTH;
+
+lastxcur = x + FONTW * len;
+lastycur = y;
+if (scrx != -2)
+   lastx0 = x;
+if (scry != -2)
+   lasty0 = y + FONTH;
 }
 
 
@@ -1339,7 +1431,7 @@ lastY = scry + FONTH;
    draw (or erase) the pointer if we aren't using the mouse
 */
 
-void DrawPointer (Bool rulers)
+void DrawPointer (bool rulers)
 {
 #ifdef Y_BGI
 int r;

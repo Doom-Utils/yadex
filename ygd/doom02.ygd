@@ -1,7 +1,8 @@
-# Yadex game definition file version 3
+# Yadex game definition file version 4
 #
 #	doom02.ygd
-#	Yadex Game Definitions for the Doom alpha 0.2
+#	Yadex Game Definitions for Doom alpha 0.2
+#	See doc/ygd.html for the specs.
 #	AYM 1999-07-09
 #
 
@@ -11,6 +12,7 @@
 level_format    alpha		# FIXME it's not even that !
 level_name      e1m1		# FIXME it's not even that !
 picture_format  alpha
+sky_flat        f_sky1
 texture_lumps   none
 
 #
@@ -230,7 +232,8 @@ thinggroup s rgb:0/b/d "Special"
 #
 #	Definition of things
 #	Format is :
-#	thing <number> <thinggroup> <flags> <radius> <descr> [<sprite>]
+#	thing <number> <thinggroup> <flags> <radius> <desc> [<sprite>]
+#	<desc> must not exceed 19 characters.
 #
 
 thing 2007 a -  20 "Clip"			CLIP

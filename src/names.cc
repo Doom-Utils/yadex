@@ -96,20 +96,23 @@ return "??  UNKNOWN";
 
 const char *GetLineDefFlagsName (int flags)
 {
-static char buf[17];
+static char buf[20];
 // "P" is a Boom extension ("pass through")
 // "T" is for Strife ("translucent")
 const char *flag_chars = "???T??PANBSLU2MI";
 int n;
 
+char *p = buf;
 for (n = 0; n < 16; n++)
    {
+   if (n != 0 && n % 4 == 0)
+      *p++ = ' ';
    if (flags & (0x8000u >> n))
-      buf[n] = flag_chars[n];
+      *p++ = flag_chars[n];
    else
-      buf[n] = '-';
+      *p++ = '-';
    }
-buf[n] = '\0';
+*p = '\0';
 return buf;
 
 #if 0

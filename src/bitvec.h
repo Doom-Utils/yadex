@@ -28,7 +28,7 @@ Place, Suite 330, Boston, MA 02111-1307, USA.
 */
 
 
-#ifndef YH_BITVEC
+#ifndef YH_BITVEC  /* DO NOT INSERT ANYTHING BEFORE THIS LINE */
 #define YH_BITVEC
 
 
@@ -107,4 +107,4 @@ class bitvec_c
    };
 
 
-#endif
+#endif  /* DO NOT ADD ANYTHING AFTER THIS LINE */

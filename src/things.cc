@@ -59,6 +59,9 @@ static size_t last_table_idx = (size_t) -1;
 static int things_table_cmp (const void *a, const void *b);
 
 
+static const int default_radius = 16;
+
+
 /*
  *	create_things_table
  *	Build things_table, a table of things attributes
@@ -69,8 +72,13 @@ void create_things_table ()
 {
 size_t n;
 
-_max_radius = 0;
+_max_radius = default_radius;
 nthings = al_lcount (thingdef);
+if (nthings == 0)
+   {
+   things_table = NULL;
+   return;
+   }
 things_table = (thing_attributes_t *) malloc (nthings * sizeof *things_table);
 if (! things_table)
    fatal_error ("Not enough memory");
@@ -87,9 +95,9 @@ for (al_lrewind (thingdef), n = 0; n < nthings; al_lstep (thingdef), n++)
       if (CUR_THINGGROUP  /* don't segfault if zero thinggroup ! */
        && CUR_THINGGROUP->thinggroup == CUR_THINGDEF->thinggroup)
 	 {
-         things_table[n].colour = CUR_THINGGROUP->acn;
-         break;
-         }
+	 things_table[n].colour = CUR_THINGGROUP->acn;
+	 break;
+	 }
       }
 
    things_table[n].desc   = CUR_THINGDEF->desc;
@@ -152,6 +160,9 @@ inline int lookup_thing (wad_ttype_t type)
 if (last_table_idx < nthings && things_table[last_table_idx].type == type)
    return last_table_idx;
 
+if (things_table == NULL)
+   return (size_t) -1;
+
 size_t nmin = 0;
 size_t nmax = nthings - 1;
 for (;;)
@@ -179,8 +190,21 @@ return (size_t) -1;
 
 
 /*
- *	get_thing_colour
- *	Return the colour of the thing of given type.
+ *	is_thing_type - is given type valid (i.e. defined in the ygd)
+ *
+ *	Return true if the thing is defined, false otherwise.
+ */
+bool is_thing_type (wad_ttype_t type)
+{
+size_t table_idx = lookup_thing (type);
+return table_idx < nthings;
+}
+
+
+/*
+ *	get_thing_colour - return the colour of the thing of given type.
+ *
+ *	Return the colour. If the 
  */
 acolour_t get_thing_colour (wad_ttype_t type)
 {
@@ -193,8 +217,7 @@ else
 
 
 /*
- *	get_thing_name
- *	Return the description of the thing of given type.
+ *	get_thing_name - return the description of the thing of given type.
  */
 const char *get_thing_name (wad_ttype_t type)
 {
@@ -246,7 +269,7 @@ int get_thing_radius (wad_ttype_t type)
 {
 size_t table_idx = lookup_thing (type);
 if (table_idx == (size_t) -1)
-   return 16;  // Not found.
+   return default_radius;  // Not found.
 else
    return things_table[table_idx].radius;
 }
@@ -306,21 +329,24 @@ return buf;
  */
 const char *GetWhenName (int when)
 {
-static char buf[17];
+static char buf[16+3+1];
 // "N" is a Boom extension ("not in deathmatch")
 // "C" is a Boom extension ("not in cooperative")
 // "F" is an MBF extension ("friendly")
-const char *flag_chars = "????????FCNMD431";
+const char *flag_chars = "????" "????" "FCNM" "D431";
 int n;
 
+char *b = buf;
 for (n = 0; n < 16; n++)
    {
+   if (n != 0 && n % 4 == 0)
+      *b++ = ' ';
    if (when & (0x8000u >> n))
-      buf[n] = flag_chars[n];
+      *b++ = flag_chars[n];
    else
-      buf[n] = '-';
+      *b++ = '-';
    }
-buf[n] = '\0';
+*b = '\0';
 return buf;
 
 #if 0

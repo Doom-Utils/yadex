@@ -166,10 +166,14 @@ x += 4 * FONTW;
 // scale
 if (redraw_from_scratch || scale_disp != scale)
    {
+#ifdef OLD
    if (Scale < 1.0)
       DrawScreenText (x, text_y0, "Scale: 1/%d", (int) (1.0 / Scale + 0.5));
    else
       DrawScreenText (x, text_y0, "Scale: %d/1", (int) Scale);
+#else
+   DrawScreenText (x, text_y0, "Scale: %d%%", (int) (Scale * 100));
+#endif
    scale_disp = scale;
    }
 x += 13 * FONTW;

@@ -1,13 +1,17 @@
-# Yadex game definition file version 3
+# Yadex game definition file version 4
 #
 #	doom.ygd
 #	Yadex Game Definitions for Doom and Ultimate Doom
+#	See doc/ygd.html for the specs.
 #	AYM 1998-01-29
 #
+
+# EDGE stuff courtesy of Andrew Apted. Mistakes courtesy of AYM.
 
 level_format    doom
 level_name      e1m1
 picture_format  normal
+sky_flat        f_sky1
 texture_format  normal
 texture_lumps   normal
 
@@ -31,6 +35,8 @@ ldtgroup L "Light"
 ldtgroup e "End level"
 ldtgroup m "Moving floor"
 ldtgroup s "Raising stair"
+ldtgroup A "Animated"
+ldtgroup E "Extrafloor"
 ldtgroup x "Misc."
 
 #
@@ -87,7 +93,7 @@ ldt  44 c "W1 Ceil dn flr+8" "W1  Lower ceiling to floor + 8"
 ldt  45 f "SR Floor dn HEF"  "SR  Lower floor to HEF"
 ldt  46 d "GR Open door (O)" "GR  Open  door (stays open)"
 ldt  47 F "G1 F. up nhEF TX" "G1  Raise floor to nhEF (TX)"
-ldt  48 x "-- Animated wall" "--  Animated wall (scrolls horizontally)"
+ldt  48 A "-- Scroll left"   "--  Scrolling wall, left"
 ldt  49 c "S1 Ceil dn flr+8" "S1  Lower ceiling to floor + 8"
 ldt  50 d "S1 Close door"    "S1  Close door"
 ldt  51 e "S- Secret level"  "S-  End level, go to secret level"
@@ -181,8 +187,28 @@ ldt 138 L "SR Light to 255"  "SR  Light level goes to 255 [v1.6]"
 ldt 139 L "SR Light to 0"    "SR  Light level goes to 0 [v1.6]"
 ldt 140 F "S1 Floor up 512"  "S1  Raise floor by 512, medium speed [v1.6]"
 ldt 141 C "W1& Crush SS sil" "W1& Start slow crushing, slow hurt, silent [v1.6]"
+
 ldt 271 x "-- Xfer sky"      "--  Xfer straight upper to sky tex. [MBF]"
 ldt 272 x "-- Xfer mir. sky" "--  Xfer mirrored upper to sky tex. [MBF]"
+
+ldt 400 E "-- Thick EF"      "--  Thick extrafloor [EDGE]"
+ldt 401 E "-- Thick EF upr"  "--  Thick extrafloor, side upper [EDGE]"
+ldt 402 E "-- Thick EF lwr"  "--  Thick extrafloor, side lower [EDGE]"
+ldt 403 E "-- Liq EF opaque" "--  Liquid extrafloor, opaque [EDGE]"
+ldt 404 E "-- Liquid EF 20%" "--  Liquid extrafloor, 20% translucent [EDGE]"
+ldt 405 E "-- Liquid EF 40%" "--  Liquid extrafloor, 40% translucent [EDGE]"
+ldt 406 E "-- Liquid EF 60%" "--  Liquid extrafloor, 60% translucent [EDGE]"
+ldt 407 E "-- Liquid EF 80%" "--  Liquid extrafloor, 80% translucent [EDGE]"
+ldt 408 E "-- Liq EF invis"  "--  Liquid extrafloor, invisible [EDGE]"
+
+ldt 9000 A "-- Scroll right" "--  Scrolling wall, right [EDGE]"
+ldt 9001 A "-- Scroll up"    "--  Scrolling wall, up [EDGE]"
+ldt 9002 A "-- Scroll down"  "--  Scrolling wall, down [EDGE]"
+ldt 9003 A "-- Scroll L+U"   "--  Scrolling wall, left and up [EDGE]"
+ldt 9004 A "-- Scroll L+D"   "--  Scrolling wall, left and down [EDGE]"
+ldt 9005 A "-- Scroll R+U"   "--  Scrolling wall, right and up [EDGE]"
+ldt 9006 A "-- Scroll R+D"   "--  Scrolling wall, right and down [EDGE]"
+ldt 9097 t "WR Teleport prv" "WR  Teleport, preserving direction [EDGE]"
 
 #
 #	Definition of sector types
@@ -228,7 +254,8 @@ thinggroup s rgb:0/b/d "Special"
 #
 #	Definition of things
 #	Format is :
-#	thing <number> <thinggroup> <flags> <radius> <descr> [<sprite>]
+#	thing <number> <thinggroup> <flags> <radius> <desc> [<sprite>]
+#	<desc> must not exceed 19 characters.
 #
 
 thing 2007 a -  20 "Clip"			CLIP
@@ -247,6 +274,7 @@ thing 2024 b -  20 "Partial invis."		PINS
 thing 2023 b -  20 "Berserk"			PSTR
 thing 2022 b -  20 "Invulnerability"		PINV
 thing 2045 b -  20 "Light amp. visor"		PVIS
+thing 7000 b -  20 "Night vision [EDGE]"	NVSC
 thing 2016 b -  16 "Evil sceptre [PR]"		BON3
 thing 2017 b -  16 "Unholy bible [PR]"		BON4
 
@@ -259,6 +287,7 @@ thing   22 c -  16 "Dead cacodemon"		HEADL
 thing   23 c -  16 "Dead lost soul"
 
 thing 2035 d -  10 "Barrel"			BAR1
+thing 7011 d -  10 "Unstable barrel [EDGE]"	BEXP
 thing   48 d -  16 "Technical column"		ELEC
 thing   30 d -  16 "Tall green pillar"		COL1
 thing   32 d -  16 "Tall red pillar"		COL3
@@ -268,9 +297,10 @@ thing   36 d -  16 "Pillar w/heart"		COL5
 thing   37 d -  16 "Red pillar w/skull"		COL6
 thing   41 d -  16 "Evil eye"			CEYE
 thing   42 g -  16 "Floating skulls"		FSKU
-thing   43 d -  16 "Grey tree"			TRE1
 thing   47 d -  16 "Brown stub"			SMIT
-thing   54 d -  32 "Tall brown tree"		TRE2
+thing 7010 d -  16 "Grey stub [EDGE]"		SMT2
+thing   54 d -  32 "Brown tree"			TRE2
+thing   43 d -  16 "Grey tree"			TRE1
 
 thing   10 g -  16 "Mushed player"		PLAYW
 thing   12 g -  16 "Mushed player 2"		PLAYW
@@ -326,6 +356,7 @@ thing 3006 m -  16 "Lost soul"			SKUL
 thing 3005 m -  31 "Cacodemon"			HEAD
 thing    7 m - 128 "Spider mastermind"		SPID
 thing   16 m -  40 "Cyberdemon"			CYBR
+thing 7101 m -  64 "Imp spawner [EDGE]"		TFOGB
 
 thing    1 p -  16 "Player 1 start"		PLAY
 thing    2 p -  16 "Player 2 start"		PLAY

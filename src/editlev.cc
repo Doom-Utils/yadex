@@ -146,12 +146,13 @@ return error_invalid;
    the driving program
 */
 
-void EditLevel (const char *levelname, Bool newlevel)
+void EditLevel (const char *levelname, bool newlevel)
 {
 ReadWTextureNames ();
 ReadFTextureNames ();
 patch_dir.refresh (MasterDir);
-InitGfx ();
+if (InitGfx ())
+   return;
 /* Call init_input_status() as shortly as possible after the creation
    of the window to minimize the risk of calling get_input_status(),
    get_key(), have_key(), etc. with <is> still uninitialized. */

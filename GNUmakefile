@@ -4,11 +4,6 @@
 #	AYM 1998-06-10
 #
 
-# This version of Yadex is known to work on a Debian 2.0 Linux
-# distribution (80x86, Linux 2.0.34, EGCS 1.0.3, glibc 2.0.7,
-# XFree86 3.3.2 (= X11R6.3), GNU make 3.76 and 3.77). It might
-# need modifications to work on other platforms.
-
 # ATTENTION : GNU MAKE IS REQUIRED ! This makefile uses pattern
 # rules, addprefix, addsuffix, etc. It's not named "GNUmakefile"
 # for nothing.
@@ -36,7 +31,7 @@ OS := $(shell uname -s | tr A-Z a-z)
 HAVE_GCC := $(shell if gcc --version; then echo OK; fi)
 
 # Is that /usr/man or /usr/share/man ?
-FHS_MAN := $(shell if [ -d "$(PREFIX)/share/man" ]; then echo OK; fi)
+FHS_MAN := $(shell if [ -d $(PREFIX)/share/man ]; then echo OK; fi)
 
 # Does your system have gettimeofday() ?
 # Current rule: all systems have it.
@@ -82,83 +77,6 @@ endif
 CC = cc
 CXX = c++
 
-#
-#	Definitions that only hackers
-#	might want to change
-#
-
-# All the modules of Yadex without path or extension.
-MODULES_YADEX =\
-	acolours	aym		bitvec		cfgfile\
-	checks		clearimg	colour1		colour2\
-	colour3		colour4		dialog		dispimg\
-	disppic		drawmap		edisplay	editgrid\
-	editlev		editloop	editobj		editsave\
-	endian		editzoom	entry		entry2\
-	events		flats		game		gcolour1\
-	gcolour2	geom		gfx		gfx2\
-	gfx3		gotoobj		help1		help2\
-	highlt		infobar		input		l_align\
-	l_centre	l_flags		l_misc		l_prop\
-	l_unlink	l_vertices	levels		lists\
-	macro		memory		menubar		menu\
-	mkpalette	mouse		names		nop\
-	objects		objinfo		oldmenus	palview\
-	patchdir	pic2img		prefer		s_centre\
-	s_door		s_lift		s_linedefs	s_merge\
-	s_misc		s_prop		s_split		s_vertices\
-	sanity		savepic		scrnshot	selbox\
-	selectn		selpath		selrect		spectimg\
-	sprites		swapmem		t_centre	t_flags\
-	t_prop		t_spin		textures	things\
-	trace		v_centre	v_merge		v_polyg\
-	verbmsg		version		wads		wads2\
-	warn		x_centre	x_exchng	x_mirror\
-	x_rotate	x11		xref		yadex\
-	ytime
-
-# All the modules of Atclib without path or extension.
-MODULES_ATCLIB =\
-	al_adigits	al_aerrno	al_astrerror	al_fana\
-	al_fnature	al_lateol	al_lcount	al_lcreate\
-	al_ldelete	al_ldiscard	al_lgetpos	al_linsert\
-	al_linsertl	al_llength	al_lpeek	al_lpeekl\
-	al_lpoke	al_lpokel	al_lptr		al_lread\
-	al_lreadl	al_lrewind	al_lseek	al_lsetpos\
-	al_lstep	al_ltell	al_lwrite	al_lwritel\
-	al_sapc		al_saps		al_scps		al_scpslower\
-	al_sdup		al_sisnum	al_strolc
-
-# All the modules of BSP without path or extension.
-MODULES_BSP =\
-	bsp		funcs		makenode	picknode
-
-# The source files of Yadex.
-SRC_YADEX = $(addprefix src/, $(addsuffix .cc, $(MODULES_YADEX)))
-
-# The source files of Atclib.
-SRC_ATCLIB = $(addprefix atclib/, $(addsuffix .c, $(MODULES_ATCLIB)))
-
-# The source files of BSP.
-SRC_BSP = $(addprefix bsp-2.3/, $(addsuffix .c, $(MODULES_BSP)))
-
-# The headers of Yadex.
-HEADERS_YADEX := $(wildcard src/*.h)
-
-# The headers of Atclib.
-HEADERS_ATCLIB = atclib/atclib.h
-
-# The headers of BSP.
-HEADERS_BSP = bsp-2.3/bsp.h bsp-2.3/structs.h
-
-# All the source files of both, including the headers.
-SRC = $(SRC_YADEX)  $(HEADERS_YADEX)\
-      $(SRC_ATCLIB) $(HEADERS_ATCLIB)\
-      $(SRC_BSP)    $(HEADERS_BSP)
-
-# The files on which youngest is run.
-SRC_NON_GEN = $(filter-out src/version.cc, $(SRC))
-
 # Options used when compiling Atclib.
 CFLAGS = -O
 
@@ -173,14 +91,114 @@ LDFLAGS  =
 # targets. Not used by normal end-user targets.
 # Unlike CFLAGS, CXXFLAGS and LDFLAGS, assume
 # GCC/EGCS.
-DCFLAGS = -O -g -pedantic -Wall -Wno-parentheses -Wpointer-arith\
-		-Wcast-qual -Wcast-align -Wwrite-strings\
-		-Wmissing-declarations -Wmissing-prototypes -Winline
-DCXXFLAGS = -O -I$(X11INCLUDEDIR)\
-		-g -pedantic -Wall -Wno-parentheses -Wpointer-arith\
-		-Wcast-qual -Wcast-align -Wwrite-strings\
-		-Wmissing-declarations -Wmissing-prototypes -Winline
-DLDFLAGS =
+DCFLAGS		= -g -O -I$(X11INCLUDEDIR)
+DCFLAGS		+= -Wall			# GCC warnings
+DCFLAGS		+= -pedantic			# GCC warnings
+DCFLAGS		+= -Wno-parentheses		# GCC warnings
+DCFLAGS		+= -Wpointer-arith		# GCC warnings
+DCFLAGS		+= -Wcast-qual			# GCC warnings
+DCFLAGS		+= -Wcast-align			# GCC warnings
+DCFLAGS		+= -Wwrite-strings		# GCC warnings
+DCFLAGS		+= -Wmissing-declarations	# GCC warnings
+DCFLAGS		+= -Wmissing-prototypes		# GCC warnings
+DCFLAGS		+= -Winline			# GCC warnings
+DCFLAGS		+= -pg				# Profiling
+
+DCXXFLAGS	= -g -O -I$(X11INCLUDEDIR)
+DCXXFLAGS	+= -Wall			# GCC warnings
+DCXXFLAGS	+= -pedantic			# GCC warnings
+DCXXFLAGS	+= -Wno-parentheses		# GCC warnings
+DCXXFLAGS	+= -Wpointer-arith		# GCC warnings
+DCXXFLAGS	+= -Wcast-qual			# GCC warnings
+DCXXFLAGS	+= -Wcast-align			# GCC warnings
+DCXXFLAGS	+= -Wwrite-strings		# GCC warnings
+DCXXFLAGS	+= -Wmissing-declarations	# GCC warnings
+DCXXFLAGS	+= -Wmissing-prototypes		# GCC warnings
+#DCXXFLAGS	+= -Winline			# GCC warnings
+DCXXFLAGS	+= -pg				# Profiling
+
+DLDFLAGS	=
+DLDFLAGS	+= -pg				# Profiling
+#DLDFLAGS	+= -lefence			# Electric Fence
+
+
+########################################################################
+#
+#	Definitions that only hackers
+#	might want to change
+#
+########################################################################
+
+MAKEFILE = GNUmakefile
+
+# All the modules of Yadex without path or extension.
+MODULES_YADEX =\
+	acolours	aym		bench		bitvec		\
+	cfgfile		checks		colour1				\
+	colour2		colour3		colour4		dependcy	\
+	dialog		disppic		drawmap				\
+	edisplay	editgrid	editlev		editloop	\
+	editobj		editsave	endian		editzoom	\
+	entry		entry2		events		flats		\
+	game		gcolour1	gcolour2	gcolour3	\
+	geom		gfx		gfx2		gfx3		\
+	gotoobj		help1		help2		highlt		\
+	img		imgscale	imgspect	infobar		\
+	input		l_align		l_centre	l_flags		\
+	l_misc		l_prop		l_unlink	l_vertices	\
+	levels		lists		lumpdir		macro		\
+	memory		menubar		menu		mkpalette	\
+	mouse		names		nop		objects		\
+	objinfo		oldmenus	palview		patchdir	\
+	pic2img		prefer		s_centre	s_door		\
+	s_lift		s_linedefs	s_merge		s_misc		\
+	s_prop		s_split		s_swapf		s_vertices	\
+	sanity								\
+	savepic		scrnshot	selbox		selectn		\
+	selpath		selrect		serialnum	spritdir	\
+	sticker		swapmem		t_centre	t_flags		\
+	t_prop								\
+	t_spin		textures	things		trace		\
+	v_centre	v_merge		v_polyg		vectext		\
+	verbmsg								\
+	version		wadnamec	wadres		wads		\
+	wads2		warn		windim		x_centre	\
+	x_exchng	x_mirror	x_rotate	x11		\
+	xref		yadex		ytime
+
+# All the modules of Atclib without path or extension.
+MODULES_ATCLIB =\
+	al_adigits	al_aerrno	al_astrerror	al_fana		\
+	al_fnature	al_lateol	al_lcount	al_lcreate	\
+	al_ldelete	al_ldiscard	al_lgetpos	al_linsert	\
+	al_linsertl	al_llength	al_lpeek	al_lpeekl	\
+	al_lpoke	al_lpokel	al_lptr		al_lread	\
+	al_lreadl	al_lrewind	al_lseek	al_lsetpos	\
+	al_lstep	al_ltell	al_lwrite	al_lwritel	\
+	al_sapc		al_saps		al_scps		al_scpslower	\
+	al_sdup		al_sisnum	al_strolc
+
+# All the modules of BSP without path or extension.
+MODULES_BSP =\
+	bsp		funcs		makenode	picknode
+
+# The source files of Yadex, Atclib and BSP
+SRC_YADEX  = $(addprefix src/,     $(addsuffix .cc, $(MODULES_YADEX)))
+SRC_ATCLIB = $(addprefix atclib/,  $(addsuffix .c,  $(MODULES_ATCLIB)))
+SRC_BSP    = $(addprefix bsp-2.3/, $(addsuffix .c,  $(MODULES_BSP)))
+
+# The headers of Yadex, Atclib and BSP
+HEADERS_YADEX  := $(wildcard src/*.h)
+HEADERS_ATCLIB =  atclib/atclib.h
+HEADERS_BSP    =  bsp-2.3/bsp.h bsp-2.3/structs.h
+
+# All the source files, including the headers.
+SRC = $(SRC_YADEX)  $(HEADERS_YADEX)\
+      $(SRC_ATCLIB) $(HEADERS_ATCLIB)\
+      $(SRC_BSP)    $(HEADERS_BSP)
+
+# The files on which youngest is run.
+SRC_NON_GEN = $(filter-out src/version.cc, $(SRC))
 
 # Defines used when compiling Yadex.
 # If you change Y_UNIX for Y_DOS or Y_X11 for Y_BGI,
@@ -222,45 +240,46 @@ DOBJ_ATCLIB = $(addprefix $(DOBJDIR_ATCLIB)/, $(addsuffix .o, $(MODULES_ATCLIB))
 
 # The game definition files.
 YGD = $(addprefix ygd/,\
-	doom.ygd	doom02.ygd	doom04.ygd	doom05.ygd\
-	doom2.ygd	doompr.ygd	heretic.ygd	hexen.ygd\
+	doom.ygd	doom02.ygd	doom04.ygd	doom05.ygd	\
+	doom2.ygd	doompr.ygd	heretic.ygd	hexen.ygd	\
 	strife.ygd	strife10.ygd)
 
 # Files that are used with scripts/process to
 # generate files that are included in the
 # distribution archive.
 DOC1_SRC =\
-	docsrc/README\
-	docsrc/README.doc\
+	docsrc/README			\
+	docsrc/README.doc
 
 # Files that are used with scripts/process to
 # generate files that go in the doc/ directory
 # and are NOT included in the archive.
 DOC2_SRC_HTML =\
-	docsrc/advanced.html\
-	docsrc/contact.html\
-	docsrc/credits.html\
-	docsrc/deu_diffs.html\
-	docsrc/editing_docs.html\
-	docsrc/feedback.html\
-	docsrc/getting_started.html\
-	docsrc/hackers_guide.html\
-	docsrc/help.html\
-	docsrc/index.html\
-	docsrc/keeping_up.html\
-	docsrc/legal.html\
-	docsrc/palette.html\
-	docsrc/reporting.html\
-	docsrc/tips.html\
-	docsrc/trivia.html\
-	docsrc/trouble.html\
-	docsrc/users_guide.html\
-	docsrc/wad_specs.html\
-	docsrc/ygd.html\
+	docsrc/advanced.html		\
+	docsrc/contact.html		\
+	docsrc/credits.html		\
+	docsrc/deu_diffs.html		\
+	docsrc/editing_docs.html	\
+	docsrc/faq.html			\
+	docsrc/feedback.html		\
+	docsrc/getting_started.html	\
+	docsrc/hackers_guide.html	\
+	docsrc/help.html		\
+	docsrc/index.html		\
+	docsrc/keeping_up.html		\
+	docsrc/legal.html		\
+	docsrc/palette.html		\
+	docsrc/reporting.html		\
+	docsrc/tips.html		\
+	docsrc/trivia.html		\
+	docsrc/trouble.html		\
+	docsrc/users_guide.html		\
+	docsrc/wad_specs.html		\
+	docsrc/ygd.html
 
 DOC2_SRC_MISC =\
-	bsp-2.3/ybsp.6\
-	docsrc/yadex.6\
+	bsp-2.3/ybsp.6			\
+	docsrc/yadex.6			\
 #	docsrc/yadex.lsm\
 
 # Files that must be put in the distribution
@@ -277,20 +296,20 @@ DOC2 = $(addprefix doc/, $(PIX) $(notdir $(DOC2_SRC_HTML) $(DOC2_SRC_MISC)))
 # Misc. other files that must be put in the
 # distribution archive.
 MISC_FILES =\
-	src/.srcdate\
-	src/.uptodate\
-	CHANGES\
-	COPYING\
-	COPYING.LIB\
-	GNUmakefile\
-	Makefile\
-	TODO\
-	VERSION\
-	bsp-2.3/bsp23x.txt\
-	bsp-2.3/transdor.wad\
-	docsrc/.pixlist\
-	yadex.cfg\
-	yadex.dep\
+	src/.srcdate		\
+	src/.uptodate		\
+	CHANGES			\
+	COPYING			\
+	COPYING.LIB		\
+	GNUmakefile		\
+	Makefile		\
+	TODO			\
+	VERSION			\
+	bsp-2.3/bsp23x.txt	\
+	bsp-2.3/transdor.wad	\
+	docsrc/.pixlist		\
+	yadex.cfg		\
+	yadex.dep
 
 # The images used in the HTML doc. FIXME: "<img"
 # and "src=" have to be on the same line. These
@@ -299,15 +318,21 @@ PIX = $(shell cat docsrc/.pixlist)
 
 # The script files.
 SCRIPTS = $(addprefix scripts/,\
-	ftime.1\
-	ftime.c\
-	mkinstalldirs\
-	process\
+	ftime.1		\
+	ftime.c		\
+	mkinstalldirs	\
+	process		\
 	youngest)
+
+# The patches
+PATCHES = $(addprefix patch/,\
+	README		\
+	gcc-2.7.diff)
 
 # All files that must be put in the distribution archive.
 ARC_FILES = $(sort $(DOC1) $(DOC1_SRC) $(DOC2_SRC_HTML) $(DOC2_SRC_MISC)\
-	$(MISC_FILES) $(addprefix docsrc/, $(PIX)) $(SCRIPTS) $(SRC) $(YGD))
+	$(MISC_FILES) $(addprefix docsrc/, $(PIX)) $(SCRIPTS) $(SRC) $(YGD)\
+	$(PATCHES))
 
 # Where the normal and debugging binaries are
 # put. Don't change this or you'll break things.
@@ -334,6 +359,7 @@ else
   INST_MANDIR = $(PREFIX)/man/man6
 endif
 
+
 ########################################################################
 #
 #	Targets for
@@ -347,7 +373,7 @@ all: doc yadex.dep dirs yadex ybsp $(YGD)
 .PHONY: yadex
 yadex: $(BINDIR)/yadex
 
-$(BINDIR)/yadex: $(OBJ_YADEX) $(OBJ_ATCLIB)
+$(BINDIR)/yadex: $(OBJ_YADEX) $(OBJ_ATCLIB) $(MAKEFILE)
 	@echo
 	@echo Linking Yadex
 	@$(CXX) $(OBJ_YADEX) $(OBJ_ATCLIB) -o $@\
@@ -356,7 +382,7 @@ $(BINDIR)/yadex: $(OBJ_YADEX) $(OBJ_ATCLIB)
 .PHONY: ybsp
 ybsp: $(BINDIR)/ybsp
 
-$(BINDIR)/ybsp: $(SRC_BSP) $(HEADERS_BSP)
+$(BINDIR)/ybsp: $(SRC_BSP) $(HEADERS_BSP) $(MAKEFILE)
 	@echo
 ifdef HAVE_GCC
 	@echo Compiling and linking BSP with gcc
@@ -406,6 +432,10 @@ install:
 clean:
 	rm -r $(OBJPHYSDIR)
 
+.PHONY: dclean
+dclean:
+	rm -r $(DOBJPHYSDIR)
+
 .PHONY: doc
 doc: docsrc/.pixlist docdirs $(DOC1) doc2
 
@@ -431,6 +461,9 @@ help:
 	@echo "make dg              Run debug version of Yadex through gdb"
 	@echo "make dd              Run debug version of Yadex through ddd"
 	@echo "make doc             Update doc"
+	@echo "make man             View man page with man"
+	@echo "make dvi             View man page with xdvi"
+	@echo "make ps              View man page with gv"
 	@echo "make dist            Create distribution archive"
 	@echo "make save            Create backup archive"
 	@echo "make showconf        Show current configuration"
@@ -469,7 +502,7 @@ dall: yadex.dep ddirs dyadex dybsp $(YGD)
 .PHONY: dyadex
 dyadex: ddirs $(DBINDIR)/yadex
 	
-$(DBINDIR)/yadex: $(DOBJ_YADEX) $(DOBJ_ATCLIB)
+$(DBINDIR)/yadex: $(DOBJ_YADEX) $(DOBJ_ATCLIB) $(MAKEFILE)
 	@echo
 	@echo Linking Yadex
 	@$(CXX) $(DOBJ_YADEX) $(DOBJ_ATCLIB) -o $@\
@@ -478,7 +511,7 @@ $(DBINDIR)/yadex: $(DOBJ_YADEX) $(DOBJ_ATCLIB)
 .PHONY: dybsp
 dybsp: ddirs $(DBINDIR)/ybsp
 
-$(DBINDIR)/ybsp: $(SRC_BSP) $(HEADERS_BSP)
+$(DBINDIR)/ybsp: $(SRC_BSP) $(HEADERS_BSP) $(MAKEFILE)
 	@echo
 	@echo Compiling and linking BSP
 	@$(CC) bsp-2.3/bsp.c -Wall -Winline -O2 -finline-functions\
@@ -487,6 +520,7 @@ $(DBINDIR)/ybsp: $(SRC_BSP) $(HEADERS_BSP)
 .PHONY: dtest
 dtest:
 	$(DBINDIR)/yadex $(A)
+	gprof $(DBINDIR)/yadex >gprof.out
 
 .PHONY: dg
 dg:
@@ -503,45 +537,55 @@ dd:
 # of the .tar.bz2 archive is commented out.
 .PHONY: dist
 dist: changes distimage distgz distdiff #distbz2
-	@echo Removing distribution image tree $(ARCHIVE)
-	@rm -r $(ARCHIVE)
+	@echo "> Removing distribution image tree $(ARCHIVE)"
+	rm -r $(ARCHIVE)
 
 .PHONY: distimage
 distimage: all $(ARC_FILES)
-	@echo Creating distribution image tree $(ARCHIVE)
-	@if [ -e $(ARCHIVE) ]; then echo Error: $(ARCHIVE) already exists'!';\
-		false; fi
-	@scripts/mkinstalldirs $(ARCHIVE)
+	@echo "> Creating distribution image tree $(ARCHIVE)"
+	@[ ! -e $(ARCHIVE) ] || (echo "Error: $(ARCHIVE) already exists"; false)
+	scripts/mkinstalldirs $(ARCHIVE)
 	@tar -cf - $(ARC_FILES) | (cd $(ARCHIVE); tar -xf -)
 
 .PHONY: distgz
 distgz: distimage
+	@echo "> Creating gzipped distribution"
 	tar -czf $(ARCHIVE).tar.gz $(ARCHIVE)
 
 .PHONY: distbz2
 distbz2: distimage
+	@echo "> Creating bzip2'd distribution"
 	tar -cIf $(ARCHIVE).tar.bz2 $(ARCHIVE)
 
 .PHONY: distdiff
-TMP0 = $$HOME/tmp
-TMPDIFF = $(TMP0)/$(ARCDIFF)
+TMP0    = $$HOME/tmp
 TMPPREV = $(TMP0)/$(ARCPREV)
+TMPCURR = $(TMP0)/$(ARCHIVE)
+TMPDIFF = $(TMP0)/$(ARCDIFF)
+DIFF    = $(TMP0)/$(ARCDIFF)/$(ARCDIFF)
 distdiff:
 	@echo "> Building the diff distribution"
 	@echo ">> Creating the diff"
+	@[ ! -e $(TMPPREV) ] || (echo "Error: $(TMPPREV) already exists"; false)
+	@[ ! -e $(TMPCURR) ] || (echo "Error: $(TMPCURR) already exists"; false)
+	@[ ! -e $(TMPDIFF) ] || (echo "Error: $(TMPDIFF) already exists"; false)
+	tar -xzf              $(ARCHIVE).tar.gz -C $(TMP0)
+	tar -xzf ../yadex-arc/pub/$(ARCPREV).tar.gz -C $(TMP0)
 	mkdir -p $(TMPDIFF)
+	cd $(TMP0) && (diff -uNr $(ARCPREV) $(ARCHIVE) >$(DIFF) || true)
+	! grep "Binary files .* and .* differ" $(DIFF)
 	scripts/process docsrc/README.diff >$(TMPDIFF)/README
-	tar -xzf ../yadex-arc/$(ARCPREV).tar.gz -C $(TMP0)
-	export ARCDIR=$$PWD/$(ARCHIVE); cd $(TMPPREV)\
-	  && diff -uNr . $$ARCDIR >$(TMPDIFF)/$(ARCDIFF) || true
-	cd $(TMPDIFF)/.. && tar -czf $(ARCDIFF).tar.gz $(ARCDIFF)
+	cd $(TMP0) && tar -czf $(ARCDIFF).tar.gz $(ARCDIFF)
+	cd $(TMPO) && rm -rf $(ARCDIFF)
+	cd $(TMP0) && tar -xzf $(ARCDIFF).tar.gz
 	@echo ">> Verifying the diff"
-	cd $(TMPPREV) && patch -i $(TMPDIFF)/$(ARCDIFF) -p 0
-	diff -r $(TMPPREV) $(ARCHIVE)
+	cd $(TMPPREV) && patch -p1 <../$(ARCDIFF)/$(ARCDIFF)
+	cd $(TMP0) && diff -r $(ARCPREV) $(ARCHIVE)
 	mv $(TMPDIFF).tar.gz .
 	@echo ">> Cleaning up"
-	rm -rf $(TMPDIFF)
-	rm -rf $(TMPPREV)
+	cd $(TMP0) && rm -rf $(ARCPREV)
+	cd $(TMP0) && rm -rf $(ARCHIVE)
+	cd $(TMP0) && rm -rf $(ARCDIFF)
 
 .PHONY: showconf
 showconf:
@@ -576,6 +620,7 @@ showconf:
 	@echo "cc --version       \"`cc --version`\""
 	@echo "shell              \"$$SHELL\""
 	@echo "uname              \"`uname`\""
+
 
 ########################################################################
 #
@@ -768,24 +813,43 @@ events.txt: events.html
 changes/changes.html: changes/*.log log2html
 	./log2html -- $$(ls -r changes/*.log) >$@
 	
+# changes - update the changelog
 .PHONY: changes
 changes: changes/changes.html
 	lynx -dump $< >CHANGES
 
+# cns - view the changelog with Netscape
+.PHONY: cns
+cns:
+	netscape -remote "openURL(file:$$(pwd)/changes/changes.html,new-window)"
+
+# clynx - view the changelog with Lynx
+.PHONY: clynx
+clynx:
+	lynx changes/changes.html
+
+# cless - view the changelog with less
+.PHONY: cless
+cless:
+	less CHANGES
+
+# man - view the man page with man
 .PHONY: man
 man: doc/yadex.6
 	man -l $^
 
+# dvi - view the man page with xdvi
 .PHONY: dvi
 dvi: doc/yadex.dvi
 	xdvi $^ 
 
-doc/yadex.dvi: doc/yadex.6
-	groff -Tdvi -man $^ >$@
-
+# ps - view the man page with gv
 .PHONY: ps
 ps: doc/yadex.ps
 	gv $^
+
+doc/yadex.dvi: doc/yadex.6
+	groff -Tdvi -man $^ >$@
 
 doc/yadex.ps: doc/yadex.6
 	groff -Tps -man $^ >$@

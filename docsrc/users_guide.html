@@ -114,22 +114,25 @@ available under the terms of the GPL.
 		<h3><a name="prerequisites">What do I need ?</a></h3>
 
 <p>To compile, install and run this release of Yadex, you need
+
 <ul>
-<li>a POSIX-compatible environment (such as Unix),
-<li>a C compiler (ISO-compatible),
-<li>a C++ compiler (ISO-compatible),
-<li>GNU make (it won't work with other flavours of make),
-<li>an HTML viewer to read the doc,
-<li>a Doom/Doom II/Heretic/Hexen/Strife iwad,
-<li>X11R6 or X11R5.
+  <li>a POSIX-compatible environment (such as Unix),
+  <li>a C compiler (ISO-compatible),
+  <li>a C++ compiler (ISO-compatible),
+  <li>GNU make (it won't work with other flavours of make),
+  <li>an HTML viewer to read the doc,
+  <li>a Doom/Doom II/Heretic/Hexen/Strife iwad,
+  <li>X11R6 or X11R5.
 </ul>
 
 <p>More specifically, Yadex expects that
+
 <ul>
-<li>the routines in <code>ctype.h</code> accept the range
-	<code>CHAR_MIN</code> through <code>UCHAR_MAX</code>,
-<li>the C library supports <code>hypot()</code> and at least one
-	of <code>nanosleep()</code> and <code>usleep()</code>.
+  <li>the routines in <code>ctype.h</code> accept the range
+    <code>CHAR_MIN</code> through <code>UCHAR_MAX</code>,
+
+  <li>the C library supports <code>hypot()</code> and at least
+    one of <code>nanosleep()</code> and <code>usleep()</code>.
 </ul>
 
 		<h4>Iwad</h4>
@@ -238,15 +241,15 @@ href="#pwads">there</a>.
 <p>To know about the command line options that Yadex
 understands, type
 
-<p>
-<code>$ yadex --help</code>
-<p>
-You'll get this:
-<p>
-<pre>
+<p><code>$ yadex --help</code>
+
+<p>You'll get this:
+
+<p><pre>
+-b                 <var>string</var>     Run benchmark and exit successfully
 -f  -config_file   <var>string</var>     Config file
 -d  -debug                    Debug mode
--e  -expert                   Expert mode
+    -expert                   Expert mode
 -fc -fake_cursor              Fake cursor
 -fn -font          <var>string</var>     Font name
 -g  -game          <var>string</var>     Game
@@ -274,12 +277,13 @@ You'll get this:
 -w  -width         <var>integer</var>    Initial window width
 -z  -zoom          <var>integer</var>    Initial zoom factor
 </pre>
+
 <p>You might wonder what the "<code>-file</code>",
 "<code>-pw</code>" and "<code>-pwad</code>" options are for
-since it's so simple to just put the names of the pwads
-on the command line. The answer is that they're only here
-for compatibility with previous versions of Yadex/Yade/DEU.
-Don't use them. They might go away one day.
+since it's so simple to just put the names of the pwads on the
+command line. The answer is that they're only here for
+compatibility with previous versions of Yadex/Yade/DEU. Don't
+use them. They might go away one day.
 
 		<h3><a name="game">
 		Specifying the game for which you want to edit</a></h3>
@@ -296,26 +300,35 @@ you want to override the default, use "<code>-g
 
 <p>The allowed values for <code><var>game</var></code> are&nbsp;:
 <dl>
-<dt>"<code>doom</code>"
-<dd>Doom and Ultimate Doom (shareware or registered)
-<dt>"<code>doom02</code>"
-<dd>Doom alpha 0.2
-<dt>"<code>doom04</code>"
-<dd>Doom alpha 0.4
-<dt>"<code>doom05</code>"
-<dd>Doom alpha 0.5
-<dt>"<code>doom2</code>"
-<dd>Doom II and Final Doom
-<dt>"<code>doompr</code>"
-<dd>Doom press release pre-beta
-<dt>"<code>heretic</code>"
-<dd>Heretic (shareware or registered)
-<dt>"<code>hexen</code>"
-<dd>Hexen (demo or commercial)
-<dt>"<code>strife</code>"
-<dd>Strife 1.1 or later (demo or commercial)
-<dt>"<code>strife10</code>"
-<dd>Strife 1.0 (demo or commercial)
+  <dt>"<code>doom</code>"
+  <dd>Doom and Ultimate Doom (shareware or registered)
+
+  <dt>"<code>doom02</code>"
+  <dd>Doom alpha 0.2
+
+  <dt>"<code>doom04</code>"
+  <dd>Doom alpha 0.4
+
+  <dt>"<code>doom05</code>"
+  <dd>Doom alpha 0.5
+
+  <dt>"<code>doom2</code>"
+  <dd>Doom II and Final Doom
+
+  <dt>"<code>doompr</code>"
+  <dd>Doom press release pre-beta
+
+  <dt>"<code>heretic</code>"
+  <dd>Heretic (shareware or registered)
+
+  <dt>"<code>hexen</code>"
+  <dd>Hexen (demo or commercial)
+
+  <dt>"<code>strife</code>"
+  <dd>Strife 1.1 or later (demo or commercial)
+
+  <dt>"<code>strife10</code>"
+  <dd>Strife 1.0 (demo or commercial)
 </dl>
 
 <p>Not all those games are fully supported. For details, see <a
@@ -329,64 +342,63 @@ example in the <code>r</code> command, or as a command line
 argument, you don't always have to spell it all out.
 
 <ul>
+  <p><li>The <code>.wad</code> extension can be omitted, it will
+    be added automatically.  For example, specifying the name
+    "<code>foo</code>" is equivalent to specifying
+    "<code>foo.wad</code>".  An unfortunate consequence of this
+    convention is that it's impossible to load a wad that would
+    be really called "<code>foo</code>".  Though, under DOS, you
+    can still work around this limitation by specifying the name
+    with a trailing dot, ("<code>foo.</code>").
 
-<p><li>The <code>.wad</code> extension can be omitted,
-it will be added automatically.
-For example, specifying the name "<code>foo</code>"
-is equivalent to specifying "<code>foo.wad</code>".
-An unfortunate consequence of this convention is
-that it's impossible to load a wad that would be
-really called "<code>foo</code>".
-Though, under DOS, you can still work around this limitation
-by specifying the name with a trailing dot,
-("<code>foo.</code>").
+  <p><li>The path can sometimes be omitted too, if the wad is in
+    one of the <dfn>standard directories</dfn>, or one of their
+    subdirectories.  If no file of the name you specified is
+    found in the current directory, Yadex will look for a file
+    of that name in the standard directories, which are&nbsp;:
 
-<p><li>The path can sometimes be omitted too, if the
-wad is in one of the <dfn>standard directories</dfn>,
-or one of their subdirectories.
-If no file of the name you specified
-is found in the current directory,
-Yadex will look for a file of that name
-in the standard directories, which are&nbsp;:
-<ol>
-<li>your home directory,
-<li><code>/usr/local/share/games/</code><var>game</var>,
-<li><code>/usr/share/games/</code><var>game</var>,
-<li><code>/usr/local/share/games/wads</code>,
-<li><code>/usr/share/games/wads</code>,
-</ol>
-(where <var>game</var> is the name of the <a href="#game">game</a>).
+    <ol>
+      <li>your home directory,
+      <li><code>/usr/local/share/games/</code><var>game</var>,
+      <li><code>/usr/share/games/</code><var>game</var>,
+      <li><code>/usr/local/share/games/wads</code>,
+      <li><code>/usr/share/games/wads</code>,
+    </ol>
 
-<p>On the other hand, if you give an absolute file name, that is
-one that begins with a "<code>/</code>", the standard
-directories will <em>not</em> be used. Yadex will only try to
-open the file of the exact name you specified.
+    (where <var>game</var> is the name of the <a
+    href="#game">game</a>).
 
-<p>For example, if you type "<code>yadex -g doom2
-foo/bar</code>", Yadex will look for the following files in
-order&nbsp;:
+    <p>On the other hand, if you give an absolute file name,
+    that is one that begins with a "<code>/</code>", the
+    standard directories will <em>not</em> be used. Yadex will
+    only try to open the file of the exact name you specified.
 
-<ol>
-<li><code>~/foo/bar.wad</code>,
-<li><code>/usr/local/share/games/doom2/foo/bar.wad</code>,
-<li><code>/usr/share/games/doom2/foo/bar.wad</code>,
-<li><code>/usr/local/share/games/wads/foo/bar.wad</code>,
-<li><code>/usr/share/games/wads/foo/bar.wad</code>,
-</ol>
-and open the first it finds.
+    <p>For example, if you type "<code>yadex -g doom2
+    foo/bar</code>", Yadex will look for the following files in
+    order&nbsp;:
 
-<p>But if you type
-"<code>yadex&nbsp;-g&nbsp;doom2&nbsp;/foo/bar</code>" (note the
-leading slash), Yadex will try to open
-"<code>/foo/bar.wad</code>", period.
+    <ol>
+      <li><code>~/foo/bar.wad</code>,
+      <li><code>/usr/local/share/games/doom2/foo/bar.wad</code>,
+      <li><code>/usr/share/games/doom2/foo/bar.wad</code>,
+      <li><code>/usr/local/share/games/wads/foo/bar.wad</code>,
+      <li><code>/usr/share/games/wads/foo/bar.wad</code>,
+    </ol>
 
-<p>The philosophy behind those standard directories is
-that&nbsp;:
+    and open the first it finds.
 
-<ul>
-<li>a local file overrides a global one,
-<li>a game-specific file overrides a non-game-specific one.
-</ul>
+    <p>But if you type
+    "<code>yadex&nbsp;-g&nbsp;doom2&nbsp;/foo/bar</code>" (note
+    the leading slash), Yadex will try to open
+    "<code>/foo/bar.wad</code>", period.
+
+    <p>The philosophy behind those standard directories is
+    that&nbsp;:
+
+    <ul>
+      <li>a local file overrides a global one,
+      <li>a game-specific file overrides a non-game-specific one.
+    </ul>
 </ul>
 
 <p>Gotcha: those shorthands can only be used when
@@ -397,18 +409,18 @@ extension.
 		<h3>Environment variables</h3>
 
 <dl>
-<dt><code>DOOMWADDIR</code>
-<dd>No, <code>DOOMWADDIR</code> is <em>not</em> supported.
-Perhaps in another version...
+  <dt><code>DOOMWADDIR</code>
+  <dd>No, <code>DOOMWADDIR</code> is <em>not</em> supported.
+    Perhaps in another version...
 
-<dt><code>DISPLAY</code>
-<dd>Unix only. The name of the X display that Yadex will try to connect to.
+  <dt><code>DISPLAY</code>
+  <dd>Unix only. The name of the X display that Yadex will try
+    to connect to.
 
-<dt><code>YADEX_GAME</code>
-<dd>Indicates the game to use.
-Overrides the <code>game</code> parameter in the config file,
-is overridden by the <code>-g</code> command line option.
-
+  <dt><code>YADEX_GAME</code>
+  <dd>Indicates the game to use. Overrides the <code>game</code>
+    parameter in the config file, is overridden by the
+    <code>-g</code> command line option.
 </dl>
 
 	</p><hr noshade>
@@ -426,46 +438,56 @@ your wads; sometimes it's handled but sometimes it's not. So
 always use upper-case names.
 
 <dl>
+  <p><dt>Flats
+  <dd>New or replacement flats are recognized iff they're placed
+    between <code>FF_START</code>/<code>F_END</code> or
+    <code>FF_START</code>/<code>FF_END</code> labels. There can
+    be any number of <code>FF_START</code>/<code>F_END</code>
+    and <code>FF_START</code>/<code>FF_END</code> pairs and they
+    don't have to be in the same pwad. If there are several
+    lumps for the same flat, the last one is used.
 
-<p><dt>Flats
-<dd>New or replacement flats are recognized iff they're placed
-between <code>FF_START</code>/<code>F_END</code> or
-<code>FF_START</code>/<code>FF_END</code> labels. There can be
-any number of <code>FF_START</code>/<code>F_END</code> and
-<code>FF_START</code>/<code>FF_END</code> pairs and they don't
-have to be in the same pwad. If there are several lumps for the
-same flat, the last one is used.
+  <p><dt>Palette
+  <dd>If there is a replacement <code>PLAYPAL</code> lump, it's
+    used. If there are several <code>PLAYPAL</code> lumps, the
+    last one is used.
 
-<p><dt>Palette
-<dd>If there is a replacement <code>PLAYPAL</code> lump, it's
-used. If there are several <code>PLAYPAL</code> lumps, the last
-one is used.
+  <p><dt>Patches
+  <dd>New or replacement patches are recognized iff they're
+    between <code>P_START</code> and <code>P_END</code> or
+    <code>PP_START</code> and <code>PP_END</code>. Within a
+    group of patches, labels <code>P1_START</code>,
+    <code>P1_END</code>, <code>P2_START</code>,
+    <code>P2_END</code>, <code>P3_START</code> and
+    <code>P3_END</code> are ignored&nbsp;; any other label
+    elicits a warning. New patches must also appear in the
+    <code>PNAMES</code> lump or the texture browser won't be
+    able to use them. If there are several <code>PNAMES</code>
+    lumps, the last one is used. If there are several lumps for
+    the same flat, the last one is used.
 
-<p><dt>Patches
-<dd>New or replacement patches are recognized iff they're
-between <code>P_START</code> and <code>P_END</code> or
-<code>PP_START</code> and <code>PP_END</code>. New patches must
-also appear in the <code>PNAMES</code> lump or the texture
-browser won't be able to use them. If there are several
-<code>PNAMES</code> lumps, the last one is used. If there are
-several lumps for the same flat, the last one is used.
+  <p><dt>Sprites
+  <dd>New or replacement sprites are recognized iff they're
+    between one of the following pair of labels&nbsp;:
+    <code>S_START</code>/<code>S_END</code>,
+    <code>SS_START</code>/<code>S_END</code> or
+    <code>SS_START</code>/<code>SS_END</code>. There can be any
+    number of label pairs and they don't have to be in the same
+    pwad. If there are several lumps for the same sprite, the
+    last one is used.
 
-<p><dt>Sprites
-<dd>Neither new nor replacement sprites are reliably recognized.
-This will be fixed in another release.
-
-<p><dt>Textures
-<dd>New or replacement textures are recognized iff they're in a
-<code>TEXTURE1</code> or <code>TEXTURE2</code> lump. If the same
-texture happens to be defined in both <code>TEXTURE1</code> and
-<code>TEXTURE2</code> (which should not happen), only the
-definition in <code>TEXTURE1</code> is used. If there are
-several <code>TEXTURE1</code> lumps, the last one is used. If
-there are several <code>TEXTURE2</code> lumps, the last one is
-used. If it exists, <code>TEXTURE2</code> is always susceptible
-to be used, even for games where it's not supposed to exist,
-like Doom&nbsp;II.
-
+  <p><dt>Textures
+  <dd>New or replacement textures are recognized iff they're in
+    a <code>TEXTURE1</code> or <code>TEXTURE2</code> lump. If
+    the same texture happens to be defined in both
+    <code>TEXTURE1</code> and <code>TEXTURE2</code> (which
+    should not happen), only the definition in
+    <code>TEXTURE1</code> is used. If there are several
+    <code>TEXTURE1</code> lumps, the last one is used. If there
+    are several <code>TEXTURE2</code> lumps, the last one is
+    used. If it exists, <code>TEXTURE2</code> is always
+    susceptible to be used, even for games where it's not
+    supposed to exist, like Doom&nbsp;II.
 </dl>
 
 		<h3>Logging of time spent</h3>
@@ -530,8 +552,9 @@ when you're reaching for the menu.
 
 <p>I plan to develop a full set-mark/jump-to-mark system similar
 to the one in <code>vi</code>, with
-<code>m<var>mark-name</var></code>, <code>'<var>mark-name</var></code>
-and <code>`<var>mark-name</var></code>.
+<code>m<var>mark-name</var></code>,
+<code>'<var>mark-name</var></code> and
+<code>`<var>mark-name</var></code>.
 
 <p>For the moment, if you press [<kbd>'</kbd>], the map scrolls
 so that its centre is at the centre of the screen/window.
@@ -601,27 +624,25 @@ current mode. That is, if you are in things mode, pressing
 always true, particularly if some objects are already
 selected&nbsp;:
 
-<p>
-<ul>
-<li>If you are in vertices mode and there are two or more
-vertices selected, pressing [<kbd>Ins</kbd>] will insert a
-linedef from the first vertex to the second, another one from
-the second to the third and so on. That is, a path of linedefs
-is created from the first to the last vertex. The path is not
-closed.
+<p><ul>
+  <li>If you are in vertices mode and there are two or more
+  vertices selected, pressing [<kbd>Ins</kbd>] will insert a
+  linedef from the first vertex to the second, another one from
+  the second to the third and so on. That is, a path of linedefs
+  is created from the first to the last vertex. The path is not
+  closed.
 
-<li>If you are in linedefs mode and there are selected linedefs,
-pressing [<kbd>Ins</kbd>] will create a new sector and new
-sidedefs that point to it and assign them to the linedefs. For
-the linedefs that had no first sidedef (whether or not they
-already had a second sidedef), the new sidedef is attached as
-first sidedef. For the linedefs that had a first sidedef but no
-second sidedef, the new sidedef is attached as second sidedef.
-If one or more of the selected linedefs already had two
-sidedefs, the operation fails. Bug: the side to which the new
-sidedef is attached is decided without taking into account the
-actual orientation of the linedef.
-
+  <li>If you are in linedefs mode and there are selected
+  linedefs, pressing [<kbd>Ins</kbd>] will create a new sector
+  and new sidedefs that point to it and assign them to the
+  linedefs. For the linedefs that had no first sidedef (whether
+  or not they already had a second sidedef), the new sidedef is
+  attached as first sidedef. For the linedefs that had a first
+  sidedef but no second sidedef, the new sidedef is attached as
+  second sidedef.  If one or more of the selected linedefs
+  already had two sidedefs, the operation fails. Bug: the side
+  to which the new sidedef is attached is decided without taking
+  into account the actual orientation of the linedef.
 </ul>
 
 <p>If an object of the same type is highlighted at the moment
@@ -630,112 +651,111 @@ copied from the highlighted object. In other words, the
 highlighted object serves as a "model". Else the properties of
 the new object are set to default values.
 
-<p>
-<table>
-<tr valign=top>
-<th>Object type
-<th>Property
-<th>Value if there is a model
-<th>Value if there is no model
+<p><table>
+  <tr valign=top>
+    <th>Object type
+    <th>Property
+    <th>Value if there is a model
+    <th>Value if there is no model
 
-<tr valign=top>
-<td rowspan=7>Linedef
-<td>Start vertex
-<td>Like the model
-<td>If there are two selected vertices, the first.
-	If not, you are prompted for a vertex number.
+  <tr valign=top>
+    <td rowspan=7>Linedef
+    <td>Start vertex
+    <td>Like the model
+    <td>If there are two selected vertices, the first.
+	    If not, you are prompted for a vertex number.
 
-<tr valign=top>
-<td>End vertex
-<td>Like the model
-<td>If there are two selected vertices, the second.
-	If not, you are prompted for a vertex number.
+  <tr valign=top>
+    <td>End vertex
+    <td>Like the model
+    <td>If there are two selected vertices, the second.
+	    If not, you are prompted for a vertex number.
 
-<tr valign=top>
-<td>Flags
-<td>Like the model
-<td>Impassable
+  <tr valign=top>
+    <td>Flags
+    <td>Like the model
+    <td>Impassable
 
-<tr valign=top>
-<td>Type
-<td>Like the model
-<td>0 (normal)
+  <tr valign=top>
+    <td>Type
+    <td>Like the model
+    <td>0 (normal)
 
-<tr valign=top>
-<td>Sector tag
-<td>Like the model
-<td>0 (none)
+  <tr valign=top>
+    <td>Sector tag
+    <td>Like the model
+    <td>0 (none)
 
-<tr valign=top>
-<td>First sidedef
-<td>FFFFh (none)
-<td>FFFFh (none)
+  <tr valign=top>
+    <td>First sidedef
+    <td>FFFFh (none)
+    <td>FFFFh (none)
 
-<tr valign=top>
-<td>Second sidedef
-<td>FFFFh (none)
-<td>FFFFh (none)
+  <tr valign=top>
+    <td>Second sidedef
+    <td>FFFFh (none)
+    <td>FFFFh (none)
 
-<tr valign=top>
-<td rowspan=4>Thing
-<td>Coordinates
-<td>Like the pointer
-<td>Like the pointer
+  <tr valign=top>
+    <td rowspan=4>Thing
+    <td>Coordinates
+    <td>Like the pointer
+    <td>Like the pointer
 
-<tr valign=top>
-<td>Type
-<td>Like the model
-<td><a href="#param_default_thing"><code>default_thing</code></a>
+  <tr valign=top>
+    <td>Type
+    <td>Like the model
+    <td><a href="#param_default_thing"><code>default_thing</code></a>
 
-<tr valign=top>
-<td>Flags
-<td>Like the model
-<td>D12 D3 D45
+  <tr valign=top>
+    <td>Flags
+    <td>Like the model
+    <td>D12 D3 D45
 
-<tr valign=top>
-<td>Angle
-<td>Like the model
-<td>0 (east)
+  <tr valign=top>
+    <td>Angle
+    <td>Like the model
+    <td>0 (east)
 
-<tr valign=top>
-<td rowspan=7>Sector
-<td>Floor height
-<td>Like the model
-<td><a href="#param_default_floor_height"><code>default_floor_height</code></a>
+  <tr valign=top>
+    <td rowspan=7>Sector
+    <td>Floor height
+    <td>Like the model
+    <td><a href="#param_default_floor_height"><code>default_floor_height</code></a>
 
-<tr>
-<td>Ceiling height
-<td>Like the model
-<td><a href="#param_default_ceiling_height"><code>default_ceiling_height</code></a>
+  <tr>
+    <td>Ceiling height
+    <td>Like the model
+    <td><a href="#param_default_ceiling_height"><code>default_ceiling_height</code></a>
 
-<tr>
-<td>Floor texture
-<td>Like the model
-<td><a href="#param_default_floor_texture"><code>default_floor_texture</code></a>
+  <tr>
+    <td>Floor texture
+    <td>Like the model
+    <td><a href="#param_default_floor_texture"><code>default_floor_texture</code></a>
 
-<tr>
-<td>Ceiling texture
-<td>Like the model
-<td><a href="#param_default_ceiling_texture"><code>default_ceiling_texture</code></a>
+  <tr>
+    <td>Ceiling texture
+    <td>Like the model
+    <td><a href="#param_default_ceiling_texture"><code>default_ceiling_texture</code></a>
 
-<tr>
-<td>Light level
-<td>Like the model
-<td><a href="#param_default_light_level"><code>default_light_level</code></a>
+  <tr>
+    <td>Light level
+    <td>Like the model
+    <td><a href="#param_default_light_level"><code>default_light_level</code></a>
 
-<tr>
-<td>Type
-<td>Like the model
-<td>0 (normal)
+  <tr>
+    <td>Type
+    <td>Like the model
+    <td>0 (normal)
 
-<tr>
-<td>Tag
-<td>Like the model
-<td>0 (none)
+  <tr>
+    <td>Tag
+    <td>Like the model
+    <td>0 (none)
 
-<tr valign=top>
-<td>Vertex
-<td>Coordinates
+  <tr valign=top>
+    <td>Vertex
+    <td>Coordinates
 </table>
 
 		<h3>Copying objects</h3>
@@ -817,26 +837,27 @@ numbers in references but that's all. You don't need to
 
 <p>However, for certain things, the <em>relative</em> numbers of
 objects matter&nbsp;:
+
 <ul>
-<li>if you have several player 1 starts in your level (which is
-how the voodoo doll trick is done), it's the lowest-numbered one
-that the player incarnates in at level start,
+  <li>if you have several player 1 starts in your level (which
+  is how the voodoo doll trick is done), it's the
+  lowest-numbered one that the player incarnates in at level
+  start,
 
-<li>if there are several teleport exits in the same sector, I
-think only the lowest-numbered one is used (but I don't know of
-any interesting application of this fact),
+  <li>if there are several teleport exits in the same sector, I
+  think only the lowest-numbered one is used (but I don't know
+  of any interesting application of this fact),
 
-<li>if there are several superimposed linedefs, the
-lowest-numbered one is drawn like it was in front,
+  <li>if there are several superimposed linedefs, the
+  lowest-numbered one is drawn like it was in front,
 
-<li>BSP's transparent doors need one of the door tracks to be
-the lowest-numbered linedef,
+  <li>BSP's transparent doors need one of the door tracks to be
+  the lowest-numbered linedef,
 
-<li>certain linedef types apply only to the lowest-numbered of
-the tagged sectors (IIRC),
+  <li>certain linedef types apply only to the lowest-numbered of
+  the tagged sectors (IIRC),
 
-<li>raising stairs use the lowest-numbered linedef.
-
+  <li>raising stairs use the lowest-numbered linedef.
 </ul>
 
 <p>So how do you control the ordering of objects&nbsp;?
@@ -893,21 +914,19 @@ of path selection.
 press [<kbd>e</kbd>]. All the linedefs that belong to the same
 non-forked path as the highlighted linedef are selected. For
 example&nbsp;:
-<br>
-<br>
-<table align="center">
-<tr>
-<td><img src="e1.png" alt="Before pressing [e]" WIDTH=159 HEIGHT=127>
-<td><img src="e2.png" alt="After pressing [e]" WIDTH=159 HEIGHT=127>
-<tr>
-<td align="right"><i>Before pressing</i> [<kbd>e</kbd>]
-<td align="right"><i>After pressing</i> [<kbd>e</kbd>]
+
+<br><br><table align="center">
+  <tr>
+    <td><img src="e1.png" alt="Before pressing [e]" WIDTH=159 HEIGHT=127>
+    <td><img src="e2.png" alt="After pressing [e]" WIDTH=159 HEIGHT=127>
+  <tr>
+    <td align="right"><i>Before pressing</i> [<kbd>e</kbd>]
+    <td align="right"><i>After pressing</i> [<kbd>e</kbd>]
 </table>
-<br>
-<br>
-Note how the selection stop at the first fork in the path.
-That kind a path selection is good to select a path of single-
-or double-sided linedefs that belong to the same sector.
+
+<br><br>Note how the selection stop at the first fork in the
+path.  That kind a path selection is good to select a path of
+single- or double-sided linedefs that belong to the same sector.
 
 <p>The other variant of path selection is better to select all
 the linedefs that form a single pillar, even if not all of its
@@ -915,20 +934,19 @@ sides face the same sector. To use it, highlight a single-sided
 linedef and press [<kbd>E</kbd>]. All the single-sided linedefs
 that belong to the same path as the original one are
 highlighted. For example&nbsp;:
-<br>
-<br>
-<table align="center">
-<tr>
-<td><img src="E1.png" alt="Before pressing [E]" WIDTH=156 HEIGHT=160>
-<td><img src="E2.png" alt="After pressing [E]" WIDTH=154 HEIGHT=160>
-<tr>
-<td align="right"><i>Before pressing</i> [<kbd>E</kbd>]
-<td align="right"><i>After pressing</i> [<kbd>E</kbd>]
-</table>
-<br>
-<br>
-Note that the selection is not stopped by the forks in the path.
-Also note that the double-sided linedefs are not selected.
+
+<br><br><table align="center">
+  <tr>
+    <td><img src="E1.png" alt="Before pressing [E]" WIDTH=156 HEIGHT=160>
+    <td><img src="E2.png" alt="After pressing [E]" WIDTH=154 HEIGHT=160>
+  <tr>
+    <td align="right"><i>Before pressing</i> [<kbd>E</kbd>]
+    <td align="right"><i>After pressing</i> [<kbd>E</kbd>]
+  </table>
+
+<br><br>Note that the selection is not stopped by the forks in
+the path.  Also note that the double-sided linedefs are not
+selected.
 
 <p>Like clicking, [<kbd>e</kbd>] and [<kbd>E</kbd>] have the
 effect of unselecting everything else that was previously
@@ -955,129 +973,138 @@ them.
 		<h3>Sector miscellaneous operations</h3>
 
 <dl>
-<p><dt>Find first free tag number
-<dd>Displays the smallest tag number greater than 0
-and not used by any linedef or sector.
+  <p><dt>Find first free tag number
+  <dd>Displays the smallest tag number greater than 0 and not
+    used by any linedef or sector.
 
-<p><dt>Rotate and scale sectors
-<dd>(description to be written)
+  <p><dt>Rotate and scale sectors
+  <dd>(description to be written)
 
-<p><dt>Make door from sector
-<dd>(description to be written)
+  <p><dt>Make door from sector
+  <dd>(description to be written)
 
-<p><dt>Make lift from sector
-<dd>(description to be written)
+  <p><dt>Make lift from sector
+  <dd>(description to be written)
 
-<p><dt>Distribute sector floor heights
-<dd>(description to be written)
+  <p><dt>Distribute sector floor heights
+  <dd>(description to be written)
 
-<p><dt>Distribute sector ceiling heights
-<dd>(description to be written)
+  <p><dt>Distribute sector ceiling heights
+  <dd>(description to be written)
 
-<p><dt>Raise or lower sectors...
-<dd>Prompts you for a number (N) and adds that number to the
-floor and ceiling heights of all selected sectors. If N is
-positive, this results in raising the sectors by N units. If N
-is negative, this results in lowering the sectors by -N units.
+  <p><dt>Raise or lower sectors...
+  <dd>Prompts you for a number (N) and adds that number to the
+    floor and ceiling heights of all selected sectors. If N is
+    positive, this results in raising the sectors by N units. If
+    N is negative, this results in lowering the sectors by -N
+    units.
 
-<p><dt>Brighten or darken sectors...
-<dd>Prompts you for a number (N) and adds that number to the
-light level of all selected sectors. If N is positive, this
-results in sectors becoming brighter. If N is positive, this
-results in sectors becoming darker. No light level is decreased
-below 0 or increased above 255.
+  <p><dt>Brighten or darken sectors...
+  <dd>Prompts you for a number (N) and adds that number to the
+    light level of all selected sectors. If N is positive, this
+    results in sectors becoming brighter. If N is positive, this
+    results in sectors becoming darker. No light level is
+    decreased below 0 or increased above 255.
 
-<p><dt>Unlink room
-<dd>This function is not implemented yet.
+  <p><dt>Unlink room
+  <dd>This function is not implemented yet.
 
-<p><dt>Mirror horizontally
-<dd>This function starts by determining the set <var>S</var> of
-vertices that are used by the selected sectors. Then all the
-vertices in <var>S</var> have their x-coordinate changed so that
-they're "mirrored" around the vertical axis that intersects the
-geometric centre of <var>S</var>. Finally, all the linedefs
-whose both vertices belong to <var>S</var> are flipped so that
-the sector references remain correct.
+  <p><dt>Mirror horizontally
+  <dd>This function starts by determining the set <var>S</var>
+    of vertices that are used by the selected sectors. Then all
+    the vertices in <var>S</var> have their x-coordinate changed
+    so that they're "mirrored" around the vertical axis that
+    intersects the geometric centre of <var>S</var>. Finally,
+    all the linedefs whose both vertices belong to <var>S</var>
+    are flipped so that the sector references remain correct.
 
-<p>This function is designed to be used on either the whole
-level or a group of isolated sectors (like in the screenshots
-below). It is not recommended to use it on a group of sectors if
-that group is connected to other sectors. You can do it but the
-resulting mess might take you some time to untangle, especially
-if there are many connecting linedefs.
+    <p>This function is designed to be used on either the whole
+    level or a group of isolated sectors (like in the
+    screenshots below). It is not recommended to use it on a
+    group of sectors if that group is connected to other
+    sectors. You can do it but the resulting mess might take you
+    some time to untangle, especially if there are many
+    connecting linedefs.
 
-<p>A common use for this function is when you have a symmetrical
-room with, say, the same staircase on both sides of the axis of
-symmetry. You can build one staircase, make a copy of it, mirror
-the copy and paste it on the other side of the room.
+    <p>A common use for this function is when you have a
+    symmetrical room with, say, the same staircase on both sides
+    of the axis of symmetry. You can build one staircase, make a
+    copy of it, mirror the copy and paste it on the other side
+    of the room.
 
-<p>See the "Mirror horizontally" linedef function.
+    <p>See the "Mirror horizontally" linedef function.
 
-<p><dt>Mirror vertically
-<dd>This function starts by determining the set <var>S</var> of
-vertices that are used by the selected sectors. Then all the
-vertices in <var>S</var> have their y-coordinate changed so that
-they're "mirrored" around the horizontal axis that intersects
-the geometric centre of <var>S</var>. Finally, all the linedefs
-whose both vertices belong to <var>S</var> are flipped so that
-the sector references remain correct.
+  <p><dt>Mirror vertically
+  <dd>This function starts by determining the set <var>S</var>
+    of vertices that are used by the selected sectors. Then all
+    the vertices in <var>S</var> have their y-coordinate changed
+    so that they're "mirrored" around the horizontal axis that
+    intersects the geometric centre of <var>S</var>. Finally,
+    all the linedefs whose both vertices belong to <var>S</var>
+    are flipped so that the sector references remain correct.
 
-<p>This function is designed to be used on either the whole
-level or a group of isolated sectors (like in the screenshots
-below). It is not recommended to use it on a group of sectors if
-that group is connected to other sectors. You can do it but the
-resulting mess might take you some time to untangle, especially
-if there are many connecting linedefs.
+    <p>This function is designed to be used on either the whole
+    level or a group of isolated sectors (like in the
+    screenshots below). It is not recommended to use it on a
+    group of sectors if that group is connected to other
+    sectors. You can do it but the resulting mess might take you
+    some time to untangle, especially if there are many
+    connecting linedefs.
 
-<p>A common use for this function is when you have a symmetrical
-room with, say, the same staircase on both sides of the axis of
-symmetry. You can build one staircase, make a copy of it, mirror
-the copy and paste it on the other side of the room.
+    <p>A common use for this function is when you have a
+    symmetrical room with, say, the same staircase on both sides
+    of the axis of symmetry. You can build one staircase, make a
+    copy of it, mirror the copy and paste it on the other side
+    of the room.
 
-<p>See the "Mirror vertically" linedef function.
+    <p>See the "Mirror vertically" linedef function.
+
+  <p><dt>Swap flats
+  <dd>For each selected sector (or the highlighted sector if the
+    selection is empty), exchange the floor texture with the
+    ceiling texture.
 
 </dl>
 
 		<h3>Thing miscellaneous operations</h3>
 
 <dl>
-<p><dt>Find first free tag number
-<dd>Displays the smallest tag number greater than 0
-and not used by any linedef or sector.
+  <p><dt>Find first free tag number
+  <dd>Displays the smallest tag number greater than 0 and not
+  used by any linedef or sector.
 
-<p><dt>Rotate and scale things
-<dd>(description to be written)
+  <p><dt>Rotate and scale things
+  <dd>(description to be written)
 
-<p><dt>Spin things 45° clockwise
-<dd>Subtract 45 to the angle of all selected things. This is not
-to be confused with "Rotate and scale things" where it's the
-<em>position</em> of the things that is changed.
+  <p><dt>Spin things 45° clockwise
+  <dd>Subtract 45 to the angle of all selected things. This is
+    not to be confused with "Rotate and scale things" where it's
+    the <em>position</em> of the things that is changed.
 
-<p><dt>Spin things 45° counter-clockwise
-<dd>Add 45 to the angle of all selected things. This is not to
-be confused with "Rotate and scale things" where it's the
-<em>position</em> of the things that is changed.
+  <p><dt>Spin things 45° counter-clockwise
+  <dd>Add 45 to the angle of all selected things. This is not to
+    be confused with "Rotate and scale things" where it's the
+    <em>position</em> of the things that is changed.
 
-<p><dt>Mirror horizontally
-<dd>All the selected things have their x-coordinate changed so
-that they're "mirrored" around the horizontal axis that
-intersects the geometric centre of the selected things. Their
-angle is also adjusted.
+  <p><dt>Mirror horizontally
+  <dd>All the selected things have their x-coordinate changed so
+    that they're "mirrored" around the horizontal axis that
+    intersects the geometric centre of the selected things.
+    Their angle is also adjusted.
 
-<p>It is not possible to mirror things without changing their
-angle (short of commenting out a couple of lines in
-<code>x_mirror.cc</code> and recompiling, of course).
+    <p>It is not possible to mirror things without changing
+    their angle (short of commenting out a couple of lines in
+    <code>x_mirror.cc</code> and recompiling, of course).
 
-<p><dt>Mirror vertically
-<dd>All the selected things have their y-coordinate changed so
-that they're "mirrored" around the horizontal axis that
-intersects the geometric centre of the selected things. Their
-angle is also adjusted.
+  <p><dt>Mirror vertically
+  <dd>All the selected things have their y-coordinate changed so
+    that they're "mirrored" around the horizontal axis that
+    intersects the geometric centre of the selected things.
+    Their angle is also adjusted.
 
-<p>It is not possible to mirror things without changing their
-angle (short of commenting out a couple of lines in
-<code>x_mirror.cc</code> and recompiling, of course).
-
+    <p>It is not possible to mirror things without changing
+    their angle (short of commenting out a couple of lines in
+    <code>x_mirror.cc</code> and recompiling, of course).
 </dl>
 
 		<h3>Setting/toggling/clearing thing flags</h3>
@@ -1090,234 +1117,237 @@ thing flags" popup menu. <br>Press [<kbd>c</kbd>] to open the
 		<h3>Vertex miscellaneous operations</h3>
 
 <dl>
-<p><dt>Find first free tag number
-<dd>Displays the smallest tag number greater than 0
-and not used by any linedef or sector.
+  <p><dt>Find first free tag number
+  <dd>Displays the smallest tag number greater than 0 and not
+  used by any linedef or sector.
 
-<p><dt>Rotate and scale vertices
-<dd>(description to be written)
+  <p><dt>Rotate and scale vertices
+  <dd>(description to be written)
 
-<p><dt>Delete vertex and join linedefs
-<dd>(description to be written)
+  <p><dt>Delete vertex and join linedefs
+  <dd>(description to be written)
 
-<p><dt>Merge several vertices into one
-<dd>(description to be written)
+  <p><dt>Merge several vertices into one
+  <dd>(description to be written)
 
-<p><dt>Add a linedef and split sector
-<dd>To perform this operation, you must have exactly two
-vertices selected and there must be an uninterrupted path of
-linedefs that face a common sector between them. A new linedef
-is inserted from the first vertex you selected to the second.
-The newly created sector is put on the left side of the new
-linedef.
+  <p><dt>Add a linedef and split sector
+  <dd>To perform this operation, you must have exactly two
+    vertices selected and there must be an uninterrupted path of
+    linedefs that face a common sector between them. A new
+    linedef is inserted from the first vertex you selected to
+    the second.  The newly created sector is put on the left
+    side of the new linedef.
 
-<p><dt>Mirror horizontally
-<dd>All the selected vertices have their x-coordinate changed so
-that they're "mirrored" around the vertical axis that intersects
-the geometric centre of the selected vertices. Then all the
-linedefs whose both vertices belong to the group of selected
-vertices are flipped so that the sector references remain
-correct.
+  <p><dt>Mirror horizontally
+  <dd>All the selected vertices have their x-coordinate changed
+    so that they're "mirrored" around the vertical axis that
+    intersects the geometric centre of the selected vertices.
+    Then all the linedefs whose both vertices belong to the
+    group of selected vertices are flipped so that the sector
+    references remain correct.
 
-<p>See the "Mirror horizontally" linedef function.
+    <p>See the "Mirror horizontally" linedef function.
 
-<p><dt>Mirror vertically
-<dd>All the selected vertices have their y-coordinate changed so
-that they're "mirrored" around the horizontal axis that
-intersects the geometric centre of the the selected vertices.
-Then all the linedefs whose both vertices belong to the group of
-selected vertices are flipped so that the sector references
-remain correct.
+  <p><dt>Mirror vertically
+  <dd>All the selected vertices have their y-coordinate changed
+    so that they're "mirrored" around the horizontal axis that
+    intersects the geometric centre of the the selected
+    vertices.  Then all the linedefs whose both vertices belong
+    to the group of selected vertices are flipped so that the
+    sector references remain correct.
 
-<p>See the "Mirror vertically" linedef function.
-
+    <p>See the "Mirror vertically" linedef function.
 </dl>
 
 		<h3>Linedef miscellaneous operations</h3>
 
 <dl>
-<dt>Find first free tag number
-<dd>Displays the smallest tag number greater than 0
-and not used by any linedef or sector.
+  <dt>Find first free tag number
+  <dd>Displays the smallest tag number greater than 0 and not
+  used by any linedef or sector.
 
-<p><dt>Rotate and scale LD &amp; SD...
-<dd>(description to be written)
+  <p><dt>Rotate and scale LD &amp; SD...
+  <dd>(description to be written)
 
-<p><dt>Split linedefs (add new vertex)
-<dd>Split all selected linedefs, by adding a vertex
-in the middle.
+  <p><dt>Split linedefs (add new vertex)
+  <dd>Split all selected linedefs, by adding a vertex in the
+    middle.
 
-<p>The key [<kbd>x</kbd>] is a shortcut to this function.
+    <p>The key [<kbd>x</kbd>] is a shortcut to this function.
 
-<p><dt>Split linedefs and sector
-<dd>Split both selected linedefs in the middle by adding a vertex
-for each, create a linedef between the two new vertices and
-split the sector with this new linedef.
-There must be exactly 2 selected linedefs and they
-must face a common sector.
+  <p><dt>Split linedefs and sector
+  <dd>Split both selected linedefs in the middle by adding a
+    vertex for each, create a linedef between the two new
+    vertices and split the sector with this new linedef.  There
+    must be exactly 2 selected linedefs and they must face a
+    common sector.
 
-<p>The new linedef goes from the first selected linedef to the
-second selected linedef. The new sector is on the second
-sidedef of the new linedef.
+    <p>The new linedef goes from the first selected linedef to
+    the second selected linedef. The new sector is on the second
+    sidedef of the new linedef.
 
-<p>There is a bug in this function ; if the sector contains
-other sectors, some sidedefs are given the wrong sector number.
-Jim Flynn has recently fixed this in DETH. Anyone to look into
-it&nbsp;?
+    <p>There is a bug in this function ; if the sector contains
+    other sectors, some sidedefs are given the wrong sector
+    number.  Jim Flynn has recently fixed this in DETH. Anyone
+    to look into it&nbsp;?
 
-<p>The key [<kbd>w</kbd>] is a shortcut to this function.
+    <p>The key [<kbd>w</kbd>] is a shortcut to this function.
 
-<p><dt>Delete linedefs and join sector
-<dd>(description to be written)
+  <p><dt>Delete linedefs and join sector
+  <dd>(description to be written)
 
-<p><dt>Flip linedefs
-<dd>The start and end vertices of the selected linedefs
-are swapped. Their sidedefs are also swapped, so that the sector
-references remain correct.
+  <p><dt>Flip linedefs
+  <dd>The start and end vertices of the selected linedefs are
+    swapped. Their sidedefs are also swapped, so that the sector
+    references remain correct.
 
-<p>If you want to flip linedefs without swapping their sidedefs,
-you have to use "Flip linedefs" then "Swap sidedefs" on them.
+    <p>If you want to flip linedefs without swapping their
+    sidedefs, you have to use "Flip linedefs" then "Swap
+    sidedefs" on them.
 
-<p><dt>Swap sidedefs
-<dd>Swap the sidedefs of the selected linedefs <em>without</em>
-flipping the linedefs. This means that the sector references are
-also swapped. If you don't understand what this implies, don't
-use this function.
+  <p><dt>Swap sidedefs
+  <dd>Swap the sidedefs of the selected linedefs
+    <em>without</em> flipping the linedefs. This means that the
+    sector references are also swapped. If you don't understand
+    what this implies, don't use this function.
 
-<p><dt>Align textures (Y offset)
-<dd>This function is buggy.
+  <p><dt>Align textures (Y offset)
+  <dd>This function is buggy.
 
-<p><dt>Align textures (X offset)
-<dd>This function is buggy.
+  <p><dt>Align textures (X offset)
+  <dd>This function is buggy.
 
-<p><dt>Remove 2nd sidedef (make single-sided)
-<dd>When two superimposed linedefs are merged, the
-result is often a two-sided linedefs, even though
-the second sidedef faces no sector.
-Use this function to fix the mess.
+  <p><dt>Remove 2nd sidedef (make single-sided)
+  <dd>When two superimposed linedefs are merged, the result is
+    often a two-sided linedefs, even though the second sidedef
+    faces no sector.  Use this function to fix the mess.
 
-<p> It sets the I flag, clears the 2 flag and sets the second
-sidedef to -1.
+    <p>It sets the I flag, clears the 2 flag and sets the second
+    sidedef to -1.
 
-<p><dt>Make rectangular nook (32x16)
-<dd>This is a single-key function to make a rectangular
-nook in the middle of a linedef. "Nook" means that, seen
-from the first side of the original linedef, the resulting
-5 linedefs form a concave figure.
+  <p><dt>Make rectangular nook (32x16)
+  <dd>This is a single-key function to make a rectangular nook
+    in the middle of a linedef. "Nook" means that, seen from the
+    first side of the original linedef, the resulting 5 linedefs
+    form a concave figure.
 
-<p>If the linedef is not long enough, the length of the nook is
-one third of the length of the linedef.
+    <p>If the linedef is not long enough, the length of the nook
+    is one third of the length of the linedef.
 
-<p>
-<table align="center">
-<tr>
-<td><img src="nook1.png" alt="Before" WIDTH=127 HEIGHT=159>
-<td><img src="nook2.png" alt="After" WIDTH=127 HEIGHT=159>
-<tr>
-<td align="right"><i>Before</i>
-<td align="right"><i>After</i>
-</table>
+    <p><table align="center">
+      <tr>
+	<td><img src="nook1.png" alt="Before" WIDTH=127 HEIGHT=159>
+	<td><img src="nook2.png" alt="After" WIDTH=127 HEIGHT=159>
+      <tr>
+	<td align="right"><i>Before</i>
+	<td align="right"><i>After</i>
+    </table>
 
-<p><dt>Make rectangular boss (32x16)
-<dd>Same thing as "Make rectangular nook" but the
-resulting figure is convex.
+  <p><dt>Make rectangular boss (32x16)
+  <dd>Same thing as "Make rectangular nook" but the resulting
+  figure is convex.
 
-<p><dt>Set length (move 1st vertex)
-<dd>Prompts you for a length and moves the 1st vertex
-of the selected linedefs so that they have the length
-you specified. 
+  <p><dt>Set length (move 1st vertex)
+  <dd>Prompts you for a length and moves the 1st vertex of the
+  selected linedefs so that they have the length you specified. 
 
-<p><dt>Set length (move 2nd vertex)
-<dd>Same thing as "Set length (move 1st vertex) but
-moves the 2nd vertex.
+  <p><dt>Set length (move 2nd vertex)
+  <dd>Same thing as "Set length (move 1st vertex) but moves the
+  2nd vertex.
 
-<p><dt><a name="unlink_sidedefs">Unlink 1st sidedef</a>
-<dd>This function is used when you have several linedefs
-sharing common sidedefs and you don't want them to share
-any sidedefs anymore so that you can, for instance, change
-the sector reference or texture of one of the linedefs
-independently from the others.
+  <p><dt><a name="unlink_sidedefs">Unlink 1st sidedef</a>
+  <dd>This function is used when you have several linedefs
+    sharing common sidedefs and you don't want them to share any
+    sidedefs anymore so that you can, for instance, change the
+    sector reference or texture of one of the linedefs
+    independently from the others.
 
-<p>Here is how it works&nbsp;: all sidedefs that are used on the
-first side of any linedef in the selection and on any side of
-any linedef <em>not</em> in the selection are duplicated and the
-first side of the concerned linedefs in the selection is set to
-use the copy instead of the original.
+    <p>Here is how it works&nbsp;: all sidedefs that are used on
+    the first side of any linedef in the selection and on any
+    side of any linedef <em>not</em> in the selection are
+    duplicated and the first side of the concerned linedefs in
+    the selection is set to use the copy instead of the
+    original.
 
-<p>Gotcha&nbsp;: note that the selected linedefs are not
-"unlinked" from each other. They are only "unlinked" from any
-other (i.e. non-selected) linedefs.  Thus, if you have
-<em>n</em> linedefs that you want to unlink from each other, you
-have to unlink every one of them separately. This is so that, if
-you have, say, two square pillars (2 x 4 linedefs that all use
-the same sidedef), you can easily unlink one pillar from the
-other while still having its 4 linedefs all use the same
-sidedef.
+    <p>Gotcha&nbsp;: note that the selected linedefs are not
+    "unlinked" from each other. They are only "unlinked" from
+    any other (i.e. non-selected) linedefs.  Thus, if you have
+    <em>n</em> linedefs that you want to unlink from each other,
+    you have to unlink every one of them separately. This is so
+    that, if you have, say, two square pillars (2 x 4 linedefs
+    that all use the same sidedef), you can easily unlink one
+    pillar from the other while still having its 4 linedefs all
+    use the same sidedef.
 
-<p><dt>Unlink 2nd sidedef
-<dd>Same as "Unlink 1st sidedef" but with second sidedef
-instead of first sidedef.
+  <p><dt>Unlink 2nd sidedef
+  <dd>Same as "Unlink 1st sidedef" but with second sidedef
+  instead of first sidedef.
 
-<p><dt>Mirror horizontally
-<dd>This function starts by determining the set <var>S</var> of
-vertices that are used by any of the selected linedefs. Then all
-the vertices in <var>S</var> have their x-coordinate changed so
-that they're "mirrored" around the vertical axis that intersects
-the geometric centre of <var>S</var>. Finally, all the linedefs
-whose both vertices belong to <var>S</var> are flipped so that
-the sector references remain correct.
+  <p><dt>Mirror horizontally
+  <dd>This function starts by determining the set <var>S</var>
+    of vertices that are used by any of the selected linedefs.
+    Then all the vertices in <var>S</var> have their
+    x-coordinate changed so that they're "mirrored" around the
+    vertical axis that intersects the geometric centre of
+    <var>S</var>. Finally, all the linedefs whose both vertices
+    belong to <var>S</var> are flipped so that the sector
+    references remain correct.
 
-<p><table align="center">
-<tr>
-<td><img src="mirror0.png" alt="Before" WIDTH=125 HEIGHT=125>
-<td><img src="mirrorh.png" alt="After" WIDTH=125 HEIGHT=125>
-<tr>
-<td align="right"><i>Before</i>
-<td align="right"><i>After</i>
-</table>
+    <p><table align="center">
+    <tr>
+    <td><img src="mirror0.png" alt="Before" WIDTH=125 HEIGHT=125>
+    <td><img src="mirrorh.png" alt="After" WIDTH=125 HEIGHT=125>
+    <tr>
+    <td align="right"><i>Before</i>
+    <td align="right"><i>After</i>
+    </table>
 
-<p>This function is designed to be used on either the whole
-level or a group of isolated linedefs (like in the screenshots
-below). It is not recommended to use it on a group of linedefs
-if that group is connected to other linedefs. You can do it but
-the resulting mess might take you some time to untangle,
-especially if there are many connecting linedefs.
+    <p>This function is designed to be used on either the whole
+    level or a group of isolated linedefs (like in the
+    screenshots below). It is not recommended to use it on a
+    group of linedefs if that group is connected to other
+    linedefs. You can do it but the resulting mess might take
+    you some time to untangle, especially if there are many
+    connecting linedefs.
 
-<p>A common use for this function is when you have a symmetrical
-room with, say, the same staircase on both sides of the axis of
-symmetry. You can build one staircase, make a copy of it, mirror
-the copy and paste it on the other side of the room.
+    <p>A common use for this function is when you have a
+    symmetrical room with, say, the same staircase on both sides
+    of the axis of symmetry. You can build one staircase, make a
+    copy of it, mirror the copy and paste it on the other side
+    of the room.
 
-<p><dt>Mirror vertically
-<dd>This function starts by determining the set <var>S</var> of
-vertices that are used by any of the selected linedefs. Then all
-the vertices in <var>S</var> have their y-coordinate changed so
-that they're "mirrored" around the horizontal axis that
-intersects the geometric centre of <var>S</var>. Finally, all
-the linedefs whose both vertices belong to <var>S</var> are
-flipped so that the sector references remain correct.
+  <p><dt>Mirror vertically
+  <dd>This function starts by determining the set <var>S</var>
+    of vertices that are used by any of the selected linedefs.
+    Then all the vertices in <var>S</var> have their
+    y-coordinate changed so that they're "mirrored" around the
+    horizontal axis that intersects the geometric centre of
+    <var>S</var>. Finally, all the linedefs whose both vertices
+    belong to <var>S</var> are flipped so that the sector
+    references remain correct.
 
-<p><table align="center">
-<tr>
-<td><img src="mirror0.png" alt="Before" WIDTH=125 HEIGHT=125>
-<td><img src="mirrorv.png" alt="After" WIDTH=125 HEIGHT=125>
-<tr>
-<td align="right"><i>Before</i>
-<td align="right"><i>After</i>
-</table>
+    <p><table align="center">
+      <tr>
+	<td><img src="mirror0.png" alt="Before" WIDTH=125 HEIGHT=125>
+	<td><img src="mirrorv.png" alt="After" WIDTH=125 HEIGHT=125>
+      <tr>
+	<td align="right"><i>Before</i>
+	<td align="right"><i>After</i>
+    </table>
 
-<p>This function is designed to be used on either the whole
-level or a group of isolated linedefs (like in the screenshots
-below). It is not recommended to use it on a group of linedefs
-if that group is connected to other linedefs. You can do it but
-the resulting mess might take you some time to untangle,
-especially if there are many connecting linedefs.
+    <p>This function is designed to be used on either the whole
+    level or a group of isolated linedefs (like in the
+    screenshots below). It is not recommended to use it on a
+    group of linedefs if that group is connected to other
+    linedefs. You can do it but the resulting mess might take
+    you some time to untangle, especially if there are many
+    connecting linedefs.
 
-<p>A common use for this function is when you have a symmetrical
-room with, say, the same staircase on both sides of the axis of
-symmetry. You can build one staircase, make a copy of it, mirror
-the copy and paste it on the other side of the room.
-
+    <p>A common use for this function is when you have a
+    symmetrical room with, say, the same staircase on both sides
+    of the axis of symmetry. You can build one staircase, make a
+    copy of it, mirror the copy and paste it on the other side
+    of the room.
 </dl>
 
 		<h3>Setting/toggling/clearing linedef flags</h3>
@@ -1366,20 +1396,22 @@ name, like pressing [<kbd>Backspace</kbd>] repeatedly would.
 
 <p>You can also move through the list without typing
 names&nbsp;:
+
 <ul>
-<li>[<kbd>Up</kbd>] and [<kbd>Down</kbd>] move to the previous
-or next name in the list.
+  <li>[<kbd>Up</kbd>] and [<kbd>Down</kbd>] move to the previous
+  or next name in the list.
 
-<li>[<kbd>Pgup</kbd>] and [<kbd>Pgdn</kbd>] move one page at a time.
+  <li>[<kbd>Pgup</kbd>] and [<kbd>Pgdn</kbd>] move one page at a
+  time.
 
-<li>[<kbd>Home</kbd>] and [<kbd>End</kbd>] move you to the first
-or last name of the list.
+  <li>[<kbd>Home</kbd>] and [<kbd>End</kbd>] move you to the
+  first or last name of the list.
 
-<li>[<kbd>Ctrl-b</kbd>] does the same thing as [<kbd>Pgup</kbd>].
+  <li>[<kbd>Ctrl-b</kbd>] does the same thing as
+  [<kbd>Pgup</kbd>].
 
-<li>[<kbd>Ctrl-f</kbd>] and [<kbd>Ctrl-v</kbd>] do the same
-thing as [<kbd>Pgdn</kbd>].
-
+  <li>[<kbd>Ctrl-f</kbd>] and [<kbd>Ctrl-v</kbd>] do the same
+  thing as [<kbd>Pgdn</kbd>].
 </ul>
 
 
@@ -1394,6 +1426,10 @@ However, in the X11 version, this function is currently a no-op
 because I've not taken the time to port the Gifsave library to
 Unix yet. Besides, I'd rather use PPM and/or PNG than GIF.
 
+<p>[<kbd>F1</kbd>] prints to stdout the location (file name and
+offset) of the current flat, patch or sprite. For debugging
+purposes.
+
 <p>Finally when viewing sprites, two other useful commands are
 [<kbd>Ctrl-n</kbd>] and [<kbd>Ctrl-p</kbd>]. These go
 respectively to the next and previous group of sprites (all
@@ -1406,20 +1442,21 @@ weapon dude at once.
 <p>There are two ways to save&nbsp;:
 
 <br><br><ul>
-<li>Press [<kbd>F2</kbd>] or do "File-&gt;Save". If the level
-comes from the iwad or if its level name or file name is unknown
-(because it's a new level), you are prompted for a level name
-(EnMn or MAPnm) and a file name first. If the file name has
-changed since the last time you saved, and if a file of that
-name already exists, you are asked confirmation before saving.
+  <li>Press [<kbd>F2</kbd>] or do "File-&gt;Save". If the level
+    comes from the iwad or if its level name or file name is
+    unknown (because it's a new level), you are prompted for a
+    level name (EnMn or MAPnm) and a file name first. If the
+    file name has changed since the last time you saved, and if
+    a file of that name already exists, you are asked
+    confirmation before saving.
 
-<p>The level in the window is saved in the specified file, in
-the pwad format, under the specified .
+    <p>The level in the window is saved in the specified file,
+    in the pwad format, under the specified .
 
-<br><br><li>Press [<kbd>F3</kbd>] or do "File-&gt;Save as". This
-procedure is identical to the "Save" procedure except that the
-query for a level name and file name is unconditional.
-
+  <br><br><li>Press [<kbd>F3</kbd>] or do "File-&gt;Save as".
+    This procedure is identical to the "Save" procedure except
+    that the query for a level name and file name is
+    unconditional.
 </ul>
 
 <p>FIXME -- this needs to be written...
@@ -1434,17 +1471,17 @@ levels in the Hexen format is not supported as of this release.
 <p>There are two ways to close a window&nbsp;:
 
 <br><br><ul>
-<li>Press [<kbd>Esc</kbd>]. If you have made changes since the
-last time you saved, or if you have never saved, Yadex requires
-confirmation before closing the window.
+  <li>Press [<kbd>Esc</kbd>]. If you have made changes since the
+    last time you saved, or if you have never saved, Yadex
+    requires confirmation before closing the window.
 
-<br><br><li>Press [<kbd>q</kbd>] or do "File-&gt;Quit". If
-you have made changes since the last time you saved, or if you
-have never saved, Yadex first saves the level, using the same
-procedure as when you press [<kbd>F2</kbd>]. After that the
-window is closed. If the saving procedure is interactive (for
-example because it's the first time you save), and if you cancel
-it, the window is not closed.
+  <br><br><li>Press [<kbd>q</kbd>] or do "File-&gt;Quit". If
+    you have made changes since the last time you saved, or if
+    you have never saved, Yadex first saves the level, using the
+    same procedure as when you press [<kbd>F2</kbd>]. After that
+    the window is closed. If the saving procedure is interactive
+    (for example because it's the first time you save), and if
+    you cancel it, the window is not closed.
 
 </ul>
 
@@ -1480,19 +1517,19 @@ when you exit Yadex.
 
 <p>If you don't specify "<code>-f</code>" on the command line,
 Yadex tries to open the following files in order&nbsp;:
-<p>
-<ol>
-<li><code>./yadex.cfg</code>
-<li><code>~/.yadex/<var>version</var>/yadex.cfg</code>
-<li><code>~/.yadex/yadex.cfg</code>
-<li><code><var>install_dir</var>/yadex.cfg</code>
-<li><code>/usr/local/etc/yadex/<var>version</var>/yadex.cfg</code>
-<li><code>/usr/local/etc/yadex/yadex.cfg</code>
-<li><code>/etc/yadex/<var>version</var>/yadex.cfg</code>
-<li><code>/etc/yadex/yadex.cfg</code>
+
+<p><ol>
+  <li><code>./yadex.cfg</code>
+  <li><code>~/.yadex/<var>version</var>/yadex.cfg</code>
+  <li><code>~/.yadex/yadex.cfg</code>
+  <li><code><var>install_dir</var>/yadex.cfg</code>
+  <li><code>/usr/local/etc/yadex/<var>version</var>/yadex.cfg</code>
+  <li><code>/usr/local/etc/yadex/yadex.cfg</code>
+  <li><code>/etc/yadex/<var>version</var>/yadex.cfg</code>
+  <li><code>/etc/yadex/yadex.cfg</code>
 </ol>
-<p>
-The first file found is used.
+
+<p>The first file found is used.
 
 <p>If you use "<code>-f&nbsp;<var>file</var></code>" and
 "<code><var>file</var></code>" is an absolute name (i.e. it
@@ -1529,11 +1566,11 @@ Yadex should use the game definition file named
 <p>When looking for the game definition file, Yadex tries those
 names in order&nbsp;:
 <ol>
-<li><code>./<var>game</var>.ygd</code>
-<li><code>~/.yadex/<var>version</var>/<var>game</var>.ygd</code>
-<li><code><var>install_dir</var>/<var>game</var>.ygd</code>
-<li><code>/usr/local/share/games/yadex/<var>version</var>/<var>game</var>.ygd</code>
-<li><code>/usr/share/games/yadex/<var>version</var>/<var>game</var>.ygd</code>
+  <li><code>./<var>game</var>.ygd</code>
+  <li><code>~/.yadex/<var>version</var>/<var>game</var>.ygd</code>
+  <li><code><var>install_dir</var>/<var>game</var>.ygd</code>
+  <li><code>/usr/local/share/games/yadex/<var>version</var>/<var>game</var>.ygd</code>
+  <li><code>/usr/share/games/yadex/<var>version</var>/<var>game</var>.ygd</code>
 </ol>
 
 <p>For Yadex to recognize the file as a game definition file,
@@ -1573,9 +1610,9 @@ a future version. So a 3-button mouse is of course recommended.
 
 			<h4>Buttons 4 and 5</h4>
 
-<p>People who have a mouse with more than 3 buttons, rejoyce !
-Buttons 4 and 5 are used (for zooming in and out). See the
-paragraph on mice wheels below.
+<p>People who have a mouse with more than 3 buttons,
+rejoyce&nbsp;!  Buttons 4 and 5 are used (for zooming in and
+out). See the paragraph on mice wheels below.
 
 			<h4>Swapping buttons</h4>
 
@@ -1620,16 +1657,16 @@ damage precious data. On the other hand, <strong>some can
 bite</strong>. Those are the ones you should know about&nbsp;:
 
 <ul>
-<li>Command line options that take an argument
-need to have a space between their argument and themselves.
+  <li>Command line options that take an argument need to have a
+  space between their argument and themselves.
 
-<li>Exposure events are not always handled.
-If the Yadex window turns black,
-back out by pressing [<kbd>Esc</kbd>],
-several times if necessary.
+  <li>Exposure events are not always handled.  If the Yadex
+  window turns black, back out by pressing [<kbd>Esc</kbd>],
+  several times if necessary.
 
-<li>If you edit a level from a file that contains several and save it,
-all the other levels from that file are lost.
+  <li>If you edit a level from a file that contains several and
+  save it, all the other levels, textures, flats, etc. from that
+  file are <strong>lost</strong>.
 </ul>
 
 Check <a href="TODO"><code>TODO</code></a> for a complete list
@@ -1669,7 +1706,7 @@ oddities in the levels, such as linedefs with negative types or
 things with strange bits set in their flags, but I don't think
 it's Yadex's fault.
 
-<p>You can edit and save alpha levels be they will be saved in
+<p>You can edit and save alpha levels but they will be saved in
 the regular Doom format, not the alpha format. Writing levels in
 the Doom alpha format is not supported at all and probably never
 will, for three reasons. Firstly, there are parts of the format
@@ -1728,13 +1765,15 @@ mode.</strong>
 		<h3>Strife</h3>
 
 <p>Supported, except that&nbsp;:
+
 <ul>
-<li>many thing types are missing,
-<li>some thing flags are not known,
-<li>many linedef types are missing or wrong,
-<li>some linedef flags might be missing,
-<li>some sector types might be missing.
+  <li>many thing types are missing,
+  <li>some thing flags are not known,
+  <li>many linedef types are missing or wrong,
+  <li>some linedef flags might be missing,
+  <li>some sector types might be missing.
 </ul>
+
 And perhaps other things as well. If you're a Strife hacker,
 your help would be welcome.
 
@@ -1750,25 +1789,27 @@ different format.
 		<h3>Boom</h3>
 
 <p>Kind of supported, only very inconvenient to use &lt;g&gt;.
+
 <dl>
-<dt>New linedef flag "P" (pass through)
-<dd>Supported.
+  <dt>New linedef flag "P" (pass through)
+  <dd>Supported.
 
-<dt>New linedef types
-<dd>You can enter arbitrary linedef types ("enter number").
+  <dt>New linedef types
+  <dd>You can enter arbitrary linedef types ("enter number").
 
-<dt>New sector types
-<dd>You can enter arbitrary sector types ("enter number")
+  <dt>New sector types
+  <dd>You can enter arbitrary sector types ("enter number")
 
-<dt>New things flags "N" (not in deathmatch) and "C" (not in coop)
-<dd>Supported.
+  <dt>New things flags "N" (not in deathmatch) and "C" (not in coop)
+  <dd>Supported.
 
-<dt>New things types 5001 and 5002
-<dd>Supported.
+  <dt>New things types 5001 and 5002
+  <dd>Supported.
 
-<dt>Special lumps <code>SWITCHES</code> and <code>ANIMATED</code>
-<dd>Unsupported.
+  <dt>Special lumps <code>SWITCHES</code> and <code>ANIMATED</code>
+  <dd>Unsupported.
 </dl>
+
 In progress...
 
 		<h3>MBF</h3>

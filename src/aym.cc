@@ -268,6 +268,19 @@ return vsprintf (buf, fmt, args);
 
 
 /*
+ *	y_strupr
+ *	Upper-case a string
+ */
+void y_strupr (char *string)
+{
+  while (*string)
+  {
+    *string = toupper (*string);
+    string++;
+  }
+}
+
+/*
  *	is_one_of
  *	Return non-zero if <s> is equal (in the strcmp() sense)
  *	to one of the other strings (retrieved from the argument
@@ -306,4 +319,59 @@ fclose (test);
 return 1;
 }
 
+
+/*
+ *	y_filename
+ *	Copies into <buf> a string that is a close as possible
+ *	to <filename> but is guaranteed to be no longer than
+ *	<size> - 1 and contain only printable characters. Non
+ *	printable characters are replaced by question marks.
+ *	Excess characters are replaced by an ellipsis.
+ */
+void y_filename (char *buf, size_t size, const char *filename)
+{
+  if (size == 0)
+    return;
+  if (size == 1)
+  {
+    *buf = '\0';
+    return;
+  }
+  size_t len    = strlen (filename);
+  size_t maxlen = size - 1;
+
+  if (len > 3 && maxlen <= 3)  // Pathological case, fill with dots
+  {
+    memset (buf, '.', maxlen);
+    buf[maxlen] = '\0';
+    return;
+  }
+
+  size_t len1 = len;
+  size_t len2 = 0;
+  if (len > maxlen)
+  {
+    len1 = (maxlen - 3) / 2;
+    len2 = maxlen - 3 - len1;
+  }
+  char *p = buf;
+  for (size_t n = 0; n < len1; n++)
+  {
+    *p++ = y_isprint (*filename) ? *filename : '?';
+    filename++;
+  }
+  if (len2 > 0)
+  {
+    *p++ = '.';
+    *p++ = '.';
+    *p++ = '.';
+    filename += len - len1 - len2;
+    for (size_t n = 0; n < len2; n++)
+    {
+      *p++ = y_isprint (*filename) ? *filename : '?';
+      filename++;
+    }
+  }
+  *p++ = '\0';
+}
 

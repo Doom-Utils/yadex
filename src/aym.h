@@ -5,6 +5,33 @@
  */
 
 
+/*
+This file is part of Yadex.
+
+Yadex incorporates code from DEU 5.21 that was put in the public domain in
+1994 by Raphaël Quinet and Brendon Wyber.
+
+The rest of Yadex is Copyright © 1997-2000 André Majorel.
+
+This program is free software; you can redistribute it and/or modify it under
+the terms of the GNU General Public License as published by the Free Software
+Foundation; either version 2 of the License, or (at your option) any later
+version.
+
+This program is distributed in the hope that it will be useful, but WITHOUT
+ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License along with
+this program; if not, write to the Free Software Foundation, Inc., 59 Temple
+Place, Suite 330, Boston, MA 02111-1307, USA.
+*/
+
+
+#ifndef YH_AYM  /* DO NOT INSERT ANYTHING BEFORE THIS LINE */
+#define YH_AYM
+
+
 int levelname2levelno (const char *name);
 int levelname2rank (const char *name);
 const char *spec_path (const char *spec);
@@ -14,8 +41,10 @@ int y_stricmp (const char *s1, const char *s2);
 int y_strnicmp (const char *s1, const char *s2, size_t len);
 int y_snprintf (char *buf, size_t size, const char *fmt, ...);
 int y_vsnprintf (char *buf, size_t size, const char *fmt, va_list args);
+void y_strupr (char *string);
 int is_one_of (const char *needle, ...);
 bool file_exists (const char *);
+void y_filename (char *buf, size_t size, const char *path);
 
 
 /*
@@ -86,3 +115,26 @@ inline int fnewline (FILE *fd)
 }
 
 
+/*
+ *	round_up
+ *	Round a value up to the next multiple of quantum.
+ *
+ *	Both the value and the quantum are supposed to be positive.
+ */
+inline void round_up (int& value, int quantum)
+{
+  value = ((value + quantum - 1) / quantum) * quantum;
+}
+
+
+/*
+ *	y_isprint
+ *	Is <c> a printable character in ISO-8859-1 ?
+ */
+inline bool y_isprint (char c)
+{
+  return (c & 0x60) && (c != 0x7f);
+}
+
+
+#endif  /* DO NOT ADD ANYTHING AFTER THIS LINE */

@@ -352,7 +352,7 @@ void Entry2::refresh ()
       cur_pos = box_len[field_no] - 1;
     int x = entry_text_x0 + cur_pos * FONTW;
     int y = entry_text_y0 + field_no * vstep;
-    DrawScreenBox (x, y, x + FONTW - 1, y + FONTH - 1);
+    DrawScreenBoxwh (x, y, FONTW, FONTH);
     pop_colour ();
     entry_drawn[field_no] = true;
   }
