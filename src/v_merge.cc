@@ -241,6 +241,7 @@ while (ref)
    refv = ref->objnum;
    ref = ref->next;
    oldnumld = NumLineDefs;
+   //printf ("V%d %d\n", refv, NumLineDefs); // DEBUG;
    /* check if this vertex is on a linedef */
    for (ld = 0; ld < oldnumld; ld++)
       {

@@ -84,7 +84,7 @@ bool Confirm (int x0, int y0, const char *prompt1, const char *prompt2)
       DrawScreenText (text_x0, text_y0, prompt1);
       if (prompt2 != NULL)
 	DrawScreenText (text_x0, text_y0 + FONTH, prompt2);
-      set_colour (YELLOW);
+      set_colour (WINTITLE);
       DrawScreenText (text_x0, text_y1 - FONTH - 1, prompt3);
     }
     get_input_status ();
@@ -170,7 +170,7 @@ void Notify (int x0, int y0, const char *prompt1, const char *prompt2)
   DrawScreenText (text_x0, text_y0, prompt1);
   if (prompt2 != NULL)
     DrawScreenText (text_x0, text_y0 + FONTH, prompt2);
-  set_colour (YELLOW);
+  set_colour (WINTITLE);
   DrawScreenText (text_x0, text_y1 - FONTH - 1, prompt3);
   get_key_or_click ();
   ShowMousePointer ();

@@ -131,7 +131,6 @@ const char *const msg1 = "Warning: modifying the cross-references";
 const char *const msg2 = "between some objects may crash the game.";
 char prompt[80];
 size_t maxlen = 0;
-size_t nlines = 0;
 int width;
 int height;
 
@@ -376,59 +375,70 @@ int  maxlen, first;
 bool ok;
 char prompt[80];
 // FIXME copied from InputInteger()...
-int  entry_width = 2 * HOLLOW_BORDER + 2 * NARROW_HSPACING + 7 * FONTW;
+int  entry_width  = 2 * HOLLOW_BORDER + 2 * NARROW_HSPACING + 7 * FONTW;
 int  entry_height = 2 * HOLLOW_BORDER + 2 * NARROW_VSPACING + FONTH;
-int  entry1_out_x0;
-int  entry1_out_y0;
-int  entry1_out_x1;
-int  entry1_out_y1;
-int  entry1_text_x0;
-int  entry1_text_y0;
-int  entry2_out_x0;
-int  entry2_out_y0;
-int  entry2_out_x1;
-int  entry2_out_y1;
-int  entry2_text_x0;
-int  entry2_text_y0;
 
-HideMousePointer ();
 y_snprintf (prompt, sizeof prompt, "Give the %s and %s for the object:",
    name1, name2);
 maxlen = strlen (prompt);
+
+int title_x0       = BOX_BORDER + FONTW;
+int title_y0       = BOX_BORDER + FONTH / 2;
+int label1_x0      = title_x0;
+int label1_y0      = title_y0 + 2 * FONTH;
+int label2_x0      = title_x0 + (strlen (name1) + 2) * FONTW;
+{
+   int bound = label1_x0 + entry_width + int (FONTW);
+   if (label2_x0 < bound)
+      label2_x0 = bound;
+}
+// FIXME Assuming the range is not longer than the name
+int label2_y0      = label1_y0;
+int entry1_out_x0  = label1_x0;
+int entry1_out_y0  = label1_y0 + 3 * FONTH / 2;
+int entry1_text_x0 = entry1_out_x0 + HOLLOW_BORDER + NARROW_HSPACING;
+int entry1_text_y0 = entry1_out_y0 + HOLLOW_BORDER + NARROW_VSPACING;
+int entry1_out_x1  = entry1_out_x0 + entry_width - 1;
+int entry1_out_y1  = entry1_out_y0 + entry_height - 1;
+int entry2_out_x0  = label2_x0;
+int entry2_out_y0  = label2_y0 + 3 * FONTH / 2;
+int entry2_text_x0 = entry2_out_x0 + HOLLOW_BORDER + NARROW_HSPACING;
+int entry2_text_y0 = entry2_out_y0 + HOLLOW_BORDER + NARROW_VSPACING;
+int entry2_out_x1  = entry2_out_x0 + entry_width - 1;
+int entry2_out_y1  = entry2_out_y0 + entry_height - 1;
+int range1_x0      = entry1_out_x0;
+int range1_y0      = entry1_out_y1 + FONTH / 2;
+int range2_x0      = entry2_out_x0;
+int range2_y0      = entry2_out_y1 + FONTH / 2;
+int window_x1      = entry2_out_x1 + FONTW + BOX_BORDER;
+int window_y1      = range1_y0 + 3 * FONTH / 2 + BOX_BORDER;
+{
+   int bound = 2 * BOX_BORDER + (maxlen + 2) * int (FONTW);
+   if (window_x1 < bound)
+      window_x1 = bound;
+}
+
 if (x0 < 0)
-   x0 = (ScrMaxX - 25 - FONTW * maxlen) / 2;
+   x0 = (ScrMaxX - window_x1) / 2;
 if (y0 < 0)
-   y0 = (ScrMaxY - 75) / 2;
-DrawScreenBox3D (x0, y0, x0 + 25 + FONTW * maxlen, y0 + 75);
+   y0 = (ScrMaxY - window_y1) / 2;
 
-entry1_out_x0  = x0 + 10;	/* Totally bogus offset FIXME */
-entry1_out_y0  = y0 + 38;	/* Totally bogus offset FIXME */
-entry1_out_x1  = entry1_out_x0 + entry_width - 1;
-entry1_out_y1  = entry1_out_y0 + entry_height - 1;
-entry1_text_x0 = entry1_out_x0 + HOLLOW_BORDER + NARROW_HSPACING;
-entry1_text_y0 = entry1_out_y0 + HOLLOW_BORDER + NARROW_VSPACING;
+HideMousePointer ();
+DrawScreenBox3D (x0, y0, x0 + window_x1, y0 + window_y1);
+set_colour     (WHITE);
+DrawScreenText (x0 + title_x0,  y0 + title_x0,  prompt);
+DrawScreenText (x0 + label1_x0, y0 + label1_y0, name1);
+DrawScreenText (x0 + label2_x0, y0 + label2_y0, name2);
+DrawScreenText (x0 + range1_x0, y0 + range1_y0, "(0-%d)", v1max);
+DrawScreenText (x0 + range2_x0, y0 + range2_y0, "(0-%d)", v2max);
 
-entry2_out_x0  = x0 + 180;	/* Totally bogus offset FIXME */
-entry2_out_y0  = y0 + 38;	/* Totally bogus offset FIXME */
-entry2_out_x1  = entry2_out_x0 + entry_width - 1;
-entry2_out_y1  = entry2_out_y0 + entry_height - 1;
-entry2_text_x0 = entry2_out_x0 + HOLLOW_BORDER + NARROW_HSPACING;
-entry2_text_y0 = entry2_out_y0 + HOLLOW_BORDER + NARROW_VSPACING;
-
-DrawScreenText (entry1_out_x0, y0 + 26, name1);
-DrawScreenText (entry2_out_x0, y0 + 26, name2);
-DrawScreenText (entry1_out_x0, y0 + 58, "(0-%d)", v1max);
-DrawScreenText (entry2_out_x0, y0 + 58, "(0-%d)", v2max);
-
-set_colour (WHITE);
-DrawScreenText (x0 + 10, y0 + 8, prompt);
 first = 1;
 key = 0;
 for (;;)
    {
    ok = true;
-   DrawScreenBoxHollow (entry1_out_x0, entry1_out_y0,
-      entry1_out_x1, entry1_out_y1, BLACK);
+   DrawScreenBoxHollow (x0 + entry1_out_x0, y0 + entry1_out_y0,
+      x0 + entry1_out_x1, y0 + entry1_out_y1, BLACK);
    if (*v1 < 0 || *v1 > v1max)
       {
       set_colour (DARKGREY);
@@ -436,9 +446,9 @@ for (;;)
       }
    else
       set_colour (LIGHTGREY);
-   DrawScreenText (entry1_text_x0, entry1_text_y0, "%d", *v1);
-   DrawScreenBoxHollow (entry2_out_x0, entry2_out_y0,
-      entry2_out_x1, entry2_out_y1, BLACK);
+   DrawScreenText (x0 + entry1_text_x0, y0 + entry1_text_y0, "%d", *v1);
+   DrawScreenBoxHollow (x0 + entry2_out_x0, y0 + entry2_out_y0,
+      x0 + entry2_out_x1, y0 + entry2_out_y1, BLACK);
    if (*v2 < 0 || *v2 > v2max)
       {
       set_colour (DARKGREY);
@@ -446,11 +456,11 @@ for (;;)
       }
    else
       set_colour (LIGHTGREY);
-   DrawScreenText (entry2_text_x0, entry2_text_y0, "%d", *v2);
+   DrawScreenText (x0 + entry2_text_x0, y0 + entry2_text_y0, "%d", *v2);
    if (first)
-      key = InputInteger (entry1_out_x0, entry1_out_y0, v1, 0, v1max);
+      key = InputInteger (x0 + entry1_out_x0, y0 + entry1_out_y0, v1, 0, v1max);
    else
-      key = InputInteger (entry2_out_x0, entry2_out_y0, v2, 0, v2max);
+      key = InputInteger (x0 + entry2_out_x0, y0 + entry2_out_y0, v2, 0, v2max);
    if (key==YK_LEFT || key==YK_RIGHT || key==YK_TAB || key==YK_BACKTAB)
       first = !first;
    else if (key == YK_ESC)

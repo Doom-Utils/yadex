@@ -28,6 +28,7 @@ Place, Suite 330, Boston, MA 02111-1307, USA.
 */
 
 
+#include "yadex.h"  /* Just to force a recompile when you ./configure again */
 #include "dependcy.h"
 #include "serialnum.h"
 

@@ -1280,17 +1280,31 @@ for (size_t n = 0; n < NCOLOURS; n++)
       a menu). _LIGHT and _DARK are for window borders and
       grooves. There is no _HL flavour of these because I didn't
       feel the need. */
+#ifdef WHITE_BACKGROUND
+   else if (n == WINBG)			c.set (0xe2, 0xdc, 0xd6);
+   else if (n == WINBG_LIGHT)		c.set (0xee, 0xe8, 0xe2);
+   else if (n == WINBG_DARK)		c.set (0xc3, 0xbe, 0xb9);
+   else if (n == WINBG_HL)		c.set (0xf4, 0xee, 0xe7);
+#else
    else if (n == WINBG)			c.set (0x2a, 0x24, 0x18);
    else if (n == WINBG_LIGHT)		c.set (0x48, 0x42, 0x3c);
    else if (n == WINBG_DARK)		c.set (0x20, 0x1b, 0x12);
    else if (n == WINBG_HL)		c.set (0x58, 0x50, 0x48);
+#endif
 
    /* WINFG* is for regular text. _DIM is for greyed out text
       (for disabled options or text that is not applicable). */
+#ifdef WHITE_BACKGROUND
+   else if (n == WINFG)			c.set (0x60, 0x60, 0x60);
+   else if (n == WINFG_HL)		c.set (0x30, 0x30, 0x30);
+   else if (n == WINFG_DIM)		c.set (0xB8, 0xB8, 0xB8);
+   else if (n == WINFG_DIM_HL)		c.set (0x90, 0x90, 0x90);
+#else
    else if (n == WINFG)			c.set (0xa0, 0xa0, 0xa0);
    else if (n == WINFG_HL)		c.set (0xd0, 0xd0, 0xd0);
    else if (n == WINFG_DIM)		c.set (0x48, 0x48, 0x48);
    else if (n == WINFG_DIM_HL)		c.set (0x70, 0x70, 0x70);
+#endif
 
    /* WINLABEL is for text of lesser importance. For example,
       the brackets around key binding are displayed in WINLABEL,
@@ -1298,10 +1312,17 @@ for (size_t n = 0; n < NCOLOURS; n++)
       difference with WINFG is not very noticeable but it does
       improve readability. The static text in the object info
       windows should be displayed in WINLABEL. */
+#ifdef WHITE_BACKGROUND
+   else if (n == WINLABEL)		c.set (0x88, 0x88, 0x88);
+   else if (n == WINLABEL_HL)		c.set (0x60, 0x60, 0x60);
+   else if (n == WINLABEL_DIM)		c.set (0xc8, 0xc8, 0xc8);
+   else if (n == WINLABEL_DIM_HL)	c.set (0xb0, 0xb0, 0xb0);
+#else
    else if (n == WINLABEL)		c.set (0x78, 0x78, 0x78);
    else if (n == WINLABEL_HL)		c.set (0xa0, 0xa0, 0xa0);
    else if (n == WINLABEL_DIM)		c.set (0x38, 0x38, 0x38);
    else if (n == WINLABEL_DIM_HL)	c.set (0x50, 0x50, 0x50);
+#endif
 
 #ifdef WHITE_BACKGROUND
    else if (n == GRID1)			c.set (0x80, 0x80, 0xff);
@@ -1331,6 +1352,12 @@ for (size_t n = 0; n < NCOLOURS; n++)
    else if (n == SECTOR_TAG)		c.set (0x00, 0xff, 0x00);
    else if (n == SECTOR_TAGTYPE)	c.set (0x00, 0xe0, 0xe0);
    else if (n == SECTOR_TYPE)		c.set (0x00, 0x80, 0xff);
+
+#ifdef WHITE_BACKGROUND
+   else if (n == WINTITLE)		c.set (0xb0, 0x80, 0x00);
+#else
+   else if (n == WINTITLE)		c.set (0xff, 0xff, 0x00);
+#endif
 
    else					fatal_error ("Wrong acn %d", n);
 

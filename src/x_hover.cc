@@ -48,6 +48,14 @@ class Close_obj
       radius   = INT_MAX;
       inside   = false;
     }
+    bool operator== (const Close_obj& other) const
+    {
+      if (inside == other.inside
+	 && radius == other.radius
+	 && distance == other.distance)
+       return true;
+      return false;
+    }
     bool operator< (const Close_obj& other) const
     {
       if (inside && ! other.inside)
@@ -67,6 +75,10 @@ class Close_obj
 	return false;
 
       return radius < other.radius;
+    }
+    bool operator<= (const Close_obj& other) const
+    {
+      return *this == other || *this < other;
     }
     Objid  obj;
     double distance;
@@ -218,7 +230,10 @@ static const Close_obj& get_cur_linedef (int x, int y)
       else
 	dist = fabs (x0 + ((double) dx)/dy * (y - y0) - x);
     }
-    if (dist < object.distance && dist <= mapslack)
+    if (dist <= object.distance  /* "<=" because if there are superimposed
+				    linedefs, we want to return the
+				    highest-numbered one. */
+       && dist <= mapslack)
     {
       object.obj.type = OBJ_LINEDEFS;
       object.obj.num  = n;
@@ -229,6 +244,7 @@ static const Close_obj& get_cur_linedef (int x, int y)
   }
   return object;
 }
+
 
 /*
  *	get_cur_sector - determine which sector is under the pointer
@@ -351,7 +367,9 @@ static const Close_obj& get_cur_thing (int x, int y)
 			&& x < Things[n].xpos + current.radius
 			&& y > Things[n].ypos - current.radius
 			&& y < Things[n].ypos + current.radius;
-	if (current < closest)
+       if (current <= closest)  /* "<=" because if there are superimposed
+				   things, we want to return the
+				   highest-numbered one. */
 	  closest = current;
       }
     }
@@ -387,7 +405,10 @@ static const Close_obj& get_cur_vertex (int x, int y)
      || Vertices[n].y > ymax)
        continue;
     double dist = hypot (x - Vertices[n].x, y - Vertices[n].y);
-    if (dist < object.distance && dist <= mapslack)
+    if (dist <= object.distance  /* "<=" because if there are superimposed
+				   vertices, we want to return the
+				   highest-numbered one. */
+       && dist <= mapslack)
     {
       object.obj.type = OBJ_VERTICES;
       object.obj.num  = n;

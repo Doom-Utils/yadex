@@ -38,6 +38,7 @@ Place, Suite 330, Boston, MA 02111-1307, USA.
 #include "gfx.h"
 #include "img.h"
 #include "imgspect.h"
+#include "l_super.h"
 #include "levels.h"
 #include "objid.h"
 #include "objinfo.h"
@@ -149,7 +150,7 @@ void objinfo_c::draw ()
 	   y0 + (height - FONTH) / 2, message);
 	break;
       }
-      set_colour (YELLOW);
+      set_colour (WINTITLE);
       DrawScreenText (ix0, iy0, "Thing #%d", obj_no);
       const bool invalid_type = ! is_thing_type (Things[obj_no].type);
       set_colour (WINFG);
@@ -234,6 +235,7 @@ void objinfo_c::draw ()
     break;
 
     case OBJ_LINEDEFS:
+      // Linedef
       width  = 2 * BOX_BORDER + 2 * WIDE_HSPACING + 29 * FONTW;
       height = 2 * BOX_BORDER + 2 * WIDE_VSPACING + (int) (8.5 * FONTH);
       x0 = 0;
@@ -244,7 +246,7 @@ void objinfo_c::draw ()
       DrawScreenBox3D (x0, y0, x0 + width - 1, y0 + height - 1);
       if (obj_no >= 0)
       {
-	set_colour (YELLOW);
+	set_colour (WINTITLE);
 	DrawScreenText (ix0, iy0, "Linedef #%d", obj_no);
 	set_colour (WINFG);
 	DrawScreenText (-1, iy0 + (int) (1.5 * FONTH),
@@ -307,6 +309,7 @@ void objinfo_c::draw ()
 	  y0 + (height - FONTH) / 2, message);
       }
 
+      // 1st sidedef
       x0 += width;
       width  = 2 * BOX_BORDER + 2 * WIDE_HSPACING + 16 * FONTW;
       ix0 = x0 + BOX_BORDER + WIDE_HSPACING;
@@ -315,7 +318,7 @@ void objinfo_c::draw ()
       DrawScreenBox3D (x0, y0, x0 + width - 1, y0 + height - 1);
       if (obj_no >= 0 && sd1 >= 0)
       {
-	set_colour (YELLOW);
+	set_colour (WINTITLE);
 	DrawScreenText (ix0, iy0, "Sidedef1 #%d", sd1);
 
 	if (s1 >= 0 && s2 >= 0 && Sectors[s1].ceilh > Sectors[s2].ceilh
@@ -364,6 +367,8 @@ void objinfo_c::draw ()
 	DrawScreenText (x0 + (width - FONTW * strlen (message)) / 2,
 	  y0 + (height - FONTH) / 2, message);
       }
+
+      // 2nd sidedef
       x0 += width;
       ix0 = x0 + BOX_BORDER + WIDE_HSPACING;
       y0 = out_y1 - height + 1;
@@ -371,7 +376,7 @@ void objinfo_c::draw ()
       DrawScreenBox3D (x0, y0, x0 + width - 1, y0 + height - 1);
       if (obj_no >= 0 && sd2 >= 0)
       {
-	set_colour (YELLOW);
+	set_colour (WINTITLE);
 	DrawScreenText (ix0, iy0, "Sidedef2 #%d", sd2);
 	set_colour (WINFG);
 	const char *tex_name;
@@ -424,6 +429,50 @@ void objinfo_c::draw ()
 	DrawScreenText (x0 + (width - FONTW * strlen (message)) / 2,
 	  y0 + (height - FONTH) / 2, message);
       }
+
+      // Superimposed linedefs
+      {
+	Superimposed_ld super;
+	super.set (obj_no);
+	obj_no_t l = super.get ();
+	int iy1;
+
+	if (l != -1 || box_disp[3])
+	{
+	  x0 += width;
+	  width  = 2 * BOX_BORDER + 2 * WIDE_HSPACING + 12 * FONTW;
+	  ix0 = x0 + BOX_BORDER + WIDE_HSPACING;
+	  iy0 = y0 + BOX_BORDER + WIDE_VSPACING;
+	  iy1 = y0 + height - 1 - BOX_BORDER - WIDE_VSPACING;
+	  DrawScreenBox3D (x0, y0, x0 + width - 1, y0 + height - 1);
+	}
+	if (l != -1)
+	{
+	  box_disp[3] = true;
+	  set_colour (WINTITLE);
+	  DrawScreenString (ix0, iy0, "Superimposed");
+	  set_colour (WINFG);
+	  iy0 += int (1.5 * FONTH);
+	  while (l != -1)
+	  {
+	    if (iy0 + FONTH - 1 <= iy1)
+	      DrawScreenText (ix0, iy0, "#%d", l);
+	    /* Too many linedefs, replace the last one by "(more)".
+	       Not elegant, but it makes the code simpler. */
+	    else
+	    {
+	      iy0 -= FONTH;
+	      set_colour (WINBG);
+	      DrawScreenBox (ix0, iy0, ix0 + 12 * FONTW - 1, iy0 + FONTH - 1);
+	      set_colour (WINFG);
+	      DrawScreenString (ix0, iy0, "(more)");
+	      break;
+	    }
+	    iy0 += FONTH;
+	    l = super.get ();
+	  }
+	}
+      }
       break;
 
     case OBJ_VERTICES:
@@ -443,7 +492,7 @@ void objinfo_c::draw ()
 	  y0 + (height - FONTH) / 2, message);
 	break;
       }
-      set_colour (YELLOW);
+      set_colour (WINTITLE);
       DrawScreenText (ix0, iy0, "Vertex #%d", obj_no);
       set_colour (WINFG);
       DrawScreenText (-1, iy0 + (int) (1.5 * FONTH),
@@ -492,7 +541,7 @@ void objinfo_c::draw ()
 	  y0 + (height - FONTH) / 2, message);
 	break;
       }
-      set_colour (YELLOW);
+      set_colour (WINTITLE);
       DrawScreenText (ix0, iy0, "Sector #%d", obj_no);
       set_colour (WINFG);
       const struct Sector *sec = Sectors + obj_no;
@@ -608,7 +657,7 @@ void objinfo_c::draw ()
 	  }
 	  if (! is_sector (dsecno))  // Can't happen
 	    continue;
-	  set_colour (YELLOW);
+	  set_colour (WINTITLE);
 	  if (thick)
 	    DrawScreenText (ix0, iy0, "Thick #%d", dsecno);
 	  else

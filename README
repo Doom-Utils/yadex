@@ -1,4 +1,4 @@
-Yadex 1.6.0 (2003-04-01)
+Yadex 1.7.0 (2003-12-28)
 
 WHAT IS YADEX ?
     Yadex is a Doom level (wad) editor for Unix systems running X,
@@ -31,31 +31,37 @@ BUILDING AND INSTALLING
                     make
                     make install
 
+    To force the use of a particular C/C++ compiler :
+
+                    ./configure --cc gcc-3.3 --cxx g++-3.3 
+                    make
+                    make install
+
     Got problems getting Yadex to compile ? See doc/faq.html.
     Got no problem ? Read the FAQ anyway. See doc/faq.html.
     
     Beware, the installation OVERWRITES the following files (assuming
     you're installing in /usr/local) :
-           /etc/yadex/1.6.0/yadex.cfg
+           /etc/yadex/1.7.0/yadex.cfg
            /usr/local/bin/yadex
-           /usr/local/bin/yadex-1.6.0
+           /usr/local/bin/yadex-1.7.0
            /usr/local/man/man6/yadex.6
-           /usr/local/man/man6/yadex-1.6.0.6
-           /usr/local/share/games/yadex/1.6.0/doom.ygd
-           /usr/local/share/games/yadex/1.6.0/doom02.ygd
-           /usr/local/share/games/yadex/1.6.0/doom04.ygd
-           /usr/local/share/games/yadex/1.6.0/doom05.ygd
-           /usr/local/share/games/yadex/1.6.0/doom2.ygd 
-           /usr/local/share/games/yadex/1.6.0/doompr.ygd
-           /usr/local/share/games/yadex/1.6.0/heretic.ygd
-           /usr/local/share/games/yadex/1.6.0/hexen.ygd
-           /usr/local/share/games/yadex/1.6.0/strife.ygd
-           /usr/local/share/games/yadex/1.6.0/strife10.ygd
+           /usr/local/man/man6/yadex-1.7.0.6
+           /usr/local/share/games/yadex/1.7.0/doom.ygd
+           /usr/local/share/games/yadex/1.7.0/doom02.ygd
+           /usr/local/share/games/yadex/1.7.0/doom04.ygd
+           /usr/local/share/games/yadex/1.7.0/doom05.ygd
+           /usr/local/share/games/yadex/1.7.0/doom2.ygd 
+           /usr/local/share/games/yadex/1.7.0/doompr.ygd
+           /usr/local/share/games/yadex/1.7.0/heretic.ygd
+           /usr/local/share/games/yadex/1.7.0/hexen.ygd
+           /usr/local/share/games/yadex/1.7.0/strife.ygd
+           /usr/local/share/games/yadex/1.7.0/strife10.ygd
 
 CONFIGURING AND RUNNING
     Before you run Yadex, you need to tell it where to find your iwads.
     Assuming you have installed in /usr/local, open
-    /etc/yadex/1.6.0/yadex.cfg with your favourite text editor and
+    /etc/yadex/1.7.0/yadex.cfg with your favourite text editor and
     insert the appropriate values for the parameters "iwad1", "iwad2",
     etc. If you don't want Doom II to be the default iwad, also change
     the value of the "game" parameter.
@@ -132,4 +138,4 @@ LEGAL
 CONTACT
     See doc/contact.html for addresses.
 
-AYM 2003-02-15
+AYM 2003-12-28

@@ -54,7 +54,7 @@ Locate::Locate (const char *const *search_path, const char *name, bool backw)
   this->name        = name;
   this->backwards   = backw;
   absolute          = is_absolute (name);
-  count             = 0;
+  rewound           = true;
   rewind ();
 }
 
@@ -68,7 +68,7 @@ Locate::Locate (const char *const *search_path, const char *name, bool backw)
  */
 void Locate::rewind ()
 {
-  count = 0;
+  rewound = true;
 
   if (backwards)
   {
@@ -95,9 +95,9 @@ const char *Locate::get_next ()
 {
   if (absolute)
   {
-    if (count != 0)			// Result has exactly one element
+    if (! rewound)			// Result has exactly one element
       return NULL;
-    count++;
+    rewound = false;
     if (strlen (name) > sizeof pathname - 1)
     {
       warn ("%s: file name too long\n", name);

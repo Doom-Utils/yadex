@@ -223,7 +223,7 @@ void InputFileName (int x0, int y0, const char *prompt, size_t maxlen,
 
   DrawScreenBox3D (x0, y0, x0 + width - 1, entry_out_y1 + WIDE_VSPACING);
   DrawScreenBoxHollow (entry_out_x0, entry_out_y0, entry_out_x1, entry_out_y1, BLACK);
-  set_colour (YELLOW);
+  set_colour (WINTITLE);
   DrawScreenString (entry_out_x0, title_y0, prompt);
   firstkey = true;
   for (;;)

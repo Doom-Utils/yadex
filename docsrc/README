@@ -31,6 +31,12 @@ BUILDING AND INSTALLING
                     make
                     make install
 
+    To force the use of a particular C/C++ compiler :
+
+                    ./configure --cc gcc-3.3 --cxx g++-3.3 
+                    make
+                    make install
+
     Got problems getting Yadex to compile ? See doc/faq.html.
     Got no problem ? Read the FAQ anyway. See doc/faq.html.
     

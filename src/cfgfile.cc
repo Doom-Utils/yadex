@@ -713,7 +713,6 @@ static int parse_config_file (const char *filename, cfg_parse_flags_t flags)
   for (unsigned lnum = 1; fgets (line, sizeof line, cfgfile) != NULL; lnum++)
   {
     char *name  = 0;
-    char *op    = 0;
     char *value = 0;
     char *p     = line;
 

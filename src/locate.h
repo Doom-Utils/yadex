@@ -37,7 +37,7 @@ class Locate
     bool               absolute;
     bool               backwards;
     const char *const *cursor;
-    bool               count;
+    bool               rewound;
     char               pathname[1025];
 };
 

@@ -301,7 +301,7 @@ void Entry2::refresh ()
       do_geom ();
 
     DrawScreenBox3D (win_x0, win_y0, win_x1, win_y1);
-    push_colour (YELLOW);
+    push_colour (WINTITLE);
     DrawScreenString (title_x0, title_y0, title);
     set_colour (WINFG);
     for (size_t f = 0; f < nfields; f++)

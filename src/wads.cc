@@ -234,7 +234,7 @@ int copy_bytes (FILE *dest, FILE *source, long size)
 {
   int          rc      = 0;
   void        *data    = 0;
-  const size_t chunksz = 0x8000;
+  const size_t chunksz = 0x4000;
 
   data = GetFarMemory (chunksz + 2);
   while (size > chunksz)

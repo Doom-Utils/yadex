@@ -265,7 +265,9 @@ const acolour_t SECTOR_TAG      = 41;
 const acolour_t SECTOR_TAGTYPE  = 42;
 const acolour_t SECTOR_TYPE     = 43;
 
-const acolour_t NCOLOURS        = 44;
+const acolour_t WINTITLE        = 44;
+
+const acolour_t NCOLOURS        = 45;
 
 
 /*

@@ -1011,7 +1011,7 @@ void Menu_priv::draw ()
   {
     HideMousePointer ();
     DrawScreenBox3D (ox0, oy0, ox1, oy1);
-    set_colour (YELLOW);
+    set_colour (WINTITLE);
     if ((flags & MF_POPUP) && title != 0)
       DrawScreenString (ix0 + WIDE_HSPACING, ty0, title);
     ShowMousePointer ();

@@ -109,7 +109,7 @@ void DisplayHelp () /* SWAP! */
   DrawScreenText (x0 + BOX_BORDER + 2 * FONTW, y0 + BOX_BORDER + FONTH, "");
   for (const char **str = help_text; *str; str++)
      DrawScreenText (-1, -1, *str);
-  set_colour (YELLOW);
+  set_colour (WINTITLE);
   DrawScreenText (-1, -1, "Press any key to return to the editor...");
   get_key_or_click ();
   ShowMousePointer ();
@@ -168,7 +168,7 @@ void about_yadex ()
   DrawScreenText (-1, -1, "Send all email to you-know-what@freelists.org, NOT to me.");
   DrawScreenText (-1, -1, "");
   DrawScreenText (-1, -1, "");
-  set_colour (YELLOW);
+  set_colour (WINTITLE);
   DrawScreenText (-1, -1, "Press any key to return to the editor...");
   pop_colour ();
   get_key_or_click ();

@@ -150,7 +150,7 @@ DrawScreenText (-1, -1, "Number of sectors:  %4d (%lu K)", NumSectors,
  ((unsigned long) NumSectors * sizeof (struct Sector) + 512L) / 1024L);
 
 DrawScreenText (-1, -1, "");
-set_colour (YELLOW);
+set_colour (WINTITLE);
 DrawScreenText (-1, -1, "Press any key to continue...");
 get_key_or_click ();
 ShowMousePointer ();
@@ -212,14 +212,14 @@ if (fatal)
    {
    DrawScreenText (text_x0, cur_y += 2 * FONTH,
      "The game will crash if you play with this level.");
-   set_colour (YELLOW);
+   set_colour (WINTITLE);
    DrawScreenText (text_x0, cur_y += FONTH,
      "Press any key to see the object");
    LogMessage ("\n");
    }
 else
    {
-   set_colour (YELLOW);
+   set_colour (WINTITLE);
    DrawScreenText (text_x0, cur_y += 2 * FONTH,
      "Press Esc to see the object,");
    DrawScreenText (text_x0, cur_y += FONTH,

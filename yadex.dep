@@ -72,8 +72,12 @@ obj/0/colour4.o: src/wstructs.h src/input.h src/colour.h src/gfx.h src/rgb.h
 dobj/0/colour4.o: src/wstructs.h src/input.h src/colour.h src/gfx.h src/rgb.h
 obj/0/colour4.o: src/x11.h
 dobj/0/colour4.o: src/x11.h
-obj/0/dependcy.o: src/dependcy.h src/serialnum.h
-dobj/0/dependcy.o: src/dependcy.h src/serialnum.h
+obj/0/dependcy.o: src/yadex.h src/config.h atclib/atclib.h src/bitvec.h
+dobj/0/dependcy.o: src/yadex.h src/config.h atclib/atclib.h src/bitvec.h
+obj/0/dependcy.o: src/yerror.h src/ymemory.h src/aym.h src/windim.h
+dobj/0/dependcy.o: src/yerror.h src/ymemory.h src/aym.h src/windim.h
+obj/0/dependcy.o: src/wstructs.h src/input.h src/dependcy.h src/serialnum.h
+dobj/0/dependcy.o: src/wstructs.h src/input.h src/dependcy.h src/serialnum.h
 obj/0/dialog.o: src/yadex.h src/config.h atclib/atclib.h src/bitvec.h
 dobj/0/dialog.o: src/yadex.h src/config.h atclib/atclib.h src/bitvec.h
 obj/0/dialog.o: src/yerror.h src/ymemory.h src/aym.h src/windim.h
@@ -510,12 +514,14 @@ obj/0/objinfo.o: src/wstructs.h src/input.h src/disppic.h src/lists.h src/img.h
 dobj/0/objinfo.o: src/wstructs.h src/input.h src/disppic.h src/lists.h src/img.h
 obj/0/objinfo.o: src/flats.h src/game.h src/rgb.h src/gamesky.h src/wadname.h
 dobj/0/objinfo.o: src/flats.h src/game.h src/rgb.h src/gamesky.h src/wadname.h
-obj/0/objinfo.o: src/gfx.h src/imgspect.h src/levels.h src/things.h src/objid.h
-dobj/0/objinfo.o: src/gfx.h src/imgspect.h src/levels.h src/things.h src/objid.h
-obj/0/objinfo.o: src/objinfo.h src/edwidget.h src/pic2img.h src/sticker.h
-dobj/0/objinfo.o: src/objinfo.h src/edwidget.h src/pic2img.h src/sticker.h
-obj/0/objinfo.o: src/wadres.h src/spritdir.h src/lumpdir.h
-dobj/0/objinfo.o: src/wadres.h src/spritdir.h src/lumpdir.h
+obj/0/objinfo.o: src/gfx.h src/imgspect.h src/l_super.h src/levels.h
+dobj/0/objinfo.o: src/gfx.h src/imgspect.h src/l_super.h src/levels.h
+obj/0/objinfo.o: src/things.h src/objid.h src/objinfo.h src/edwidget.h
+dobj/0/objinfo.o: src/things.h src/objid.h src/objinfo.h src/edwidget.h
+obj/0/objinfo.o: src/pic2img.h src/sticker.h src/wadres.h src/spritdir.h
+dobj/0/objinfo.o: src/pic2img.h src/sticker.h src/wadres.h src/spritdir.h
+obj/0/objinfo.o: src/lumpdir.h
+dobj/0/objinfo.o: src/lumpdir.h
 obj/0/oldmenus.o: src/yadex.h src/config.h atclib/atclib.h src/bitvec.h
 dobj/0/oldmenus.o: src/yadex.h src/config.h atclib/atclib.h src/bitvec.h
 obj/0/oldmenus.o: src/yerror.h src/ymemory.h src/aym.h src/windim.h
@@ -980,6 +986,8 @@ obj/0/highlt.o: src/edwidget.h src/objid.h
 dobj/0/highlt.o: src/edwidget.h src/objid.h
 obj/0/infobar.o: src/edwidget.h
 dobj/0/infobar.o: src/edwidget.h
+obj/0/l_super.o: src/levels.h src/wstructs.h src/things.h src/objid.h
+dobj/0/l_super.o: src/levels.h src/wstructs.h src/things.h src/objid.h
 obj/0/l_vertices.o: src/selectn.h
 dobj/0/l_vertices.o: src/selectn.h
 obj/0/levels.o: src/wstructs.h src/things.h

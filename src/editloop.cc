@@ -1060,7 +1060,7 @@ for (RedrawMap = 1; ; RedrawMap = 0)
       but no selection box exists and [Ctrl] was not
       pressed when the button was pressed :
       drag the selection. */
-   else if ((is.key == YE_MOTION || motion)
+   else if (motion
       && e.tool == TOOL_NORMAL
       && is.butl
       && e.clicked ()

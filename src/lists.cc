@@ -186,7 +186,7 @@ listdisp = y_max (listdisp,
 DrawScreenBox3D (x0, y0, x0 + win_width, y0 + win_height);
 DrawScreenBoxHollow (entry_out_x0, entry_out_y0, entry_out_x1, entry_out_y1,
 		     BLACK);
-set_colour (YELLOW);
+set_colour (WINTITLE);
 DrawScreenText (x0 + 10, y0 + 8, prompt);
 set_colour (WINFG);
 if (hookfunc != NULL)

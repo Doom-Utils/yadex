@@ -72,9 +72,11 @@ else
   endif
 endif
 
-# C and C++ compiler
-#CC  = cc
-#CXX = c++
+# $(CC) and $(CXX) are the C and C++ compiler respectively. They're
+# normally autodetected by ./configure and passed to make through
+# obj/0/Makefile.config.
+#CC  =
+#CXX =
 
 # Options used when compiling Atclib.
 CFLAGS = -O
@@ -84,6 +86,7 @@ CFLAGS = -O
 # LDFLAGS should not contain options that mean
 # something to the C++ compiler.
 CXXFLAGS = -O
+#CXXFLAGS += -DWHITE_BACKGROUND
 #LDFLAGS  =
 
 # Options used to compile and link the debugging
@@ -471,7 +474,7 @@ d: dyadex dtest
 
 .PHONY: save
 save:
-	tar -Icvf yadex-$$(date '+%Y%m%d').tar.bz2			\
+	tar -cjvf yadex-$$(date '+%Y%m%d').tar.bz2			\
 		--exclude "*.wad"					\
 		--exclude "*.zip"					\
 		--exclude "core"					\
@@ -831,7 +834,7 @@ ps: doc/yadex.ps
 # remade at first build time.
 FAQ: docsrc/faq.html
 	scripts/process $< >cache/faq.html
-	lynx -dump cache/faq.html >$@
+	links -width 72 -dump cache/faq.html >$@
 	rm cache/faq.html
 
 doc/yadex.dvi: doc/yadex.6

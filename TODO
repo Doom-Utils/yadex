@@ -80,7 +80,7 @@ Game definitions
     _zdoom.ygd    in ZDoom but not in Boom
     doom.ygd      include _doom; include _doom16
     doom04.ygd    ?
-    doom04.ygd    ?
+    doom05.ygd    ?
     doompr.ygd    ?
     doom2.ygd     include _doom; include _doom16; include _doom2
     hacx.ygd      ??
@@ -200,6 +200,7 @@ Hexen
 Heretic
 - Heretic has some flats with a size of 4160. Is this why DeuTex accepts
   64x65 flats ?
+- Most "1.666" linedefs types are wrong.
 
 Strife
 - Extract the radii from the exe.
@@ -503,6 +504,9 @@ Editing in general
   Note #4: it might be useful to have two descriptions : an internal one
   that sorts well (door open, door close) and an external one that's
   human readable (Open door, Close door).
+- Arguably, when snap to grid is on,
+  - the pointer position shown in the info bar should honour it,
+  - the pointer position used for dragging etc. should honour it.
 
 Editing, global mode:
 - Editing properties (double-clicking or [Return]), selecting by
@@ -716,17 +720,19 @@ Editing linedefs and sidedefs
   linedefs that should be highlighted and do them all in a loop, without
   recursion. And thus we would not highlight the same linedef more than
   once anymore.
-- Warn if W? linedef type used on single-sided linedef.
 - Show all linedefs that have errors in red. That includes :
   1. bad type,
   2. type requires a tag but its tag is set to 0,
   3. type requires a tag but no sector uses that tag,
   4. door type on a single-sided linedef,
+  4b. W? linedef type used on single-sided linedef,
   5. missing texture (HOM) (though this is normal for some tricks),
   6. tx with multi-patch columns on a double-sided linedef (medusa),
   7. bad flag,
   8. misaligned (bad X-offset),
   9. superimposed linedefs.
+  10. teleport type, but the target sector has no teleport exit, or it's
+      not present at all skill levels.
   Notes:
   - For (3), you probably need a bit vector of tags used by at least one
     sector. When should it be refreshed ? It's perhaps safer to do it
@@ -737,6 +743,9 @@ Editing linedefs and sidedefs
   - The colour of the linedef should probably be reset to normal before
     highlighting and selecting. Having lines of many different colour is
     just going to be confusing.
+- Check texture names: if the sidedef is not used by any linedefs, you
+  are still prompted to "press [esc] to see the object". If you do, you
+  get a "Bug: GetObjectCoords: bad sector# x" message.
 
 Editing sectors
 - Set floor height to ceiling height - headroom.
@@ -920,11 +929,12 @@ Unix port
   al_fana() to use dynamically allocated buffers.
 
 Platforms/Portability
-- Solaris 2.7: bad X11/Xlib.h. With GCC, need -fpermissive
+- Solaris 7: bad X11/Xlib.h. With GCC, need -fpermissive
   and/or  -isystem /usr/openwin/include
-- Solaris 2.7: don't assume that having gcc implies that cc is
+- Solaris 7: don't assume that having gcc implies that cc is
   gcc. cc might be the native compiler in which case -Wall might
   no be appreciated.
+- Solaris 9: nanosleep() needs -lrt. Best to use usleep() ?
 
 Prompt
 - Add access to the prompt from an editing window (":" like in vi).
@@ -993,6 +1003,21 @@ Misc.
 - Wad_file has too many friends.
 - Do not include so much of the Boost library in the distribution
   archive.
+- Implement a colour translation class that remaps palette indices
+  before the Sticker stage. Used for:
+  - Doom spectres,
+  - Strife peasants, advisors, etc.
+    - peasant: PEAS beige top, green trousers
+      grey    ramp: 01-1F
+      green   ramp: 20-3F
+      beige   ramp: A0-BF
+      greyish ramp: C0-DF
+  - Doom player:
+    - player 1: green:                    no translation
+    - player 2: indigo (or is it grey ?): 70h-7Fh => 60h-6Fh
+    - player 3: brown:                    70h-7Fh => 40h-4Fh
+    - player 4: red:                      70h-7Fh => 20h-2Fh
+  In the .ygd, add a "translation-id" field to the "thing" records.
 
 To do soon
 - Finish window_to_rgbbmp()

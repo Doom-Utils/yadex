@@ -52,7 +52,6 @@ Place, Suite 330, Boston, MA 02111-1307, USA.
 void DisplayWallTexture (hookfunc_comm_t *c)
 {
 MDirPtr  dir = 0;	// Main directory pointer to the TEXTURE* entries
-i32     *offsets;	// Array of offsets to texture names
 int      n;		// General counter
 i16      width, height;	// Size of the texture
 i16      npatches;	// Number of patches in the textures
@@ -162,7 +161,9 @@ else if (yg_texture_lumps == YGTL_TEXTURES
    dir = FindMasterDir (MasterDir, lump_name);
    if (dir != NULL)  // (Theoretically, it should always exist)
       {
+      i32 *offsets = NULL;  // Array of offsets to texture names
       const Wad_file *wf = dir->wadfile;
+
       wf->seek (dir->dir.start);
       if (wf->error ())
 	 {
@@ -202,7 +203,8 @@ else if (yg_texture_lumps == YGTL_TEXTURES
 	    texofs = dir->dir.start + offsets[n];
 	 }
       textures_done:
-      FreeMemory (offsets);
+      if (offsets != NULL)
+	 FreeMemory (offsets);
       }
    }
 // Other iwads : "TEXTURE1" and "TEXTURE2"
@@ -216,6 +218,8 @@ else if (yg_texture_lumps == YGTL_NORMAL
    if (dir != NULL)  // (Theoretically, it should always exist)
       {
       const Wad_file *wf = dir->wadfile;
+      i32 *offsets = NULL;  // Array of offsets to texture names
+
       wf->seek (dir->dir.start);
       if (wf->error ())
 	 {
@@ -255,13 +259,16 @@ else if (yg_texture_lumps == YGTL_NORMAL
 	    texofs = dir->dir.start + offsets[n];
 	 }
       texture1_done:
-      FreeMemory (offsets);
+      if (offsets != NULL)
+	 FreeMemory (offsets);
       }
    }
    // Well, then is it in TEXTURE2 ?
    if (texofs == 0)
       {
       const char *lump_name = "TEXTURE2";
+      i32 *offsets = NULL;  // Array of offsets to texture names
+
       dir = FindMasterDir (MasterDir, lump_name);
       if (dir != NULL)  // Doom II has no TEXTURE2
 	 {
@@ -305,13 +312,13 @@ else if (yg_texture_lumps == YGTL_NORMAL
 	       texofs = dir->dir.start + offsets[n];
 	    }
 	 texture2_done:
-	 FreeMemory (offsets);
+	 if (offsets != NULL)
+	    FreeMemory (offsets);
 	 }
       }
    }
 else
    nf_bug ("Invalid texture_format/texture_lumps combination.");
-search_done:
 
 // Texture name not found
 if (texofs == 0)
