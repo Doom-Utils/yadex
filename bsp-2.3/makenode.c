@@ -45,8 +45,8 @@ static int DivideSegs(struct Seg *ts,struct Seg *best,struct Seg **rs,struct Seg
             if (a && b)
 	     {                    /* Seg is split */
                 double ds = (double) a / (a-b);  /* 0 = start, 1 = end */
-                int x = tmps->psx + tmps->pdx * ds;
-	        int y = tmps->psy + tmps->pdy * ds;
+                int x = tmps->psx + tmps->pdx * ds + 0.5;
+	        int y = tmps->psy + tmps->pdy * ds + 0.5;
 
                 if (x==tmps->psx && y==tmps->psy)
                   if (b<0)
@@ -264,7 +264,7 @@ static int IsItConvex(const struct Seg *ts)
        long a = line->pdy * check->psx - line->pdx * check->psy + line->ptmp;
        long b = line->pdy * check->pex - line->pdx * check->pey + line->ptmp;
 
-       if ((a^b)>=0 ? a<0 || (!a && !b && check->pdx*line->pdx +
+       if ((a^b)>=0 ? a<0 || b<0 || (!a && !b && check->pdx*line->pdx +
 			      check->pdy*line->pdy < 0 &&
 		      (check->linedef != line->linedef ||
 		       !(linedefs[line->linedef].flags & 4) || 
@@ -274,7 +274,7 @@ static int IsItConvex(const struct Seg *ts)
 		       *sidedefs[linedefs[line->linedef].sidedef2].tex3-'-'
 		       )
 		      )
-	   : check->len*a/(a-b)>=2 && check->len*b/(b-a)>=2)
+	   : (b<0 || check->len*a/(a-b)>=2) && (a<0 || check->len*b/(b-a)>=2))
          return FALSE;
      }
   /* no need to split the list: these Segs can be put in a SSector */
@@ -395,6 +395,19 @@ static struct Node *CreateNode(struct Seg *ts)
  return tn;
 }
 
+/*
+ * $Log: makenode.c,v $
+ * Revision 1.2  1999/06/21 14:40:26  cphipps
+ * Make rounding better in DivideSegs()
+ * Fix logic errors in IsItConvex:
+ * - Even if both ends of a seg are the same side of a possible dividing seg,
+ * we must check that both are not on the wrong side still (one could be on the
+ * line)
+ * - Even if a split would be near the end of a line, the other end must be on
+ * the right side still
+ *
+ */
+
 /*---------------------------------------------------------------------------*
 
 	This message has been taken, complete, from OBJECTS.C in DEU5beta source.
@@ -450,4 +463,3 @@ static struct Node *CreateNode(struct Seg *ts)
    global list and ready to be saved to disk.
 
 *---------------------------------------------------------------------------*/
-

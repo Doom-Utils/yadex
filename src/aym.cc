@@ -36,30 +36,36 @@ Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 /*
  *	levelname2levelno
  *	Used to know if directory entry is ExMy or MAPxy
- *	For "ExMy",  returns 10*x+y.
- *	For "MAPxy", returns 100+10*x+y.
+ *	For "ExMy" (case-insensitive),  returns 10*x+y.
+ *	For "MAPxy" (case-insensitive), returns 100+10*x+y.
  *	For other names, returns 0.
  */
 int levelname2levelno (const char *name)
 {
-if (toupper (name[0]) == 'E'
- && isdigit (name[1])
- && name[1] != '0'
- && toupper (name[2]) == 'M'
- && isdigit (name[3])
- && name[3] != '0'
- && name[4] == '\0')
-   return 10*(name[1]-'0') + name[3]-'0';
-if (toupper (name[0]) == 'M'
- && toupper (name[1]) == 'A'
- && toupper (name[2]) == 'P'
- && isdigit (name[3])
- && isdigit (name[4])
- && name[5] == '\0')
-   return 100 + 10*(name[3]-'0') + name[4]-'0';
+const unsigned char *s = (const unsigned char *) name;
+if (toupper (s[0]) == 'E'
+ && isdigit (s[1])
+ && s[1] != '0'
+ && toupper (s[2]) == 'M'
+ && isdigit (s[3])
+ && s[3] != '0'
+ && s[4] == '\0')
+   return 10 * dectoi (s[1]) + dectoi (s[3]);
+if (toupper (s[0]) == 'M'
+ && toupper (s[1]) == 'A'
+ && toupper (s[2]) == 'P'
+ && isdigit (s[3])
+ && isdigit (s[4])
+ && s[5] == '\0')
+   return 100 + 10 * dectoi (s[3]) + dectoi (s[4]);
 return 0;
 }
 
+
+/*
+ *	levelno2levelname
+ *	Convert 
+ */
 
 /*
  *	spec_path
@@ -67,11 +73,11 @@ return 0;
  */
 const char *spec_path (const char *spec)
 {
-static char path[PATH_MAX+1];
+static char path[Y_PATH + 1];
 size_t n;
 
 *path = '\0';
-strncat (path, spec, PATH_MAX);
+strncat (path, spec, sizeof path - 1);
 for (n = strlen (path); n > 0 && ! al_fisps (path[n-1]); n--)
    ;
 path[n] = '\0';
@@ -133,17 +139,121 @@ return *filename == '/'
 
 
 /*
- *	hextoi
- *	Convert [0-9a-fA-F] char to integer.
- *	Returns -1 if char is not a hexadecimal digit.
+ *	y_stricmp
+ *	A case-insensitive strcmp()
+ *	(same thing as DOS stricmp() or GNU strcasecmp())
  */
-int hextoi (char c)
+int y_stricmp (const char *s1, const char *s2)
 {
-if (isdigit (c))
-   return c - '0';
-if (isalpha (c))
-   return toupper (c) - 'A' + 10;
-return -1;
+for (;;)
+   {
+   if (tolower (*s1) != tolower (*s2))
+      return (unsigned char) *s1 - (unsigned char) *s2;
+   if (! *s1)
+      if (! *s2)
+         return 0;
+      else
+	 return -1;
+   if (! *s2)
+      return 1;
+   s1++;
+   s2++;
+   }
+}
+
+
+/*
+ *	y_strnicmp
+ *	A case-insensitive strncmp()
+ *	(same thing as DOS strnicmp() or GNU strncasecmp())
+ */
+int y_strnicmp (const char *s1, const char *s2, size_t len)
+{
+while (len-- > 0)
+   {
+   if (tolower (*s1) != tolower (*s2))
+      return (unsigned char) *s1 - (unsigned char) *s2;
+   if (! *s1)
+      if (! *s2)
+         return 0;
+      else
+	 return -1;
+   if (! *s2)
+      return 1;
+   s1++;
+   s2++;
+   }
+return 0;
+}
+
+
+/*
+ *	y_snprintf
+ *	If available, snprintf(). Else sprintf().
+ */
+int y_snprintf (char *buf, size_t size, const char *fmt, ...)
+{
+va_list args;
+va_start (args, fmt);
+#ifdef Y_SNPRINTF
+return vsnprintf (buf, size, fmt, args);
+#else
+return vsprintf (buf, fmt, args);
+#endif
+}
+
+
+/*
+ *	y_vsnprintf
+ *	If available, vsnprintf(). Else vsprintf().
+ */
+int y_vsnprintf (char *buf, size_t size, const char *fmt, va_list args)
+{
+#ifdef Y_SNPRINTF
+return vsnprintf (buf, size, fmt, args);
+#else
+return vsprintf (buf, fmt, args);
+#endif
+}
+
+
+/*
+ *	is_one_of
+ *	Return non-zero if <s> is equal (in the strcmp() sense)
+ *	to one of the other strings (retrieved from the argument
+ *	list as const char *). The last string must be followed
+ *	by (const char *) 0.
+ */
+int is_one_of (const char *needle, ...)
+{
+  va_list args;
+  va_start (args, needle);
+  for (;;)
+  {
+    const char *haystack = va_arg (args, const char *);
+    if (haystack == Y_NULL)
+      break;
+    if (! strcmp (needle, haystack))
+      return 1;
+  }
+  return 0;
+}
+
+
+
+/*
+ *	file_exists
+ *	Check whether a file exists and is readable.
+ *	Returns non-zero if it is, 0 if it isn't.
+ */
+bool file_exists (const char *filename)
+{
+FILE *test;
+
+if ((test = fopen (filename, "rb")) == NULL)
+   return 0;
+fclose (test);
+return 1;
 }
 
 

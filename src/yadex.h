@@ -31,11 +31,11 @@ Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 
 
 // Sanity checks
-#if ! (defined(Y_BGI) ^ defined(Y_X11))
+#if ! (defined Y_BGI ^ defined Y_X11)
 #error "You must #define either Y_BGI or Y_X11"
 #endif
 
-#if ! (defined(Y_DOS) ^ defined(Y_UNIX))
+#if ! (defined Y_DOS ^ defined Y_UNIX)
 #error "You must #define either Y_DOS or Y_UNIX"
 #endif
 
@@ -49,6 +49,7 @@ Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 #include <stdarg.h>
 #include <ctype.h>
 #include <limits.h>
+#include <errno.h>
 #ifdef Y_DOS
 #include <alloc.h>
 #include <dos.h>
@@ -57,8 +58,6 @@ Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 #include <unistd.h>
 #define far
 #define huge
-#define stricmp    strcasecmp
-#define strnicmp   strncasecmp
 #define farmalloc  malloc
 #define farrealloc realloc
 #define farfree    free
@@ -79,6 +78,10 @@ Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 #include <graphics.h>
 #endif
 #include <atclib.h>
+#include "bitvec.h"  /* bv_set, bv_clear, bv_toggle */
+#include "yerror.h"
+#include "aym.h"     /* Needs yerror.h */
+#include "ymemory.h"
 
 
 /*
@@ -105,12 +108,25 @@ typedef signed   long  i32;
 
 
 /*
+ *	Platform definitions
+ */
+#if defined Y_DOS
+const int Y_PATH      = 64;	// Maximum length of a path
+const int Y_FILE_NAME = 255;	// Maximum length of file name, including path
+#elif defined Y_UNIX
+const int Y_PATH      = 255;
+const int Y_FILE_NAME = 255;
+#endif
+typedef char y_file_name_t[Y_FILE_NAME + 1];
+
+
+/*
  *	Constants of the universe.
  */
-#define HALFPI 1.5707963
-#define ONEPI  3.1415926
-#define TWOPI  6.2831852
-#define ANSWER 42
+const double HALFPI = 1.5707963;
+const double ONEPI  = 3.1415926;
+const double TWOPI  = 6.2831852;
+const double ANSWER = 42;
 
 
 /*
@@ -119,6 +135,7 @@ typedef signed   long  i32;
 //#ifndef Y_X11	// X11/Xlib.h already defines it !
 typedef int Bool;	// Boolean data: true or false
 //#endif
+const char *const Y_NULL = 0;  // NULL (const char *)
 
 
 /*
@@ -127,27 +144,29 @@ typedef int Bool;	// Boolean data: true or false
 class rgb_c;
 
 
+#include "wstructs.h"
+
+
 /*
  *	Doom definitions
- *	Things about the Doom engine and the wad file format.
+ *	Things about the Doom engine
  *	FIXME should move as much of this as possible to the ygd file...
+ *	FIXME Hexen has a different value for MIN_DEATHMATH_STARTS
  */
-#define DOOM_PLAYER_HEIGHT          56
-#define DOOM_FLAT_WIDTH             64
-#define DOOM_FLAT_HEIGHT            64
-#define DOOM_MIN_DEATHMATCH_STARTS  4
-#define DOOM_COLOURS                256
+const int DOOM_PLAYER_HEIGHT         = 56;
+const int DOOM_FLAT_WIDTH            = 64;
+const int DOOM_FLAT_HEIGHT           = 64;
+const int DOOM_MIN_DEATHMATCH_STARTS = 4;
+const int DOOM_MAX_DEATHMATCH_STARTS = 10;
+const int DOOM_COLOURS               = 256;
+typedef enum { YGPF_NORMAL, YGPF_ALPHA, YGPF_PR } ygpf_t;
+typedef enum { YGTF_NORMAL, YGTF_ALPHA04 } ygtf_t;
+typedef enum { YGTL_TEXTURE1, YGTL_TEXTURES } ygtl_t;
 
-/* The directory structure is the structure used by DOOM to order the
-   data in it's wad files. */
-typedef struct Directory huge *DirPtr;
-struct Directory
-   {
-   i32  start;			// Offset to start of data
-   i32  size;			// Byte size of data
-   char name[8];		// Name of data block
-   };
 
+/*
+ *	Directory
+ */
 /* The wad file pointer structure is used for holding the information
    on the wad files in a linked list.
    The first wad file is the main wad file. The rest are patches. */
@@ -157,10 +176,12 @@ struct WadFileInfo
    WadPtr next;			// Next file in linked list
    char *filename;		// Name of the wad file
    FILE *fd;			// C file stream information
+   bool error;			// Read or write error occurred
    char type[4];		// Type of wad file ("IWAD" or "PWAD")
    i32  dirsize;		// Directory size of wad
    i32  dirstart;		// Offset to start of directory
    DirPtr directory;		// Array of directory information
+   ygpf_t pic_format;		// Picture format (usually PF_NORMAL)
    };
 
 /* The master directory structure is used to build a complete directory
@@ -265,12 +286,20 @@ typedef struct
    int height;       // [returned] Height of image
    int npatches;     // [returned] Textures only : number of patches
    } hookfunc_comm_t;
-#define HOOK_DRAWN       0x0001  // image is completely drawn
-#define HOOK_SIZE_VALID  0x0002  // width and height are valid
-#define HOOK_DISP_SIZE   0x0004  // caller should display "widthxheight"
+const int HOOK_DRAWN      = 1 << 0;	// image is completely drawn
+const int HOOK_SIZE_VALID = 1 << 1;	// width and height are valid
+const int HOOK_DISP_SIZE  = 1 << 2;	// caller should display "widthxheight"
+const int HOOK_SPECTRAL   = 1 << 3;	// Render picture with a spectral look
 
 // The actual definition is in selectn.h
 typedef struct SelectionList *SelPtr;
+// Operations on the selection :
+typedef enum
+{
+  YS_ADD    = BV_SET,	// Add to selection
+  YS_REMOVE = BV_CLEAR,	// Remove from selection
+  YS_TOGGLE = BV_TOGGLE	// If not in selection, add; else, remove
+} sel_op_t;
 
 // Confirmation options are stored internally this way :
 typedef enum
@@ -278,7 +307,7 @@ typedef enum
    YC_YES      = 'y',
    YC_NO       = 'n',
    YC_ASK      = 'a',
-   YC_ASK_ONCE = 'o',
+   YC_ASK_ONCE = 'o'
    } confirm_t;
 
 // Bit bashing operations
@@ -300,11 +329,11 @@ extern const char *const log_file;        // "yadex.log"
 extern const char *const msg_unexpected;  // "unexpected error"
 extern const char *const msg_nomem;       // "Not enough memory"
 
-// Convert screen coordinates to map coordinates
+// Convert screen/window coordinates to map coordinates
 #define MAPX(x)		(OrigX + (int) (((x) - ScrCenterX) / Scale))
 #define MAPY(y)		(OrigY + (int) ((ScrCenterY - (y)) / Scale))
 
-// Convert map coordinates to screen coordinates
+// Convert map coordinates to screen/window coordinates
 #define SCREENX(x)	(ScrCenterX + (int) (((x) - OrigX) * Scale))
 #define SCREENY(y)	(ScrCenterY + (int) ((OrigY - (y)) * Scale))
 
@@ -322,6 +351,7 @@ extern const char *const msg_nomem;       // "Not enough memory"
 #define OBJ_BLOCKMAP	10
 
 // Special object numbers */
+typedef i16 obj_no_t;
 #define OBJ_NO_NONE    -1
 #define OBJ_NO_CANVAS  -2
 #define is_obj(n)      ((n) >= 0)
@@ -355,7 +385,7 @@ extern char error_invalid[1];     // Invalid parameter
  *	Interfile global variables
  */
 
-// Defined in yadex.c
+// Defined in yadex.cc
 extern const char *install_dir; 	// Where yadex is installed
 extern FILE *logfile;			// Filepointer to the error log
 extern Bool  Registered;		// Registered or shareware iwad ?
@@ -367,31 +397,39 @@ extern int remind_to_build_nodes;	// Remind the user to build nodes
 extern int   autoscroll;	// Autoscrolling enabled.
 extern int   autoscroll_amp;	// Amplitude in percents of screen/window size.
 extern int   autoscroll_edge;	// Max. dist. in pixels to edge.
-extern char *config_file;	// Name of the configuration file
+extern const char *config_file;	// Name of the configuration file
 extern int   copy_linedef_reuse_sidedefs;
+extern int   cpu_big_endian;	// Am I running on a big-endian CPU ?
 extern Bool  Debug;			// Are we debugging?
-extern int   default_ceiling_height;	// For new sectors
-extern char  default_ceiling_texture[9];// For new sectors
-extern int   default_floor_height;	// For new sectors
-extern char  default_floor_texture[9];	// For new sectors
-extern int   default_light_level;	// For new sectors
-extern char  default_lower_texture[9];	// For new linedefs
-extern char  default_middle_texture[9];	// For new linedefs
-extern int   default_thing;		// For new THINGS
-extern char  default_upper_texture[9];	// For new linedefs
+extern int   default_ceiling_height;			// For new sectors
+extern char  default_ceiling_texture[WAD_FLAT_NAME + 1];// For new sectors
+extern int   default_floor_height;			// For new sectors
+extern char  default_floor_texture[WAD_FLAT_NAME + 1];	// For new sectors
+extern int   default_light_level;			// For new sectors
+extern char  default_lower_texture[WAD_TEX_NAME + 1];	// For new linedefs
+extern char  default_middle_texture[WAD_TEX_NAME + 1];	// For new linedefs
+extern int   default_thing;				// For new THINGS
+extern char  default_upper_texture[WAD_TEX_NAME + 1];	// For new linedefs
 extern int   double_click_timeout;// Max ms between clicks of double click.
 extern Bool  Expert;		// Don't ask for confirmation for some ops.
-extern char *Game;		// Name of game ("doom", "doom2" or "heretic")
+extern const char *Game;	// Name of game "doom", "doom2", "heretic", ...
 extern int   grid_pixels_min;   // Minimum grid step in pixels when not locked
 extern int   GridMin;	 	// Minimum grid step in map units
 extern int   GridMax;		// Maximum grid step in map units
+extern int   idle_sleep_ms;	// Time to sleep after empty XPending()
 extern int   InitialScale;	// Initial zoom factor for map
 extern confirm_t insert_vertex_merge_vertices;
 extern confirm_t insert_vertex_split_linedef;
-extern char *Iwad1;		// Name of the Doom iwad
-extern char *Iwad2;		// Name of the Doom II iwad
-extern char *Iwad3;		// Name of the Heretic iwad
-extern char *MainWad;	        // Name of the main wad file
+extern const char *Iwad1;	// Name of the Doom iwad
+extern const char *Iwad2;	// Name of the Doom II iwad
+extern const char *Iwad3;	// Name of the Heretic iwad
+extern const char *Iwad4;	// Name of the Hexen iwad
+extern const char *Iwad5;	// Name of the Strife iwad
+extern const char *Iwad6;	// Name of the Doom alpha 0.2 iwad
+extern const char *Iwad7;	// Name of the Doom alpha 0.4 iwad
+extern const char *Iwad8;	// Name of the Doom alpha 0.5 iwad
+extern const char *Iwad9;	// Name of the Doom press release iwad
+extern const char *MainWad;	// Name of the main wad file
 #ifdef AYM_MOUSE_HACKS
 extern int   MouseMickeysH; 
 extern int   MouseMickeysV; 
@@ -411,22 +449,22 @@ extern int   vertex_fudge;	// How near to a vertex you need to be to
 				// highlight it, in percents of its radius.
 extern int   welcome_message;	// Print the welcome message on startup.
 
-// Defined in gfx.c
-extern int   ScrMaxX;		// Maximum X screen coord
-extern int   ScrMaxY;		// Maximum Y screen coord
+// Defined in gfx.cc
+extern int   ScrMaxX;		// Maximum display X-coord of screen/window
+extern int   ScrMaxY;		// Maximum display Y-coord of screen/window
 extern float Scale;		// Scale to draw map 20 to 1
 
-// Defined in wads.c
+// Defined in wads.cc
 extern WadPtr  WadFileList;	// List of wad files
 extern MDirPtr MasterDir;	// The master directory
 
-// Defined in edit.c
+// Defined in edit.cc
 extern Bool InfoShown;          // Is the bottom line displayed?
 
-// Defined in mouse.c
-#if defined(Y_BGI)
+// Defined in mouse.cc
+#if defined Y_BGI
 extern Bool UseMouse;		// Is there a mouse driver?
-#elif defined(Y_X11)
+#elif defined Y_X11
 #define UseMouse 1
 #endif
 
@@ -437,41 +475,23 @@ extern Bool UseMouse;		// Is there a mouse driver?
  *	I had to recompile _all_ the modules every time I changed
  *	a single prototype. To avoid this, my theory is to put all
  *	the prototypes I can in individual headers. There is still
- *	room for improvement for that matter...
+ *	room for improvement on that matter...
  */
 
-/* aym.c */
-#if !defined(PATH_MAX)
-#define PATH_MAX 64
-#endif
-int levelname2levelno (const char *name);
-const char *spec_path (const char *spec);
-int fncmp (const char *name1, const char *name2);
-int is_absolute (const char *filename);
-int hextoi (char c);
-
-/* checks.c (previously in editobj.c) */
+/* checks.cc (previously in editobj.cc) */
 void CheckLevel (int, int, int pulldown); /* SWAP! */
 Bool CheckStartingPos (void); /* SWAP! */
 
-/* colour1.c */
+/* colour1.cc */
 int getcolour (const char *s, rgb_c *rgb);
 
-/* colour2.c */
+/* colour2.cc */
 int rgb2irgb (int r, int g, int b);
 
-/* colour3.c */
+/* colour3.cc */
 void irgb2rgb (int c, rgb_c *rgb);
 
-/* yadex.c */
-int main (int, char *[]);
-void Beep (void);
-void PlaySound (int, int);
-void fatal_error (const char *fmt, ...);
-void report_error (const char *fmt, ...);
-void LogMessage (const char *, ...);
-
-/* editobj.c */
+/* editobj.cc */
 int InputObjectNumber (int, int, int, int);
 int InputObjectXRef (int, int, int, Bool, int);
 Bool Input2VertexNumbers (int, int, const char *, int *, int *);
@@ -479,19 +499,19 @@ void EditObjectsInfo (int, int, int, SelPtr);
 void InsertStandardObject (int, int, int choice); /* SWAP! */
 void MiscOperations (int, SelPtr *, int choice); /* SWAP! */
 
-/* game.c */
+/* game.cc */
 void InitGameDefs (void);
 void LoadGameDefs (const char *game);
 void FreeGameDefs (void);
 
-/* geom.c */
+/* geom.cc */
 unsigned ComputeAngle (int, int);
 unsigned ComputeDist (int, int);
 
-/* gfx.c */
+/* gfx.cc */
 void set_colour (acolour_t);
 void SetLineThickness (int thick);
-void SetDrawingMode (int xor);
+void SetDrawingMode (int _xor);
 void DrawMapCircle (int, int, int);
 void DrawMapLine (int mapx1, int mapy1, int mapx2, int mapy2);
 void DrawMapVector (int, int, int, int);
@@ -504,53 +524,48 @@ void DrawScreenBoxHollow (int x0, int y0, int x1, int y1, acolour_t colour);
 void draw_box_border (int x, int y, int width, int height,
    int thickness, int raised);
 void DrawScreenText (int, int, const char *, ...);
+void DrawScreenString (int, int, const char *);
 void DrawPointer (Bool);
 
-/* input.c */
+/* input.cc */
 #include "input.h"
 
-/* l_align.c (previously in objects.c) */
+/* l_align.cc (previously in objects.cc) */
 void AlignTexturesY (SelPtr *); /* SWAP! */
 void AlignTexturesX (SelPtr *); /* SWAP! */
 
-/* l_misc.c (previously in objects.c) */
+/* l_misc.cc (previously in objects.cc) */
 void FlipLineDefs (SelPtr, Bool); /* SWAP! */
 void SplitLineDefs (SelPtr); /* SWAP! */
 void MakeRectangularNook (SelPtr obj, int width, int depth, int convex); /* SWAP! */
 void SetLinedefLength (SelPtr obj, int length, int move_2nd_vertex);
 
-/* l_prop.c (previously in editobj.c) */
+/* l_prop.cc (previously in editobj.cc) */
 void LinedefProperties (int x0, int y0, SelPtr obj);
 
-/* l_unlink.c */
+/* l_unlink.cc */
 void unlink_sidedef (SelPtr linedefs, int side1, int side2);
 
-/* levels.c */
-void ReadLevelData (const char *); /* SWAP! */
+/* levels.cc */
+int ReadLevelData (const char *); /* SWAP! */
 void ForgetLevelData (void); /* SWAP! */
-void SaveLevelData (const char *); /* SWAP! */
+int SaveLevelData (const char *, const char *level_name); /* SWAP! */
 void ReadWTextureNames (void);
 void ForgetFTextureNames (void);
+int is_flat_name_in_list (const char *name);
 void ReadFTextureNames (void);
 void ForgetWTextureNames (void);
 
-/* list.c */
+/* list.cc */
 void InputNameFromListWithFunc (int, int, const char *, int,
    const char *const *, int, char *, int, int,
-   void (*hookfunc)(hookfunc_comm_t *));
+   void (*hookfunc)(hookfunc_comm_t *),
+   char flags_to_pass_to_callback = 0);
 void InputNameFromList (int, int, const char *, int, const char *const *,
    char *);
 
-/* memory.c */
-void *GetMemory (unsigned long size);
-void *ResizeMemory (void *, unsigned long size);
-void FreeMemory (void *);
-void huge *GetFarMemory (unsigned long size);
-void huge *ResizeFarMemory (void huge *old, unsigned long size);
-void FreeFarMemory (void huge *);
-
-/* mouse.c (this module is entirely DOS-specific) */
-#if defined(Y_BGI)
+/* mouse.cc (this module is entirely DOS-specific) */
+#if defined Y_BGI
 void CheckMouseDriver (void);
 void ShowMousePointer (void);
 void HideMousePointer (void);
@@ -559,7 +574,7 @@ void SetMouseCoords (int, int);
 void SetMouseLimits (int, int, int, int);
 void ResetMouseLimits (void);
 void MouseCallBackFunction (void);
-#elif defined(Y_X11)
+#elif defined Y_X11
 #define CheckMouseDriver nop
 #define ShowMousePointer nop
 #define HideMousePointer nop
@@ -569,7 +584,7 @@ void MouseCallBackFunction (void);
 #define ResetMouseLimits nop
 #endif
 
-/* names.c */
+/* names.cc */
 const char *GetObjectTypeName (int);
 const char *GetEditModeName (int);
 const char *GetLineDefTypeName (int);
@@ -579,12 +594,12 @@ const char *GetLineDefFlagsLongName (int);
 const char *GetSectorTypeName (int);
 const char *GetSectorTypeLongName (int);
 
-/* nop.c */
+/* nop.cc */
 void nop (...);
 
-/* objects.c */
+/* objects.cc */
 void HighlightSelection (int, SelPtr); /* SWAP! */
-int GetMaxObjectNum (int);
+obj_no_t GetMaxObjectNum (int);
 int GetCurObject (int objtype, int x, int y, int radius); /* SWAP! */
 void SelectObjectsInBox (SelPtr *list, int, int, int, int, int); /* SWAP! */
 void HighlightObject (int, int, int); /* SWAP! */
@@ -598,80 +613,90 @@ Bool MoveObjectsToCoords (int, SelPtr, int, int, int); /* SWAP! */
 void GetObjectCoords (int, int, int *, int *); /* SWAP! */
 int FindFreeTag (void); /* SWAP! */
 
-/* s_door.c (previously in objects.c) */
+/* s_door.cc (previously in objects.cc) */
 void MakeDoorFromSector (int); /* SWAP! */
 
-/* s_lift.c (previously in objects.c) */
+/* s_lift.cc (previously in objects.cc) */
 void MakeLiftFromSector (int); /* SWAP! */
 
-/* s_merge.c (previously in objects.c */
+/* s_merge.cc (previously in objects.cc) */
 void MergeSectors (SelPtr *); /* SWAP! */
 void DeleteLineDefsJoinSectors (SelPtr *); /* SWAP! */
 
-/* s_misc.c (previously in objects.c) */
+/* s_misc.cc (previously in objects.cc) */
 void DistributeSectorFloors (SelPtr); /* SWAP! */
 void DistributeSectorCeilings (SelPtr); /* SWAP! */
 void RaiseOrLowerSectors (SelPtr obj);
 void BrightenOrDarkenSectors (SelPtr obj);
 
-/* s_prop.c (previously in editobj.c) */
+/* s_prop.cc (previously in editobj.cc) */
 void SectorProperties (int x0, int y0, SelPtr obj);
 
-/* s_split.c (previously in objects.c) */
+/* s_split.cc (previously in objects.cc) */
 void SplitSector (int, int); /* SWAP! */
 void SplitLineDefsAndSector (int, int); /* SWAP! */
 
-/* swapmem.c */
+/* swapmem.cc */
 void InitSwap (void);
 void FreeSomeMemory (void);
 void ObjectsNeeded (int, ...);
 
-/* scrnshot.c */
+/* scrnshot.cc */
 void ScreenShot (void);
 
-/* srcdate.c */
-extern const char *const yadex_version;
-extern const char *const yadex_source_date;
-
+/* selrect.cc */
 /* t_prop.c (previously in editobj.c) */
 void ThingProperties (int x0, int y0, SelPtr obj);
 
-/* textures.c */
+/* textures.cc */
 void DisplayPic (hookfunc_comm_t *c);
 void ChooseWallTexture (int, int, const char *, int, char **, char *);
 void GetWallTextureSize (i16 *, i16 *, const char *);
 
-/* v_merge.c */
+/* v_merge.cc */
 void DeleteVerticesJoinLineDefs (SelPtr ); /* SWAP! */
 void MergeVertices (SelPtr *); /* SWAP! */
 Bool AutoMergeVertices (SelPtr *, int obj_type, char operation); /* SWAP! */
 
-/* v_polyg.c */
+/* v_polyg.cc */
 void InsertPolygonVertices (int, int, int, int);
 
-/* verbmsg.c */
+/* verbmsg.cc */
 void verbmsg (const char *fmt, ...);
 
-/* wads.c */
+/* version.cc */
+extern const char *const yadex_version;
+extern const char *const yadex_source_date;
+
+/* wads.cc */
 void OpenMainWad (const char *);
 void OpenPatchWad (const char *);
 void CloseWadFiles (void);
 void CloseUnusedWadFiles (void);
-WadPtr BasicWadOpen (const char *);
+WadPtr BasicWadOpen (const char *, ygpf_t pic_format);
 void wad_read_bytes (WadPtr wadfile, void huge *buf, long count);
 long wad_read_bytes2 (WadPtr wadfile, void huge *buf, long count);
 void wad_seek (WadPtr, long);
+int  wad_seek2 (WadPtr wadfile, long offset);
 MDirPtr FindMasterDir (MDirPtr, const char *);
+MDirPtr FindMasterDir (MDirPtr, const char *, const char *);
 void ListMasterDirectory (FILE *);
 void ListFileDirectory (FILE *, WadPtr);
 void BuildNewMainWad (const char *, Bool);
 void WriteBytes (FILE *, const void huge *, long);
 void CopyBytes (FILE *, FILE *, long);
-int Exists (const char *);
 void DumpDirectoryEntry (FILE *, const char *);
 void SaveDirectoryEntry (FILE *, const char *);
 void SaveEntryToRawFile (FILE *, const char *);
 void SaveEntryFromRawFile (FILE *, FILE *, const char *);
 int entryname_cmp (const char *entry1, const char *entry2);
 
+/* warning.cc */
+void warn (const char *fmt, ...);
+
+/* yadex.cc */
+int main (int, char *[]);
+void Beep (void);
+void PlaySound (int, int);
+void LogMessage (const char *, ...);
 

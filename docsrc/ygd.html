@@ -1,0 +1,202 @@
+<html>
+<head>
+<title>Yadex game definition files</title>
+</head>
+<body>
+
+<div align="center">
+<img src="logo_small.png" alt="Fancy logo">
+<br>Yadex $VERSION ($SOURCE_DATE)
+<h1>Yadex game definition files</h1>
+</div>
+<br>
+<br>
+<br>
+
+	<h2>Magic string</h2>
+
+<p>A file is a valid Yadex game definition file if its first
+line contains exactly the following characters&nbsp;:
+"<code>#&nbsp;Yadex&nbsp;game&nbsp;definition&nbsp;file&nbsp;version&nbsp;2</code>"
+(without the double quotes).
+
+	<h2>Contents</h2>
+
+<p>The contents are pretty self explanatory. Some things worth
+noting&nbsp;:
+
+<dl>
+<p><dt><strong><code>ldt</code></strong>
+
+<p><dd>Defines a linedef type.
+
+<p><dt><strong><code>ldtgroup</code></strong>
+
+<p><dd>Defines a group of linedef types.
+
+<p><dt><strong><code>level_format</code></strong>
+
+<p><dd>Indicates the format in which levels are stored in the
+wad. There is only one argument. It can have the following
+values&nbsp;:
+
+  <p><table border>
+  <tr>
+    <th>Value
+    <th>Meaning
+  <tr>
+    <td valign="top"><code>alpha</code>
+    <td>Doom alpha format, 7 directory entries per level (label,
+    <code>FLATNAME</code>, <code>POINTS</code>,
+    <code>LINES</code>, <code>SECTORS</code> and
+    <code>THINGS</code>).
+  <tr>
+    <td valign="top"><code>doom</code>
+    <td>Normal Doom format, 11 directory entries per level (label,
+    <code>THINGS</code>, <code>LINEDEFS</code>,
+    <code>SIDEDEFS</code>, <code>VERTEXES</code>,
+    <code>SEGS</code>, <code>SSECTORS</code>, <code>NODES</code>,
+    <code>SECTORS</code>, <code>REJECT</code> and
+    <code>BLOCKMAP</code>).
+  <tr>
+    <td valign="top"><code>hexen</code>
+    <td>Hexen format, 12 directory entries per level (same as for
+    <code>doom</code> then <code>BEHAVIOR</code>).
+  </table>
+
+<p>Reading is supported for all formats but writing is supported
+only for <code>doom</code>.
+
+<p>This directive is mandatory. If there are several
+<code>level_format</code> directives, it's the last one that
+counts.
+
+<p><dt><strong><code>level_name</code></strong>
+
+<p><dd>Indicates whether the level names for that game are of
+the form <code>E<var>n</var>M<var>n</var></code> or of the form
+<code>MAP<var>nm</var></code>. There is only one argument. It
+can have the following values&nbsp;:
+
+  <p><table border>
+  <tr>
+    <th>Value
+    <th>Meaning
+  <tr>
+    <td valign="top"><code>e1m1</code>
+    <td><code>E<var>n</var>M<var>m</var></code> (Doom, Doom
+    press release and Heretic).
+  <tr>
+    <td valign="top"><code>e1m10</code>
+    <td><code>E<var>n</var>M<var>m</var></code> or
+    <code>E<var>i</var>M<var>jk</var></code> (Doom alpha only)
+  <tr>
+    <td valign="top"><code>map01</code>
+    <td><code>MAP<var>nm</var></code> (Doom II, Hexen and
+    Strife).
+  </table>
+
+<p>The influence of this directive on the behaviour of Yadex is
+in the choice of the default name for new levels and the way
+shorthand arguments to the <code>edit</code> and
+<code>create</code> commands are interpreted.
+
+<p>This directive is mandatory. If there are several
+<code>level_name</code> directives, it's the last one that
+counts.
+
+<p><dt><strong><code>picture_format</code></strong>
+
+<p><dd>Indicates in which format the pictures are stored in the
+wads. There is only one argument. It can have the following
+values&nbsp;:
+
+  <p><table border>
+  <tr>
+    <th>Value
+    <th>Meaning
+  <tr>
+    <td valign="top"><code>alpha</code>
+    <td>The obsolete format used in Doom alpha 0.2, 0.4 and 0.5.
+  <tr>
+    <td valign="top"><code>pr</code>
+    <td>The obsolete format used in the Doom press release pre-beta.
+  <tr>
+    <td valign="top"><code>normal</code>
+    <td>The normal format used by all other iwads.
+  </table>
+
+<p>This directive is optional. If it's missing, the default is
+<code>normal</code>. If it's repeated, it's the last occurrence
+that counts.
+
+<p><dt><strong><code>st</code></strong>
+
+<p><dd>Defines a sector type.
+
+<p><dt><strong><code>texture_format</code></strong>
+
+<p><dd>Indicates in which format the textures are stored in the
+wads. There is only one argument. It can have the following
+values&nbsp;:
+
+  <p><table border>
+  <tr>
+    <th>Value
+    <th>Meaning
+  <tr>
+    <td valign="top"><code>alpha04</code>
+    <td>The obsolete format used in Doom alpha 0.4 (no texture
+    names).
+  <tr>
+    <td valign="top"><code>normal</code>
+    <td>The normal format used by all other iwads.
+  </table>
+
+<p>This directive is optional. If it's missing, the default is
+<code>normal</code>. If it's repeated, it's the last occurrence
+that counts.
+
+<p><dt><strong><code>texture_lumps</code></strong>
+
+<p><dd>Indicates in which lump(s) is the list of textures for
+that game. There is only one argument. It can have the following
+values&nbsp;:
+
+  <p><table border>
+  <tr>
+    <th>Value
+    <th>Meaning
+  <tr>
+    <td valign="top"><code>textures</code>
+    <td>There is only one lump and it's called
+    <code>TEXTURES</code> (Doom alpha only).
+  <tr>
+    <td valign="top"><code>texture1</code>
+    <td>There is <code>TEXTURE1</code> and optionally
+    <code>TEXTURE2</code> (all other iwads).
+  </table>
+
+<p>This directive is optional. If it's missing, the default is
+<code>texture1</code>. If it's repeated, it's the last
+occurrence that counts.
+
+<p><dt><strong><code>thing</code></strong>
+
+<p><dd>Provides the information relative to a thing number. The
+"<code>flags</code>" field can be either "<code>s</code>" for
+things that have a spectral look (that is spectres) and
+"<code>-</code>" for the others.
+
+<p><dt><strong><code>thinggroup</code></strong>
+
+<p><dd>All things defined through the <code>thing</code>
+directive must belong to a thing group. The
+<code>thinggroup</code> directive is used to define a thing
+group.
+
+</dl>
+
+<p><hr>AYM $SELF_DATE
+</body>
+</html>

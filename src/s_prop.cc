@@ -55,7 +55,7 @@ static const char *PrintSt (void *ptr);
 void SectorProperties (int x0, int y0, SelPtr obj)
 {
 char  *menustr[30];
-char   texname[9];
+char   texname[WAD_FLAT_NAME + 1];
 int    n, val;
 SelPtr cur;
 int    subwin_y0;
@@ -67,10 +67,10 @@ sprintf (menustr[0], "Change floor height     (Current: %d)",
 	Sectors[obj->objnum].floorh);
 sprintf (menustr[1], "Change ceiling height   (Current: %d)",
 	Sectors[obj->objnum].ceilh);
-sprintf (menustr[2], "Change floor texture    (Current: %.8s)",
-	Sectors[obj->objnum].floort);
-sprintf (menustr[3], "Change ceiling texture  (Current: %.8s)",
-	Sectors[obj->objnum].ceilt);
+sprintf (menustr[2], "Change floor texture    (Current: %.*s)",
+	WAD_FLAT_NAME, Sectors[obj->objnum].floort);
+sprintf (menustr[3], "Change ceiling texture  (Current: %.*s)",
+	WAD_FLAT_NAME, Sectors[obj->objnum].ceilt);
 sprintf (menustr[4], "Change light level      (Current: %d)",
 	Sectors[obj->objnum].light);
 sprintf (menustr[5], "Change type             (Current: %d)",
@@ -104,33 +104,47 @@ case 2:
       }
    break;
 case 3:
+   {
    *texname = '\0';
-   strncat (texname, Sectors[obj->objnum].floort, 8);
+   strncat (texname, Sectors[obj->objnum].floort, WAD_FLAT_NAME);
    ObjectsNeeded (0);
+   char **flat_names =
+      (char **) GetMemory (NumFTexture * sizeof *flat_names);
+   for (size_t n = 0; n < NumFTexture; n++)
+      flat_names[n] = flat_list[n].name;
    ChooseFloorTexture (x0 + 42, subwin_y0, "Choose a floor texture",
-     NumFTexture, FTexture, texname);
+     NumFTexture, flat_names, texname);
+   FreeMemory (flat_names);
    ObjectsNeeded (OBJ_SECTORS, 0);
    if (strlen (texname) > 0)
       {
       for (cur = obj; cur; cur = cur->next)
-	 strncpy (Sectors[cur->objnum].floort, texname, 8);
+	 strncpy (Sectors[cur->objnum].floort, texname, WAD_FLAT_NAME);
       MadeChanges = 1;
       }
    break;
+   }
 case 4:
+   {
    *texname = '\0';
-   strncat (texname, Sectors[obj->objnum].ceilt, 8);
+   strncat (texname, Sectors[obj->objnum].ceilt, WAD_FLAT_NAME);
    ObjectsNeeded (0);
+   char **flat_names =
+      (char **) GetMemory (NumFTexture * sizeof *flat_names);
+   for (size_t n = 0; n < NumFTexture; n++)
+      flat_names[n] = flat_list[n].name;
    ChooseFloorTexture (x0 + 42, subwin_y0, "Choose a ceiling texture",
-     NumFTexture, FTexture, texname);
+     NumFTexture, flat_names, texname);
+   FreeMemory (flat_names);
    ObjectsNeeded (OBJ_SECTORS, 0);
    if (strlen (texname) > 0)
       {
       for (cur = obj; cur; cur = cur->next)
-	 strncpy (Sectors[cur->objnum].ceilt, texname, 8);
+	 strncpy (Sectors[cur->objnum].ceilt, texname, WAD_FLAT_NAME);
       MadeChanges = 1;
       }
    break;
+   }
 case 5:
    val = InputIntegerValue (x0 + 42, subwin_y0, 0, 255,
      Sectors[obj->objnum].light);
@@ -188,7 +202,7 @@ static const char *PrintSt (void *ptr)
 static char buf[100];
 
 if (ptr == NULL)
-  fatal_error ("PLD1");
+  return "PrintSt: (null)";
 sprintf (buf, "[%2d] %.70s",
  ((stdef_t *)ptr)->number,
  ((stdef_t *)ptr)->longdesc);

@@ -46,7 +46,7 @@ extern const colour_pair_t menu_colour[2][2];
 typedef enum
   {
   MEN_GRAY = 0x01,  /* This menu item is grayed out */
-  MEN_TICK = 0x02,  /* This menu item can be "ticked", boolean expr follows */
+  MEN_TICK = 0x02   /* This menu item can be "ticked", boolean expr follows */
   } menu_flags_t;
 
 // Values returned by process_event()
@@ -64,7 +64,7 @@ class menu_c : public edwidget_c
 /*
  *	Ctors
  */
-inline menu_c () { memset (this, 0, sizeof *this); }
+menu_c () { memset (this, 0, sizeof *this); }
 
 menu_c (const char *title, ...);
 
@@ -104,13 +104,13 @@ void set_title (const char *title);
 
 // Set the current item (the first item having number 0).
 // By default the current item is set to 0 after creation.
-inline void set_item_no (int item_no) { line = item_no; }
+void set_item_no (int item_no) { line = item_no; }
 
 // Set (or clear) the popup flag.
 // If the <popup> flag is set, the title of the menu is shown,
 // and button releases are treated differently.
 // By default, the popup flag is not set.
-inline void set_popup (int popup)
+void set_popup (int popup)
    {
    if (!! popup != !! this->popup)
       need_geom = 1;  // Force geom() to be called
@@ -123,7 +123,7 @@ inline void set_popup (int popup)
 //   nor recognized,
 // - the items are numbered [0-9A-Z] and can be selected by
 //   pressing the corresponding key.
-inline void set_force_numbers (int force_numbers)
+void set_force_numbers (int force_numbers)
    {
    if (!! force_numbers != !! this->force_numbers)
       need_geom = 1;  // Force geom() to be called.
@@ -131,7 +131,7 @@ inline void set_force_numbers (int force_numbers)
    }
 
 // Whether the widget should be visible.
-inline void set_visible (int visible) { this->visible = visible; }
+void set_visible (int visible) { this->visible = visible; }
 
 // Tick or untick a menu item.
 void set_ticked (int item_no, int ticked);
@@ -150,21 +150,21 @@ int last_shortcut_key ();
  *	Widget functions
  */
 void draw ();
-inline void undraw () { }  // I can't undraw myself
-inline int can_undraw () { return 0; }  // I can't undraw myself
+void undraw () { }  // I can't undraw myself
+int can_undraw () { return 0; }  // I can't undraw myself
 
-inline int need_to_clear ()
+int need_to_clear ()
    {
    return ! visible && visible_disp || need_geom;
    }
 
-inline void clear () { visible_disp = 0; }
-inline int req_width () { if (need_geom) geom (); return width; }
-inline int req_height () { if (need_geom) geom ();  return height; }
-inline int get_x0 () { return ox0_disp; }
-inline int get_y0 () { return oy0_disp; }
-inline int get_x1 () { return ox0_disp + width_disp - 1; }
-inline int get_y1 () { return oy0_disp + height_disp - 1; }
+void clear () { visible_disp = 0; }
+int req_width () { if (need_geom) geom (); return width; }
+int req_height () { if (need_geom) geom ();  return height; }
+int get_x0 () { return ox0_disp; }
+int get_y0 () { return oy0_disp; }
+int get_x1 () { return ox0_disp + width_disp - 1; }
+int get_y1 () { return oy0_disp + height_disp - 1; }
 
 	private :
 

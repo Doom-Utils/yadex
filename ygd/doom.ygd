@@ -1,13 +1,15 @@
-# Yadex game definition file version 1
+# Yadex game definition file version 2
 #
-#	heretic.ygd
-#	Yadex Game Definitions for Heretic
-#	AYM 1998-10-20
+#	doom.ygd
+#	Yadex Game Definitions for Doom and Ultimate Doom
+#	AYM 1998-01-29
 #
 
-#	ATTENTION: as I'm not familiar with Heretic editing,
-#	this file probably contains errors and omissions.
-#	Anyway, the sprite names are missing.
+level_format    doom
+level_name      e1m1
+picture_format  normal
+texture_format  normal
+texture_lumps   texture1
 
 #
 #	Definition of linedef type groups
@@ -179,6 +181,8 @@ ldt 138 L "SR Light to 255"  "SR  Light level goes to 255 [v1.6]"
 ldt 139 L "SR Light to 0"    "SR  Light level goes to 0 [v1.6]"
 ldt 140 F "S1 Floor up 512"  "S1  Raise floor by 512, medium speed [v1.6]"
 ldt 141 C "W1& Crush SS sil" "W1& Start slow crushing, slow hurt, silent [v1.6]"
+ldt 271 x "-- Xfer sky"      "--  Xfer straight upper to sky tex. [MBF]"
+ldt 272 x "-- Xfer mir. sky" "--  Xfer mirrored upper to sky tex. [MBF]"
 
 #
 #	Definition of sector types
@@ -192,7 +196,6 @@ st  2 "  Flashes 2 Hz" "  Light flashes 2 Hz"
 st  3 "  Flashes 1 Hz" "  Light flashes 1 Hz"
 st  4 "P -20% & 2Hz"   "P -10/20% health, flashes 2 Hz"
 st  5 "P -10% health"  "P -5/10% health"
-st  6 "? Crush raise"  "? Ceiling crush and raise"
 st  7 "P -5% health"   "P -2/5% health"
 st  8 "  Oscillates"   "  Light oscillates"
 st  9 "P Secret"       "P Secret"
@@ -201,39 +204,13 @@ st 11 "P -20% & end"   "P -10/20% health and end level when health <= 10%"
 st 12 "  Flash1Hz syn" "  Light flashes 1 Hz, synchronized"
 st 13 "  Flash2Hz syn" "  Light flashes 2 Hz, synchronized"
 st 14 "  Opens 300 s"  "  300 s after level start, ceiling opens like a door"
-st 15 "? Friction"     "? Friction"
 st 16 "P -20% health"  "P -10/20% health"
-st 21 "? Flow E slow"  "? Floor scrolls eastward slowly"
-st 22 "? Flow E mid"   "? Floor scrolls eastward"
-st 23 "? Flow E fast"  "? Floor scrolls eastward fast"
-st 26 "? Flow N slow"  "? Floor scrolls northward slowly" 
-st 27 "? Flow N mid"   "? Floor scrolls northward"
-st 28 "? Flow N fast"  "? Floor scrolls northward fast" 
-st 31 "? Flow S slow"  "? Floor scrolls southward slowly" 
-st 32 "? Flow S mid"   "? Floor scrolls southward"
-st 33 "? Flow S fast"  "? Floor scrolls southward fast" 
-st 36 "? Flow W slow"  "? Floor scrolls westward slowly" 
-st 37 "? Flow W mid"   "? Floor scrolls westward"
-st 38 "? Flow W fast"  "? Floor scrolls westward fast" 
-st 40 "? Wind E slow"  "? Wind blows eastward slowly"
-st 41 "? Wind E mid"   "? Wind blows eastward"
-st 42 "? Wind E fast"  "? Wind blows eastward fast"
-st 43 "? Wind N slow"  "? Wind blows northward slowly" 
-st 44 "? Wind N mid"   "? Wind blows northward"
-st 45 "? Wind N fast"  "? Wind blows northward fast" 
-st 46 "? Wind S slow"  "? Wind blows southward slowly" 
-st 47 "? Wind S mid"   "? Wind blows southward"
-st 48 "? Wind S fast"  "? Wind blows southward fast" 
-st 49 "? Wind W slow"  "? Wind blows westward slowly" 
-st 50 "? Wind W mid"   "? Wind blows westward"
-st 51 "? Wind W fast"  "? Wind blows westward fast" 
-
+st 17 "  Flicker rand" "  Light flickers on and off randomly [v1.6]"
 
 #
 #	Definition of thing groups
 #	Format is : thinggroup <thinggroup> <colour> <description>
 #
-
 
 thinggroup p rgb:4/f/4 "Player"
 thinggroup m rgb:f/0/0 "Monster"
@@ -243,122 +220,128 @@ thinggroup h rgb:2/8/0 "Health & armour"
 thinggroup b rgb:2/8/0 "Misc. bonus"
 thinggroup k rgb:f/0/f "Key"
 thinggroup d rgb:6/6/c "Misc. decoration"
-#thinggroup l rgb:6/6/c "Light source"
-#thinggroup g rgb:6/6/c "Gory decoration"
-#thinggroup c rgb:6/6/c "Corpse"
-thinggroup e rgb:0/b/d "Environment sound"
-thinggroup s rgb:0/b/d "Ambient sound"
-
+thinggroup l rgb:6/6/c "Light source"
+thinggroup g rgb:6/6/c "Gory decoration"
+thinggroup c rgb:6/6/c "Corpse"
+thinggroup s rgb:0/b/d "Special"
 
 #
 #	Definition of things
-#	Format is : thing <number> <thinggroup> <radius> <description>
+#	Format is :
+#	thing <number> <thinggroup> <flags> <radius> <descr> [<sprite>]
 #
 
-thing    1 p  16 "Player 1 start"
-thing    2 p  16 "Player 2 start"
-thing    3 p  16 "Player 3 start"
-thing    4 p  16 "Player 4 start"
-thing   11 p  16 "Deathmatch start"
-thing   14 p  16 "Teleport exit"
+thing 2007 a -  20 "Clip"			CLIP
+thing 2048 a -  20 "Box of bullets"		AMMO
+thing 2008 a -  20 "4 shotgun shells"		SHEL
+thing 2049 a -  20 "Box shotgun shells"		SBOX
+thing 2010 a -  20 "Rocket"			ROCK
+thing 2046 a -  20 "Box of rockets"		BROK
+thing 2047 a -  20 "Energy cell"		CELL
+thing   17 a -  20 "Energy cell pack"		CELP
+thing    8 a -  20 "Backpack full ammo"		BPAK
 
-thing   66 m  25 "Gargoyle"
-thing    5 m  25 "Gargoyle leader"
-thing   68 m  20 "Golem"
-thing   69 m  20 "Golem ghost"
-thing   45 m  20 "Golem leader"
-thing   46 m  20 "Golem leader ghost"
-thing   64 m  20 "Undead warrior"
-thing   65 m  20 "Undead warrior ghost"
-thing   15 m  20 "Disciple"
-thing   70 m  17 "Weredragon"
-thing   90 m  23 "Sabre claw"
-thing    6 m  17 "Ironlich"
-thing    9 m   9 "Maulotaur"
-thing   92 m  17 "Ophidian"
-thing    7 m  17 "D'Sparil"
-thing   56 m  17 "D'Sparil spot"
+thing 2025 b -  20 "Rad. shielding suit"	SUIT
+thing 2026 b -  20 "Computer area map"		PMAP
+thing 2024 b -  20 "Partial invis."		PINS
+thing 2023 b -  20 "Berserk"			PSTR
+thing 2022 b -  20 "Invulnerability"		PINV
+thing 2045 b -  20 "Light amp. visor"		PVIS
+thing 2016 b -  16 "Evil sceptre [PR]"		BON3
+thing 2017 b -  16 "Unholy bible [PR]"		BON4
 
-thing 2005 w  16 "Gauntlets"
-thing 2001 w  16 "Ethereal cross bow"
-thing   53 w  16 "Dragon claw"
-thing 2004 w  16 "Hellstaff"
-thing 2003 w  16 "Phoenix rod"
-thing 2002 w  16 "Mace"
+thing   15 c -  16 "Dead player (green)"	PLAYN
+thing   18 c -  20 "Dead trooper"		POSSL
+thing   19 c -  20 "Dead sergeant"		SPOSL
+thing   20 c -  20 "Dead imp"			TROOM
+thing   21 c -  16 "Dead demon"			SARGN
+thing   22 c -  16 "Dead cacodemon"		HEADL
+thing   23 c -  16 "Dead lost soul"
 
-thing   10 a  16 "Wand crystal (ew x)"
-thing   12 a  16 "Wand geode (ew xx)"
-thing   18 a  16 "Ethereal arrows (cb x)"
-thing   19 a  16 "Ethereal quiver (cb xx)"
-thing   54 a  16 "Claw orb (dc x)"
-thing   55 a  16 "Energy orb (dc xx)"
-thing   20 a  17 "Lesser runes (hs x)"
-thing   21 a  17 "Greater runes (hs xx)"
-thing   22 a  17 "Flame orb (pr x)"
-thing   23 a  17 "Inferno orb (pr xx)"
-thing   13 a  17 "Mace spheres (m x)"
-thing   16 a  17 "Pile of mace spheres (m xx)"
+thing 2035 d -  10 "Barrel"			BAR1
+thing   48 d -  16 "Technical column"		ELEC
+thing   30 d -  16 "Tall green pillar"		COL1
+thing   32 d -  16 "Tall red pillar"		COL3
+thing   31 d -  16 "Short green pillar"		COL2
+thing   33 d -  16 "Short red pillar"		COL4
+thing   36 d -  16 "Pillar w/heart"		COL5
+thing   37 d -  16 "Red pillar w/skull"		COL6
+thing   41 d -  16 "Evil eye"			CEYE
+thing   42 g -  16 "Floating skulls"		FSKU
+thing   43 d -  16 "Grey tree"			TRE1
+thing   47 d -  16 "Brown stub"			SMIT
+thing   54 d -  32 "Tall brown tree"		TRE2
 
-thing   32 h  17 "Mystic urn"
-thing   81 h  17 "Crystal vial"
-thing   82 h  17 "Quartz flask"
-thing   85 h  17 "Shield 1"
-thing   31 h  17 "Shield 2"
+thing   10 g -  16 "Mushed player"		PLAYW
+thing   12 g -  16 "Mushed player 2"		PLAYW
+thing   24 g -  16 "Pool of blood"		POL5
+thing   27 g -  16 "Pole with skull"		POL4
+thing   28 g -  16 "Skewer with heads"		POL2
+thing   29 g -  16 "Pile of skulls"		POL3
+thing   25 g -  16 "Impaled body"		POL1
+thing   26 g -  16 "Impaled twitching"		POL6
+thing   49 g -  16 "Swaying body O"		GOR1
+thing   63 g -  16 "Swaying body"		GOR1
+thing   50 g -  16 "Hanging arms out O"		GOR2
+thing   59 g -  16 "Hanging arms out"		GOR2
+thing   53 g -  16 "Hanging leg O"		GOR5
+thing   62 g -  16 "Hanging leg"		GOR5
+thing   51 g -  16 "Hanging one-legged O"	GOR3
+thing   61 g -  16 "Hanging one-legged"		GOR3
+thing   52 g -  16 "Hanging torso O"		GOR4
+thing   60 g -  16 "Hanging torso"		GOR4
 
-thing    8 b  17 "Bag of holding"
-thing   30 b  17 "Morph ovum"
-thing   34 b  17 "Time bomb"
-thing   83 b  17 "Wings of wrath"
-thing   75 b  17 "Shadowsphere"
-thing   84 b  17 "Ring of invulnerability"
-thing   35 b  17 "Map scroll"
-thing   36 b  17 "Chaos device"
-thing   86 b  17 "Tome of power"
-thing   33 b  17 "Torch"
+thing 2014 h -  20 "Health bonus"		BON1
+thing 2011 h -  20 "Stimpack"			STIM
+thing 2012 h -  20 "Medikit"			MEDI
+thing 2013 h -  20 "Supercharge"		SOUL
+thing 2015 h -  20 "Armor bonus"		BON2
+thing 2018 h -  20 "Armor"			ARM1
+thing 2019 h -  20 "Megaarmor"			ARM2
 
-thing   73 k  16 "Green key"
-thing   79 k  16 "Blue key"
-thing   80 k  16 "Yellow key"
+thing    5 k -  20 "Blue keycard"		BKEY
+thing    6 k -  20 "Yellow keycard"		YKEY
+thing   13 k -  20 "Red keycard"		RKEY
+thing   40 k -  20 "Blue skull key"		BSKU
+thing   39 k -  20 "Yellow skull key"		YSKU
+thing   38 k -  20 "Red skull key"		RSKU
 
-thing   44 d  16 "Barrel"
-thing   47 d  17 "Brown pillar"
-thing   28 d  28 "Chandelier"
-thing   76 d  16 "Fire brazier"
-thing   51 d  17 "Hanging corpse"
-thing   94 d  16 "Blue key statue"
-thing   95 d  16 "Green key statue"
-thing   96 d  16 "Yellow key statue"
-thing   48 d  20 "Moss 1"
-thing   49 d  15 "Moss 2"
-thing   27 d  16 "Serpent torch"
-thing   26 d   8 "Hanging skull 35"
-thing   25 d   8 "Hanging skull 45"
-thing   24 d   8 "Hanging skull 60"
-thing   17 d   8 "Hanging skull 70"
-thing   29 d  17 "Small pillar"
-thing   50 d   5 "Wall torch"
-thing   74 d   5 "Teleport glitter"
-thing   52 d   5 "Glitter exit"
-thing   87 d  17 "Volcano"
-thing   37 d  17 "Small stalagmite"
-thing   38 d  17 "Large stalagmite"
-thing   39 d  17 "Small stalactite"
-thing   40 d  17 "Large stalactite"
-thing 2035 d  17 "Pod"
-thing   43 d  17 "Pod generator"
+thing 2028 l -  16 "Lamp"			COLU
+thing   34 l -  16 "Candle"			CAND
+thing   35 l -  16 "Candelabra"			CBRA
+thing   44 l -  16 "Tall blue torch"		TBLU
+thing   45 l -  16 "Tall green torch"		TGRN
+thing   46 l -  16 "Tall red torch"		TRED
+thing   55 l -  16 "Short blue torch"		SMBT
+thing   56 l -  16 "Short green torch"		SMGT
+thing   57 l -  16 "Short red torch"		SMRT
 
-thing   41 e  16 "Waterfall"
-thing   42 e  16 "Wind"
+thing 3004 m -  20 "Trooper"			POSS
+thing    9 m -  20 "Sergeant"			SPOS
+thing 3001 m -  20 "Imp"			TROO
+thing 3002 m -  30 "Demon"			SARG
+thing 3003 m -  24 "Baron of hell"		BOSS
+thing   58 m s  30 "Spectre"			SARG
+thing 3006 m -  16 "Lost soul"			SKUL
+thing 3005 m -  31 "Cacodemon"			HEAD
+thing    7 m - 128 "Spider mastermind"		SPID
+thing   16 m -  40 "Cyberdemon"			CYBR
 
-thing 1200 s  16 "Scream"
-thing 1201 s  16 "Squish"
-thing 1202 s  16 "Water drip"
-thing 1203 s  16 "Slow footsteps"
-thing 1204 s  16 "Heart beat"
-thing 1205 s  16 "Bells"
-thing 1206 s  16 "Growl"
-thing 1207 s  16 "Magic"
-thing 1208 s  16 "Laughter"
-thing 1209 s  16 "Fast footsteps"
+thing    1 p -  16 "Player 1 start"		PLAY
+thing    2 p -  16 "Player 2 start"		PLAY
+thing    3 p -  16 "Player 3 start"		PLAY
+thing    4 p -  16 "Player 4 start"		PLAY
+thing  888 p -  16 "Dog [MBF]"
+thing   11 p -  16 "Deathmatch start"		PLAYF1
+thing   14 p -  16 "Teleport exit"		TFOG
 
+thing 2005 w -  20 "Chainsaw"			CSAW
+thing 2001 w -  20 "Shotgun"			SHOT
+thing 2002 w -  20 "Chaingun"			MGUN
+thing 2003 w -  20 "Rocket launcher"		LAUN
+thing 2004 w -  20 "Plasma gun"			PLAS
+thing 2006 w -  20 "BFG9000"			BFUG
+
+thing 5001 s -  20 "Point pusher [Boom]"
+thing 5002 s -  20 "Point puller [Boom]"
 

@@ -1,37 +1,17 @@
 <html>
 <head>
 <title>Yadex hacker's guide</title>
-<style type="text/css">
-body {
-        color: black;
-        background-color: rgb(176,144,104);
-}
-
-kbd {
-        color: black;
-        background-color: rgb(224,192,128);
-}
-
-code {
-	background-color: rgb(192,160,120);
-}
-
-h1, h2, h3, h4 {
-        font-family: helvetica, arial, sans-serif;
-}
-
-h1 {
-        align: center;
-}
-
-/* Apparently, Mozilla doesn't support it. */
-dl dt {
-        font-weight: bold;
-}
-</style>
 </head>
 <body>
-	<h1>Yadex hacker's guide</h1>
+
+<div align="center">
+<img src="logo_small.png" alt="Fancy logo">
+<br>Yadex $VERSION ($SOURCE_DATE)
+<h1>Hacker's guide</h1>
+</div>
+<br>
+<br>
+<br>
 
 		<h2>Blah</h2>
 
@@ -64,8 +44,8 @@ a rather low-level API to set the video mode, draw lines, text, etc.
 			<h3>Original platform</h3>
 
 The Unix version has been developped with
-GCC 2.7.2 and XFree 3.3
-on a PC K6/200 with Linux 2.0.29, 2.0.30 and 2.0.35.
+GCC 2.7.2, EGCS 1.0.3, EGCS 1.1.1, libc5, glibc2 and XFree 3.3
+on a PC K6/200 with Linux 2.0.29, 2.0.30 and 2.0.34.
 <p>
 The DOS version has been developped with
 Borland C++ 4.0
@@ -75,8 +55,7 @@ Yadex should be compilable on all reasonable
 Unix-and-X11 platforms provided that 
 <ul>
 <li>you have GNU make,
-<li>you either have GCC or can hack the makefile
-to change the GCC-specific options ($c -W*),
+<li>you have a C compiler and a C++ compiler,
 <li>$c short is 16-bit long,
 <li>$c long is 32-bit long.
 </ul>
@@ -117,61 +96,208 @@ so that's why Yadex is such an ugly mixture of languages.
 
 			<h3>Memory allocation</h3>
 
-You're not supposed to use $c malloc() and $c free()
-but $c GetMemory(), $c FreeMemory(),
-$c GetFarMemory() and $c FreeFarMemory() instead.
-Why ?
-<p>
-$c GetMemory() and friends manage more things for you.
-They include an anti-fragmentation system,
-they try to swap things out when memory is tight
-(this is an only an issue for the 16-bit DOS version)
-and if they fail, they call $c fatal_error()
+You're not supposed to use $c malloc() and $c free() but $c
+GetMemory(), $c FreeMemory(), $c GetFarMemory() and $c
+FreeFarMemory() instead. Why ?
+
+<p>$c GetMemory() and friends manage more things for you.  They
+include an anti-fragmentation system, they try to swap things
+out when memory is tight (this is an only an issue for the
+16-bit DOS version) and if they fail, they call $c fatal_error()
 so you don't need to check their return value.
-<p>
-The reason for $c GetFarMemory()
-is that, for the 16-bit DOS version,
-it can allocate more than 64 kB ($c GetMemory() cannot).
-I must say that I don't use $c GetFarMemory() a lot myself
-because I don't like the idea of having to use two different
-memory allocation routines depending on the size I expect to allocate.
-I modified $c GetMemory()
-so that it accepts an <code>unsigned long</code>
-but checks that the passed value fits in $c size_t.
-In other words, if you call $c GetMemory()
-with a size of 65,536 the 16-bit DOS version
-will trigger a fatal error immediately
-instead of silently allocating 1 byte
-and letting you search afterwards why the program behaves strangely.
-A better fix would be to make $c GetMemory()
-call $c GetFarMemory() when the block is too large
-for $c malloc().
-Any volunteers ?
-<p>
-Memory allocated with $c GetMemory() is guaranteed
-to be freeable with $c free().
-On the other hand, memory allocated with $c GetFarMemory()
-must be freeed with $c FreeFarMemory().
+
+<p>The reason for $c GetFarMemory() is that, for the 16-bit DOS
+version, it can allocate more than 64 kB ($c GetMemory()
+cannot). I must say that I don't use $c GetFarMemory() a lot
+myself because I don't like the idea of having to use two
+different memory allocation routines depending on the size I
+expect to allocate. I modified $c GetMemory() so that it accepts
+an <code>unsigned long</code> but checks that the passed value
+fits in $c size_t. In other words, if you call $c GetMemory()
+with a size of 65,536 the 16-bit DOS version will trigger a
+fatal error immediately instead of silently allocating 1 byte
+and letting you search afterwards why the program behaves
+strangely. A better fix would be to make $c GetMemory() call $c
+GetFarMemory() when the block is too large for $c malloc(). Any
+volunteers ?
+
+<p>Memory allocated with $c GetMemory() is guaranteed to be
+freeable with $c free().  On the other hand, memory allocated
+with $c GetFarMemory() must be freeed with $c FreeFarMemory().
 
 			<h3><a name="endianness">Endianness</a></h3>
 
-The 16-bit and 32-bit integers in a wad file
-are always little-endian, whatever the platform.
-<p>
-On the other hand, Yadex keeps all its in-core
-integer in the platform's native endianness,
-i.e. in little-endian format on little-endian machines
-and in big-endian format on big-endian machines.
-<p>
-The wad endianness &lt;-&gt; native endianness conversion
-is done automagically by $c wad_read_i16() and $c wad_read_i32().
-<p>
-<u>To maintain compatibility with big-endian platforms, all I/O of
-multibyte integers should be done with those functions.</u>
+The 16-bit and 32-bit integers in a wad file are always
+little-endian, whatever the platform.
 
-		<h2>The main directory</h2>
+<p>On the other hand, Yadex keeps all its in-core integer in the
+platform's native endianness, i.e. in little-endian format on
+little-endian machines and in big-endian format on big-endian
+machines.
 
-TBD
+<p>The wad endianness &lt;-&gt; native endianness conversion is
+done automagically by $c wad_read_i16() and $c wad_read_i32().
+
+<p><u>To maintain compatibility with big-endian platforms, all
+I/O of multibyte integers should be done with those
+functions.</u>
+
+		<h2>The directory</h2>
+
+			<h3>Principle</h3>
+
+Like Doom, Yadex accesses lumps through an indirection layer
+that called the <i>directory</i>. The directory is basically a
+list of all the lumps that exist in the iwad and/or at least one
+of the pwads with, for each lump, the information necessary to
+read it. Each directory entry has 4 fields&nbsp;; the name of
+the lump, its offset in the wad, its length, and an indirect
+pointer to the file descriptor for the wad that contains it.
+
+<p>As you might expect, if the same lump is present in more than
+one wad, it has only one directory entry, pointing to the last
+occurence.
+
+<p>When you need to load a lump by name, you call
+<code>FindMasterDir()</code>.  It returns you a pointer on its
+entry in the directory, which in turn contains everything you
+need to read it.
+
+			<h3>Managing the directory</h3>
+
+<p>The directory is kept in memory at all times. It is only
+modified when you initially load the iwad and when you load or
+unload a pwad. And of course when you delete the directory.
+Simple, isn't it&nbsp;?
+
+<p>Ha-ha, gotcha, this is not how the actual API works. The
+actual set of operations is somewhat different in that it does
+not include unloading a pwad. Instead, there is a function to
+close all unused pwads, that is pwads that are not referenced by
+a single entry in the directory. I suppose that the reason why
+it was done this way is that unloading a pwad is a bit more
+complicated, since it involves finding the previous "provider"
+of all lumps that the wad to unload used to "provide". I guess
+the only way to do that would be rebuilding the directory from
+scratch. This "feature" is discussed in the Comments section
+below. Anyway, here is the API.
+
+<dl>
+<dt><code>OpenMainWad()</code>
+<dd>Create the directory and fill it with the contents of the
+directory of the iwad.
+
+<dt><code>OpenPatchWad()</code> 
+<dd>Add a pwad to the list of the open wads and to the
+directory.
+
+<dt><code>CloseUnusedWadFiles()</code>
+<dd>Close all wads that are not used in the directory anymore.
+
+<dt><code>CloseWadFiles()</code>
+<dd>Close all open wads and delete the list of open wads and the
+directory.
+</dl>
+
+			<h3>Implementation</h3>
+
+It has not been said explicitly so far but Yadex maintains a
+list of all open wads (iwads and pwads). It is a linked list of
+the <code>WadFileInfo</code> structure. The global variable
+<code>WadeFileList</code> is a pointer to the first element of
+the list, which is always the iwad. The type <code>WadPtr</code>
+is an alias for "<code>struct WadFileInfo *</code>" (yes, I
+know, it's confusing to have two names for the same thing).
+
+<pre>
+struct WadFileInfo
+   {
+   WadPtr next;                 // Next file in linked list
+   char *filename;              // Name of the wad file
+   FILE *fd;                    // C file stream information
+   char type[4];                // Type of wad file ("IWAD" or "PWAD")
+   i32  dirsize;                // Directory size of wad
+   i32  dirstart;               // Offset to start of directory
+   DirPtr directory;            // Array of directory information
+   };
+typedef struct WadFileInfo *WadPtr;
+extern WadPtr WadFileList;      // List of wad files
+</pre>
+
+<p>The directory itself is a linked list of the
+<code>MasterDirectory</code> structure. The global variable
+<code>MasterDir</code> points to the first element of the
+directory. The type <code>MDirPtr</code> is an alias for
+"<code>struct MasterDirectory *</code>".
+
+<pre>
+struct Directory
+   {
+   i32  start;                  // Offset to start of data
+   i32  size;                   // Byte size of data
+   char name[WAD_NAME];         // Name of data block
+   };
+struct MasterDirectory
+   {
+   MDirPtr next;                // Next in list
+   WadPtr wadfile;              // File of origin
+   struct Directory dir;        // Directory data (name, offset, size)
+   };
+typedef struct MasterDirectory *MDirPtr;
+extern MDirPtr MasterDir;       // The master directory
+</pre>
+
+			<h3>Sample code</h3>
+
+To be written : searching for a directory entry. The same thing,
+in an incremental fashion.
+
+			<h3>Comments</h3>
+
+<p>The decision to use a directory is arguable. It is convenient
+for the programmer when he/she is looking for the
+<em>effective</em> instance of a lump, which is the case most of
+the time. But it also prevents the user from editing a resource
+(notably, a level), if it has been overridden in another wad.
+It's not a big deal but I don't like it.
+
+<p>The fact that the directory managing operations don't include
+removing a pwad from the directory means that there is no way
+for the user to "unload" a pwad. The "<code>read</code>" command
+has no inverse. The only way to do it is to restart Yadex.
+
+<p>Another somewhat non obvious design decision is that, in most
+places where the directory is updated,
+<code>CloseUnusedWadFiles()</code> is called too. This means
+that you can't load two pwads that have exactly the same lumps.
+As the second pwad is loaded, the first one is automatically
+(and silently) unloaded. Not a big deal either but, as a user, I
+don't like the programs I use to behave like that. I'll
+illustrate my point with the following scenario, which assumes
+the "unload pwad" function exists&nbsp;:
+<ol>
+<li>Load pwad A (MAP01)
+<li>Load pwad B (MAP01)
+<li>Unload pwad B
+<li>Edit MAP01
+</ol>
+At this point, as you have backtracked on your action of loading
+B, you would expect to see the MAP01 from A, wouldn't you&nbsp;?
+Instead you get the MAP01 from the iwad, because A was unloaded
+as you loaded B. From a user point of view, such a behaviour is
+confusing and therefore to be avoided.
+
+<p>I don't like the directory management API very much because
+it's unexpectedly asymmetric and therefore neither intuitive nor
+orthogonal. The way Yadex plays games with the directory is
+really disgusting and confusing to me.
+
+<p>I should look into replacing the iwad "on the fly", so that
+the user is able to change the game parameter dynamically,
+without restarting Yadex. In fact, the ultimate goal is to
+remove the game parameter completely or, more precisely, to make
+it local to a Level object, automatically adjusting and
+dynamically modifiable by the user.
 
 		<h2>The wad data</h2>
 
@@ -249,11 +375,11 @@ BLOCKMAP, REJECT and VERTEXES lumps are copied from the
 original file. Else, they are output with a length of
 zero bytes, except the VERTEXES lump that is created
 from the the level data ($c NumVertices and $c Vertices).
-<p>
-Since the endianness of the wad files is fixed (little
-endian) and thus not necessarily identical to the endianness
-of the CPU, writing 2- and 4-byte integers to the file is
-done through special endianness-independant routines.
+
+<p>Since the endianness of the wad files is fixed (little
+endian) and thus not necessarily identical to the endianness of
+the CPU, writing 2- and 4-byte integers to the file is done
+through special endianness-independant routines.
 
 		<h2>Editing windows, or the lack of it</h2>
 
@@ -420,7 +546,7 @@ Warning : does not check that object $c n is not already
 in the list.
 
 <dt><code>void UnSelectObject (SelPtr *s, int n)</code>
-<dd>Removes from list $c *s all occurences of
+<dd>Removes from list $c *s all occurrences of
 object $c n.
 If all objects are removed, sets $c *s to $c NULL.
 
@@ -489,6 +615,113 @@ it had at the moment of the last call to $c push_colour().
 
 TBD
 
+		<h2>Game graphics</h2>
+
+			<h3>Viewing graphics</h3>
+
+Doom has two formats for graphics&nbsp;: pictures and plain
+bitmaps. Pictures are made of columns which are in turn made of
+one or more posts. If there are several posts in a column, they
+can be separated by void space and thus the picture can have
+transparent areas. Pictures are used for patches, sprites and
+the rest of the graphics (but Yadex doesn't use them). Plain
+bitmaps are just arrays of pixels and cannot contain transparent
+areas. That latter format is used only for flats, which are all
+64&times;64 bitmaps.
+
+<p>Textures are made by pasting one or more patches onto a
+rectangular buffer. The resulting image can be of course
+transparent.
+
+<p>For all formats, a pixel is a byte. The value of the byte
+(between 0 and 255 inclusive) is an index into one of the
+palettes contained in the <code>PLAYPAL</code> lump. To be able
+to know the actual RGB colour of a pixel, it is necessary to
+look up its value in the <code>PLAYPAL</code> (normally, only
+the first palette is used).
+
+<p>As is the case with saving graphics to a file, viewing
+graphics would involve a lot of coding to do it in an optimized
+fashion. Therefore it's done in a somewhat wasteful way&nbsp;:
+<ol>
+<li>the image is put into a buffer
+<li>the buffer is pasted onto the window or screen
+</ol>
+The buffer is an array of bytes, one byte per pixel. The value
+of a pixel is, as in Doom, an index into the
+<code>PLAYPAL</code> palette. There is no notion of transparent
+colour in the buffer&nbsp;: it is opaque.
+
+<p>The first step is done with
+<code>DisplayFloorTexture()</code> (for flats) and
+<code>LoadPicture()</code> (for other graphics). For textures,
+<code>LoadPicture()</code> is called repeatedly on the same game
+image buffer, once for each flat.
+
+<p>The second step is done with
+<code>display_game_image()</code>. It takes care of converting
+Doom pixel values into actual pixel values needed by the
+graphical API (which depend on a lot of factors like the video
+mode, type and depth of visual, byte order of X server, etc.)
+and getting the graphical API to display it on the window or
+screen.
+
+<p><code>display_pic()</code> combines fetching the image into
+the game image buffer and displaying it.
+
+<p><code>spectrify_game_image()</code> can be used on a game
+image buffer to make it look more or less like a spectre.
+
+			<h3>Saving graphics to file (screenshots etc.)</h3>
+
+The basic idea is to
+<ol>
+<li>get the image to save in an <code>Rgbbmp</code> buffer (with
+<code>window_to_rgbbmp()</code>),
+
+<li>save the <code>Rgbbmp</code> buffer to a file (with
+<code>rgbbmp_to_ppm()</code>).
+
+</ol>
+This is inefficient because, in many cases, the image could be
+saved directly from the window to the file. This two-step
+algorithm wastes memory (the buffer can be quite large) and
+time. However, there is a good reason for doing things this way.
+
+<p>The way to retrieve the image from the window or screen is
+very dependent on the platform or video mode or type of visual
+and the fashion in which the image is read is very dependent on
+the graphic format. Therefore, if you want to use a one-step
+algorithm and you have <var>n</var> platforms or video modes or
+types of visuals and <var>m</var> graphic formats, you have to
+write <var>n</var> &times; <var>m</var> functions. With a
+two-step algorithm, you have only <var>n</var> + <var>m</var>
+functions to write. As saving graphics to file is not a critical
+function, I'd rather keep the code short and simple, unless the
+result proves unacceptable.
+
+		<h2>Saving</h2>
+
+<p>One very important constraint in the saving code is that it
+should never fail unless there is no reasonable alternative.
+That's because, for users, saving is a <em>passage
+obligé</em> to quit the program without losing their work.
+Therefore, the saving code must be particularly robust and able
+to recover from errors.
+
+<p>This implies that the saving code <strong>must not need to
+allocate new memory</strong>. To understand why, consider the
+following scenario&nbsp;: you load a level and edit it until
+Yadex uses all the available memory save a few kB. Then you want
+to save it and Yadex says "nope, I don't have enough memory to
+do that". From a user point of view, that sucks.
+
+<p>Unfortunately, at present, many benign errors are considered
+fatal when saving. For example, trying to save to a file on
+which you don't have the necessary rights will make Yadex abort
+even though this error is perfectly recoverable. This should be
+fixed since it could cause users to lose data.
+
 		<h2>Compile-time variables (defines)</h2>
 
 <dl>
@@ -515,7 +748,7 @@ define this and Yadex will draw squares instead.
 <p>
 <dt>$c OLD
 <dd>Misc. obsolete stuff I didn't want to delete at the time.
-Never define it or you'll break Yadex !
+Never define it or you'll break Yadex&nbsp;!
 Code under <code>#ifdef OLD</code> should probably be removed.
 <p>
 <dt>$c OLD_METHOD
@@ -686,6 +919,7 @@ and for window output.
 
 </dl>
 
+<p><hr>AYM $SELF_DATE
 </body>
 </html>
 

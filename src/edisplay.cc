@@ -129,8 +129,12 @@ objinfo->set_y1 (e->infobar_shown ? infobar->get_y0 () - 1 : ScrMaxY);
 /* Extract the interesting data from the edit_c object
    and feed it to the widgets. */
 infobar->set_visible          (e->infobar_shown);
-infobar->set_file_name        ((const char *) Level->wadfile->filename);
-infobar->set_level_name       ((const char *) Level->dir.name);
+infobar->set_file_name        (Level
+				  ?  (const char *) Level->wadfile->filename
+				  : 0);
+infobar->set_level_name       (Level
+				  ? (const char *) Level->dir.name
+				  : 0);
 infobar->set_obj_type         (e->obj_type);
 infobar->set_changes          (MadeMapChanges ? 2 : (MadeChanges ? 1 : 0));
 infobar->set_grid_snap        (e->grid_snap);

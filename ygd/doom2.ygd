@@ -1,9 +1,15 @@
-# Yadex game definition file version 1
+# Yadex game definition file version 2
 #
-#	doom.ygd
-#	Yadex Game Definitions for Doom
-#	AYM 1998-01-29
+#	doom2.ygd
+#	Yadex Game Definitions for Doom II and Final Doom
+#	AYM 1998-01-03
 #
+
+level_format    doom
+level_name      map01
+picture_format  normal
+texture_format  normal
+texture_lumps   texture1
 
 #
 #	Definition of linedef type groups
@@ -175,6 +181,8 @@ ldt 138 L "SR Light to 255"  "SR  Light level goes to 255 [v1.6]"
 ldt 139 L "SR Light to 0"    "SR  Light level goes to 0 [v1.6]"
 ldt 140 F "S1 Floor up 512"  "S1  Raise floor by 512, medium speed [v1.6]"
 ldt 141 C "W1& Crush SS sil" "W1& Start slow crushing, slow hurt, silent [v1.6]"
+ldt 271 x "-- Xfer sky"      "--  Xfer straight upper to sky tex. [MBF]"
+ldt 272 x "-- Xfer mir. sky" "--  Xfer mirrored upper to sky tex. [MBF]"
 
 #
 #	Definition of sector types
@@ -222,115 +230,143 @@ thinggroup s rgb:0/b/d "Special"
 #	Format is : thing <number> <thinggroup> <radius> <description>
 #
 
-thing 2007 a  20 "Clip"			CLIP
-thing 2048 a  20 "Box of bullets"	AMMO
-thing 2008 a  20 "4 shotgun shells"	SHEL
-thing 2049 a  20 "Box shotgun shells"	SBOX
-thing 2010 a  20 "Rocket"		ROCK
-thing 2046 a  20 "Box of rockets"	BROK
-thing 2047 a  20 "Energy cell"		CELL
-thing   17 a  20 "Energy cell pack"	CELP
-thing    8 a  20 "Backpack full ammo"	BPAK
+thing 2007 a -  20 "Clip"			CLIP
+thing 2048 a -  20 "Box of bullets"		AMMO
+thing 2008 a -  20 "4 shotgun shells"		SHEL
+thing 2049 a -  20 "Box shotgun shells"		SBOX
+thing 2010 a -  20 "Rocket"			ROCK
+thing 2046 a -  20 "Box of rockets"		BROK
+thing 2047 a -  20 "Energy cell"		CELL
+thing   17 a -  20 "Energy cell pack"		CELP
+thing    8 a -  20 "Backpack full ammo"		BPAK
 
-thing 2025 b  20 "Rad. shielding suit"	SUIT
-thing 2026 b  20 "Computer area map"	PMAP
-thing 2024 b  20 "Partial invis."	PINS	# blur sphere
-thing 2023 b  20 "Berserk"		PSTR
-thing 2022 b  20 "Invulnerability"	PINV
-thing 2045 b  20 "Light amp. visor"	PVIS
+thing 2025 b -  20 "Rad. shielding suit"	SUIT
+thing 2026 b -  20 "Computer area map"		PMAP
+thing 2024 b -  20 "Partial invis."		PINS
+thing 2023 b -  20 "Berserk"			PSTR
+thing 2022 b -  20 "Invulnerability"		PINV
+thing 2045 b -  20 "Light amp. visor"		PVIS
+thing 2016 b -  16 "Evil sceptre [PR]"		BON3
+thing 2017 b -  16 "Unholy bible [PR]"		BON4
 
-thing   15 c  16 "Dead player (green)"	PLAYN
-thing   18 c  20 "Dead trooper"		POSSL
-thing   19 c  20 "Dead sergeant"	SPOSL
-thing   20 c  20 "Dead imp"		TROOM
-thing   21 c  16 "Dead demon"		SARGN
-thing   22 c  16 "Dead cacodemon"	HEADL
-thing   23 c  16 "Dead lost soul"
+thing   15 c -  16 "Dead player (green)"	PLAYN
+thing   18 c -  20 "Dead trooper"		POSSL
+thing   19 c -  20 "Dead sergeant"		SPOSL
+thing   20 c -  20 "Dead imp"			TROOM
+thing   21 c -  16 "Dead demon"			SARGN
+thing   22 c -  16 "Dead cacodemon"		HEADL
+thing   23 c -  16 "Dead lost soul"
 
-thing 2035 d  10 "Barrel"		BAR1
-thing   48 d  16 "Technical column"	ELEC
-thing   30 d  16 "Tall green pillar"	COL1
-thing   32 d  16 "Tall red pillar"	COL3
-thing   31 d  16 "Short green pillar"	COL2
-thing   33 d  16 "Short red pillar"	COL4
-thing   36 d  16 "Pillar w/heart"	COL5
-thing   37 d  16 "Red pillar w/skull"	COL6
-thing   41 d  16 "Evil eye"		CEYE
-thing   42 g  16 "Floating skulls"	FSKU
-thing   43 d  16 "Grey tree"		TRE1
-thing   47 d  16 "Brown stub"		SMIT
-thing   54 d  32 "Tall brown tree"	TRE2
+thing 2035 d -  10 "Barrel"			BAR1
+thing   72 d -  16 "Commander Keen"		KEEN
+thing   48 d -  16 "Technical column"		ELEC
+thing   30 d -  16 "Tall green pillar"		COL1
+thing   32 d -  16 "Tall red pillar"		COL3
+thing   31 d -  16 "Short green pillar"		COL2
+thing   33 d -  16 "Short red pillar"		COL4
+thing   36 d -  16 "Pillar w/heart"		COL5
+thing   37 d -  16 "Red pillar w/skull"		COL6
+thing   41 d -  16 "Evil eye"			CEYE
+thing   42 g -  16 "Floating skulls"		FSKU
+thing   43 d -  16 "Grey tree"			TRE1
+thing   47 d -  16 "Brown stub"			SMIT
+thing   54 d -  32 "Tall brown tree"		TRE2
 
-thing   10 g  16 "Mushed player"	PLAYW
-thing   12 g  16 "Mushed player 2"	PLAYW
-thing   24 g  16 "Pool of blood"	POL5
-thing   27 g  16 "Pole with skull"	POL4
-thing   28 g  16 "Skewer with heads"	POL2
-thing   29 g  16 "Pile of skulls"	POL3
-thing   25 g  16 "Impaled body"		POL1
-thing   26 g  16 "Impaled twitching"	POL6
-thing   49 g  16 "Swaying body O"	GOR1
-thing   63 g  16 "Swaying body"		GOR1
-thing   50 g  16 "Hanging arms out O"	GOR2
-thing   59 g  16 "Hanging arms out"	GOR2
-thing   53 g  16 "Hanging leg O"	GOR5
-thing   62 g  16 "Hanging leg"		GOR5
-thing   51 g  16 "Hanging one-legged O"	GOR3
-thing   61 g  16 "Hanging one-legged"	GOR3
-thing   52 g  16 "Hanging torso O"	GOR4
-thing   60 g  16 "Hanging torso"	GOR4
+thing   10 g -  16 "Mushed player"		PLAYW
+thing   12 g -  16 "Mushed player 2"		PLAYW
+thing   24 g -  16 "Pool of blood"		POL5
+thing   79 g -  16 "Pool of blood 2"		POB1
+thing   80 g -  16 "Pool of blood 3"		POB2
+thing   81 g -  16 "Pool of brains"		BRS1
+thing   27 g -  16 "Pole with skull"		POL4
+thing   28 g -  16 "Skewer with heads"		POL2
+thing   29 g -  16 "Pile of skulls"		POL3
+thing   25 g -  16 "Impaled body"		POL1
+thing   26 g -  16 "Impaled twitching"		POL6
+thing   49 g -  16 "Swaying body O"		GOR1
+thing   63 g -  16 "Swaying body"		GOR1
+thing   50 g -  16 "Hanging arms out O"		GOR2
+thing   59 g -  16 "Hanging arms out"		GOR2
+thing   53 g -  16 "Hanging leg O"		GOR5
+thing   62 g -  16 "Hanging leg"		GOR5
+thing   51 g -  16 "Hanging one-legged O"	GOR3
+thing   61 g -  16 "Hanging one-legged"		GOR3
+thing   52 g -  16 "Hanging torso O"		GOR4
+thing   60 g -  16 "Hanging torso"		GOR4
+thing   73 g -  16 "Hanging no guts"		HDB1
+thing   74 g -  16 "Hanging no brain"		HDB2
+thing   75 g -  16 "H. torso looking down"	HDB3
+thing   76 g -  16 "H. torso open skull"	HDB4
+thing   77 g -  16 "H. torso looking up"	HDB5
+thing   78 g -  16 "H. torso w/o brain"		HDB6
 
-thing 2014 h  20 "Health bonus"		BON1	
-thing 2011 h  20 "Stimpack"		STIM
-thing 2012 h  20 "Medikit"		MEDI
-thing 2013 h  20 "Supercharge"		SOUL	# blue sphere
-thing 2015 h  20 "Armor bonus"		BON2
-thing 2018 h  20 "Armor"		ARM1	# green armour
-thing 2019 h  20 "Megaarmor"		ARM2	# blue armour
+thing 2014 h -  20 "Health bonus"		BON1
+thing 2011 h -  20 "Stimpack"			STIM
+thing 2012 h -  20 "Medikit"			MEDI
+thing 2013 h -  20 "Supercharge"		SOUL
+thing 2015 h -  20 "Armor bonus"		BON2
+thing 2018 h -  20 "Armor"			ARM1
+thing 2019 h -  20 "Megaarmor"			ARM2
+thing   83 h -  20 "Megasphere"			MEGA
 
-thing    5 k  20 "Blue keycard"		BKEY
-thing    6 k  20 "Yellow keycard"	YKEY
-thing   13 k  20 "Red keycard"		RKEY
-thing   40 k  20 "Blue skull key"	BSKU
-thing   39 k  20 "Yellow skull key"	YSKU
-thing   38 k  20 "Red skull key"	RSKU
+thing    5 k -  20 "Blue keycard"		BKEY
+thing    6 k -  20 "Yellow keycard"		YKEY
+thing   13 k -  20 "Red keycard"		RKEY
+thing   40 k -  20 "Blue skull key"		BSKU
+thing   39 k -  20 "Yellow skull key"		YSKU
+thing   38 k -  20 "Red skull key"		RSKU
 
-thing 2028 l  16 "Lamp"			COLU
-thing   34 l  16 "Candle"		CAND
-thing   35 l  16 "Candelabra"		CBRA
-thing   44 l  16 "Tall blue torch"	TBLU
-thing   45 l  16 "Tall green torch"	TGRN
-thing   46 l  16 "Tall red torch"	TRED
-thing   55 l  16 "Short blue torch"	SMBT
-thing   56 l  16 "Short green torch"	SMGT
-thing   57 l  16 "Short red torch"	SMRT
+thing 2028 l -  16 "Lamp"			COLU
+thing   85 l -  16 "Tall mercury lamp"		TLMP
+thing   86 l -  16 "Short mercury lamp"		TLP2
+thing   34 l -  16 "Candle"			CAND
+thing   35 l -  16 "Candelabra"			CBRA
+thing   44 l -  16 "Tall blue torch"		TBLU
+thing   45 l -  16 "Tall green torch"		TGRN
+thing   46 l -  16 "Tall red torch"		TRED
+thing   55 l -  16 "Short blue torch"		SMBT
+thing   56 l -  16 "Short green torch"		SMGT
+thing   57 l -  16 "Short red torch"		SMRT
+thing   70 l -  16 "Burning barrel"		FCAN
 
-thing 3004 m  20 "Trooper"		POSS
-thing    9 m  20 "Sergeant"		SPOS
-thing 3001 m  20 "Imp"			TROO
-thing 3002 m  30 "Demon"		SARG
-thing 3003 m  24 "Baron of hell"	BOSS
-thing   58 m  30 "Spectre"		SARG
-thing 3006 m  16 "Lost soul"		SKUL
-thing 3005 m  31 "Cacodemon"		HEAD
-thing    7 m 128 "Spider mastermind"	SPID
-thing   16 m  40 "Cyberdemon"		CYBR
+thing 3004 m -  20 "Trooper"			POSS
+thing    9 m -  20 "Sergeant"			SPOS
+thing 3001 m -  20 "Imp"			TROO
+thing 3002 m -  30 "Demon"			SARG
+thing 3003 m -  24 "Baron of hell"		BOSS
+thing   58 m s  30 "Spectre"			SARG
+thing 3006 m -  16 "Lost soul"			SKUL
+thing 3005 m -  31 "Cacodemon"			HEAD
+thing    7 m - 128 "Spider mastermind"		SPID
+thing   16 m -  40 "Cyberdemon"			CYBR
+thing   84 m -  20 "Wolfenstein SS"		SSWV
+thing   65 m -  20 "Heavy weapon dude"		CPOS
+thing   69 m -  24 "Hell knight"		BOS2
+thing   68 m -  64 "Arachnotron"		BSPI
+thing   71 m -  31 "Pain elemental"		PAIN
+thing   66 m -  20 "Revenant"			SKEL
+thing   67 m -  48 "Mancubus"			FATT
+thing   64 m -  20 "Arch vile"			VILE
+thing   88 m -  16 "Boss brain"			BBRN
+thing   89 m -  16 "Boss shooter"	
+thing   87 m -  16 "Spawn spot"			FIREF
 
-thing    1 p  16 "Player 1 start"	PLAY
-thing    2 p  16 "Player 2 start"	PLAY
-thing    3 p  16 "Player 3 start"	PLAY
-thing    4 p  16 "Player 4 start"	PLAY
-thing   11 p  16 "Deathmatch start"	PLAYF1
-thing   14 p  16 "Teleport exit"	TFOG
+thing    1 p -  16 "Player 1 start"		PLAY
+thing    2 p -  16 "Player 2 start"		PLAY
+thing    3 p -  16 "Player 3 start"		PLAY
+thing    4 p -  16 "Player 4 start"		PLAY
+thing  888 p -  16 "Dog [MBF]"
+thing   11 p -  16 "Deathmatch start"		PLAYF1
+thing   14 p -  16 "Teleport exit"		TFOG
 
-thing 2005 w  20 "Chainsaw"		CSAW
-thing 2001 w  20 "Shotgun"		SHOT
-thing 2002 w  20 "Chaingun"		MGUN
-thing 2003 w  20 "Rocket launcher"	LAUN
-thing 2004 w  20 "Plasma gun"		PLAS
-thing 2006 w  20 "BFG9000"		BFUG
+thing 2005 w -  20 "Chainsaw"			CSAW
+thing 2001 w -  20 "Shotgun"			SHOT
+thing   82 w -  20 "Super shotgun"		SGN2
+thing 2002 w -  20 "Chaingun"			MGUN
+thing 2003 w -  20 "Rocket launcher"		LAUN
+thing 2004 w -  20 "Plasma gun"			PLAS
+thing 2006 w -  20 "BFG9000"			BFUG
 
-# Boom extensions
-thing 5001 s  20 "Point pusher"
-thing 5002 s  20 "Point puller"
+thing 5001 s -  20 "Point pusher [Boom]"
+thing 5002 s -  20 "Point puller [Boom]"
 

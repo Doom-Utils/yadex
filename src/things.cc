@@ -38,13 +38,14 @@ Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 #include "things.h"
 
 
-// This is the structure of a table of THINGS attributes.
-// In this table, THINGS are sorted by increasing number.
+// This is the structure of a table of things attributes.
+// In this table, things are sorted by increasing number.
 // It is searched in a dichotomic fashion by get_thing_*().
 // This table is only here for speed.
 typedef struct
   {
-  w_thingtype_t type;
+  wad_ttype_t type;
+  char		flags;
   short         radius;
   acolour_t     colour;
   const char    *desc;
@@ -53,7 +54,6 @@ typedef struct
 
 static thing_attributes_t *things_table;
 static size_t nthings;
-static size_t table_idx;
 int max_radius;
 
 
@@ -62,7 +62,7 @@ static int things_table_cmp (const void *a, const void *b);
 
 /*
  *	create_things_table
- *	Build things_table, a table of THINGS attributes
+ *	Build things_table, a table of things attributes
  *	that's used by get_thing_*() to speed things up.
  *	Call delete_things_table to delete that table.
  */
@@ -78,6 +78,7 @@ if (! things_table)
 for (al_lrewind (thingdef), n = 0; n < nthings; al_lstep (thingdef), n++)
    {
    things_table[n].type   = CUR_THINGDEF->number;
+   things_table[n].flags  = CUR_THINGDEF->flags;
    things_table[n].radius = CUR_THINGDEF->radius;
    max_radius = max (max_radius, CUR_THINGDEF->radius);
 
@@ -96,7 +97,7 @@ for (al_lrewind (thingdef), n = 0; n < nthings; al_lstep (thingdef), n++)
    things_table[n].sprite = CUR_THINGDEF->sprite;
    }
 
-// Sort the table by increasing THING type
+// Sort the table by increasing thing type
 qsort (things_table, nthings, sizeof *things_table, things_table_cmp);
 
 #if 0
@@ -138,105 +139,128 @@ return ((const thing_attributes_t *) a)->type
 
 
 /*
- *	LOOKUP_THING
- *	Does a binary search in things_table for THING of type <type>.
- *	If fails, execution is transfered to the next statement.
- *	If succeeds, does a "goto got_it" and <n> contains the index.
+ *	lookup_thing
+ *	Does a binary search in things_table for the thing of type <type>.
+ *	If succeeds, returns the index of the thing.
+ *	If fails, returns ((size_t) -1).
  *	To further speed things up, the last index found is kept
  *	between invocations in a static variable. Thus, if several
  *	attributes of the same thing type are queried in a row,
  *	the table search is done only once.
  */
-#define LOOKUP_THING \
-size_t nmin, nmax;\
-if (table_idx >= 0 && table_idx < nthings\
-   && things_table[table_idx].type == type)\
-   goto got_it;\
-nmin = 0;\
-nmax = nthings - 1;\
-for (;;)\
-   {\
-   table_idx = (nmin + nmax) / 2;\
-   if (type > things_table[table_idx].type)\
-      {\
-      if (nmin >= nmax)\
-         break;\
-      nmin = table_idx + 1;\
-      }\
-   else if (type < things_table[table_idx].type)\
-      {\
-      if (nmin >= nmax)\
-         break;\
-      nmax = table_idx - 1;\
-      }\
-   else\
-      goto got_it;\
+inline int lookup_thing (wad_ttype_t type)
+{
+size_t nmin, nmax;
+static size_t table_idx;
+
+if (table_idx >= 0 && table_idx < nthings
+   && things_table[table_idx].type == type)
+   return table_idx;
+nmin = 0;
+nmax = nthings - 1;
+for (;;)
+   {
+   table_idx = (nmin + nmax) / 2;
+   if (type > things_table[table_idx].type)
+      {
+      if (nmin >= nmax)
+         break;
+      nmin = table_idx + 1;
+      }
+   else if (type < things_table[table_idx].type)
+      {
+      if (nmin >= nmax)
+         break;
+      if (table_idx < 1)
+         break;
+      nmax = table_idx - 1;
+      }
+   else
+      return table_idx;
    }
+return (size_t) -1;
+}
 
 
 /*
  *	get_thing_colour
- *	Return the colour of THING of given type.
+ *	Return the colour of the thing of given type.
  */
-acolour_t get_thing_colour (w_thingtype_t type)
+acolour_t get_thing_colour (wad_ttype_t type)
 {
-LOOKUP_THING
-return LIGHTCYAN;  // Not found.
-got_it :
-return things_table[table_idx].colour;
+size_t table_idx = lookup_thing (type);
+if (table_idx == (size_t) -1)
+   return LIGHTCYAN;  // Not found.
+else
+   return things_table[table_idx].colour;
 }
 
 
 /*
  *	get_thing_name
- *	Return the description of THING of given type.
+ *	Return the description of the thing of given type.
  */
-const char *get_thing_name (w_thingtype_t type)
+const char *get_thing_name (wad_ttype_t type)
 {
-LOOKUP_THING
-{
-static char buf[20];
-sprintf (buf, "<UNKNOWN %4d>", type);  // Not found.
-return buf;
-}
-got_it :
-return things_table[table_idx].desc;
+size_t table_idx = lookup_thing (type);
+if (table_idx == (size_t) -1)
+   {
+   static char buf[20];
+   sprintf (buf, "UNKNOWN (%d)", type);  // Not found.
+   return buf;
+   }
+else
+   return things_table[table_idx].desc;
 }
 
 
 /*
  *	get_thing_sprite
- *	Return the root of the sprite name for THING of given type.
+ *	Return the root of the sprite name for the thing of given type.
  */
-const char *get_thing_sprite (w_thingtype_t type)
+const char *get_thing_sprite (wad_ttype_t type)
 {
-LOOKUP_THING
-{
-return NULL;  // Not found
+size_t table_idx = lookup_thing (type);
+if (table_idx == (size_t) -1)
+   return NULL;  // Not found
+else
+   return things_table[table_idx].sprite;
 }
-got_it :
-return things_table[table_idx].sprite;
+
+
+/*
+ *	get_thing_flags
+ *	Return the flags for the thing of given type.
+ */
+char get_thing_flags (wad_ttype_t type)
+{
+size_t table_idx = lookup_thing (type);
+if (table_idx == (size_t) -1)
+   return 0;  // Not found
+else
+   return things_table[table_idx].flags;
 }
 
 
 /*
  *	get_thing_radius
- *	Return the radius of THING of given type.
+ *	Return the radius of the thing of given type.
  */
-int get_thing_radius (w_thingtype_t type)
+int get_thing_radius (wad_ttype_t type)
 {
-LOOKUP_THING
-return 16;  // Not found.
-got_it :
-return things_table[table_idx].radius;
+size_t table_idx = lookup_thing (type);
+if (table_idx == (size_t) -1)
+   return 16;  // Not found.
+else
+   return things_table[table_idx].radius;
 }
 
 
 /*
  *	get_max_thing_radius
- *	Return the radius of the largest THING that exists.
+ *	Return the radius of the largest thing that exists.
  *	This is a speedup function, used by GetCurObject()
- *	to avoid calculating the distance for the THINGS
+ *	to avoid calculating the distance for the things
  *	that are obviously too far away.
  */
 
@@ -275,7 +299,7 @@ switch (angle)
    case 315:
       return "South-east";
    }
-sprintf (buf, "<ILLEGAL ANGLE %d>", angle);
+sprintf (buf, "ILLEGAL (%d)", angle);
 return buf;
 }
 
@@ -289,7 +313,8 @@ const char *GetWhenName (int when)
 static char buf[17];
 // "N" is a Boom extension ("not in deathmatch")
 // "C" is a Boom extension ("not in cooperative")
-const char *flag_chars = "?????????CNMD431";
+// "F" is an MBF extension ("friendly")
+const char *flag_chars = "????????FCNMD431";
 int n;
 
 for (n = 0; n < 16; n++)

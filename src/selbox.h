@@ -23,10 +23,10 @@ class selbox_c : public edwidget_c
       void draw          ();
       void undraw        ();
 
-      inline int can_undraw ()
+      int can_undraw ()
          { return 1; }  // I have the ability to undraw myself
 
-      inline int need_to_clear ()
+      int need_to_clear ()
          { return 0; }  // I know how to undraw myself.
 
       void clear         ();

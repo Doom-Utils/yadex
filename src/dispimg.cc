@@ -79,29 +79,61 @@ if (buf_bpp == 1)
    }
 
 else if (buf_bpp == 2)
-   {
-   register const game_image_pixel_t *image_ptr;
-   register u16 *buf_ptr;
-   for (image_ptr = image_data, buf_ptr = (u16 *) buf;
-        image_ptr < image_end;
-        image_ptr++)
-      *buf_ptr++ = (u16) game_colour[*image_ptr];
-   }
+   if (cpu_big_endian == x_server_big_endian)
+      {
+      register const game_image_pixel_t *image_ptr;
+      register u16 *buf_ptr;
+      for (image_ptr = image_data, buf_ptr = (u16 *) buf;
+	   image_ptr < image_end;
+	   image_ptr++)
+	 *buf_ptr++ = (u16) game_colour[*image_ptr];
+      }
+   else  // Different endiannesses so swap bytes
+      {
+      register const game_image_pixel_t *image_ptr;
+      register u16 *buf_ptr;
+      for (image_ptr = image_data, buf_ptr = (u16 *) buf;
+	   image_ptr < image_end;
+	   image_ptr++)
+	 *buf_ptr++ = (u16) (
+	       (game_colour[*image_ptr] >> 8)  // Assume game_colour unsigned
+	     | (game_colour[*image_ptr] << 8));
+      }
 
 else if (buf_bpp == 4)
-   {
-   register const game_image_pixel_t *image_ptr;
-   register u32 *buf_ptr;
-   for (image_ptr = image_data, buf_ptr = (u32 *) buf;
-        image_ptr < image_end;
-        image_ptr++)
-      *buf_ptr++ = (u32) game_colour[*image_ptr];
-   }
+   if (cpu_big_endian == x_server_big_endian)
+      {
+      register const game_image_pixel_t *image_ptr;
+      register u32 *buf_ptr;
+      for (image_ptr = image_data, buf_ptr = (u32 *) buf;
+	   image_ptr < image_end;
+	   image_ptr++)
+	 *buf_ptr++ = (u32) game_colour[*image_ptr];
+      }
+   else  // Different endiannesses so swap bytes
+      {
+      register const game_image_pixel_t *image_ptr;
+      register u32 *buf_ptr;
+      for (image_ptr = image_data, buf_ptr = (u32 *) buf;
+	   image_ptr < image_end;
+	   image_ptr++)
+	 *buf_ptr++ = (u32) (
+	      (game_colour[*image_ptr] >> 24)  // Assume game_colour unsigned
+	    | (game_colour[*image_ptr] >> 8) & 0x0000ff00
+	    | (game_colour[*image_ptr] << 8) & 0x00ff0000
+	    | (game_colour[*image_ptr] << 24));
+      }
 
 image = XCreateImage (dpy, win_vis, win_depth, ZPixmap, 0, (char *) buf,
    image_width, image_height, 8, image_width * buf_bpp);
 if (! image)
    fatal_error ("XCreateImage returned NULL");
+if (image->byte_order == LSBFirst && ! x_server_big_endian
+      || image->byte_order == MSBFirst && x_server_big_endian)
+   ;  // OK
+else
+   warn ("image byte_order %d doesn't match X server endianness\n",
+	 image->byte_order);
 XPutImage (dpy, win, gc, image, 0, 0,
    screen_x, screen_y, image_width, image_height);
 XDestroyImage (image);  /* Also frees buf. */

@@ -36,26 +36,26 @@ class highlight_c : public edwidget_c
    {
    public :
       highlight_c (void);
-      inline void set (int obj_type, int obj_no)
+      void set (int obj_type, int obj_no)
 	 {
 	 this->obj_type = obj_type;
 	 this->obj_no   = obj_no;
 	 }
 
       /* Methods declared in edwidget */
-      inline void unset ()
+      void unset ()
 	 { obj_no = OBJ_NO_NONE; }
 
       void draw          ();
       void undraw        ();
 
-      inline int can_undraw ()
+      int can_undraw ()
          { return 1; }  // I have the ability to undraw myself.
 
-      inline int need_to_clear ()
+      int need_to_clear ()
 	 { return 0; }  // I know how to undraw myself.
 
-      inline void clear ()
+      void clear ()
 	 { obj_no_disp = OBJ_NO_NONE; }
 
    private :

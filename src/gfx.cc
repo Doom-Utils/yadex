@@ -32,21 +32,21 @@ Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 
 #include "yadex.h"
 #include <math.h>
-#include <errno.h>
+#ifdef Y_X11
+#include <X11/Xlib.h>
+#include <X11/Xutil.h>
+#endif
 #include "acolours.h"
 #include "gcolour1.h"
 #include "gcolour2.h"
 #include "gfx.h"
 #include "levels.h"  // Level
+#include "x11.h"
 
 #ifdef Y_DOS
 #include <direct.h>
 #endif
 
-#ifdef Y_X11
-#include <X11/Xlib.h>
-#include <X11/Xutil.h>
-#endif
 
 
 /* if your graphics driver doesn't like circles, draw squares instead */
@@ -71,13 +71,13 @@ int   VideoMode = 2;		// BGI: default video mode for VESA cards
 int GfxMode = 0;	// graphics mode number, or 0 for text
 			// 1 = 320x200, 2 = 640x480, 3 = 800x600, 4 = 1kx768
 			// positive = 16 colors, negative = 256 colors
-int OrigX;		// the X origin
-int OrigY;		// the Y origin
+int OrigX;		// Map X-coord of centre of screen/window
+int OrigY;		// Map Y-coord of centre of screen/window
 float Scale;		// the scale value
-int ScrMaxX;		// maximum X screen coord
-int ScrMaxY;		// maximum Y screen coord
-int ScrCenterX;		// X coord of screen center
-int ScrCenterY;		// Y coord of screen center
+int ScrMaxX;		// Maximum display X-coord of screen/window
+int ScrMaxY;		// Maximum display Y-coord of screen/window
+int ScrCenterX;		// Display X-coord of centre of screen/window
+int ScrCenterY;		// Display Y-coord of centre of screen/window
 int FONTH;
 int FONTW;
 int font_xofs;
@@ -95,7 +95,7 @@ Colormap cmap = 0;	// The X colormap
 			// The 2 x NCOLOURS following are the same as the
 			// above except that line is thick instead of thin.
 GC       std_gc[2][2][NCOLOURS];
-#endif MANY_GC
+#endif  /* MANY_GC */
 GC       gc;		// Default GC as set by set_colour(), SetDrawingMode()
                         // and SetLineThickness()
 GC       pixmap_gc;	// The GC used to clear the pixmap
@@ -122,6 +122,7 @@ int      win_vis_class;	// The class of win's visual
 VisualID win_vis_id;	// The ID of win's visual
 int      win_depth;	// The depth of win in bits
 int      win_bpp;	// The depth of win in bytes
+int      x_server_big_endian = 0;	// Is the X server big endian ?
 static pcolour_t *app_colour = 0;	// Pixel values for the app. colours
 static int DrawingMode    = 0;		// 0 = copy, 1 = xor
 static int LineThickness  = 0;		// 0 = thin, 1 = thick
@@ -130,6 +131,7 @@ int      text_dot         = 0;		// DrawScreenText() debug flag
 static acolour_t colour_stack[4];
 static int       colour_stack_pointer = 0;
 static Font      font_xfont;
+static bool      default_font = true;
 
 #if defined Y_BGI && defined CIRRUS_PATCH
 char mp[256];
@@ -171,8 +173,11 @@ char HWCursor[] =
 #endif /* Y_BGI && CIRRUS_PATCH */
 
 
+/*
+ *	Prototypes
+ */
 #ifdef Y_BGI
-int cooked_installuserdriver (const char far *__name,
+static int cooked_installuserdriver (const char far *__name,
                              int huge (*detect)(void));
 #endif
 
@@ -242,6 +247,29 @@ dpy = XOpenDisplay (0);
 if (! dpy)
    fatal_error ("Can't open display");
 scn = DefaultScreen (dpy);
+{
+verbmsg ("X server endianness: ");
+int r = ImageByteOrder (dpy);
+if (r == LSBFirst)
+   {
+   verbmsg ("little-endian\n");
+   x_server_big_endian = 0;
+   }
+else if (r == MSBFirst)
+   {
+   verbmsg ("big-endian\n");
+   x_server_big_endian = 1;
+   }
+else
+   {
+   verbmsg ("unknown\n");
+   warn ("don't understand X server's endianness code %d\n", r);
+   warn ("assuming same endianness as CPU.\n");
+   x_server_big_endian = cpu_big_endian;
+   }
+}
+
+
 
 /*
  *	Create the window
@@ -366,23 +394,32 @@ XSelectInput (dpy, win,
 XFontStruct *xqf;
 
 // Load the font or use the default font.
+default_font = true;
 if (font_name != NULL)
    {
+   x_catch_on ();  // Catch errors in XLoadFont()
    font_xfont = XLoadFont (dpy, font_name);
-   XFlush (dpy);
+   if (const char *err_msg = x_error ())
+      {
+      warn ("can't load font \"%s\" (%s).\n", font_name, err_msg);
+      warn ("using default font instead.\n");
+      }
+   else
+      default_font = false;
+   x_catch_off ();
    }
 
 // Query the font we'll use for FONTW, FONTH and FONTYOFS.
 xqf = XQueryFont (dpy,
-   font_name ? font_xfont : XGContextFromGC (DefaultGC (dpy, scn)));
+   default_font ? XGContextFromGC (DefaultGC (dpy, scn)) : font_xfont);
 if (xqf->direction != FontLeftToRight)
-   printf ("Warning: this font is not left-to-right !\n");
+   warn ("this font is not left-to-right !\n");
 if (xqf->min_byte1 != 0 || xqf->max_byte1 != 0)
-   printf ("Warning: this is not a single-byte font !\n");
+   warn ("this is not a single-byte font !\n");
 if (xqf->min_char_or_byte2 > 32 || xqf->max_char_or_byte2 < 126)
-   printf ("Warning: this font does not support the ASCII character set !\n");
+   warn ("this font does not support the ASCII character set !\n");
 if (xqf->min_bounds.width != xqf->max_bounds.width)
-   printf ("Warning: this is not a fixed-width font !\n");
+   warn ("this is not a fixed-width font !\n");
 FONTW     = xqf->max_bounds.width;
 FONTH     = xqf->ascent + xqf->descent;
 font_xofs = xqf->min_bounds.lbearing;
@@ -418,7 +455,7 @@ for (size_t acn = 0; acn < NCOLOURS; acn++)
    unsigned long mask;
 
    mask = GCForeground | GCFunction | GCLineWidth;
-   if (font_name != NULL)
+   if (! default_font)
       {
       mask |= GCFont;
       gcv.font = font_xfont;
@@ -449,7 +486,7 @@ XGCValues gcv;
 unsigned long mask;
 
 mask = GCForeground | GCFunction | GCLineWidth;
-if (font_name != NULL)
+if (! default_font)
    {
    mask |= GCFont;
    gcv.font = font_xfont;
@@ -522,7 +559,7 @@ if (GfxMode)
       verbmsg ("  Freeing Colormap\n");
       XFreeColormap  (dpy, cmap);
       }
-   if (font_name != NULL)
+   if (! default_font)
       {
       verbmsg ("  Unloading font\n");
       XUnloadFont (dpy, font_xfont);
@@ -722,6 +759,18 @@ drw = win;  // If they don't like it, they can call ClearScreen() [HHOS]
 
 
 /*
+ *	force_window_not_pixmap
+ *	Redirect graphic output to window, not pixmap.
+ *	Used only in yadex.cc, before calling the sprite viewer.
+ *	FIXME this is not a clean way to do things.
+ */
+void force_window_not_pixmap ()
+{
+drw = win;
+}
+
+
+/*
  *	set_pcolour
  *	Set the current drawing colour
  *	<colour> must be an physical colour number (a.k.a. pixel value).
@@ -770,7 +819,10 @@ if (colour != current_acolour)
 void push_colour (acolour_t colour)
 {
 if (colour_stack_pointer >= sizeof colour_stack / sizeof *colour_stack)
-   fatal_error ("Colour stack overflow");
+   {
+   nf_bug ("Colour stack overflow");
+   return;
+   }
 colour_stack[colour_stack_pointer] = current_acolour;
 colour_stack_pointer++;
 set_colour (colour);
@@ -784,7 +836,10 @@ set_colour (colour);
 void pop_colour (void)
 {
 if (colour_stack_pointer < 1)
-   fatal_error ("Colour stack underflow");
+   {
+   nf_bug ("Colour stack underflow");
+   return;
+   }
 colour_stack_pointer--;
 set_colour (colour_stack[colour_stack_pointer]);
 }
@@ -808,7 +863,7 @@ if (!! thick != LineThickness)
    XGCValues gcv;
    gcv.line_width = LineThickness ? 3 : (DrawingMode ? 1 : 0);
    // ^ It's important to use a line_width of 1 when in xor mode.
-   // See note (1) in the developper's guide.
+   // See note (1) in the hacker's guide.
    XChangeGC (dpy, gc, GCLineWidth, &gcv);
    }
 #endif
@@ -820,14 +875,14 @@ if (!! thick != LineThickness)
    set the drawing mode (copy or xor)
 */
 
-void SetDrawingMode (int xor)
+void SetDrawingMode (int _xor)
 {
 #if defined Y_BGI
-setwritemode (xor ? XOR_PUT : COPY_PUT);
+setwritemode (_xor ? XOR_PUT : COPY_PUT);
 #elif defined Y_X11
-if (!! xor != DrawingMode)
+if (!! _xor != DrawingMode)
    {
-   DrawingMode = !! xor;
+   DrawingMode = !! _xor;
 #ifdef MANY_GC
    gc = std_gc[LineThickness][DrawingMode][current_acolour];
 #else
@@ -835,7 +890,7 @@ if (!! xor != DrawingMode)
    gcv.function = DrawingMode ? GXxor : GXcopy;
    gcv.line_width = LineThickness ? 3 : (DrawingMode ? 1 : 0);
    // ^ It's important to use a line_width of 1 when in xor mode.
-   // See note (1) in the developper's guide.
+   // See note (1) in the hacker's guide.
    XChangeGC (dpy, gc, GCFunction | GCLineWidth, &gcv);
    }
 #endif
@@ -904,7 +959,7 @@ int    scry1   = SCREENY (mapy1);
 int    scrx2   = SCREENX (mapx2);
 int    scry2   = SCREENY (mapy2);
 double r       = hypot ((double) (scrx1 - scrx2), (double) (scry1 - scry2));
-/* AYM 19980216 to avoid getting huge arrow when zooming in */
+/* AYM 19980216 to avoid getting huge arrowheads when zooming in */
 int    scrXoff = (r >= 1.0) ? (int) ((scrx1 - scrx2) * 8.0 / r * (Scale < 1 ? Scale : 1)) : 0;
 int    scrYoff = (r >= 1.0) ? (int) ((scry1 - scry2) * 8.0 / r * (Scale < 1 ? Scale : 1)) : 0;
 
@@ -1176,6 +1231,10 @@ printf ("DrawScreenMeter()\n");  /* FIXME ! */
 }
 
 
+// Shared by DrawScreenText() and DrawScreenString()
+static int lastX;
+static int lastY;
+
 
 /*
  *	DrawScreenText
@@ -1188,11 +1247,8 @@ printf ("DrawScreenMeter()\n");  /* FIXME ! */
  *	If <msg> == NULL, no text is printed. Useful to set the
  *	coordinates for the next time.
  */
-
 void DrawScreenText (int scrx, int scry, const char *msg, ...)
 {
-static int lastX;
-static int lastY;
 char temp[120];
 va_list args;
 
@@ -1207,13 +1263,18 @@ if (msg == NULL)
    }
 
 va_start (args, msg);
-#ifdef Y_SNPRINTF
-vsnprintf (temp, sizeof temp, msg, args);
-#else
-vsprintf (temp, msg, args);
-#endif
-va_end (args);
+y_vsnprintf (temp, sizeof temp, msg, args);
+DrawScreenString (scrx, scry, temp);
+}
 
+
+/*
+ *	DrawScreenString
+ *	Same thing as DrawScreenText() except that the string is
+ *	printed verbatim (no formatting or conversion).
+ */
+void DrawScreenString (int scrx, int scry, const char *str)
+{
 /* FIXME originally, the test was "< 0". Because it broke
    when the screen was too small, I changed it to a more
    specific "== -1". A quick and very dirty hack ! */
@@ -1222,10 +1283,10 @@ if (scrx == -1)
 if (scry == -1)
    scry = lastY;
 #if defined Y_BGI
-outtextxy (scrx, scry, temp);
+outtextxy (scrx, scry, str);
 #elif defined Y_X11
 XDrawString (dpy, drw, gc, scrx - font_xofs, scry + font_yofs,
-   temp, strlen (temp));
+    str, strlen (str));
 if (text_dot)
    XDrawPoint (dpy, drw, gc, scrx, scry);
 drw_mods++;
@@ -1233,7 +1294,6 @@ drw_mods++;
 lastX = scrx;
 lastY = scry + FONTH;
 }
-
 
 
 /*
@@ -1427,8 +1487,8 @@ wrinx (SEQ, 0x13, 0x3F);
 
 
 #ifdef Y_DOS
-int cooked_installuserdriver (const char far *__name,
-                             int huge (*detect)(void))
+static int cooked_installuserdriver (const char far *__name,
+                                    int huge (*detect)(void))
 {
 char savecwd[PATH_MAX+1];
 int gdriver;

@@ -37,7 +37,7 @@ Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 
 
 /*
-   turn a Sector into a door: change the LineDefs and SideDefs
+   turn a sector into a door: change the linedefs and sidedefs
 */
 
 void MakeDoorFromSector (int sector) /* SWAP! */
@@ -50,7 +50,7 @@ ldok = NULL;
 ldflip = NULL;
 ld1s = NULL;
 s = 0;
-/* build lists of linedefs that border the Sector */
+/* build lists of linedefs that border the sector */
 for (n = 0; n < NumLineDefs; n++)
 {
    ObjectsNeeded (OBJ_LINEDEFS, 0);
@@ -114,17 +114,17 @@ while (ldok != NULL)
    LineDefs[n].flags = 0x04;
    sd1 = LineDefs[n].sidedef1; /* outside */
    sd2 = LineDefs[n].sidedef2; /* inside */
-   /* adjust the textures for the SideDefs */
+   /* adjust the textures for the sidedefs */
    ObjectsNeeded (OBJ_SIDEDEFS, 0);
-   if (strncmp (SideDefs[sd1].tex3, "-", 8))
+   if (strncmp (SideDefs[sd1].tex3, "-", WAD_TEX_NAME))
    {
-      if (!strncmp (SideDefs[sd1].tex1, "-", 8))
-	 strncpy (SideDefs[sd1].tex1, SideDefs[sd1].tex3, 8);
-      strncpy (SideDefs[sd1].tex3, "-", 8);
+      if (!strncmp (SideDefs[sd1].tex1, "-", WAD_TEX_NAME))
+	 strncpy (SideDefs[sd1].tex1, SideDefs[sd1].tex3, WAD_TEX_NAME);
+      strncpy (SideDefs[sd1].tex3, "-", WAD_TEX_NAME);
    }
-   if (!strncmp (SideDefs[sd1].tex1, "-", 8))
-      strncpy (SideDefs[sd1].tex1, "BIGDOOR2", 8);
-   strncpy (SideDefs[sd2].tex3, "-", 8);
+   if (!strncmp (SideDefs[sd1].tex1, "-", WAD_TEX_NAME))
+      strncpy (SideDefs[sd1].tex1, "BIGDOOR2", WAD_TEX_NAME);
+   strncpy (SideDefs[sd2].tex3, "-", WAD_TEX_NAME);
    UnSelectObject (&ldok, n);
 }
 while (ld1s != NULL)
@@ -134,12 +134,12 @@ while (ld1s != NULL)
    n = ld1s->objnum;
    LineDefs[n].flags = 0x11;
    sd1 = LineDefs[n].sidedef1;
-   /* adjust the textures for the SideDef */
+   /* adjust the textures for the sidedef */
    ObjectsNeeded (OBJ_SIDEDEFS, 0);
-   if (!strncmp (SideDefs[sd1].tex3, "-", 8))
-      strncpy (SideDefs[sd1].tex3, "DOORTRAK", 8);
-   strncpy (SideDefs[sd1].tex1, "-", 8);
-   strncpy (SideDefs[sd1].tex2, "-", 8);
+   if (!strncmp (SideDefs[sd1].tex3, "-", WAD_TEX_NAME))
+      strncpy (SideDefs[sd1].tex3, "DOORTRAK", WAD_TEX_NAME);
+   strncpy (SideDefs[sd1].tex1, "-", WAD_TEX_NAME);
+   strncpy (SideDefs[sd1].tex2, "-", WAD_TEX_NAME);
    UnSelectObject (&ld1s, n);
 }
 /* adjust the ceiling height */

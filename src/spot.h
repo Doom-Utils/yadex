@@ -39,15 +39,15 @@ public :
 /*
  *	Specific to this class
  */
-inline spot_c () { visible = 0; visible_disp = 0; }
-inline void set (int x, int y) { this->x = x; this->y = y; visible = 1; }
+spot_c () { visible = 0; visible_disp = 0; }
+void set (int x, int y) { this->x = x; this->y = y; visible = 1; }
 
 /*
  *	Inherited from edwidget_c
  */
-inline void unset () { visible = 0; }
+void unset () { visible = 0; }
 
-inline void draw ()
+void draw ()
    {
    if (visible && (! visible_disp || x_disp != x || y_disp != y))
       {
@@ -62,7 +62,7 @@ inline void draw ()
       }
    }
 
-inline void undraw ()
+void undraw ()
    {
    if (visible_disp)
       {
@@ -75,9 +75,9 @@ inline void undraw ()
       }
    }
 
-inline int can_undraw () { return 1; }
-inline int need_to_clear () { return 0; }
-inline void clear () { visible_disp = 0; }
+int can_undraw () { return 1; }
+int need_to_clear () { return 0; }
+void clear () { visible_disp = 0; }
 
 private :
 int visible;

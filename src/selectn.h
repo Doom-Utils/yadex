@@ -26,6 +26,7 @@ void select_unselect_obj (SelPtr *list, int objnum);
 void UnSelectObject (SelPtr *, int);
 void ForgetSelection (SelPtr *);
 bitvec_c *list_to_bitvec (SelPtr list, size_t bitvec_size);
+SelPtr bitvec_to_list (const bitvec_c &b);
 
 #endif
 

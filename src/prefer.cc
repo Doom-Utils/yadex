@@ -46,7 +46,8 @@ void Preferences (int x0, int y0)
 {
 char   *menustr[9];
 int     n, val;
-char    texname[9];
+char    texname[WAD_TEX_NAME + 1];
+char    flatname[WAD_FLAT_NAME + 1];
 int     width;
 int     height;
 
@@ -59,16 +60,16 @@ if (y0 < 0)
 for (n = 0; n < 9; n++)
    menustr[n] = (char *) GetMemory (80);
 sprintf (menustr[8], "Preferences");
-sprintf (menustr[0], "Change default middle texture  (Current: %s)",
-   default_middle_texture);
-sprintf (menustr[1], "Change default upper texture   (Current: %s)",
-   default_upper_texture);
-sprintf (menustr[2], "Change default lower texture   (Current: %s)",
-   default_lower_texture);
-sprintf (menustr[3], "Change default floor texture   (Current: %s)",
-   default_floor_texture);
-sprintf (menustr[4], "Change default ceiling texture (Current: %s)",
-   default_ceiling_texture);
+sprintf (menustr[0], "Change default middle texture  (Current: %.*s)",
+   WAD_TEX_NAME, default_middle_texture);
+sprintf (menustr[1], "Change default upper texture   (Current: %.*s)",
+   WAD_TEX_NAME, default_upper_texture);
+sprintf (menustr[2], "Change default lower texture   (Current: %.*s)",
+   WAD_TEX_NAME, default_lower_texture);
+sprintf (menustr[3], "Change default floor texture   (Current: %.*s)",
+   WAD_FLAT_NAME, default_floor_texture);
+sprintf (menustr[4], "Change default ceiling texture (Current: %.*s)",
+   WAD_FLAT_NAME, default_ceiling_texture);
 sprintf (menustr[5], "Change default floor height    (Current: %d)",
    default_floor_height);
 sprintf (menustr[6], "Change default ceiling height  (Current: %d)",
@@ -104,19 +105,33 @@ switch (val)
 	 strcpy (default_lower_texture, texname);
       break;
    case 4:
-      strcpy (texname, default_floor_texture);
+      {
+      strcpy (flatname, default_floor_texture);
+      char ** flat_names
+	= (char **) GetMemory (NumFTexture * sizeof *flat_names);
+      for (size_t n = 0; n < NumFTexture; n++)
+	 flat_names[n] = flat_list[n].name;
       ChooseFloorTexture (subwin_x0, subwin_y0, "Choose a floor texture",
-        NumFTexture, FTexture, texname);
-      if (strlen (texname) > 0)
-	 strcpy (default_floor_texture, texname);
+        NumFTexture, flat_names, flatname);
+      FreeMemory (flat_names);
+      if (strlen (flatname) > 0)
+	 strcpy (default_floor_texture, flatname);
       break;
+      }
    case 5:
-      strcpy (texname, default_ceiling_texture);
+      {
+      strcpy (flatname, default_ceiling_texture);
+      char ** flat_names
+	= (char **) GetMemory (NumFTexture * sizeof *flat_names);
+      for (size_t n = 0; n < NumFTexture; n++)
+	 flat_names[n] = flat_list[n].name;
       ChooseFloorTexture (subwin_x0, subwin_y0, "Choose a ceiling texture",
-        NumFTexture, FTexture, texname);
-      if (strlen (texname) > 0)
-	 strcpy (default_ceiling_texture, texname);
+        NumFTexture, flat_names, flatname);
+      FreeMemory (flat_names);
+      if (strlen (flatname) > 0)
+	 strcpy (default_ceiling_texture, flatname);
       break;
+      }
    case 6:
       val = InputIntegerValue (x0 + 42, subwin_y0, -512, 511, default_floor_height);
       if (val != IIV_CANCEL)

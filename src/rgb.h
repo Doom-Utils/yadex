@@ -29,31 +29,35 @@ Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 */
 
 
+#ifndef YH_RGB  /* Prevent multiple inclusion */
+#define YH_RGB  /* Prevent multiple inclusion */
+
+
 class rgb_c
    {
    public :
-      inline rgb_c ()
+      rgb_c ()
          {
          }
 
-      inline rgb_c (u8 r, u8 g, u8 b)
-         {
-         set (r, g, b);
-         }
-
-      inline void set (u8 r, u8 g, u8 b)
+      void set (u8 r, u8 g, u8 b)  // Must be defined before rbg_c (r, g, b)
          {
          this->r = r;
          this->g = g;
          this->b = b;
          }
 
-      inline int operator == (const rgb_c rgb2)
+      rgb_c (u8 r, u8 g, u8 b)
+         {
+         set (r, g, b);
+         }
+
+      int operator == (const rgb_c rgb2) const
          {
          return rgb2.r == r && rgb2.g == g && rgb2.b == b;
          }
 
-      inline int operator - (const rgb_c rgb2)
+      int operator - (const rgb_c rgb2) const
          {
          return abs (rgb2.r - r) + abs (rgb2.g - g) + abs (rgb2.b - b);
          }
@@ -64,3 +68,4 @@ class rgb_c
    };
 
 
+#endif  /* DO NOT ADD ANYTHING AFTER THIS LINE */

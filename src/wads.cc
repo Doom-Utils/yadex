@@ -51,6 +51,17 @@ if (fseek (wadfile->fd, offset, 0))
 }
 
 
+/*
+ *	wad_seek2
+ *	Like wad_seek() but simply returns non-zero on error.
+ */
+int wad_seek2 (WadPtr wadfile, long offset)
+{
+if (fseek (wadfile->fd, offset, 0))
+   return 1;
+return 0;
+}
+
 
 /*
  *	wad_read_bytes
@@ -106,6 +117,29 @@ return bytes_read_total;
  *	wad_read_i16
  *	Read a little-endian 16-bit signed integer
  *	from wad file <wadfile>.
+ *	If a read error occurs, sets wadfile->error.
+ */
+i16 wad_read_i16 (WadPtr wadfile)
+{
+const size_t nbytes = 2;
+u8 buf[nbytes];
+if (fread (buf, 1, nbytes, wadfile->fd) != nbytes)
+   {
+   if (! wadfile->error)
+      {
+      //wadfile->err_ofs = ftell (wadfile->fd);
+      wadfile->error = true;
+      }
+   return EOF;  // Whatever
+   }
+return buf[0] | buf[1] << 8;
+}
+
+
+/*
+ *	wad_read_i16
+ *	Same thing as above but the value read is not
+ *	returned by stored in *buf.
  *	If a read error occurs, calls fatal_error().
  */
 void wad_read_i16 (WadPtr wadfile, i16 *buf)
@@ -124,7 +158,7 @@ if (feof (wadfile->fd) || ferror (wadfile->fd))
  *	from wad file <wadfile>.
  *	If a read error occurs, calls fatal_error().
  */
-void wad_read_i32 (WadPtr wadfile, i32 *buf, long count = 1)
+void wad_read_i32 (WadPtr wadfile, i32 *buf, long count)
 {
 while (count-- > 0)
    {
@@ -159,7 +193,7 @@ putc ((buf >> 8) & 0xff, fd);
  *	to file <fd>.
  *	Does no error checking.
  */
-void file_write_i32 (FILE *fd, i32 buf, long count = 1)
+void file_write_i32 (FILE *fd, i32 buf, long count)
 {
 // It would probably be more efficient
 // to swap bytes in-core and write
@@ -175,6 +209,33 @@ while (count-- > 0)
 
 
 /*
+ *	file_write_name
+ *	Write to file <fd> the directory entry name contained in
+ *	<name>. The string written in the file is exactly the
+ *	same as the string contained in <name> except that :
+ *
+ *	- only the first WAD_NAME characters of <name> are
+ *	  used, or up to the first occurrence of a NUL,
+ *	  
+ *	- all letters are forced to upper case,
+ *
+ *	- if necessary, the string is padded to WAD_NAME
+ *	  characters with NULs.
+ *
+ *	Does no error checking.
+ */
+void file_write_name (FILE *fd, const char *name)
+{
+const unsigned char *const p0 = (const unsigned char *) name;
+const unsigned char *p = p0;  // "unsigned" for toupper()'s sake
+for (; p - p0 < WAD_NAME && *p; p++)
+   putc (toupper (*p), fd);
+for (; p - p0 < WAD_NAME; p++)
+   putc ('\0', fd);
+}
+
+
+/*
    find an entry in the master directory
 */
 
@@ -182,7 +243,23 @@ MDirPtr FindMasterDir (MDirPtr from, const char *name)
 {
 while (from)
    {
-   if (!strncmp (from->dir.name, name, 8))
+   if (! y_strnicmp (from->dir.name, name, WAD_NAME))
+      break;
+   from = from->next;
+   }
+return from;
+}
+
+
+/*
+ *	Find an entry in the master directory
+ */
+MDirPtr FindMasterDir (MDirPtr from, const char *name1, const char *name2)
+{
+while (from)
+   {
+   if (! y_strnicmp (from->dir.name, name1, WAD_NAME)
+	 || ! y_strnicmp (from->dir.name, name2, WAD_NAME))
       break;
    from = from->next;
    }
@@ -213,6 +290,9 @@ if (fwrite (buf, 1, size, file) != (size_t) size)
 
 /*
    copy bytes from a binary file to another with error checking
+   FIXME it's silly to allocate such a large buffer on memory
+   constrained systems. The function should be able to fall back
+   on a smaller buffer.
 */
 
 void CopyBytes (FILE *dest, FILE *source, long size)
@@ -237,47 +317,6 @@ if (fwrite (data, 1, size, dest) != (size_t) size)
 FreeFarMemory (data);
 }
 
-
-
-/*
-   check if a file exists and is readable
-*/
-
-Bool Exists (const char *filename)
-{
-FILE *test;
-
-if ((test = fopen (filename, "rb")) == NULL)
-   return 0;
-fclose (test);
-return 1;
-}
-
-
-/*
- *	entryname_cmp
- *	Compare two directory entries.
- *	This is basically an unrolled strnicmp (entry1, entry2, 8).
- */
-int entryname_cmp (const char *entry1, const char *entry2)
-{
-if (entry1[0] != entry2[0]) return entry1[0] - entry2[0];
-if (entry1[0] == '\0')      return 0;
-if (entry1[1] != entry2[1]) return entry1[1] - entry2[1];
-if (entry1[1] == '\0')      return 0;
-if (entry1[2] != entry2[2]) return entry1[2] - entry2[2];
-if (entry1[2] == '\0')      return 0;
-if (entry1[3] != entry2[3]) return entry1[3] - entry2[3];
-if (entry1[3] == '\0')      return 0;
-if (entry1[4] != entry2[4]) return entry1[4] - entry2[4];
-if (entry1[4] == '\0')      return 0;
-if (entry1[5] != entry2[5]) return entry1[5] - entry2[5];
-if (entry1[5] == '\0')      return 0;
-if (entry1[6] != entry2[6]) return entry1[6] - entry2[6];
-if (entry1[6] == '\0')      return 0;
-if (entry1[7] != entry2[7]) return entry1[7] - entry2[7];
-return 0;
-}
 
 
 /* end of file */

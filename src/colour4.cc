@@ -1,3 +1,4 @@
+
 /*
  *	colour4.cc
  *	Allocate and free physical colours.
@@ -37,6 +38,7 @@ Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 #include "colour.h"
 #include "gfx.h"
 #include "rgb.h"
+#include "x11.h"
 
 
 /* This table contains all the physical colours allocated,
@@ -52,6 +54,17 @@ size_t physical_colours = 0;  // Number of entries in <pcolours>
 
 
 static void dump_pcolours ();
+
+
+/*
+ *	eight2sixteen
+ *	Convert an 8-bit RGB component value to a 16-bit one.
+ *	Will convert 00h to 0000h, 80h to 8080h and FFh to FFFFh.
+ */
+inline u16 eight2sixteen (u8 v)
+{
+return (v << 8) | v;
+}
 
 
 /*
@@ -89,9 +102,9 @@ for (size_t n = 0; n < count; n++)
    if (pcn_table[n] == PCOLOUR_NONE)
       {
       XColor xc;
-      xc.red   = rgb_values[n].r << 8;
-      xc.green = rgb_values[n].g << 8;
-      xc.blue  = rgb_values[n].b << 8;
+      xc.red   = eight2sixteen (rgb_values[n].r);
+      xc.green = eight2sixteen (rgb_values[n].g);
+      xc.blue  = eight2sixteen (rgb_values[n].b);
       Status r = XAllocColor (dpy, cmap, &xc);
 
       // Allocation successful. Add a new entry to
@@ -173,7 +186,12 @@ for (pcolour_t *pcn = pcn_table; count; count--, pcn++)
    if (pcolours[i].usage_count == 0)
       {
       unsigned long pixel = (unsigned long) *pcn;
+      x_catch_on ();
       XFreeColors (dpy, cmap, &pixel, 1, 0);
+      // Should not happen but sometimes does (not reproducible)
+      if (const char *err_msg = x_error ())
+	warn ("error freeing colour %08lXh (%s).\n", pixel, err_msg);
+      x_catch_off ();
       pcolours[i].pcn = PCOLOUR_NONE;
       }
    }
@@ -235,7 +253,10 @@ return physical_colours;
 pcolour_t get_pcolour_pcn (size_t i)
 {
 if (i >= physical_colours)
-   fatal_error ("gpp: i=%d\n", (int) i);
+   {
+   nf_bug ("get_pcolour_pcn: i=%d\n", (int) i);
+   return ULONG_MAX;
+   }
 return pcolours[i].pcn;
 }
 
@@ -249,7 +270,7 @@ static void dump_pcolours ()
 for (size_t i = 0; i < physical_colours; i++)
    {
 #if 0
-   printf ("%02lX %02X/%02X%02X %d",
+   printf ("%02lX %02X/%02X/%02X %d",
       pcolours[i].pcn,
       pcolours[i].rgb.r,
       pcolours[i].rgb.g,

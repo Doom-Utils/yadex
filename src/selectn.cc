@@ -176,7 +176,7 @@ while (cur)
 /*
  *	list_to_bitvec
  *	Make a bit vector of <bitvec_size> elements from a list.
- *	It's up to the caller to delete the bit vector after use.
+ *	It's up to the caller to delete the new bit vector after use.
  */
 bitvec_c *list_to_bitvec (SelPtr list, size_t bitvec_size)
 {
@@ -188,4 +188,23 @@ for (cur = list; cur; cur = cur->next)
    bitvec->set (cur->objnum);
 return bitvec;
 }
+
+
+/*
+ *	bitvec_to_list
+ *	Make a list from a bitvec object. The items are inserted
+ *	in the list from first to last (i.e. item N in the bitvec
+ *	is inserted before item N+1).
+ *	It's up to the caller to delete the new list after use.
+ */
+SelPtr bitvec_to_list (const bitvec_c &b)
+{
+SelPtr list = 0;
+for (size_t n = 0; n < b.nelements (); n++)
+   if (b.get (n))
+      SelectObject (&list, n);
+return list;
+}
+
+
 

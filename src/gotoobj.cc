@@ -36,9 +36,10 @@ Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 
 
 /*
-  center the map around the given coords
-*/
-
+ *	CenterMapAroundCoords
+ *	Change the view so that the map coordinates (xpos, ypos)
+ *	appear at the centre of the window
+ */
 void CenterMapAroundCoords (int xpos, int ypos)
 {
 OrigX = xpos;
@@ -54,21 +55,47 @@ is.y = ScrCenterY;
 
 
 /*
-  center the map around the object and zoom in if necessary
+ *	focus_on_map_coords
+ *	Change the view so that the map coordinates (xpos, ypos)
+ *	appear under the pointer
+ */
+void focus_on_map_coords (int x, int y)
+{
+OrigX = x - (MAPX (is.x) - OrigX);
+OrigY = y - (MAPY (is.y) - OrigY);
+}
+
+
+/*
+ *	sector_under_pointer
+ *	Convenience function
+ */
+inline int sector_under_pointer ()
+{
+   return GetCurObject (OBJ_SECTORS, MAPX (is.x), MAPY (is.y), 1);
+}
+
+
+/*
+  centre the map around the object and zoom in if necessary
 */
 
 void GoToObject (int objtype, int objnum) /* SWAP! */
 {
 int   xpos, ypos;
 int   xpos2, ypos2;
-int   n;
 int   sd1, sd2;
 float oldscale;
 
 GetObjectCoords (objtype, objnum, &xpos, &ypos);
-CenterMapAroundCoords (xpos, ypos);
+focus_on_map_coords (xpos, ypos);
 oldscale = Scale;
 
+/* I ifdef'd out this block because the only thing it really
+   does is (uselessly) messing the zoom factor up when there are
+   superimposed objects and we're trying to focus on the
+   highest-numbered (and therefore hidden) one. AYM 1999-07-26 */
+#if 0
 /* zoom in until the object can be selected */
 while (Scale < 8.0
    && GetCurObject (objtype, MAPX (is.x), MAPY (is.y), 4) != objnum)
@@ -78,44 +105,42 @@ while (Scale < 8.0
    else
       Scale = Scale * 2.0;
    }
+#endif
 
-/* Special case for Sectors: if several Sectors are one inside another, then
-   zooming in on the center won't help. So I choose a LineDef that borders the
-   sector, move a few pixels towards the inside of the Sector, then zoom in. */
-if (objtype == OBJ_SECTORS
- && GetCurObject (OBJ_SECTORS, OrigX, OrigY, 1) != objnum)
+/* Special case for sectors: if a sector contains other sectors,
+   or if its shape is such that it does not contain its own
+   geometric centre, zooming in on the centre won't help. So I
+   choose a linedef that borders the sector and focus on a point
+   between the centre of the linedef and the centre of the
+   sector. If that doesn't help, I try another linedef.
+
+   This algorithm is not perfect but it works rather well with
+   most well-constituted sectors. It does not work so well for
+   unclosed sectors, though (but it's partly GetCurObject()'s
+   fault). */
+if (objtype == OBJ_SECTORS && sector_under_pointer () != objnum)
    {
    /* restore the Scale */
    Scale = oldscale;
-   for (n = 0; n < NumLineDefs; n++)
+   for (int n = 0; n < NumLineDefs; n++)
       {
       ObjectsNeeded (OBJ_LINEDEFS, 0);
       sd1 = LineDefs[n].sidedef1;
       sd2 = LineDefs[n].sidedef2;
       ObjectsNeeded (OBJ_SIDEDEFS, 0);
-      if (sd1 >= 0 && SideDefs[sd1].sector == objnum)
-	 break;
-      if (sd2 >= 0 && SideDefs[sd2].sector == objnum)
-	 break;
-      }
-   if (n < NumLineDefs)
-      {
-      GetObjectCoords (OBJ_LINEDEFS, n, &xpos2, &ypos2);
-      n = ComputeDist (abs (xpos - xpos2), abs (ypos - ypos2)) / 7;
-      if (n <= 1)
-	n = 2;
-      xpos = xpos2 + (xpos - xpos2) / n;
-      ypos = ypos2 + (ypos - ypos2) / n;
-      CenterMapAroundCoords (xpos, ypos);
-      /* zoom in until the sector can be selected */
-      while (Scale > 8.0
-          && GetCurObject (OBJ_SECTORS, OrigX, OrigY, 1) != objnum)
-         {
-	 if (Scale < 1.0)
-	    Scale = 1.0 / ((1.0 / Scale) - 1.0);
-	 else
-	    Scale = Scale / 2.0;
-         }
+      if (sd1 >= 0 && SideDefs[sd1].sector == objnum
+	|| sd2 >= 0 && SideDefs[sd2].sector == objnum)
+	 {
+	 GetObjectCoords (OBJ_LINEDEFS, n, &xpos2, &ypos2);
+	 int d = ComputeDist (abs (xpos - xpos2), abs (ypos - ypos2)) / 7;
+	 if (d <= 1)
+	   d = 2;
+	 xpos = xpos2 + (xpos - xpos2) / d;
+	 ypos = ypos2 + (ypos - ypos2) / d;
+	 focus_on_map_coords (xpos, ypos);
+	 if (sector_under_pointer () == objnum)
+	    break;
+	 }
       }
    }
 if (UseMouse)

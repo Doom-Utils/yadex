@@ -69,7 +69,8 @@ void InputNameFromListWithFunc (
    char *name,
    int width,
    int height,
-   void (*hookfunc)(hookfunc_comm_t *c))
+   void (*hookfunc)(hookfunc_comm_t *c),
+   char flags_to_pass_to_callback)
 {
 const char *msg1 = "Press Shift-F1 to";
 const char *msg2 = "save image to file";
@@ -164,56 +165,74 @@ firstkey = 1;
 for (;;)
    {
    hookfunc_comm_t c;
-   /* test if "name" is in the list */
+   // Test if "name" is in the list
    for (n = 0; n < listsize; n++)
-      if (strcmp (name, list[n]) <= 0)
+      if (y_stricmp (name, list[n]) <= 0)
 	 break;
-   ok = n < listsize ? !strcmp (name, list[n]) : 0;
+   ok = n < listsize ? ! y_stricmp (name, list[n]) : 0;
    if (n > listsize - 1)
       n = listsize - 1;
-   /* display the "listdisp" next items in the list */
-   set_colour (WINBG);
-   DrawScreenBox (x0 + xlist,                  entry_out_y0,
-                  x0 + xlist + FONTW * maxlen, entry_out_y0 + FONTH * listdisp);
-   set_colour (WINFG);
+
+   // Display the <listdisp> next items in the list
+   {
+   int l;				// Current line
+   int y = entry_out_y0;		// Y-coord of current line
+   int xmin = x0 + xlist;
+   int xmax = xmin + FONTW * maxlen - 1;
    for (l = 0; l < listdisp && n + l < listsize; l++)
-      DrawScreenText (x0 + xlist, entry_out_y0 + l * FONTH, list[n+l]);
-   l = strlen (name);
+      {
+      set_colour (WINBG);
+      DrawScreenBox (xmin, y, xmax, y + FONTH - 1);
+      set_colour (WINFG);
+      DrawScreenText (xmin, y, list[n+l]);
+      y += FONTH;
+      }
+   if (l < listdisp)  // Less than <listdisp> names to display
+      {
+      set_colour (WINBG);
+      DrawScreenBox (xmin, y, xmax, entry_out_y0 + listdisp * FONTH - 1);
+      }
+   }
+
+   // Display the entry box and the current text
    set_colour (BLACK);
    DrawScreenBox (entry_text_x0, entry_text_y0, entry_text_x1, entry_text_y1);
-   if (ok)
+   if (ok)  // FIXME this colour scheme should be changed.
       set_colour (WHITE);
    else
-      set_colour (WINFG_DIM);
+      set_colour (WINFG);
    DrawScreenText (entry_text_x0, entry_text_y0, name);
-   /* call the function to display the picture, if any */
+
+   // Call the function to display the picture, if any
    if (hookfunc)
       {
       /* clear the window */
       set_colour (BLACK);
       DrawScreenBox (x1, y1, x2, y2);
       /* display the picture "name" */
-      c.x0   = x1;
-      c.y0   = y1;
-      c.x1   = x2;
-      c.y1   = y2;
-      c.name = name;
+      c.x0    = x1;
+      c.y0    = y1;
+      c.x1    = x2;
+      c.y1    = y2;
+      c.name  = name;
+      c.flags = flags_to_pass_to_callback;
       if (picture_size_drawn)
-	{
-	set_colour (WINBG);
-	DrawScreenBox (x0 + 10, y0 + 50,
-           x0 + 10 + 10 * FONTW - 1, y0 + 50 + FONTH - 1);
-	picture_size_drawn = 0;
-	}
+	 {
+	 set_colour (WINBG);
+	 DrawScreenBox (x0 + 10, y0 + 50,
+	    x0 + 10 + 10 * FONTW - 1, y0 + 50 + FONTH - 1);
+	 picture_size_drawn = 0;
+	 }
       hookfunc (&c);
       if ((c.flags & HOOK_SIZE_VALID) && (c.flags & HOOK_DISP_SIZE))
-	{
-	set_colour (WINFG);
-	DrawScreenText (x0 + 10, y0 + 50, "%dx%d", c.width, c.height);
-	picture_size_drawn = 1;
-	}
+	 {
+	 set_colour (WINFG);
+	 DrawScreenText (x0 + 10, y0 + 50, "%dx%d", c.width, c.height);
+	 picture_size_drawn = 1;
+	 }
       }
-   /* process user input */
+
+   // Process user input
    key = get_key ();
    if (firstkey && is_ordinary (key) && key != ' ')
       {
@@ -222,6 +241,7 @@ for (;;)
       l = 0;
       }
    firstkey = 0;
+   l = strlen (name);
    if (l < maxlen && key >= 'a' && key <= 'z')
       {
       name[l] = key + 'A' - 'a';
@@ -232,42 +252,121 @@ for (;;)
       name[l] = key;
       name[l + 1] = '\0';
       }
-   else if (l > 0 && key == YK_BACKSPACE)
+   else if (l > 0 && key == YK_BACKSPACE)		// BS
       name[l - 1] = '\0';
-   else if (n < listsize - 1 && key == YK_DOWN)
-      strcpy (name, list[n + 1]);
-   else if (n > 0 && key == YK_UP)
-      strcpy (name, list[n - 1]);
-   else if (n < listsize - listdisp && key == YK_PD)
-      strcpy (name, list[min (n + listdisp, listsize - 1)]); // AYM
-   else if (n > 0 && key == YK_PU)
+   else if (key == 21 || key == 23)			// ^U, ^W
+      *name = '\0';
+   else if (key == YK_DOWN)				// [Down]
+      {
+      /* Look for the next item in the list that has a
+	 different name. Why not just use the next item ?
+	 Because sometimes the list has duplicates (for example
+	 when editing a Doom II pwad in Doom mode) and then the
+	 viewer gets "stuck" on the first duplicate. */
+      int m = n + 1;
+      while (m < listsize && ! y_stricmp (list[n], list[m]))
+	  m++;
+      if (m < listsize)
+         strcpy (name, list[m]);
+      else
+	 Beep ();
+      }
+   else if (key == YK_UP)				// [Up]
+      {
+      // Same trick as for [Down]
+      int m = n - 1;
+      while (m >= 0 && ! y_stricmp (list[n], list[m]))
+	 m--;
+      if (m >= 0)
+         strcpy (name, list[m]);
+      else
+         Beep ();
+      }
+   else if (key == YK_PD || key == 6 || key == 22)	// [Pgdn], ^F, ^V
+      { 
+      if (n < listsize - listdisp)
+         strcpy (name, list[min (n + listdisp, listsize - 1)]);
+      else
+	 Beep ();
+      }
+   else if ((key == YK_PU || key == 2) && n > 0)	// [Pgup], ^B
       {
       if (n > listdisp)
 	 strcpy (name, list[n - listdisp]);
       else
 	 strcpy (name, list[0]);
       }
-   else if (key == YK_END)
+   else if (key == 14)					// ^N
+      {
+      if (n + 1 >= listsize)
+	 {
+	 Beep ();
+         goto done_with_event;
+	 }
+      while (n + 1 < listsize)
+	 {
+	 n++;
+	 if (y_strnicmp (list[n - 1], list[n], 4))
+	    break;
+	 }
+      strcpy (name, list[n]);
+      }
+   else if (key == 16)					// ^P
+      {
+      if (n < 1)
+	 {
+	 Beep ();
+	 goto done_with_event;
+	 }
+      // Put in <n> the index of the first entry of the current
+      // group or, if already at the beginning of the current
+      // group, the first entry of the previous group.
+      if (n > 0)
+	 {
+	 if (y_strnicmp (list[n], list[n - 1], 4))
+	    n--;
+	 while (n > 0 && ! y_strnicmp (list[n], list[n - 1], 4))
+	    n--;
+	 }
+      strcpy (name, list[n]);
+      }
+   else if (key == (YK_CTRL | YK_PD) || key == YK_END)	// [Ctrl][Pgdn], [End]
+      {
+      if (n + 1 >= listsize)
+	 {
+	 Beep ();
+	 goto done_with_event;
+	 }
       strcpy (name, list[listsize - 1]);
-   else if (key == YK_HOME)
+      }
+   else if (key == (YK_CTRL | YK_PU) || key == YK_HOME)	// [Ctrl][Pgup], [Home]
+      {
+      if (n < 1)
+	 {
+	 Beep ();
+	 goto done_with_event;
+	 }
       strcpy (name, list[0]);
-   else if (key == YK_F1 + YK_SHIFT   /* Shift-F1 : dump image to file */
+      }
+   else if (key == YK_F1 + YK_SHIFT	// [Shift][F1] : dump image to file
     && hookfunc != NULL
     && (c.flags & HOOK_DRAWN))
       {
       SavePic (c.x0, c.y0, c.width, c.height, c.name);  /* FIXME */
       }
-   else if (key == YK_TAB)
+   else if (key == YK_TAB)				// [Tab]
       strcpy (name, list[n]);
-   else if (ok && key == YK_RETURN)
+   else if (ok && key == YK_RETURN)			// [Return]
       break; /* return "name" */
-   else if (key == YK_ESC)
+   else if (key == YK_ESC)				// [Esc]
       {
       name[0] = '\0'; /* return an empty string */
       break;
       }
    else
       Beep ();
+done_with_event:
+   ;
    }
 }
 

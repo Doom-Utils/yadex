@@ -5,6 +5,7 @@
  */
 
 
-void make_gimp_palette (int playpalnum, const char *filename);
+int make_gimp_palette (int playpalnum, const char *filename);
+int make_palette_ppm (int playpalnum, const char *filename);
 
 

@@ -108,7 +108,7 @@ enum
   // Those are ORed with the other key numbers :
   YK_SHIFT	= 0x2000,
   YK_CTRL	= 0X4000, 
-  YK_ALT	= 0x8000,
+  YK_ALT	= 0x8000
   };
 
 /* Defined in input.c -- see the comment there */

@@ -31,7 +31,6 @@ Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 
 
 #include "yadex.h"
-#include <errno.h>
 #include "acolours.h"
 #include "game.h"
 #include "things.h"
@@ -46,6 +45,10 @@ static const char *standard_directories[] =
    "/usr/share/games",
    0
    };
+
+
+const char ygd_file_magic[] = "# Yadex game definition file version 2";
+
 
 /*
  *	InitGameDefs
@@ -108,7 +111,18 @@ if (! ygdfile)
 else
    printf ("Using game definition file \"%s\".\n", filename);
 
-for (lineno = 1; fgets (readbuf, YGD_BUF, ygdfile); lineno++)
+/* The first line of the ygd file must
+   contain exactly ygd_file_magic. */
+if (fgets (readbuf, sizeof readbuf, ygdfile) == NULL
+   || memcmp (readbuf, ygd_file_magic, sizeof ygd_file_magic - 1)
+   || readbuf[sizeof ygd_file_magic - 1] != '\n'
+   || readbuf[sizeof ygd_file_magic] != '\0')
+   {
+   report_error ("%s is not a valid Yadex game definition file", filename);
+   fatal_error ("Perhaps a leftover from a previous version of Yadex ?");
+   }
+
+for (lineno = 2; fgets (readbuf, sizeof readbuf, ygdfile); lineno++)
    {
    int         ntoks;
    char       *token[MAX_TOKENS];
@@ -117,17 +131,8 @@ for (lineno = 1; fgets (readbuf, YGD_BUF, ygdfile); lineno++)
    const char *iptr;
    char       *optr;
    char       *buf;
-   const char *bad_arg_count = "%s(%d): directive \"%s\" takes %d parameters";
-
-   if (lineno == 1)
-      {
-      if (strcmp (readbuf, "# Yadex game definition file version 1\n"))
-         {
-         report_error ("%s is not a Yadex game definition file", filename);
-         fatal_error ("Perhaps a version mismatch ?");
-         }
-      continue;
-      }
+   const char *const bad_arg_count =
+                                "%s(%d): directive \"%s\" takes %d parameters";
 
    /* duplicate the buffer */
    buf = (char *) malloc (strlen (readbuf) + 1);
@@ -209,6 +214,48 @@ for (lineno = 1; fgets (readbuf, YGD_BUF, ygdfile); lineno++)
       if (al_lwrite (ldtgroup, &buf))
 	 fatal_error ("LGD2 (%s)", al_astrerror (al_aerrno));
       }
+   else if (! strcmp (token[0], "level_format"))
+      {
+      if (ntoks != 2)
+	 fatal_error (bad_arg_count, filename, lineno, token[0], 1);
+      if (! strcmp (token[1], "alpha"))
+	 yg_level_format = YGLF_ALPHA;
+      else if (! strcmp (token[1], "doom"))
+         yg_level_format = YGLF_DOOM;
+      else if (! strcmp (token[1], "hexen"))
+         yg_level_format = YGLF_HEXEN;
+      else
+	 fatal_error ("%s(%d): invalid argument \"%s\" (alpha|doom|hexen)",
+            filename, lineno, token[1]);
+      }
+   else if (! strcmp (token[0], "level_name"))
+      {
+      if (ntoks != 2)
+	 fatal_error (bad_arg_count, filename, lineno, token[0], 1);
+      if (! strcmp (token[1], "e1m1"))
+         yg_level_name = YGLN_E1M1;
+      else if (! strcmp (token[1], "e1m10"))
+         yg_level_name = YGLN_E1M10;
+      else if (! strcmp (token[1], "map01"))
+         yg_level_name = YGLN_MAP01;
+      else
+	 fatal_error ("%s(%d): invalid argument \"%s\" (e1m1|e1m10|map01)",
+            filename, lineno, token[1]);
+      }
+   else if (! strcmp (token[0], "picture_format"))
+      {
+      if (ntoks != 2)
+         fatal_error (bad_arg_count, filename, lineno, token[0], 1);
+      if (! strcmp (token[1], "alpha"))
+	 yg_picture_format = YGPF_ALPHA;
+      else if (! strcmp (token[1], "pr"))
+	 yg_picture_format = YGPF_PR;
+      else if (! strcmp (token[1], "normal"))
+	 yg_picture_format = YGPF_NORMAL;
+      else
+	 fatal_error ("%s(%d): invalid argument \"%s\" (alpha|pr|normal)",
+	       filename, lineno, token[1]);
+      }
    else if (! strcmp (token[0], "st"))
       {
       stdef_t buf;
@@ -221,19 +268,44 @@ for (lineno = 1; fgets (readbuf, YGD_BUF, ygdfile); lineno++)
       if (al_lwrite (stdef, &buf))
 	 fatal_error ("LGD3 (%s)", al_astrerror (al_aerrno));
       }
+   else if (! strcmp (token[0], "texture_format"))
+      {
+      if (ntoks != 2)
+         fatal_error (bad_arg_count, filename, lineno, token[0], 1);
+      if (! strcmp (token[1], "alpha04"))
+	 yg_texture_format = YGTF_ALPHA04;
+      else if (! strcmp (token[1], "normal"))
+	 yg_texture_format = YGTF_NORMAL;
+      else
+	 fatal_error ("%s(%d): invalid argument \"%s\" (alpha04|normal)",
+	       filename, lineno, token[1]);
+      }
+   else if (! strcmp (token[0], "texture_lumps"))
+      {
+      if (ntoks != 2)
+         fatal_error (bad_arg_count, filename, lineno, token[0], 1);
+      if (! strcmp (token[1], "textures"))
+	 yg_texture_lumps = YGTL_TEXTURES;
+      else if (! strcmp (token[1], "texture1"))
+	 yg_texture_lumps = YGTL_TEXTURE1;
+      else
+	 fatal_error ("%s(%d): invalid argument \"%s\" (textures|texture1)",
+	       filename, lineno, token[1]);
+      }
    else if (! strcmp (token[0], "thing"))
       {
       thingdef_t buf;
 
-      if (ntoks < 5 || ntoks > 6)
+      if (ntoks < 6 || ntoks > 7)
 	 fatal_error (
-            "%s(d%): directive \"%s\" takes between 4 and 5 parameters",
+            "%s(d%): directive \"%s\" takes between 5 and 6 parameters",
             filename, lineno, token[0]);
       buf.number     = atoi (token[1]);
       buf.thinggroup = *token[2];
-      buf.radius     = atoi (token[3]);
-      buf.desc       = token[4];
-      buf.sprite     = ntoks > 5 ? token[5] : 0;
+      buf.flags      = *token[3] == 's' ? THINGDEF_SPECTRAL : 0;  // FIXME!
+      buf.radius     = atoi (token[4]);
+      buf.desc       = token[5];
+      buf.sprite     = ntoks >= 7 ? token[6] : 0;
       if (al_lwrite (thingdef, &buf))
 	 fatal_error ("LGD4 (%s)", al_astrerror (al_aerrno));
       }
@@ -258,6 +330,23 @@ for (lineno = 1; fgets (readbuf, YGD_BUF, ygdfile); lineno++)
 
 fclose (ygdfile);
 
+/* Verify that all the mandatory directives are present. */
+bool abort = false;
+if (yg_level_format == YGLF__)
+   {
+   report_error ("%s: Missing \"level_format\" directive.", filename);
+   abort = true;
+   }
+if (yg_level_name == YGLN__)
+   {
+   report_error ("%s: Missing \"level_name\" directive.", filename);
+   abort = true;
+   }
+// FIXME perhaps print a warning message if picture_format
+// is missing ("assuming picture_format=normal").
+// FIXME and same thing for texture_format and texture_lumps ?
+if (abort)
+   exit (2);
 
 /*
  *	Second pass

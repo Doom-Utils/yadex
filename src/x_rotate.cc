@@ -59,7 +59,7 @@ theta = atan2 ((double) *y, (double) *x);
 
 
 /*
-   rotate and scale a group of objects around the center of gravity
+   rotate and scale a group of objects around the centre of gravity
 */
 
 void RotateAndScaleObjects (int objtype, SelPtr obj, double angle, double scale) /* SWAP! */

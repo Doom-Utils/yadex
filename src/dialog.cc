@@ -42,8 +42,7 @@ Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 */
 Bool Confirm (int x0, int y0, const char *prompt1, const char *prompt2)
 {
-const char *const prompt3 = "Press Y to confirm or any other key to cancel";
-int key;
+const char *const prompt3 = "Press [Y] to confirm, [N] to cancel...";
 size_t maxlen;
 double n_lines_of_text;
 int width;
@@ -54,8 +53,8 @@ int x1;
 int text_y0;
 int text_y1;
 int y1;
+int rc;
 
-HideMousePointer ();
 maxlen = strlen (prompt3);
 if (strlen (prompt1) > maxlen)
    maxlen = strlen (prompt1);
@@ -74,17 +73,34 @@ x1      = text_x1 + WIDE_HSPACING + BOX_BORDER;
 text_y0 = y0 + BOX_BORDER + WIDE_VSPACING;
 text_y1 = text_y0 + (int) (n_lines_of_text * FONTH) - 1;
 y1      = text_y1 + WIDE_HSPACING + BOX_BORDER;
-DrawScreenBox3D (x0, y0, x1, y1);
-set_colour (WHITE);
-DrawScreenText (text_x0, text_y0, prompt1);
-if (prompt2 != NULL)
-   DrawScreenText (text_x0, text_y0 + FONTH, prompt2);
-set_colour (YELLOW);
-DrawScreenText (text_x0, text_y1 - FONTH - 1, prompt3);
-key = get_key ();
+HideMousePointer ();
+for (bool first_time = true; ; first_time = false)
+   {
+   if (first_time || is.key == YE_EXPOSE)
+      {
+      DrawScreenBox3D (x0, y0, x1, y1);
+      set_colour (WHITE);
+      DrawScreenText (text_x0, text_y0, prompt1);
+      if (prompt2 != NULL)
+	 DrawScreenText (text_x0, text_y0 + FONTH, prompt2);
+      set_colour (YELLOW);
+      DrawScreenText (text_x0, text_y1 - FONTH - 1, prompt3);
+      }
+   get_input_status ();
+   if (is.key == 'y' || is.key == 'Y' || is.key == YK_RETURN)
+      {
+      rc = 1;
+      break;
+      }
+   if (is.key == 'n' || is.key == 'N' || is.key == YK_ESC)
+      {
+      rc = 0;
+      break;
+      }
+   }
 is.key = 0;  // Shouldn't have to do that but EditorLoop() is broken
 ShowMousePointer ();
-return (key == 'Y' || key == 'y');
+return rc;
 }
 
 
@@ -173,13 +189,7 @@ va_list arglist;
 if (Debug != 1)
   return;
 va_start (arglist, fmt);
-
-#ifdef Y_SNPRINTF
-vsnprintf (buf, sizeof buf, fmt, arglist);
-#else
-vsprintf (buf, fmt, arglist);
-#endif
-
+y_vsnprintf (buf, sizeof buf, fmt, arglist);
 #ifdef Y_BGI
 setviewport (0, 0, ScrMaxX, ScrMaxY, 1);
 #endif /* FIXME! */
@@ -196,13 +206,7 @@ char prompt[120];
 va_list args;
 
 va_start (args, msg);
-#ifdef Y_SNPRINTF
-vsnprintf (prompt, sizeof prompt, msg, args);
-#else
-vsprintf (prompt, msg, args);
-#endif
-va_end (args);
-
+y_vsnprintf (prompt, sizeof prompt, msg, args);
 int width = 2 * BOX_BORDER + 2 * WIDE_HSPACING + FONTW * strlen (prompt);
 int height = 2 * BOX_BORDER + 2 * WIDE_VSPACING + FONTH;
 if (x0 < 0)

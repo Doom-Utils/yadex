@@ -111,7 +111,9 @@ typedef struct
 static const key_info_t key_info[] =
    {
    { XK_BackSpace,	YK_BACKSPACE	},
+#ifdef XK_ISO_Left_Tab  /* OpenServer 5.0 X11R5 doesn't have XK_ISO_Left_Tab */
    { XK_ISO_Left_Tab,	YK_BACKTAB	},
+#endif
    { XK_Delete,		YK_DEL,		},
    { XK_Down,		YK_DOWN,	},
    { XK_End,		YK_END,		},
@@ -142,8 +144,8 @@ static const key_info_t key_info[] =
 /*
  *	get_input_status
  *	Get the next event and update <is> accordingly.
- *	If not event is available, waits for 50 ms and returns
- *	(its used for the autoscroll feature).
+ *	If not event is available, waits for idle_sleep_ms ms
+ *	and returns (it's used for the autoscroll feature).
  */
 void get_input_status ()
 {
@@ -155,9 +157,18 @@ if (! dpy)  /* Sanity check */
    fatal_error ("get_input_status() called before XOpenDisplay()");
 if (XPending (dpy) == 0)
    {
-   struct timespec treq = { 0, 50000000 };  // 50 ms.
+   // No event ? Wait for <idle_sleep_ms> ms before polling again.
+#if defined Y_NANOSLEEP
+   struct timespec treq = { 0, 1000000ul * idle_sleep_ms };
    struct timespec trem;
-   nanosleep (&treq, &trem);  // Sleep for 50 ms
+   nanosleep (&treq, &trem);
+#elif defined Y_USLEEP
+   usleep (1000ul * idle_sleep_ms );
+#else
+   ;  // Neither nanosleep() no usleep() so be a CPU hog.
+   // FIXME: if autoscroll is turned off, could as well
+   // call XNextEvent and sleep for good.
+#endif
    return;
    }
 
@@ -325,7 +336,7 @@ switch (ev.type)
       if (ev.type == KeyPress)
 	 {
 	 printf ("key=%04Xh", is.key);
-	 if (isascii (is.key) && isprint (is.key))
+	 if (is.key >= 0 && is.key <= UCHAR_MAX && isprint (is.key))
 	    printf (" (%c)", (char) is.key);
 	 putchar ('\n');
 	 }
@@ -390,7 +401,7 @@ do
    get_input_status ();
 while (! event_is_key (is.key) && is.key != YE_BUTL_PRESS);
 
-is.key = 0;  // Shouldn't have to do that but EditorLoop() is broken
+is.key = 0;  // FIXME Shouldn't have to do that but EditorLoop() is broken
 }
 
 
@@ -440,13 +451,22 @@ static const key_string_t key_string[] =
 const char *key_to_string (int k)
 {
 static char buf[51];
+
+// Is one of the special keys ?
 size_t n;
+const size_t nmax = sizeof key_string / sizeof *key_string;
+for (n = 0; n < nmax; n++)
+   if (key_string[n].key == k)
+      break;
 
 *buf = '\0';
-if (k & YK_CTRL)
+if (k & YK_CTRL || (n == nmax && k >= 0 && k <= 31))
    {
    al_saps (buf, "Ctrl-", sizeof buf - 1);
-   k ^= YK_CTRL;
+   if (k & YK_CTRL)
+      k ^= YK_CTRL;
+   if (k >= 0 && k <= 31)
+      k += 96;  // Heavy ASCII-ism : 01h (^A) -> 61h ("a")
    }
 if (k & YK_ALT)
    {
@@ -459,14 +479,8 @@ if (k & YK_SHIFT)
    k ^= YK_SHIFT;
    }
 
-for (n = 0; n < sizeof key_string / sizeof *key_string; n++)
-   if (key_string[n].key == k)
-      {
-      al_saps (buf, key_string[n].string, sizeof buf - 1);
-      break;
-      }
-if (n == sizeof key_string / sizeof *key_string)
-   if (isascii (k) && isprint (k))
+if (n == nmax)
+   if (k >= 0 && k <= UCHAR_MAX && isprint (k))
       al_sapc (buf, k, sizeof buf - 1);
    else
       {
@@ -475,7 +489,10 @@ if (n == sizeof key_string / sizeof *key_string)
       al_sapc (buf, al_adigits[(k >>  4) & 15], sizeof buf - 1);
       al_sapc (buf, al_adigits[(k >>  0) & 15], sizeof buf - 1);
       }
-buf[50] = '\0';  /* Paranoia */
+else
+   al_saps (buf, key_string[n].string, sizeof buf - 1);
+
+buf[sizeof buf - 1] = '\0';  /* Paranoia */
 return buf;
 }
 

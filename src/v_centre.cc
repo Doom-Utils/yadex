@@ -67,3 +67,35 @@ else
 }
 
 
+/*
+ *	centre_of_vertices
+ *	Return the coordinates of the centre of a group of vertices.
+ */
+void centre_of_vertices (const bitvec_c &bv, int &x, int &y)
+{
+long x_sum = 0;
+long y_sum = 0;
+int nmax = bv.nelements ();
+int nvertices = 0;
+for (int n = 0; n < nmax; n++)
+   {
+   if (bv.get (n))
+      {
+      x_sum += Vertices[n].x;
+      y_sum += Vertices[n].y;
+      nvertices++;
+      }
+   }
+if (nvertices == 0)
+   {
+   x = 0;
+   y = 0;
+   }
+else
+   {
+   x = (int) (x_sum / nvertices);
+   y = (int) (y_sum / nvertices);
+   }
+}
+
+

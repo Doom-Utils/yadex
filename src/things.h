@@ -29,10 +29,11 @@ int max_radius;
 
 void        create_things_table ();
 void        delete_things_table ();
-acolour_t   get_thing_colour (w_thingtype_t type);
-const char *get_thing_name   (w_thingtype_t type);
-const char *get_thing_sprite (w_thingtype_t type);
-int         get_thing_radius (w_thingtype_t type);
+acolour_t   get_thing_colour (wad_ttype_t type);
+const char *get_thing_name   (wad_ttype_t type);
+const char *get_thing_sprite (wad_ttype_t type);
+char        get_thing_flags  (wad_ttype_t type);
+int         get_thing_radius (wad_ttype_t type);
 inline int  get_max_thing_radius () { return max_radius; }
 const char *GetAngleName (int);
 const char *GetWhenName (int);

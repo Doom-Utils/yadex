@@ -30,43 +30,77 @@ Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 */
 
 
+#ifndef YH_BITVEC
+#define YH_BITVEC
+
+
 #include <limits.h>
+
+#include "yerror.h"
+#include "ymemory.h"
+
+
+typedef enum
+   {
+   BV_SET    = 's',
+   BV_CLEAR  = 'c',
+   BV_TOGGLE = 't'
+   } bitvec_op_t;
+
+
+extern const char _bitvec_msg1[];
 
 
 class bitvec_c
    {
    public :
-      inline bitvec_c (size_t n_elements)
+      bitvec_c (size_t n_elements)
          { 
 	 a = (char *) GetMemory (n_elements / CHAR_BIT + 1);
  	 memset (a, 0, n_elements / CHAR_BIT + 1);
          this->n_elements = n_elements;
-         return this;
          }
 
-      inline ~bitvec_c ()
+      ~bitvec_c ()
          {
          FreeMemory (a);
          }
 
-      inline size_t nelements ()  // Return the number of elements
+      size_t nelements () const  // Return the number of elements
          {
          return n_elements;
          }
 
-      inline int get (size_t n)  // Get bit <n>
+      int get (size_t n) const  // Get bit <n>
          {
          return a[n/CHAR_BIT] & (1 << (n % CHAR_BIT));
          }
 
-      inline void set (size_t n)  // Set bit <n> to 1
+      void set (size_t n)  // Set bit <n> to 1
          {
          a[n/CHAR_BIT] |= 1 << (n % CHAR_BIT);
          }
 
-      inline void unset (size_t n)  // Set bit <n> to 0
+      void unset (size_t n)  // Set bit <n> to 0
          {
          a[n/CHAR_BIT] &= ~(1 << (n % CHAR_BIT));
+         }
+
+      void toggle (size_t n)  // Toggle bit <n>
+ 	 {
+	 a[n/CHAR_BIT] ^= (1 << (n % CHAR_BIT));
+	 }
+
+      void frob (size_t n, bitvec_op_t op)  // Set, unset or toggle bit <n>
+         {
+	 if (op == BV_SET)
+	    set (n);
+	 else if (op == BV_CLEAR)
+	    unset (n);
+	 else if (op == BV_TOGGLE)
+	    toggle (n);
+	 else
+	    nf_bug (_bitvec_msg1, (int) op);
          }
 
    private :
@@ -74,3 +108,5 @@ class bitvec_c
       char *a;
    };
 
+
+#endif

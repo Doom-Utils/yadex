@@ -36,31 +36,31 @@ class objinfo_c : public edwidget_c
    {
    public :
       objinfo_c ();
-      inline void set (int obj_type, int obj_no)
+      void set (int obj_type, int obj_no)
 	 {
 	 this->obj_no   = obj_no;
 	 this->obj_type = obj_type;
 	 }
 
-      inline void set_y1 (int y1)
+      void set_y1 (int y1)
 	 { out_y1 = y1; }
 
       /* Methods declared in edwidget_c */
-      inline void unset ()
+      void unset ()
 	 { obj_no = OBJ_NO_NONE; }
 
       void draw ();
 
-      inline void undraw ()
+      void undraw ()
          { }  // Sorry, I don't know how to undraw myself
 
-      inline int can_undraw ()
+      int can_undraw ()
          { return 0; }  // I don't have the ability to undraw myself
 
-      inline int need_to_clear ()
+      int need_to_clear ()
 	 { return is_obj (obj_no_disp) && ! is_obj (obj_no); }
 
-      inline void clear ()
+      void clear ()
 	 { obj_no_disp = OBJ_NO_NONE; }
 
    private :

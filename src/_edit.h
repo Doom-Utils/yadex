@@ -75,6 +75,7 @@ enum
 
 
 /* This structure holds all the data necessary to an edit window. */
+// FIXME: make a class of it.
 typedef struct
    {
    int    mb_ino[MBI_COUNT];	// The numbers of the items on the menu bar

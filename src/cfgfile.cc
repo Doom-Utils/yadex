@@ -30,11 +30,13 @@ Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 
 
 #include "yadex.h"
-#include <errno.h>
 #include "cfgfile.h"
 #include "gfx.h"
 #include "help1.h"
 #include "levels.h"
+
+
+const char config_file_magic[] = "# Yadex configuration file version 2";
 
 
 /*
@@ -63,8 +65,8 @@ typedef enum
    OPT_STRINGBUF8,
 
    // String
-   // Receptacle is of type (char *)
-   // data_ptr is of type (char **)
+   // Receptacle is of type (const char *)
+   // data_ptr is of type (const char **)
    OPT_STRINGPTR,
 
    // String, but store in a list
@@ -73,8 +75,8 @@ typedef enum
    OPT_STRINGPTRACC,
 
    // List of strings
-   // Receptacle is of type ??
-   // data_ptr is of type ??
+   // Receptacle is of type (const char *[])
+   // data_ptr is of type (const char ***)
    OPT_STRINGPTRLIST,
 
    // End of the options description
@@ -301,6 +303,13 @@ opt_desc_t options[] =		/* description of the command line options */
   "Min grid step (pixels)",
   &grid_pixels_min },
 
+{ "idle_sleep_ms",
+  NULL,
+  OPT_INTEGER,
+  NULL,
+  "ms to sleep before XPending()",
+  &idle_sleep_ms },
+
 { "info_bar",
   NULL,
   OPT_BOOLEAN,
@@ -326,14 +335,14 @@ opt_desc_t options[] =		/* description of the command line options */
   "i1",
   OPT_STRINGPTR,
   NULL,
-  "The name of Doom iwad",
+  "The name of the Doom/Ultimate D. iwad",
   &Iwad1 },
 
 { "iwad2",
   "i2",
   OPT_STRINGPTR,
   NULL,
-  "The name of the Doom II iwad",
+  "The name of the Doom II/Final D. iwad",
   &Iwad2 },
 
 { "iwad3",
@@ -342,6 +351,48 @@ opt_desc_t options[] =		/* description of the command line options */
   NULL,
   "The name of the Heretic iwad",
   &Iwad3 },
+
+{ "iwad4",
+  "i4",
+  OPT_STRINGPTR,
+  NULL,
+  "The name of the Hexen iwad",
+  &Iwad4 },
+
+{ "iwad5",
+  "i5",
+  OPT_STRINGPTR,
+  NULL,
+  "The name of the Strife iwad",
+  &Iwad5 },
+
+{ "iwad6",
+  "i6",
+  OPT_STRINGPTR,
+  NULL,
+  "The name of the Doom alpha 0.2 iwad",
+  &Iwad6 },
+
+{ "iwad7",
+  "i7",
+  OPT_STRINGPTR,
+  NULL,
+  "The name of the Doom alpha 0.4 iwad",
+  &Iwad7 },
+
+{ "iwad8",
+  "i8",
+  OPT_STRINGPTR,
+  NULL,
+  "The name of the Doom alpha 0.5 iwad",
+  &Iwad8 },
+
+{ "iwad9",
+  "i9",
+  OPT_STRINGPTR,
+  NULL,
+  "The name of the Doom press rel. iwad",
+  &Iwad9 },
 
 #ifdef AYM_MOUSE_HACKS
 { "mouse_horizontal_sens",
@@ -363,7 +414,7 @@ opt_desc_t options[] =		/* description of the command line options */
   "pw",
   OPT_STRINGPTRACC,
   NULL,
-  "Patch wad file",
+  "Pwad file to load",
   &PatchWads },
 
 { "no_pixmap",
@@ -491,7 +542,7 @@ static const char *standard_directories[] =
   };
 
 
-static void append_item_to_list (char ***list, char *item);
+static void append_item_to_list (const char ***list, const char *item);
 int parse_one_config_file (const char *filename);
 static confirm_t confirm_e2i (const char *external);
 static const char *confirm_i2e (confirm_t internal);
@@ -576,11 +627,15 @@ cfgfile = fopen (filename, "r");
 if (cfgfile == NULL)
    return 1;
 
+/* The first line of the configuration file must
+   contain exactly config_file_magic. */
 if (fgets (line, sizeof line, cfgfile) == NULL
-   || strcmp (line, "# Yadex configuration file version 2\n"))
+   || memcmp (line, config_file_magic, sizeof config_file_magic - 1)
+   || line[sizeof config_file_magic - 1] != '\n'
+   || line[sizeof config_file_magic] != '\0')
    {
    report_error ("%s is not a valid Yadex configuration file", filename);
-   report_error ("Perhaps a version mismatch ?");
+   report_error ("Perhaps a leftover from a previous version of Yadex ?");
    return 1;
    }
 
@@ -633,7 +688,7 @@ while (fgets (line, sizeof line, cfgfile) != NULL)
          report_error ("Invalid option in %s: \"%s\"", filename, option);
          return 1;
          }
-      if (!stricmp (option, o->long_name))
+      if (!y_stricmp (option, o->long_name))
 	 {
 	 if (o->flags != NULL && strchr (o->flags, '1'))
 	    break;
@@ -648,14 +703,14 @@ while (fgets (line, sizeof line, cfgfile) != NULL)
 	 switch (o->opt_type)
 	    {
 	    case OPT_BOOLEAN:
-	       if (!stricmp (value, "yes") || !stricmp (value, "true")
-	        || !stricmp (value, "on") || !stricmp (value, "1"))
+	       if (!y_stricmp (value, "yes") || !y_stricmp (value, "true")
+	        || !y_stricmp (value, "on") || !y_stricmp (value, "1"))
 		  {
 		  if (o->data_ptr)
 		     *((Bool *) (o->data_ptr)) = 1;
 		  }
-	       else if (!stricmp (value, "no") || !stricmp (value, "false")
-	             || !stricmp (value, "off") || !stricmp (value, "0"))
+	       else if (!y_stricmp (value, "no") || !y_stricmp (value, "false")
+	             || !y_stricmp (value, "off") || !y_stricmp (value, "0"))
 		  {
 		  if (o->data_ptr)
 		     *((Bool *) (o->data_ptr)) = 0;
@@ -689,7 +744,7 @@ while (fgets (line, sizeof line, cfgfile) != NULL)
 	       p = (char *) GetMemory (strlen (value) + 1);
 	       strcpy (p, value);
 	       if (o->data_ptr)
-	          append_item_to_list ((char ***) o->data_ptr, p);
+	          append_item_to_list ((const char ***) o->data_ptr, p);
 	       break;
 	    case OPT_STRINGPTRLIST:
 	       while (value[0])
@@ -704,7 +759,7 @@ while (fgets (line, sizeof line, cfgfile) != NULL)
 		  p = (char *) GetMemory (strlen (value) + 1);
 		  strcpy (p, value);
 	          if (o->data_ptr)
-		     append_item_to_list ((char ***) o->data_ptr, p);
+		     append_item_to_list ((const char ***) o->data_ptr, p);
 		  value = option;
 		  }
 	       break;
@@ -751,11 +806,11 @@ while (argc > 0)
 	 {
 	 if (o->opt_type == OPT_END)
 	    {
-	    report_error ("invalid argument: \"%s\"", argv[0]);
+	    report_error ("invalid option: \"%s\"", argv[0]);
 	    return 1;
 	    }
-	 if (o->short_name != NULL && ! stricmp (argv[0]+1, o->short_name)
-	  || o->long_name  != NULL && ! stricmp (argv[0]+1, o->long_name))
+	 if (o->short_name != NULL && ! y_stricmp (argv[0]+1, o->short_name)
+	  || o->long_name  != NULL && ! y_stricmp (argv[0]+1, o->long_name))
             break;
          }
 
@@ -819,7 +874,7 @@ while (argc > 0)
 	 argv++;
 	 argc--;
 	 if (o->data_ptr && ! ignore)
-	    *((char **) (o->data_ptr)) = argv[0];
+	    *((const char **) (o->data_ptr)) = argv[0];
 	 break;
       case OPT_STRINGPTRACC:
 	 if (argc <= 1)
@@ -830,7 +885,7 @@ while (argc > 0)
 	 argv++;
 	 argc--;
 	 if (o->data_ptr && ! ignore)
-	    append_item_to_list ((char ***) o->data_ptr, argv[0]);
+	    append_item_to_list ((const char ***) o->data_ptr, argv[0]);
 	 break;
       case OPT_STRINGPTRLIST:
 	 if (argc <= 1)
@@ -843,7 +898,7 @@ while (argc > 0)
 	    argv++;
 	    argc--;
 	    if (o->data_ptr && ! ignore)
-	       append_item_to_list ((char ***) o->data_ptr, argv[0]);
+	       append_item_to_list ((const char ***) o->data_ptr, argv[0]);
 	    }
 	 break;
       default:
@@ -991,7 +1046,7 @@ if (external != NULL)
    if (! strcmp (external, "ask_once"))
       return YC_ASK_ONCE;
    }
-return '\0';
+return YC_ASK;
 }
 
 
@@ -1019,7 +1074,7 @@ return "?";
  *	append_item_to_list
  *	Append a string to a null-terminated string list
  */
-static void append_item_to_list (char ***list, char *item)
+static void append_item_to_list (const char ***list, const char *item)
 {
 int i;
 
@@ -1030,12 +1085,12 @@ if (*list != NULL)
    while ((*list)[i] != NULL)
       i++;
    /* expand the list */
-   *list = (char **) ResizeMemory (*list, (i + 2) * sizeof (char **));
+   *list = (const char **) ResizeMemory (*list, (i + 2) * sizeof **list);
    }
 else
    {
    /* create a new list */
-   *list = (char **) GetMemory (2 * sizeof (char **));
+   *list = (const char **) GetMemory (2 * sizeof **list);
    }
 /* append the new element */
 (*list)[i] = item;

@@ -8,6 +8,9 @@
 #include "rgb.h"
 
 
+extern const char ygd_file_magic[];
+
+
 /*
  *	Data structures for game definition data
  */
@@ -36,17 +39,19 @@ typedef struct
    const char *longdesc;
    } stdef_t;
 
-/* thing <number> <thinggroup> <radius> <description> */
+/* thing <number> <thinggroup> <flags> <radius> <description> [<sprite>]*/
 typedef struct
    {
    int number;		// Thing number
    char thinggroup;	// Thing group
+   char flags;		// Flags
    int radius;		// Radius of thing
    const char *desc;	// Short description of thing
    const char *sprite;  // Root of name of sprite for thing
    } thingdef_t;
 /* (1)  This is only here for speed, to avoid having to lookup
         thinggroup for each thing when drawing things */
+const char THINGDEF_SPECTRAL = 0x01;
 
 /* thinggroup <thinggroup> <colour> <description> */
 typedef struct
@@ -60,9 +65,17 @@ typedef struct
 
 /*
  *	Global variables that contain game definition data
- *	Those variables are defined in deu.c
+ *	Those variables are defined in yadex.cc
  */
 
+typedef enum { YGLF__, YGLF_ALPHA, YGLF_DOOM, YGLF_HEXEN } yglf_t;
+typedef enum { YGLN__, YGLN_E1M10, YGLN_E1M1, YGLN_MAP01 } ygln_t;
+// ygpf_t and ygtf_t are defined in yadex.h
+extern yglf_t yg_level_format;
+extern ygln_t yg_level_name;
+extern ygpf_t yg_picture_format;
+extern ygtf_t yg_texture_format;
+extern ygtl_t yg_texture_lumps;
 extern al_llist_t *ldtdef;
 extern al_llist_t *ldtgroup;
 extern al_llist_t *stdef;

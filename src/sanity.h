@@ -5,5 +5,6 @@
 
 
 void check_types ();
+void check_charset ();
 
 

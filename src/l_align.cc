@@ -147,7 +147,8 @@ MadeChanges = 1;
 
 void AlignTexturesX (SelPtr *sdlist) /* SWAP! */
 {
-char texname[9];	/* FIRST texture name used in the highlited objects */
+			/* FIRST texture name used in the highlited objects */
+char texname[WAD_TEX_NAME + 1];
 char errormessage[80];	/* area to hold the error messages produced */
 int  ldef;		/* linedef number */
 int  sd1;		/* current sidedef in *sdlist */
@@ -260,7 +261,7 @@ if (type_sd == 2) /* throw out all 1st SideDefs untill a 2nd is found */
 ObjectsNeeded (OBJ_SIDEDEFS, 0);
 
 /* get texture name of the sidedef in the *sdlist) */
-strncpy (texname, SideDefs[(*sdlist)->objnum].tex3, 8);
+strncpy (texname, SideDefs[(*sdlist)->objnum].tex3, WAD_TEX_NAME);
 
 /* test if there is a texture there */
 if (texname[0] == '-')
@@ -340,7 +341,7 @@ while (*sdlist)  /* main processing loop */
    if (type_tex == 1)
      {
      ObjectsNeeded (OBJ_SIDEDEFS, 0);
-     if (strncmp (SideDefs[(*sdlist)->objnum].tex3, texname,8))
+     if (strncmp (SideDefs[(*sdlist)->objnum].tex3, texname,WAD_TEX_NAME))
        {
        Beep ();
        sprintf (errormessage, "No texture for sidedef #%d.", (*sdlist)->objnum);

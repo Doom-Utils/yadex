@@ -31,6 +31,7 @@ Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 
 
 #include "yadex.h"
+#include "game.h"  /* yg_picture_format */
 #include "wads.h"
 
 
@@ -49,8 +50,8 @@ long n;
 WadPtr wad;
 
 /* open the wad file */
-printf ("Loading main wad file: %s...\n", filename);
-wad = BasicWadOpen (filename);
+printf ("Loading iwad: %s...\n", filename);
+wad = BasicWadOpen (filename, yg_picture_format);
 if (strncmp (wad->type, "IWAD", 4))
    fatal_error ("\"%s\" is not an iwad file", filename);
 
@@ -71,7 +72,7 @@ for (n = 0; n < wad->dirsize; n++)
 
 /* check if registered version */
 if (FindMasterDir (MasterDir, "E2M1") == NULL
- && FindMasterDir (MasterDir, "MAP01") == NULL)
+ && FindMasterDir (MasterDir, "MAP32") == NULL)
    {
    printf ("   *-----------------------------------------------------*\n");
    printf ("   | Warning: this is the shareware version of the game. |\n");
@@ -96,35 +97,29 @@ void OpenPatchWad (const char *filename)
 WadPtr wad;
 MDirPtr mdir;
 long n;
-int state;
-char entryname[9];
-int replaces;
+char entryname[WAD_NAME + 1];
 const char *entry_type;
 char *real_name;
-int nitems;		// Number of items in group of flats/patches
+int nitems;		// Number of items in group of flats/patches/sprites
 
 // Look for the file and ignore it if it doesn't exist
 real_name = locate_pwad (filename);
 if (real_name == NULL)
    {
-   printf ("Warning: patch wad file \"%s\" doesn't exist. Ignored.\n",
-      filename);
+   warn ("patch wad file \"%s\" doesn't exist. Ignored.\n", filename);
    return;
    }
 
 /* open the wad file */
-printf ("Loading patch wad file: %s...\n", real_name);
-wad = BasicWadOpen (real_name);
+printf ("Loading pwad: %s...\n", real_name);
+// By default, assume pwads use the normal picture format.
+wad = BasicWadOpen (real_name, YGPF_NORMAL);
 if (strncmp (wad->type, "PWAD", 4))
    fatal_error ("\"%s\" is not a pwad file", real_name);
 FreeMemory (real_name);
 
 /* alter the master directory */
 
-/* AYM 19970816 FIXME I think there is a big problem in this routine,
-   it replaces entries too often. Entries within (S_START,S_END),
-   (P_START,P_END), (F_START,F_END) can only replace entries in the
-   same group. */
 /* AYM: now, while the directory is scanned, a state variable is
    updated. its values are :
    0    no special state
@@ -133,25 +128,32 @@ FreeMemory (real_name);
    FF_END to end a group of flats if the following entry is neither
    F_END nor F?_START. */
 
-state = 0;
-replaces = 0;
+int state = 0;
+int replaces = 0;
+int state_prev;
+int replaces_prev;
+int names;		// Number of names already printed on current line
+const char *entry_type_prev;
 for (n = 0; n < wad->dirsize; n++)
    {
-   strncpy (entryname, wad->directory[n].name, 8);
-   entryname[8] = '\0';
+   strncpy (entryname, wad->directory[n].name, WAD_NAME);
+   entryname[WAD_NAME] = '\0';
+   state_prev = state;
+   replaces_prev = replaces;
+   entry_type_prev = entry_type;
    if (state == 0)
       {
       if (! strcmp (entryname, "F_START")
        || ! strcmp (entryname, "P_START")
        || ! strcmp (entryname, "S_START"))
 	 {
-	 entry_type = "marker";
+	 entry_type = "label";
 	 replaces   = 0;
 	 }
-      // Deutex puts flats between FF_START and FF_END.
+      // Deutex puts flats between FF_START and FF_END/F_END.
       // All lumps between those markers are assumed
-      // to be patches.
-      else if (*entryname == 'F' && ! strncmp (entryname + 2, "_START", 8))
+      // to be flats.
+      else if (! strncmp (entryname, "FF_START", WAD_NAME))
 	 {
 	 state      = 'f';
 	 entry_type = "group of flats";
@@ -161,10 +163,20 @@ for (n = 0; n < wad->dirsize; n++)
       // Deutex puts patches between PP_START and PP_END.
       // All lumps between those markers are assumed
       // to be patches.
-      else if (! strncmp (entryname, "PP_START", 8))
+      else if (! strncmp (entryname, "PP_START", WAD_NAME))
 	 {
 	 state      = 'p';
 	 entry_type = "group of patches";
+	 replaces   = 0;
+         nitems     = 0;
+	 }
+      // Deutex puts patches between SS_START and SS_END/S_END.
+      // All lumps between those markers are assumed
+      // to be sprites.
+      else if (! strncmp (entryname, "SS_START", WAD_NAME))
+	 {
+	 state      = 's';
+	 entry_type = "group of sprites";
 	 replaces   = 0;
          nitems     = 0;
 	 }
@@ -181,24 +193,37 @@ for (n = 0; n < wad->dirsize; n++)
 	 else
 	    entry_type = "entry";
 	 }
-      printf  ("  %s %s %s",
-	 replaces ? "Updating" : "Adding new", entry_type, entryname);
+      if (n == 0
+	  || state_prev      != state
+	  || replaces_prev   != replaces
+	  || entry_type_prev != entry_type)
+         {
+	 if (n > 0)
+	    putchar ('\n');
+	 names = 0;
+	 printf ("  %s %s", replaces ? "Updating" : "Adding new", entry_type);
+         }
+      if (names >= 6)
+         {
+	 printf ("\n  %-*s %-*s",
+	     strlen (replaces ? "Updating" : "Adding new"), "",
+	     strlen (entry_type), "");
+	 names = 0;
+         }
+      printf  (" %-*s", WAD_NAME, entryname);
+      names++;
       if ((*entry_type == 'm' || *entry_type == 'l') && wad->directory[n].size)
 	 printf (" warning: non-zero length (%ld)", wad->directory[n].size);
-      if (state != 'f' && state != 'p')
-         putchar ('\n');
       }
-   // F_END marks the end of a Deutex-generated group of flats.
-   // Actually, Deutex uses FF_END instead but
-   // you are expected to have replaced that with
-   // F_END, as FF_END doesn't work with Doom.
+   // Either F_END or FF_END mark the end of a
+   // Deutex-generated group of flats.
    else if (state == 'f')
       {
-      /* we ignore F?_END and F?_START */
-      if (! strncmp (entryname, "F_END", 8))
+      if (! strncmp (entryname, "F_END", WAD_NAME)
+	  || ! strncmp (entryname, "FF_END", WAD_NAME))
          {
 	 state = 0;
-         printf (" (%d flats)\n", nitems);
+         printf ("/%.*s (%d flats)", WAD_NAME, entryname, nitems);
          }
       // Of course, F?_START and F?_END don't count
       // toward the number of flats in the group.
@@ -210,14 +235,31 @@ for (n = 0; n < wad->dirsize; n++)
    // PP_END marks the end of a Deutex-generated group of patches.
    else if (state == 'p')
       {
-      if (! strncmp (entryname, "PP_END", 8))
+      if (! strncmp (entryname, "PP_END", WAD_NAME))
          {
          state = 0;
-         printf (" (%d patches)\n", nitems);
+         printf ("/PP_END (%d patches)", nitems);
          }
       // Of course, P?_START and P?_END don't count
       // toward the number of flats in the group.
       else if (! (*entryname == 'P'
+                  && (! strncmp (entryname + 2, "_START", 6)
+                      || ! strcmp (entryname + 2, "_END"))))
+         nitems++;
+      }
+   // Either S_END or SS_END mark the end of a
+   // Deutex-generated group of sprites.
+   else if (state == 's')
+      {
+      if (! strncmp (entryname, "S_END", WAD_NAME)
+	  || ! strncmp (entryname, "SS_END", WAD_NAME))
+         {
+	 state = 0;
+         printf ("/%.*s (%d sprites)", WAD_NAME, entryname, nitems);
+         }
+      // Of course, S?_START and S?_END don't count
+      // toward the number of sprites in the group.
+      else if (! (*entryname == 'S'
                   && (! strncmp (entryname + 2, "_START", 6)
                       || ! strcmp (entryname + 2, "_END"))))
          nitems++;
@@ -241,7 +283,7 @@ for (n = 0; n < wad->dirsize; n++)
    if (state > 0 && state <= 11)
       state--;
    }
-
+   putchar ('\n');
 }
 
 
@@ -325,7 +367,7 @@ while (curw)
    basic opening of wad file and creation of node in Wad linked list
 */
 
-WadPtr BasicWadOpen (const char *filename)
+WadPtr BasicWadOpen (const char *filename, ygpf_t pic_format)
 {
 WadPtr curw, prevw;
 
@@ -348,6 +390,8 @@ else
 if (curw == NULL)
    {
    curw = (WadPtr) GetMemory (sizeof (struct WadFileInfo));
+   curw->error = false;
+   curw->pic_format = pic_format;
    if (prevw == NULL)
       WadFileList = curw;
    else
@@ -365,7 +409,7 @@ if (curw == NULL)
 
 /* open the file */
 if ((curw->fd = fopen (filename, "rb")) == NULL)
-   fatal_error ("error opening \"%s\"", filename);
+   fatal_error ("Can't open \"%s\" (%s)", filename, strerror (errno));
 
 /* read in the wad directory info */
 wad_read_bytes (curw, curw->type, 4);
@@ -385,8 +429,7 @@ for (i32 n = 0; n < curw->dirsize; n++)
    {
    wad_read_i32 (curw, &d->start);
    wad_read_i32 (curw, &d->size );
-   wad_read_bytes (curw, d->name, 8);
-   //verbmsg ("    %-8.8s %08lXh %d\n", d->name, (long) d->start, (long) d->size);
+   wad_read_bytes (curw, d->name, WAD_NAME);
    d++;
    }
 
@@ -401,21 +444,21 @@ return curw;
 
 void ListMasterDirectory (FILE *file)
 {
-char dataname[9];
+char dataname[WAD_NAME + 1];
 MDirPtr dir;
 char key;
 int lines = 3;
 
-dataname[8] = '\0';
+dataname[WAD_NAME] = '\0';
 fprintf (file, "The Master Directory\n");
 fprintf (file, "====================\n\n");
 fprintf (file, "NAME____  FILE______________________________________________"
    "  SIZE__  START____\n");
 for (dir = MasterDir; dir; dir = dir->next)
    {
-   strncpy (dataname, dir->dir.name, 8);
-   fprintf (file, "%-8s  %-50s  %6ld  x%08lx\n",
-     dataname, dir->wadfile->filename, dir->dir.size, dir->dir.start);
+   strncpy (dataname, dir->dir.name, WAD_NAME);
+   fprintf (file, "%-*s  %-50s  %6ld  x%08lx\n",
+    WAD_NAME, dataname, dir->wadfile->filename, dir->dir.size, dir->dir.start);
    if (file == stdout && lines++ > screen_lines - 4)
       {
       lines = 0;
@@ -439,21 +482,23 @@ for (dir = MasterDir; dir; dir = dir->next)
 
 void ListFileDirectory (FILE *file, WadPtr wad)
 {
-char dataname[9];
+char dataname[WAD_NAME + 1];
 char key;
 int lines = 5;
 long n;
 
-dataname[8] = '\0';
+dataname[WAD_NAME] = '\0';
 fprintf (file, "Wad File Directory\n");
 fprintf (file, "==================\n\n");
 fprintf (file, "Wad File: %s\n\n", wad->filename);
 fprintf (file, "NAME____  SIZE__  START____  END______\n");
 for (n = 0; n < wad->dirsize; n++)
    {
-   strncpy (dataname, wad->directory[n].name, 8);
-   fprintf (file, "%-8s  %6ld  x%08lx  x%08lx\n", dataname,
-     wad->directory[n].size, wad->directory[n].start,
+   strncpy (dataname, wad->directory[n].name, WAD_NAME);
+   fprintf (file, "%-*s  %6ld  x%08lx  x%08lx\n",
+     WAD_NAME, dataname,
+     wad->directory[n].size,
+     wad->directory[n].start,
      wad->directory[n].size + wad->directory[n].start - 1);
    if (file == stdout && lines++ > screen_lines - 4)
       {
@@ -489,10 +534,10 @@ long dirnum;
 if (patchonly)
    printf ("Building a compound Patch Wad file \"%s\".\n", filename);
 else
-   printf ("Building a new Main Wad file \"%s\" (size approx 10000K)\n",
+   printf ("Building a new Main Wad file \"%s\" (size approx 10 MB)\n",
       filename);
 if (FindMasterDir (MasterDir, "E2M4") == NULL
- && FindMasterDir (MasterDir, "MAP01") == NULL)  /* AYM */
+ && FindMasterDir (MasterDir, "MAP32") == NULL)  /* AYM */
    fatal_error ("You were warned: you are not allowed to do this.");
 if ((file = fopen (filename, "wb")) == NULL)
    fatal_error ("unable to open file \"%s\"", filename);
@@ -500,8 +545,8 @@ if (patchonly)
    WriteBytes (file, "PWAD", 4);
 else
    WriteBytes (file, "IWAD", 4);
-WriteBytes (file, &counter, 4L);      /* put true value in later */
-WriteBytes (file, &counter, 4L);      /* put true value in later */
+file_write_i32 (file, 0xdeadbeef);      /* put true value in later */
+file_write_i32 (file, 0xdeadbeef);      /* put true value in later */
 
 /* output the directory data chuncks */
 for (cur = MasterDir; cur; cur = cur->next)
@@ -526,11 +571,11 @@ for (cur = MasterDir; cur; cur = cur->next)
    if (dirnum % 100 == 0)
       printf ("Outputting directory %04ld...\r", dirnum);
    if (cur->dir.start)
-      WriteBytes (file, &counter, 4L);
+      file_write_i32 (file, counter);
    else
-      WriteBytes (file, &(cur->dir.start), 4L);
-   WriteBytes (file, &(cur->dir.size), 4L);
-   WriteBytes (file, &(cur->dir.name), 8L);
+      file_write_i32 (file, 0);
+   file_write_i32 (file, cur->dir.size);
+   file_write_name (file, cur->dir.name);
    counter += cur->dir.size;
    dirnum++;
    }
@@ -538,8 +583,8 @@ for (cur = MasterDir; cur; cur = cur->next)
 /* fix up the number of entries and directory start information */
 if (fseek (file, 4L, 0))
    fatal_error ("error writing to file");
-WriteBytes (file, &dirnum, 4L);
-WriteBytes (file, &dirstart, 4L);
+file_write_i32 (file, dirnum);
+file_write_i32 (file, dirstart);
 
 /* close the file */
 printf ("                            \r");
@@ -554,7 +599,7 @@ fclose (file);
 void DumpDirectoryEntry (FILE *file, const char *entryname)
 {
 MDirPtr entry;
-char dataname[9];
+char dataname[WAD_NAME + 1];
 char key;
 int lines = 5;
 long n, c, i;
@@ -564,10 +609,10 @@ c = 0;
 entry = MasterDir;
 while (entry)
    {
-   if (!strnicmp (entry->dir.name, entryname, 8))
+   if (!y_strnicmp (entry->dir.name, entryname, WAD_NAME))
       {
-      strncpy (dataname, entry->dir.name, 8);
-      dataname[8] = '\0';
+      strncpy (dataname, entry->dir.name, WAD_NAME);
+      dataname[WAD_NAME] = '\0';
       fprintf (file, "Contents of entry %s (size = %ld bytes):\n", dataname, entry->dir.size);
       wad_seek (entry->wadfile, entry->dir.start);
       n = 0;
@@ -590,15 +635,14 @@ while (entry)
                && ! (buf[i] >= 0x80 && buf[i] <= 0xa0)  // ISO 8859-1
 #endif
                )
-	       fprintf (file, "%c", buf[i]);
+	       putc (buf[i], file);
 	    else
-	       fprintf (file, ".");
+	       putc ('.', file);
 	    }
-	 fprintf (file, "\n");
+	 putc ('\n', file);
 	 if (file == stdout && lines++ > screen_lines - 4)
 	    {
 	    lines = 0;
-            /* FIXME: the message should indicate that Return is needed */
 	    printf ("[%d%% - Q + Return to abort,"
 		" S + Return to skip this entry,"
 		" Return to continue]", (int) (n * 100 / entry->dir.size));
@@ -621,7 +665,7 @@ while (entry)
    }
 if (! c)
    {
-   printf ("[Entry not in master directory]\n");
+   printf ("Entry not in master directory.\n");
    return;
    }
 }
@@ -635,30 +679,29 @@ if (! c)
 void SaveDirectoryEntry (FILE *file, const char *entryname)
 {
 MDirPtr entry;
-long    counter;
-long    size;
 
 for (entry = MasterDir; entry; entry = entry->next)
-   if (!strnicmp (entry->dir.name, entryname, 8))
+   if (!y_strnicmp (entry->dir.name, entryname, WAD_NAME))
       break;
 if (entry)
    {
-   WriteBytes (file, "PWAD", 4L);     /* PWAD file */
-   counter = 1L;
-   WriteBytes (file, &counter, 4L);   /* 1 entry */
-   counter = 12L;
-   WriteBytes (file, &counter, 4L);
-   counter = 28L;
-   WriteBytes (file, &counter, 4L);
-   size = entry->dir.size;
-   WriteBytes (file, &size, 4L);
-   WriteBytes (file, &(entry->dir.name), 8L);
+   // Write the header
+   WriteBytes (file, "PWAD", 4);	// Type = PWAD
+   file_write_i32 (file, 1);		// 1 entry in the directory
+   file_write_i32 (file, 12);		// The directory starts at offset 12
+
+   // Write the directory
+   file_write_i32 (file, 28);		// First entry starts at offset 28
+   file_write_i32 (file, entry->dir.size);	// Size of first entry
+   file_write_name (file, entry->dir.name);	// Name of first entry
+
+   // Write the lump data
    wad_seek (entry->wadfile, entry->dir.start);
-   CopyBytes (file, entry->wadfile->fd, size);
+   CopyBytes (file, entry->wadfile->fd, entry->dir.size);
    }
 else
    {
-   printf ("[Entry not in master directory]\n");
+   printf ("Entry not in master directory.\n");
    return;
    }
 }
@@ -674,10 +717,12 @@ void SaveEntryToRawFile (FILE *file, const char *entryname)
 MDirPtr entry;
 
 for (entry = MasterDir; entry; entry = entry->next)
-   if (!strnicmp (entry->dir.name, entryname, 8))
+   if (!y_strnicmp (entry->dir.name, entryname, WAD_NAME))
       break;
 if (entry)
    {
+   verbmsg ("Writing %ld bytes starting from offset %lX...\n",
+      (long) entry->dir.size, (unsigned long) entry->dir.start);
    wad_seek (entry->wadfile, entry->dir.start);
    CopyBytes (file, entry->wadfile->fd, entry->dir.size);
    }
@@ -695,20 +740,17 @@ else
 
 void SaveEntryFromRawFile (FILE *file, FILE *raw, const char *entryname)
 {
-long    counter;
 long    size;
-char    name8[8];
+char    name8[WAD_NAME];
 
-for (counter = 0L; counter < 8L; counter++)
-   name8[counter] = '\0';
-strncpy (name8, entryname, 8);
-WriteBytes (file, "PWAD", 4L);     /* PWAD file */
-counter = 1L;
-WriteBytes (file, &counter, 4L);   /* 1 entry */
-counter = 12L;
-WriteBytes (file, &counter, 4L);
-counter = 28L;
-WriteBytes (file, &counter, 4L);
+// Write the header
+WriteBytes (file, "PWAD", 4);		// Type = PWAD
+file_write_i32 (file, 1);		// 1 entry in the directory
+file_write_i32 (file, 12);		// The directory starts at offset 12
+
+// Write the directory
+file_write_i32 (file, 28);		// First entry starts at offset 28
+
 if (fseek (raw, 0L, SEEK_END) != 0)
    fatal_error ("error reading from raw file");
 size = ftell (raw);
@@ -716,8 +758,13 @@ if (size < 0)
    fatal_error ("error reading from raw file");
 if (fseek (raw, 0L, SEEK_SET) != 0)
    fatal_error ("error reading from raw file");
-WriteBytes (file, &size, 4L);
-WriteBytes (file, name8, 8L);
+file_write_i32 (file, size);		// Size of first entry
+
+memset (name8, '\0', WAD_NAME);
+strncpy (name8, entryname, WAD_NAME);
+file_write_name (file, name8);		// Name of first entry
+
+// Write the lump data
 CopyBytes (file, raw, size);
 }
 
@@ -761,7 +808,7 @@ if (is_absolute (filename))
    strcpy (real_name, filename);
    if (! *ext)
       strcat (real_name, ".wad");
-   int r = Exists (real_name);
+   bool r = file_exists (real_name);
    if (! r)
       {
       FreeMemory (real_name);
@@ -779,26 +826,22 @@ if (! *ext)
 
 // Then search for a file of that
 // name in the standard directories.
-real_name = (char *) GetMemory (257);
+real_name = (char *) GetMemory (Y_FILE_NAME + 1);
 for (dirname = standard_directories; *dirname; dirname++)
    {
    if (! strcmp (*dirname, "~/"))
       if (getenv ("HOME"))
          {
-	 al_scps (real_name, getenv ("HOME"), 256);
-         al_sapc (real_name, '/', 256);
+	 al_scps (real_name, getenv ("HOME"), Y_FILE_NAME);
+         al_sapc (real_name, '/', Y_FILE_NAME);
          }
       else
 	 continue;
    else
-#ifdef Y_SNPRINTF
-      snprintf (real_name, 257, *dirname, Game ? Game : "");
-#else
-      sprintf (real_name, *dirname, Game ? Game : "");
-#endif
-   al_saps (real_name, real_basename, 256);
+      y_snprintf (real_name, Y_FILE_NAME + 1, *dirname, Game ? Game : "");
+   al_saps (real_name, real_basename, Y_FILE_NAME);
    verbmsg ("  Trying \"%s\"... ", real_name);
-   if (Exists (real_name))
+   if (file_exists (real_name))
       {
       verbmsg ("right on !\n");
       FreeMemory (real_basename);

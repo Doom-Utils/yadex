@@ -53,7 +53,7 @@ static const char *PrintLdtdef (void *ptr);
 void LinedefProperties (int x0, int y0, SelPtr obj)
 {
 char  *menustr[8];
-char   texname[9];
+char   texname[WAD_TEX_NAME + 1];
 int    n, val;
 SelPtr cur, sdlist;
 int objtype = OBJ_LINEDEFS;
@@ -74,7 +74,7 @@ switch (val)
       for (n = 0; n < 8; n++)
 	 menustr[n] = (char *) GetMemory (60);
       sprintf (menustr[7], "Edit linedef #%d", obj->objnum);
-      sprintf (menustr[0], "Change Flags            (Current: %d)",
+      sprintf (menustr[0], "Change flags            (Current: %d)",
          LineDefs[obj->objnum].flags);
       sprintf (menustr[1], "Change type             (Current: %d)",
          LineDefs[obj->objnum].type);
@@ -106,18 +106,25 @@ switch (val)
 			       GetTaggedLineDefFlag (obj->objnum, 7),
 			       GetTaggedLineDefFlag (obj->objnum, 8),
 			       GetTaggedLineDefFlag (obj->objnum, 9),
+			       GetTaggedLineDefFlag (obj->objnum, 10),
+			       GetTaggedLineDefFlag (obj->objnum, 11),
+			       GetTaggedLineDefFlag (obj->objnum, 12),
+			       GetTaggedLineDefFlag (obj->objnum, 13),
+			       GetTaggedLineDefFlag (obj->objnum, 14),
+			       GetTaggedLineDefFlag (obj->objnum, 15),
+			       GetTaggedLineDefFlag (obj->objnum, 16),
 			       "(Enter a decimal value)",
 			       NULL);
-	    if (val >= 1 && val <= 9)
+	    if (val >= 1 && val <= 16)
 	       {
 	       for (cur = obj; cur; cur = cur->next)
 		  LineDefs[cur->objnum].flags ^= 0x01 << (val - 1);
 	       MadeChanges = 1;
 	       }
-	    else if (val == 10)
+	    else if (val == 17)
 	       {
 	       val = InputIntegerValue (x0 + 126, subsubwin_y0 + 12 * FONTH,
-		  0, 511, LineDefs[obj->objnum].flags);
+		  0, 65535, LineDefs[obj->objnum].flags);
 	       if (val != IIV_CANCEL)
 		  {
 		  for (cur = obj; cur; cur = cur->next)
@@ -240,8 +247,8 @@ switch (val)
 		  {
 		  n = LineDefs[cur->objnum].sidedef1;
 		  InsertObject (OBJ_SIDEDEFS, -1, 0, 0);
-		  strncpy (SideDefs[NumSideDefs - 1].tex3, "-", 8);
-		  strncpy (SideDefs[n].tex3, "-", 8);
+		  strncpy (SideDefs[NumSideDefs - 1].tex3, "-", WAD_TEX_NAME);
+		  strncpy (SideDefs[n].tex3, "-", WAD_TEX_NAME);
 		  ObjectsNeeded (OBJ_LINEDEFS, 0);
 		  LineDefs[cur->objnum].sidedef2 = NumSideDefs - 1;
 		  LineDefs[cur->objnum].flags ^= 4;  // Set the 2S bit
@@ -254,12 +261,12 @@ switch (val)
       for (n = 0; n < 7; n++)
 	 menustr[n] = (char *) GetMemory (60);
       sprintf (menustr[6], "Edit sidedef #%d", sdlist->objnum);
-      texname[8] = '\0';
-      strncpy (texname, SideDefs[sdlist->objnum].tex3, 8);
+      texname[WAD_TEX_NAME] = '\0';
+      strncpy (texname, SideDefs[sdlist->objnum].tex3, WAD_TEX_NAME);
       sprintf (menustr[0], "Change middle texture   (Current: %s)", texname);
-      strncpy (texname, SideDefs[sdlist->objnum].tex1, 8);
+      strncpy (texname, SideDefs[sdlist->objnum].tex1, WAD_TEX_NAME);
       sprintf (menustr[1], "Change upper texture    (Current: %s)", texname);
-      strncpy (texname, SideDefs[sdlist->objnum].tex2, 8);
+      strncpy (texname, SideDefs[sdlist->objnum].tex2, WAD_TEX_NAME);
       sprintf (menustr[2], "Change lower texture    (Current: %s)", texname);
       sprintf (menustr[3], "Change texture X offset (Current: %d)",
          SideDefs[sdlist->objnum].xoff);
@@ -275,7 +282,7 @@ switch (val)
       switch (val)
 	 {
 	 case 1:
-	    strncpy (texname, SideDefs[sdlist->objnum].tex3, 8);
+	    strncpy (texname, SideDefs[sdlist->objnum].tex3, WAD_TEX_NAME);
 	    ObjectsNeeded (0);
 	    ChooseWallTexture (x0 + 84, subsubwin_y0 ,
 	       "Choose a wall texture", NumWTexture, WTexture, texname);
@@ -284,12 +291,12 @@ switch (val)
 	    {
 	       for (cur = sdlist; cur; cur = cur->next)
 		  if (cur->objnum >= 0)
-		     strncpy (SideDefs[cur->objnum].tex3, texname, 8);
+		     strncpy (SideDefs[cur->objnum].tex3, texname, WAD_TEX_NAME);
 	       MadeChanges = 1;
 	    }
 	    break;
 	 case 2:
-	    strncpy (texname, SideDefs[sdlist->objnum].tex1, 8);
+	    strncpy (texname, SideDefs[sdlist->objnum].tex1, WAD_TEX_NAME);
 	    ObjectsNeeded (0);
 	    ChooseWallTexture (x0 + 84, subsubwin_y0,
 	       "Choose a wall texture", NumWTexture, WTexture, texname);
@@ -298,12 +305,12 @@ switch (val)
 	    {
 	       for (cur = sdlist; cur; cur = cur->next)
 		  if (cur->objnum >= 0)
-		     strncpy (SideDefs[cur->objnum].tex1, texname, 8);
+		     strncpy (SideDefs[cur->objnum].tex1, texname, WAD_TEX_NAME);
 	       MadeChanges = 1;
 	    }
 	    break;
 	 case 3:
-	    strncpy (texname, SideDefs[sdlist->objnum].tex2, 8);
+	    strncpy (texname, SideDefs[sdlist->objnum].tex2, WAD_TEX_NAME);
 	    ObjectsNeeded (0);
 	    ChooseWallTexture (x0 + 84, subsubwin_y0,
 	       "Choose a wall texture", NumWTexture, WTexture, texname);
@@ -312,7 +319,7 @@ switch (val)
 	    {
 	       for (cur = sdlist; cur; cur = cur->next)
 		  if (cur->objnum >= 0)
-		     strncpy (SideDefs[cur->objnum].tex2, texname, 8);
+		     strncpy (SideDefs[cur->objnum].tex2, texname, WAD_TEX_NAME);
 	       MadeChanges = 1;
 	    }
 	    break;
@@ -359,7 +366,7 @@ switch (val)
 
 static char *GetTaggedLineDefFlag (int linedefnum, int flagndx)
 {
-   static char ldstr[9][50];
+   static char ldstr[16][50];
 
    if ((LineDefs[linedefnum].flags & (0x01 << (flagndx - 1))) != 0)
       strcpy (ldstr[flagndx - 1], "* ");
@@ -390,10 +397,7 @@ for (;;)
    */
   if (DisplayMenuList (x0+84, y0, "Select group", ldtgroup,
    PrintLdtgroup, &ldtgno) < 0)
-    {
-    Beep ();
     return 1;
-    }
   if (al_lseek (ldtgroup, ldtgno, SEEK_SET))
     fatal_error ("%s ILT1 (%s)", msg_unexpected, al_astrerror (al_aerrno));
   ldtg = CUR_LDTGROUP->ldtgroup;
@@ -452,7 +456,7 @@ return 0;
 static const char *PrintLdtgroup (void *ptr)
 {
 if (! ptr)
-  fatal_error ("PLG1");
+  return "PrintLdtgroup: (null)";
 return ((ldtgroup_t *)ptr)->desc;
 }
 
@@ -466,7 +470,7 @@ static const char *PrintLdtdef (void *ptr)
 static char buf[100];
 
 if (! ptr)
-  fatal_error ("PLD1");
+  return "PrintLdtdef: (null)";
 sprintf (buf, "[%3d] %.70s",
  (*((ldtdef_t **)ptr))->number,
  (*((ldtdef_t **)ptr))->longdesc);

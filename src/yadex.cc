@@ -35,12 +35,15 @@ Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 #include "acolours.h"
 #include "cfgfile.h"
 #include "editlev.h"
+#include "endian.h"
+#include "game.h"
 #include "gfx.h"
 #include "help1.h"
 #include "mkpalette.h"
 #include "rgb.h"
 #include "sanity.h"
 #include "sprites.h"
+#include "x11.h"
 
 
 /*
@@ -70,35 +73,43 @@ int         screen_lines = 24;  	// Lines that our TTY can display
 int         remind_to_build_nodes = 0;	// Remind user to build nodes
 
 // Set from command line and/or config file
-int       autoscroll                    = 1;
-int       autoscroll_amp                = 10;
-int       autoscroll_edge               = 30;
-char *    config_file;
-int       copy_linedef_reuse_sidedefs   = 0;
+int       autoscroll			= 0;
+int       autoscroll_amp		= 10;
+int       autoscroll_edge		= 30;
+const char *config_file;
+int       copy_linedef_reuse_sidedefs	= 0;
+int       cpu_big_endian		= 0;
 Bool      Debug				= 0;
 int       default_ceiling_height	= 128;
-char      default_ceiling_texture[9]	= "CEIL3_5";
-int       default_floor_height		= 0;
-char      default_floor_texture[9]	= "FLOOR4_8";
-int       default_light_level		= 144;
-char      default_lower_texture[9]	= "STARTAN3";
-char      default_middle_texture[9]	= "STARTAN3";
-char      default_upper_texture[9]	= "STARTAN3";
+char      default_ceiling_texture[WAD_FLAT_NAME + 1]	= "CEIL3_5";
+int       default_floor_height				= 0;
+char      default_floor_texture[WAD_FLAT_NAME + 1]	= "FLOOR4_8";
+int       default_light_level				= 144;
+char      default_lower_texture[WAD_TEX_NAME + 1]	= "STARTAN3";
+char      default_middle_texture[WAD_TEX_NAME + 1]	= "STARTAN3";
+char      default_upper_texture[WAD_TEX_NAME + 1]	= "STARTAN3";
 int       default_thing			= 3004;
-int       double_click_timeout            = 200;
+int       double_click_timeout		= 200;
 Bool      Expert			= 0;
-char *    Game				= NULL;
-int       grid_pixels_min               = 10;
+const char *Game			= NULL;
+int       grid_pixels_min		= 10;
 int       GridMin			= 4;
 int       GridMax			= 256;
+int       idle_sleep_ms			= 50;
 Bool      InfoShown			= 1;
 int       InitialScale			= 8;
 confirm_t insert_vertex_split_linedef	= YC_ASK_ONCE;
 confirm_t insert_vertex_merge_vertices	= YC_ASK_ONCE;
-char *    Iwad1				= NULL;
-char *    Iwad2				= NULL;
-char *    Iwad3				= NULL;
-char *    MainWad			= NULL;
+const char *Iwad1			= NULL;
+const char *Iwad2			= NULL;
+const char *Iwad3			= NULL;
+const char *Iwad4			= NULL;
+const char *Iwad5			= NULL;
+const char *Iwad6			= NULL;
+const char *Iwad7			= NULL;
+const char *Iwad8			= NULL;
+const char *Iwad9			= NULL;
+const char *MainWad			= NULL;
 #ifdef AYM_MOUSE_HACKS
 int       MouseMickeysH			= 5;
 int       MouseMickeysV			= 5;
@@ -117,11 +128,16 @@ int       vertex_fudge			= 400;
 int       welcome_message		= 1;
 
 // Global variables declared in game.h
-al_llist_t *ldtdef     = NULL;
-al_llist_t *ldtgroup   = NULL;
-al_llist_t *stdef      = NULL;
-al_llist_t *thingdef   = NULL;
-al_llist_t *thinggroup = NULL;
+yglf_t yg_level_format   = YGLF__;
+ygln_t yg_level_name     = YGLN__;
+ygpf_t yg_picture_format = YGPF_NORMAL;
+ygtf_t yg_texture_format = YGTF_NORMAL;
+ygtl_t yg_texture_lumps  = YGTL_TEXTURE1;
+al_llist_t *ldtdef       = NULL;
+al_llist_t *ldtgroup     = NULL;
+al_llist_t *stdef        = NULL;
+al_llist_t *thingdef     = NULL;
+al_llist_t *thinggroup   = NULL;
 
 
 /*
@@ -152,7 +168,22 @@ if (screen_lines == 0)
 // InitSwap must be called before any call to GetMemory(), etc.
 InitSwap ();
 
-// First a quick pass through the command line
+// First detect manually --help and --version
+// because parse_command_line_options() cannot.
+if (argc == 2 && ! strcmp (argv[1], "--help"))
+   {
+   print_usage (stdout);
+   exit (0);
+   }
+if (argc == 2 && ! strcmp (argv[1], "--version"))
+   {
+   puts (what ());
+   puts (config_file_magic);
+   puts (ygd_file_magic);
+   exit (0);
+   }
+
+// Second a quick pass through the command line
 // arguments to detect -?, -f and -help.
 r = parse_command_line_options (argc - 1, argv + 1, 1);
 if (r)
@@ -194,18 +225,7 @@ if (r)
    exit (1);
    }
 
-if (Iwad1 == NULL && Iwad2 == NULL)
-   {
-   report_error ("You didn't say where the iwad is.");
-   fprintf (stderr,
-     "To say where doom.wad  is, use \"-i1 <file>\""
-     " or put \"iwad1=<file>\" in yadex.cfg.\n"
-     "To say where doom2.wad is, use \"-i2 <file>\""
-     " or put \"iwad2=<file>\" in yadex.cfg.\n");
-   exit (1);
-   }
-else if (Game != NULL && ! strcmp (Game, "doom")
-      || Game == NULL && Iwad2 == NULL)
+if (Game != NULL && ! strcmp (Game, "doom"))
    {
    if (Iwad1 == NULL)
       {
@@ -216,8 +236,7 @@ else if (Game != NULL && ! strcmp (Game, "doom")
       }
    MainWad = Iwad1;
    }
-else if (Game != NULL && ! strcmp (Game, "doom2")
-      || Game == NULL && Iwad1 == NULL)
+else if (Game != NULL && ! strcmp (Game, "doom2"))
    {
    if (Iwad2 == NULL)
       {
@@ -228,7 +247,7 @@ else if (Game != NULL && ! strcmp (Game, "doom2")
       }
    MainWad = Iwad2;
    }
-else if (! strcmp (Game, "heretic"))
+else if (Game != NULL && ! strcmp (Game, "heretic"))
    {
    if (Iwad3 == NULL)
       {
@@ -239,18 +258,89 @@ else if (! strcmp (Game, "heretic"))
       }
    MainWad = Iwad3;
    }
+else if (Game != NULL && ! strcmp (Game, "hexen"))
+   {
+   if (Iwad4 == NULL)
+      {
+      report_error ("You have to tell me where hexen.wad is.");
+      fprintf (stderr,
+         "Use \"-i4 <file>\" or put \"iwad4=<file>\" in yadex.cfg.\n");
+      exit (1);
+      }
+   MainWad = Iwad4;
+   }
+else if (Game != NULL && ! strcmp (Game, "strife"))
+   {
+   if (Iwad5 == NULL)
+      {
+      report_error ("You have to tell me where strife.wad is.");
+      fprintf (stderr,
+         "Use \"-i5 <file>\" or put \"iwad5=<file>\" in yadex.cfg.\n");
+      exit (1);
+      }
+   MainWad = Iwad5;
+   }
+else if (Game != NULL && ! strcmp (Game, "alpha02"))
+   {
+   if (Iwad6 == NULL)
+      {
+      report_error ("You have to tell me where the Doom alpha 0.2 iwad is.");
+      fprintf (stderr,
+         "Use \"-i6 <file>\" or put \"iwad6=<file>\" in yadex.cfg.\n");
+      exit (1);
+      }
+   MainWad = Iwad6;
+   }
+else if (Game != NULL && ! strcmp (Game, "alpha04"))
+   {
+   if (Iwad7 == NULL)
+      {
+      report_error ("You have to tell me where the Doom alpha 0.4 iwad is.");
+      fprintf (stderr,
+         "Use \"-i7 <file>\" or put \"iwad7=<file>\" in yadex.cfg.\n");
+      exit (1);
+      }
+   MainWad = Iwad7;
+   }
+else if (Game != NULL && ! strcmp (Game, "alpha05"))
+   {
+   if (Iwad8 == NULL)
+      {
+      report_error ("You have to tell me where the Doom alpha 0.5 iwad is.");
+      fprintf (stderr,
+         "Use \"-i8 <file>\" or put \"iwad8=<file>\" in yadex.cfg.\n");
+      exit (1);
+      }
+   MainWad = Iwad8;
+   }
+else if (Game != NULL && ! strcmp (Game, "doompr"))
+   {
+   if (Iwad9 == NULL)
+      {
+      report_error ("You have to tell me where the Doom press release iwad is.");
+      fprintf (stderr,
+         "Use \"-i9 <file>\" or put \"iwad9=<file>\" in yadex.cfg.\n");
+      exit (1);
+      }
+   MainWad = Iwad9;
+   }
 else
    {
-   report_error ("You didn't say for which game you want to edit.");
-   fprintf (stderr, "Use \"-g doom|doom2|heretic\" on the command line\n"
-      "or put \"game=doom|doom2|heretic\" in yadex.cfg.\n");
+   if (Game == NULL)
+      report_error ("You didn't say for which game you want to edit.");
+   else
+      report_error ("Unknown game \"%s\"", Game);
+   fprintf (stderr,
+  "Use \"-g <game>\" on the command line or put \"game=<game>\" in yadex.cfg\n"
+  "where <game> is one of \"alpha02\", \"alpha04\", \"alpha05\", \"doom\","
+  " \"doom2\",\n\"doompr\", \"heretic\", \"hexen\" and \"strife\".\n");
    exit (1);
    }
 if (Debug)
    {
    logfile = fopen (log_file, "a");
    if (logfile == NULL)
-      printf ("Warning: Could not open log file \"%s\"", log_file);
+      warn ("can't open log file \"%s\" (%s)", log_file, strerror (errno));
    LogMessage (": Welcome to Yadex!\n");
    }
 if (Quieter)
@@ -258,8 +348,10 @@ if (Quieter)
 
 // Sanity checks (useful when porting).
 check_types ();
+check_charset ();
 
 // Misc. things done only once.
+cpu_big_endian = native_endianness ();
 add_base_colours ();
 
 // Load game definitions (*.ygd).
@@ -280,6 +372,17 @@ CloseUnusedWadFiles ();
 if (welcome_message)
    print_welcome (stdout);
 
+if (! strcmp (Game, "hexen"))
+   printf (
+   "WARNING: Hexen mode is experimental. Don't expect to be able to do any\n"
+   "real Hexen editing with it. You can edit levels but you can't save them.\n"
+   "And there might be other bugs... BE CAREFUL !\n\n");
+
+if (! strcmp (Game, "strife"))
+   printf (
+   "WARNING: Strife mode is experimental. Many thing types, linedef types,\n"
+   "etc. are missing or wrong. And be careful, there might be bugs.\n\n");
+
 /* all systems go! */
 MainLoop ();
 
@@ -290,9 +393,10 @@ LogMessage (": The end!\n\n\n");
 if (logfile != NULL)
    fclose (logfile);
 if (remind_to_build_nodes)
-   printf (
-      "-> You have made changes to one or more wads. Don't forget to pass\n"
-      "   them through a nodes builder such as BSP before running them.\n");
+   printf ("\n"
+      "** You have made changes to one or more wads. Don't forget to pass\n"
+      "** them through a nodes builder (E.G. BSP) before running them.\n"
+      "** Like this: \"ybsp foo.wad -o tmp.wad; doom -file tmp.wad\"\n\n");
 return 0;
 }
 
@@ -327,7 +431,18 @@ if (! Quieter)
    nosound ();
    }
 #elif defined Y_UNIX
-return;
+if (! Quieter)
+#if 0
+   if (dpy)  // FIXME not defined here !
+#else
+   if (1)
+#endif
+      x_bell ();
+   else
+   {
+      putchar ('\a');
+      fflush (stdout);
+   }
 #endif
 }
 
@@ -405,14 +520,16 @@ if (GfxMode)
 #endif
 
 fflush (stdout);
-fprintf (stderr, "Yadex: Error: ");
+fputs ("Yadex: Error: ", stderr);
 vfprintf (stderr, fmt, args);
 fputc ('\n', stderr);
+fflush (stderr);
 if (Debug && logfile != NULL)
    {
-   fprintf (logfile, "Yadex: Error: ");
+   fputs ("Yadex: Error: ", logfile);
    vfprintf (logfile, fmt, args);
    fputc ('\n', logfile);
+   fflush (logfile);
    }
 
 // ... on the other hand, with X, we don't have to
@@ -423,6 +540,55 @@ if (Debug && logfile != NULL)
 if (GfxMode)
    TermGfx ();  // Don't need to sleep (1) either.
 #endif
+}
+
+
+/*
+ *	nf_bug
+ *	Report about a non-fatal bug to stderr. The message
+ *	should not expand to more than 80 characters.
+ */
+void nf_bug (const char *fmt, ...)
+{
+static bool first_time = 1;
+static int repeats = 0;
+static char msg_prev[81];
+char msg[81];
+
+va_list args;
+va_start (args, fmt);
+y_vsnprintf (msg, sizeof msg, fmt, args);
+if (first_time || strncmp (msg, msg_prev, sizeof msg))
+   {
+   fflush (stdout);
+   if (repeats)
+      {
+      fprintf (stderr, "Yadex: Bug: Previous message repeated %d times\n",
+	    repeats);
+      repeats = 0;
+      }
+
+   fprintf (stderr, "Yadex: Bug: %s\n", msg);
+   fflush (stderr);
+   if (first_time)
+      {
+      fputs ("REPORT ALL \"Bug:\" MESSAGES TO THE MAINTAINER !\n", stderr);
+      first_time = 0;
+      }
+   strncpy (msg_prev, msg, sizeof msg_prev);
+   }
+else
+   {
+   repeats++;  // Same message as above
+   if (repeats == 10)
+      {
+      fflush (stdout);
+      fprintf (stderr, "Yadex: Bug: Previous message repeated %d times\n",
+	    repeats);
+      fflush (stderr);
+      repeats = 0;
+      }
+   }
 }
 
 
@@ -448,7 +614,6 @@ if (Debug && logfile != NULL)
       fprintf (logfile, "%s", tstr);
       }
    vfprintf (logfile, logstr, args);
-   va_end (args);
    fflush (logfile);  /* AYM 19971031 */
    }
 }
@@ -469,25 +634,28 @@ WadPtr wad;
 for (;;)
    {
    /* get the input */
-   printf ("\n[? for help]> ");
-   fgets (input, sizeof input, stdin);
+   printf ("yadex: ");
+   if (! fgets (input, sizeof input, stdin))
+      {
+      puts ("q");
+      break;
+      }
+
    /* Strip the trailing '\n' */
    if (strlen (input) > 0 && input[strlen (input) - 1] == '\n')
       input[strlen (input) - 1] = '\0';
-   printf ("\n");
-   /* strupr (input);  AYM 1998-06-13 */
 
    /* eat the white space and get the first command word */
    com = strtok (input, " ");
 
    /* user just hit return */
    if (com == NULL)
-      printf ("[Please enter a command or ? for help.]\n");
+      printf ("Please enter a command or ? for help.\n");
 
    /* user inputting for help */
-   else if (!strcmp (com, "?"))
+   else if (!strcmp (com, "?") || !strcmp (com, "h") || !strcmp (com, "help"))
       {
-      printf ("?                                 --"
+      printf ("? | h | help                      --"
               " to display this text\n");
       printf ("b[uild] <WadFile>                 --"
               " to build a new iwad\n");
@@ -510,6 +678,10 @@ for (;;)
               " to generate a gimp palette file from\n"
               "                                    "
               " entry 0 of lump PLAYPAL.\n");
+      printf ("make_palette_ppm <outfile>        --"
+              " to generate a palette image from\n"
+              "                                    "
+              " entry 0 of lump PLAYPAL.\n");
       printf ("q[uit]                            --"
               " to quit\n");
       printf ("r[ead] <WadFile>                  --"
@@ -529,11 +701,11 @@ for (;;)
    /* user asked for list of open wad files */
    else if (!strcmp (com, "wads") || !strcmp (com, "w"))
       {
-      printf ("%-20s  IWAD  (Main wad file)\n", WadFileList->filename);
+      printf ("%-40s  Iwad\n", WadFileList->filename);
       for (wad = WadFileList->next; wad; wad = wad->next)
 	 {
-	 printf ("%-20s  PWAD  (Patch wad file for %.8s)\n",
-	  wad->filename, wad->directory[0].name);
+	 printf ("%-40s  Pwad (%.*s)\n",
+	  wad->filename, WAD_NAME, wad->directory[0].name);
 	 }
       }
 
@@ -542,9 +714,6 @@ for (;;)
       {
       if (! Registered)
 	 printf ("Remember to register your copy of the game !\n");
-#ifdef OLD
-      printf ("Goodbye...\n");
-#endif
       break;
       }
 
@@ -553,37 +722,52 @@ for (;;)
          || !strcmp (com, "create") || !strcmp (com, "c"))
       {
       const int newlevel = ! strcmp (com, "create") || ! strcmp (com, "c");
-
+      char *level_name = 0;
       com = strtok (NULL, " ");
-      if (com == NULL)
-	 {
-	 printf ("Which level ?\n");
-         continue;
-	 }
-      char *level_name = find_level (com);
-      if (level_name == error_invalid)
-         printf ("\"%s\" is not a valid level name.\n", com);
-      else if (level_name == error_none)
-         printf ("Neither E%dM%d nor MAP%02d exist.\n",
-            atoi (com) / 10, atoi (com) % 10, atoi (com));
-      else if (level_name == error_non_unique)
-         printf ("Both E%dM%d and MAP%02d exist. Use an unambiguous name.\n",
-            atoi (com) / 10, atoi (com) % 10, atoi (com));
-      else if (level_name == NULL)
-         {
-         printf ("Level %s not found.", com);
-         if (tolower (*com) == 'e' && ! strcmp (Game, "doom2")
-            || tolower (*com) == 'm' && strcmp (Game, "doom2"))
-            printf (" You are in %s mode.", Game);
-         else if (tolower (*com) == 'e' && com[1] > '1' && ! Registered)
-            printf (" You have the shareware iwad.");
-         putchar ('\n');
-         }
+      if (com == 0)
+	 if (! newlevel)
+	    {
+	    printf ("Which level ?\n");
+	    continue;
+	    }
+         else
+	    level_name = 0;
       else
-         {
-         EditLevel (level_name, newlevel);
+	 {
+	 level_name = find_level (com);
+	 if (level_name == error_invalid)
+	    {
+	    printf ("\"%s\" is not a valid level name.\n", com);
+	    continue;
+	    }
+	 else if (level_name == error_none)
+	    {
+	    printf ("Neither E%dM%d nor MAP%02d exist.\n",
+	       atoi (com) / 10, atoi (com) % 10, atoi (com));
+	    continue;
+	    }
+	 else if (level_name == error_non_unique)
+	    {
+	    printf ("Both E%dM%d and MAP%02d exist. Use an unambiguous name.\n",
+	       atoi (com) / 10, atoi (com) % 10, atoi (com));
+	    continue;
+	    }
+	 else if (level_name == NULL)
+	    {
+	    printf ("Level %s not found.", com);
+	    // Hint absent-minded users
+	    if (tolower (*com) == 'e' && yg_level_name == YGLN_MAP01
+	       || tolower (*com) == 'm' && yg_level_name == YGLN_E1M1)
+	       printf (" You are in %s mode.", Game);
+	    else if (tolower (*com) == 'e' && com[1] > '1' && ! Registered)
+	       printf (" You have the shareware iwad.");
+	    putchar ('\n');
+	    continue;
+	    }
+	 }
+      EditLevel (level_name, newlevel);
+      if (level_name)
          free (level_name);
-         }
       }
 
    /* user asked to build a new main wad file */
@@ -592,7 +776,7 @@ for (;;)
       com = strtok (NULL, " ");
       if (com == NULL)
 	 {
-	 printf ("[Wad file name argument missing.]\n");
+	 printf ("Wad file name argument missing.\n");
 	 continue;
 	 }
       for (wad = WadFileList; wad; wad = wad->next)
@@ -600,7 +784,7 @@ for (;;)
 	    break;
       if (wad)
 	 {
-	 printf ("[File \"%s\" is opened and cannot be overwritten.]\n", com);
+	 printf ("File \"%s\" is opened and cannot be overwritten.\n", com);
 	 continue;
 	 }
       BuildNewMainWad (com, 0);
@@ -611,14 +795,14 @@ for (;;)
       {
       if (WadFileList->next == NULL || WadFileList->next->next == NULL)
 	 {
-	 printf ("[You need at least two open wad files "
-	   "if you want to group them.]\n");
+	 printf ("You need at least two open wad files "
+	   "if you want to group them.\n");
 	 continue;
 	 }
       com = strtok (NULL, " ");
       if (com == NULL)
 	 {
-	 printf ("[Wad file name argument missing.]\n");
+	 printf ("Wad file name argument missing.\n");
 	 continue;
 	 }
       for (wad = WadFileList; wad; wad = wad->next)
@@ -626,7 +810,7 @@ for (;;)
 	    break;
       if (wad)
 	 {
-	 printf ("[File \"%s\" is opened and cannot be overwritten.]\n", com);
+	 printf ("File \"%s\" is opened and cannot be overwritten.\n", com);
 	 continue;
 	 }
       BuildNewMainWad (com, 1);
@@ -638,7 +822,7 @@ for (;;)
       com = strtok (NULL, " ");
       if (com == NULL)
 	 {
-	 printf ("[Wad file name argument missing.]\n");
+	 printf ("Wad file name argument missing.\n");
 	 continue;
 	 }
       for (wad = WadFileList; wad; wad = wad->next)
@@ -646,7 +830,7 @@ for (;;)
 	    break;
       if (wad == NULL)
 	 {
-	 printf ("[Wad file \"%s\" is not open.]\n", com);
+	 printf ("Wad file \"%s\" is not open.\n", com);
 	 continue;
 	 }
       out = strtok (NULL, " ");
@@ -695,6 +879,18 @@ for (;;)
       make_gimp_palette (0, out);
       }
 
+   // make_palette_ppm
+   else if (! strcmp (com, "make_palette_ppm"))
+      {
+      out = strtok (NULL, "");
+      if (out == NULL)
+	 {
+	 printf ("Output file name argument missing.\n");
+	 continue;
+	 }
+      make_palette_ppm (0, out);
+      }
+
    /* user asked to list all options and their values */
    else if (! strcmp (com, "set"))
       {
@@ -725,7 +921,7 @@ for (;;)
       com = strtok (NULL, " ");
       if (com == NULL)
 	 {
-	 printf ("[Object name argument missing.]\n");
+	 printf ("Object name argument missing.\n");
 	 continue;
 	 }
       out = strtok (NULL, " ");
@@ -747,7 +943,26 @@ for (;;)
    else if (!strcmp (com, "view") || !strcmp (com, "v"))
       {
       InitGfx ();
+      init_input_status ();
+      do
+	 get_input_status ();
+      while (is.key != YE_EXPOSE);
       com = strtok (NULL, " ");
+      force_window_not_pixmap ();  // FIXME quick hack
+      ChooseSprite (-1, -1, "Sprite viewer", com);
+      TermGfx ();
+      }
+
+   /* user asked to view the sprites */
+   else if (!strcmp (com, "patches") || !strcmp (com, "p"))
+      {
+      InitGfx ();
+      init_input_status ();
+      do
+	 get_input_status ();
+      while (is.key != YE_EXPOSE);
+      com = strtok (NULL, " ");
+      force_window_not_pixmap ();  // FIXME quick hack
       ChooseSprite (-1, -1, "Sprite viewer", com);
       TermGfx ();
       }
@@ -758,18 +973,18 @@ for (;;)
       com = strtok (NULL, " ");
       if (com == NULL)
 	 {
-	 printf ("[Object name argument missing.]\n");
+	 printf ("Object name argument missing.\n");
 	 continue;
 	 }
-      if (strlen (com) > 8 || strchr (com, '.') != NULL)
+      if (strlen (com) > WAD_NAME || strchr (com, '.') != NULL)
 	 {
-	 printf ("[Invalid object name.]\n");
+	 printf ("Invalid object name.\n");
 	 continue;
 	 }
       out = strtok (NULL, " ");
       if (out == NULL)
 	 {
-	 printf ("[Wad file name argument missing.]\n");
+	 printf ("Wad file name argument missing.\n");
 	 continue;
 	 }
       for (wad = WadFileList; wad; wad = wad->next)
@@ -777,8 +992,8 @@ for (;;)
 	    break;
       if (wad)
 	 {
-	 printf ("[This wad file is already in use. "
-	    "You may not overwrite it.]\n");
+	 printf ("This wad file is already in use. "
+	    "You may not overwrite it.\n");
 	 continue;
 	 }
       printf ("Saving directory entry data to \"%s\".\n", out);
@@ -794,18 +1009,18 @@ for (;;)
       com = strtok (NULL, " ");
       if (com == NULL)
 	 {
-	 printf ("[Raw file name argument missing.]\n");
+	 printf ("Raw file name argument missing.\n");
 	 continue;
 	 }
       out = strtok (NULL, " ");
       if (out == NULL)
 	 {
-	 printf ("[Object name argument missing.]\n");
+	 printf ("Object name argument missing.\n");
 	 continue;
 	 }
-      if (strlen (out) > 8 || strchr (out, '.') != NULL)
+      if (strlen (out) > WAD_NAME || strchr (out, '.') != NULL)
 	 {
-	 printf ("[Invalid object name.]\n");
+	 printf ("Invalid object name.\n");
 	 continue;
 	 }
       if ((raw = fopen (com, "rb")) == NULL)
@@ -818,8 +1033,8 @@ for (;;)
 	    break;
       if (wad)
 	 {
-	 printf ("[This wad file is already in use (%s). "
-	    "You may not overwrite it.]\n", input);
+	 printf ("This wad file is already in use (%s). "
+	    "You may not overwrite it.\n", input);
 	 continue;
 	 }
       printf ("Including new object %s in \"%s\".\n", out, input);
@@ -838,18 +1053,18 @@ for (;;)
       com = strtok (NULL, " ");
       if (com == NULL)
 	 {
-	 printf ("[Object name argument missing.]\n");
+	 printf ("Object name argument missing.\n");
 	 continue;
 	 }
-      if (strlen (com) > 8 || strchr (com, '.') != NULL)
+      if (strlen (com) > WAD_NAME || strchr (com, '.') != NULL)
 	 {
-	 printf ("[Invalid object name.]\n");
+	 printf ("Invalid object name.\n");
 	 continue;
 	 }
       out = strtok (NULL, " ");
       if (out == NULL)
 	 {
-	 printf ("[Raw file name argument missing.]\n");
+	 printf ("Raw file name argument missing.\n");
 	 continue;
 	 }
       for (wad = WadFileList; wad; wad = wad->next)
@@ -857,7 +1072,7 @@ for (;;)
 	    break;
       if (wad)
 	 {
-	 printf ("[You may not overwrite an opened wad file with raw data.]\n");
+	 printf ("You may not overwrite an opened wad file with raw data.\n");
 	 continue;
 	 }
       printf ("Saving directory entry data to \"%s\".\n", out);
@@ -869,7 +1084,7 @@ for (;;)
 
    /* unknown command */
    else
-      printf ("[Unknown command \"%s\"!]\n", com);
+      printf ("Unknown command \"%s\"!\n", com);
    }
 }
 

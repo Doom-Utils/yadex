@@ -33,6 +33,7 @@ Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 #include "clearimg.h"
 #include "dispimg.h"
 #include "pic2img.h"
+#include "spectimg.h"
 
 
 /*
@@ -57,6 +58,8 @@ LoadPicture (pixels,
    &c->width,
    &c->height);
 c->flags |= HOOK_SIZE_VALID;
+if (c->flags & HOOK_SPECTRAL)
+  spectrify_game_image (pixels, width, height);
 display_game_image (pixels, width, height, c->x0, c->y0, width, height);
 c->flags |= HOOK_DRAWN;
 FreeMemory (pixels);

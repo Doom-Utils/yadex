@@ -78,6 +78,7 @@ static short mapmaxx;
 static short mapminy;
 static short mapmaxy;
 
+static int show_progress = 1;
 static unsigned char pcnt;
 
 static struct Seg *PickNode_traditional(struct Seg *);
@@ -125,8 +126,9 @@ static int CreateSSector(struct Seg *);
 
 static void progress()
 {
-	if(!((++pcnt)&31))
-		fprintf(stderr,"%c\b","/-\\|"[((pcnt)>>5)&3]);
+	if(show_progress)
+		if(!((++pcnt)&31))
+			fprintf(stderr,"%c\b","/-\\|"[((pcnt)>>5)&3]);
 }
 
 /*--------------------------------------------------------------------------*/
@@ -660,7 +662,7 @@ void usage(void)
 #else
         "\nUsage: BSP [options] input.wad [-o <output.wad>]\n"
 #endif
-        "       (If no output.wad is specified, TMP.WAD is written)\n\n"
+        "       (If no output.wad is specified, \"tmp.wad\" is written)\n\n"
         "Options:\n\n"
         "  -factor <nnn>  Changes the cost assigned to SEG splits\n"
         "  -vp            Attempts to prevent visplane overflows\n"
@@ -751,8 +753,14 @@ int main(int argc,char *argv[])
  struct directory *newdirec;
 
  setbuf(stdout,NULL);
+#ifndef MSDOS  /* Unix: no whirling baton if stderr is redirected */
+ if(!isatty(2))
+   show_progress=0;
+#endif
 
  puts("* Doom BSP node builder ver 2.3 (c) 1998 Colin Reed, Lee Killough *");
+ printf("* This is the modified version that comes with Yadex %s. *",
+     YADEX_VERSION);
 
  parse_options(argc,argv);
 

@@ -23,8 +23,8 @@ extern int font_yofs;
 /* This number is the Y offset to use when underscoring a character.
    For example, if you want to draw an underscored "A" at (x,y),
    you should do :
-     DrawScreenText (x, y,         "A");
-     DrawScreenText (x, y + FONTU, "_"); */
+     DrawScreenString (x, y,         "A");
+     DrawScreenString (x, y + FONTU, "_"); */
 #define FONTU  1
 
 /* Narrow spacing around text. That's the distance in pixels
@@ -38,9 +38,10 @@ extern int font_yofs;
 #define WIDE_VSPACING  (FONTH / 2)
 
 /* Boxes */
-#define BOX_BORDER 2	// Offset between outer and inner edges of a 3D box
-#define NARROW_BORDER 1	// Same thing for a shallow 3D box
-#define HOLLOW_BORDER 1	// Same thing for a hollow box
+#define BOX_BORDER    2	 // Offset between outer and inner edges of a 3D box
+#define NARROW_BORDER 1	 // Same thing for a shallow 3D box
+#define HOLLOW_BORDER 1	 // Same thing for a hollow box
+#define BOX_VSPACING  WIDE_VSPACING  // Vertical space between two hollow boxes
 
 /* Parameters set by command line args and configuration file */
 extern const char *BGIDriver;	// BGI: default extended BGI driver
@@ -55,10 +56,10 @@ extern int   VideoMode;		// BGI: default video mode for VESA cards
 
 /* Global variables */
 extern int   GfxMode;		// current graphics mode, or 0 for text
-extern int   OrigX;		// the X origin
-extern int   OrigY;		// the Y origin
-extern int   ScrCenterX;	// X coord of screen center
-extern int   ScrCenterY;	// Y coord of screen center
+extern int   OrigX;		// Map X-coord of centre of screen/window
+extern int   OrigY;		// Map Y-coord of centre of screen/window
+extern int   ScrCenterX;	// Display X-coord of center of screen/window
+extern int   ScrCenterY;	// Display Y-coord of center of screen/window
 #ifdef Y_X11
 typedef unsigned long xpv_t;	// The type of a pixel value in X's opinion
 #ifdef X_PROTOCOL
@@ -71,11 +72,12 @@ extern GC       gc;
 extern Visual  *win_vis;	// The visual for win
 extern int      win_depth;	// The depth of win in bits
 extern int      win_bpp;	// The depth of win in bytes
+extern int	x_server_big_endian;	// Is the X server big-endian ?
 #endif  // ifdef X_PROTOCOL
 #endif  // ifdef Y_X11
-extern int	text_dot;	// DrawScreenText() debug flag
+extern int	text_dot;     // DrawScreenText()/DrawScreenString() debug flag
 
-/* gfx.c */
+/* gfx.cc */
 /* Only the functions that are not used by many modules are here.
    The others are in yadex.h */
 void InitGfx (void);
@@ -85,6 +87,7 @@ void TermGfx (void);
 void SetWindowSize (int width, int height);
 void ClearScreen (void);
 void update_display ();
+void force_window_not_pixmap ();
 void DrawScreenMeter (int, int, int, int, float);
 int TranslateToDoomColor (int);
 #if defined Y_BGI && defined CIRRUS_PATCH
@@ -100,5 +103,4 @@ void pop_colour (void);
 void draw_map_point (int mapx, int mapy);
 
 
-#endif  /* Prevent mutliple inclusion */
-
+#endif  /* DO NOT ADD ANYTHING AFTER THIS LINE */

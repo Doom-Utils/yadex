@@ -12,8 +12,8 @@ General
   reread doom.wad, if it's a Doom II level (MAPnn), reread doom2.wad.
   what if it's a Heretic level ? It must be possible to tell a Heretic
   level by the special sector & thing types.
-- DOS: do more modules splitting (deu.c, ReadConfigFile, menus.c).
-  In gfx.c, move InitGfx() in a separate module.
+- DOS: do more modules splitting (deu.c, ReadConfigFile, menus.c). In
+  gfx.c, move InitGfx() in a separate module.
 - DOS: be able to handle large levels.
 - Understand sprites in PWAD (SS_START, S_END).
 - DOS: switch to DJGPP
@@ -23,13 +23,11 @@ General
 - DOS: respect screen ;
   - restore contents
   - restore proper number of lines/columns
-- Support Boom extensions, at least by allowing to enter hexadecimal
-  linedef types etc.
 
 Game definitions
 - Move thing groups colour from .ygd to .cfg.
-- Generalize the principle of game by replacing iwad[123]= by iwad=
-  in different sections of the .cfg.
+- Generalize the principle of game by replacing iwad[123]= by iwad= in
+  different sections of the .cfg.
 - Fix TranslateToDoomColor().
 - -g should accept anything as long as <anything>.ygd exists.
 - Have to think of how to handle different games : Doom, Doom II and
@@ -45,7 +43,8 @@ Game definitions
 - LoadGameDefs : try to waste less memory if possible.
 - LoadGameDefs : at present, FreeGameDefs does NOT unallocate what
   LoadGameDefs allocated.
-- YGD: enter two iwad names for the same game (E.G. doom.wad and doom1.wad).
+- YGD: enter two iwad names for the same game (E.G. doom.wad and
+  doom1.wad).
 - YGD: add list of animated flats and textures
 - YGD: add sprite names for things [partly done]
 - YGD: add player height
@@ -57,11 +56,152 @@ Game definitions
 - FreeGameDefs(): apparently does not unallocate everything. It's
   immaterial since it's only called just before exiting but I'll have to
   fix it one day.
+- heretic.ygd: some things radius must be wrong (gargoyles and
+  molotaurs)
+- Hexen: generate the "thing" directives by either parsing info.c or
+  ripping off the one in DETH.
+- YGD: add default level names.
+- YGD: Gadget: add level names (E.G. "E1M1" -> "Hangar").
+- YGD: names of sky flats (for Strife : F_SKY001)
+
+Game and wad support
+- Some wads have sidedefs with a sector# of -1. Apparently, those are
+  always unused sidedefs but perhaps there is something to do about it.
+  dyst3, mm, mm2 map13,28, wads2/1kill (e2m2,6,7,8,9), wads2/adieu
+  wads2/ebola, wads2/requiem (map03,08,etc).
+- Some wads generating a flurry of messages "updating entry ''" when
+  loaded (11fortko, 1_on_1, chase21). Fix that.
+- Support Boom extensions, at least by allowing to enter hexadecimal
+  linedef types etc.
+- Some working pwads are not pwads. 1sthell is an iwad.
+- Some wads have a large number of unused vertices in the middle. base,
+  phobos, 2wad/dks_e1l1, 2wad/dks_e1l3, amanda2 (no tail !), atica,
+  badblu35, dmdv (tail 76% unused 45/469), drdeath (unused 69/1382),
+  spit e1m2 unused 661/816 tail 0
+- Handle sprites between SS_START and S_END/SS_END (cf. basilica.wad)
+  and patches between PP_START and PP_END (cf. mbfedit!.wad) properly.
+  The problem is that FindMasterDir() searches the master directory from
+  beginning to end, while Doom does the reverse. Therefore, replacement
+  entries never replace old entries, except when OpenPatchWad() has
+  explicitly replaced them, which does not occur for lumps framed by
+  *_START/*_END labels. The problem is not visible for flats because
+  ReadFTextureNames() explicitely merges and sorts all the
+  F*_START/F*_END sequences.
+  It's a mess. There are several approaches to fix that :
+  - (1) Don't try to replace anything, just read the directory from the
+    end like Doom does.
+  - (2) Fix OpenPatchWad() to replace patch and sprite lumps where
+    appropriate.
+  - (3) Create ReadSpriteNames() and ReadPatchNames() and use the tables
+    they generate instead of searching the master directory.
+  There are some drawbacks to (1). Directory lookups are long (E.G. 1936
+  flats for eternall.wad). When loading a pwad that replaces lots of
+  resources, you waste memory by having every entry duplicated. Also,
+  I'm skeptical about that way of doing because we know it does not work
+  too well with sprites.
+
+  I'm not sure about how to do (2). I suspect that the right thing is to
+  replace anything that has the same name. That is, there is only one
+  namespace in a wad directory. The long lookups problem remains.
+
+  Method (3) has the inconvenient of wasting even more memory than (1).
+  But it allows us to sort the entries and eliminate the duplicates.
+  Since it can effectively merge several blocks into one, it makes the
+  downstream code independant of *_START/*_END considerations, which is
+  a Good Thing.
+
+  One important criterion for me is that the chosen approach makes it
+  easy to switch iwads without quitting Yadex and to freely add or
+  remove pwads.
+
+  Perhaps it would make more sense to forget the directory completely
+  when it's not needed ? Each entry takes 16+4+4 = 24 bytes. Here are
+  the number of entries in the iwads' directories :
+  
+  Iwad     Total entries  Level entries
+  Doom     2306  54 kB    36  9 kB
+  Doom II  2956  69 kB    32  8 kB
+  Heretic  2415  56 kB    28  7 kB
+  Hexen    4249  99 kB    32  9 kB
+
+  That's a lot. When do we use the directory ?
+  - During an editing session, to display the sprites.
+  - During an editing session, to display the flats.
+  - During an editing session, to display the textures (TEXTURE1,
+    TEXTURE2, PNAMES, patches).
+  - During an editing session, to get the PLAYPAL.
+  - When loading or saving a level.
+  - At the prompt when saving or extracting a lump (not often).
+  All the levels are kept in memory all the time, even though they're
+  used only when saving and reading. The sounds, musics and graphics are
+  never unused (about 450 entries = 10 kB).
+
+- The message "Use F_END instead" should be displayed only once, when
+  the pwad is loaded, not each time you open an edit window.
+- Fix OpenPatchWad() so that, if a pwad contains FF_START ... FF_END
+  F_END (mm2.wad), the F_END does not replace the F_END from the iwad,
+  as this causes a spurious "this wad uses FF_END" warning.
+- icarus.wad uses F_END + FF_END. Sigh.
+- Heretic has some flats with a size of 4160. Is this why DeuTex accepts
+  64x65 flats ?
+- Hexen has some flats with a size of 8 kB.
+- The pwad loading messages should be made even more compact if
+  possible (cf. eternal or doom2099 for instance).
+- Alpha: fix wrong things definitions and add missing ones.
+
+Messages and reports
+  The reason for emitting messages :
+  - Bug (internal error, unexpected condition in the program that
+    indicates the existence of a bug somewhere)
+  - Error in the iwad (something looks fishy)
+  - Environment error (not enough memory, failure to open a file for
+    writing, failure to create a subprocess, failure to allocate X
+    resources or to connect to the X server, etc.)
+  - Informational (to inform the user on what's happening)
+  - Verbose messages (like informational, except that they are not on by
+    default and are meant as an aid to debugging)
+  - Syntax error messages
+  - Usage message
+  - Copyright message
+
+  Certain messages could be prefixed by the name of the program
+  ("yadex: "). I think this would be only useful for messages that are
+  issued while Yadex is not in interactive mode. For messages that are
+  meant to happen only in interactive mode, the prefix is a waste of
+  screen real estate.
+
+  Messages can be printed to stdout, stderr and on the window, or a
+  combination of these. Future versions of Yadex might have a GUI-only
+  interface and stdout/stderr messages might be lost, then. To print
+  messages on the window, it would be better to have a scrollable
+  message textbox at the bottom than alert boxes, that require constant
+  interaction and leave no trace.
+
+  Bug messages should come with a "THIS IS A BUG" notice and an
+  exhortation to go tell the maintainer.
+
+  If possible, the message printing function(s) should be
+  interface-independant.
+
+  There should be a smart handling of carriage returns. Instead of
+  inserting '\n' in the format string, one should be able to specify
+  whether the message should start on a new line and whether the message
+  should be followed by a newline.
+
+  There should be some handling of indent. One should be able to start
+  and end an indented block. The output routine would take care of the
+  printing of the indent whitespace.
+
+  If possible, it should be possible to write to several channels
+  (indent levels) asynchronously.
 
 Confirmation
 - Fine selection of automatic confirmations ("split linedef when
   inserting new vertex", "split linedef when moving vertex", "merging
   vertices", etc).
+- When moving a bunch of vertices, do not check for vertex-on-linedef
+  condition if both vertices of the linedef were part of the vertices
+  that are being moved.
 
 Old bugs to fix
 - When splitting and merging sectors, some of the sidedefs in the split
@@ -70,25 +210,26 @@ Old bugs to fix
   "vertices A and B not on the same sector" or "cannot find a closed
   path", etc. I have already got "no sector between vertex A and vertex
   B" ; save, quit, edit and try again : it works !
-- A newly created sector is sometimes not highlightable until the level
-  is saved (F2).
 - Let RIGHT work after SPACE (works if no mouse driver!)
-- DOS: understand why mouse pointer moves 8 pixels at a time and fix that.
+- DOS: understand why mouse pointer moves 8 pixels at a time and fix
+  that.
 - I already got erroneous "sector not closed" messages. The last time I
   remember, it was on a tiny triangular sector (base=16, height=2).
 - When merging sectors, linedefs sometimes get only 1 sidedef...
 - InputInteger limits numbers to [-32749,+32749].
 - InputInteger doesn't accept hexadecimal numbers.
 - DOS: numeric keypad "." means Del even if Numlock is on.
-- If you do "delete linedef and merge sectors" when it's the same
-  sector on both sides of the linedef, the sector is deleted.
+- If you do "delete linedef and merge sectors" when it's the same sector
+  on both sides of the linedef, the sector is deleted.
 - Check that all sectors are closed : chokes on pseudo sectors (s1=s2).
   I've verified that unclosed sectors, whether single ou double sided
   don't disturb Doom. However, some look ugly. The checking function
   should be modified so that only ugly unclosed sectors are reported.
 - DOS: fake pointer: make it an arrow and not flickering (Ben Davies).
+- Create new sector from linedefs: should be smarter.
 
 Editing in general
+- Implement undo and redo.
 - Move things along with vertexes
 - Add a "global" or "everything" editing mode. In that mode, moving,
   deleting, duplicating affects all objects (things, vertexes...)
@@ -99,6 +240,23 @@ Editing in general
 - Move object to nth next Grid position in direction ...
 - Flip info window on either side of the screen.
 - Toggle key to zoom in temporarily (press once -> x4, press again -> /4)
+- Gadget: show level with different orientations, i.e. with logical
+  north not always being at the top. And rotate the sprite images
+  accordingly.
+- Go to next/previous object in selection.
+- Renumbering objects:
+  - Renumber the selected object by either exchanging numbers with the
+    object having the target number or bumping all numbers by one. The
+    former solution has the advantage of being faster. The second
+    solution has the advantage of not disturbing the relative numbering
+    of the other objects.
+  - Make the highlighted object the lowest-numbered (highest-numbered)
+    one of all the selected objects of the same kind.
+- Bug: pasting repeatedly a large number of objects (all the linedefs of
+  Eternal MAP28, for instance) ends up triggering a segfault. Perhaps
+  we're overflowing/underflowing the objects arrays ?
+- Bug: my tests indicate that out-of-memory conditions are badly handled
+  (E.G. segfault upon switching to sector mode).
 
 Editing things:
 - Thing info box:
@@ -111,6 +269,24 @@ Editing things:
   - Should sort the sprite names before searching.
   - Eye candy: animate the sprites.
   - Eye candy: show the sprites according to their angle.
+  - Numeric thing type : make it optional. Give choice of format between
+    signed decimal, unsigned decimal and hexadecimal. Default format is
+    specified by config parameter format_thing_type. Also have a key
+    binding to cycle between the three.
+  - String thing type : when unknown, use the format for numeric thing
+    type.
+  - Thing angle : when unknown, give choice between signed decimal,
+    unsigned decimal and hexadecimal.
+  - Thing flags : have an option to show the numeric value of the flags
+    field, with a format one of signed decimal, unsigned decimal and
+    hexadecimal.
+- Flip/mirror: allow user to specify whether or not things should
+  be spinned.
+- Thing properties -> type : on selecting group with 0 things, fatal
+  error PTD1.
+- Sprite: if only the root of the sprite name is given, shows the
+  first sprite _found_, as opposed to the first _in_alphabetical_
+  order_. In the Strife iwad, BARWB0 comes before BARWA0.
 
 Editing vertices:
 
@@ -143,38 +319,38 @@ Editing linedefs and sidedefs
   also "45° embrasure" and "fancy embrasure" (sides are L-shaped).
 
 - Nooks and bosses: add a way to specify width and depth. Maybe have
-  several predefined dimensions plus user-defined dimensions (set in
-  the config file). Maybe set textures automatically (EG DOORSTOP and
-  LITE4). Provide for shapes other than rectangle.
-  Difference with "Make nook" is that it also splits the sector.
-  Maybe set automatically floor and ceiling height of new sector.
+  several predefined dimensions plus user-defined dimensions (set in the
+  config file). Maybe set textures automatically (EG DOORSTOP and
+  LITE4). Provide for shapes other than rectangle.  Difference with
+  "Make nook" is that it also splits the sector.  Maybe set
+  automatically floor and ceiling height of new sector.
 - Automatically set UTU/LTU when line becomes 2-sided ?
 - Reset linedef as double-sided (sets 2S, unsets IM, clears normal
   texture, set upper and lower textures, possibly set UTU and LTU).
-- Frequent operations :
-  copy upper texture -> lower texture or inverse
-  set texture. mostly on 1st sidedef
-  set normal texture 
-  copy lower+upper texture = normal texture of adjacent linedef,
-  set lower+upper texture unpegged, normaltx = -
+- Frequent operations : copy upper texture -> lower texture or inverse
+  set texture. mostly on 1st sidedef set normal texture copy lower+upper
+  texture = normal texture of adjacent linedef, set lower+upper texture
+  unpegged, normaltx = -
 - Cut and paste between wads. at least in a limited way: insert the
-  contents of a wad at the cursor. involves renumbering all items
-  by adding the number of such items already existing. E.G. if there
-  are already 50 vertices, increment the vertex numbers in all the
-  linedefs by 50. Same thing for sidedefs numbers in linedefs,
-  sector tags (DON'T increment those above 900!). increment sector#
-  in sidedefs too. that's all ?
-- Select all linedefs that in same path as the highlighted one.
-  This can be hairy when the same vertex is shared by more than 2
-  sidedefs. Ideas that come to mind :
+  contents of a wad at the cursor. involves renumbering all items by
+  adding the number of such items already existing. E.G. if there are
+  already 50 vertices, increment the vertex numbers in all the linedefs
+  by 50. Same thing for sidedefs numbers in linedefs, sector tags (DON'T
+  increment those above 900!). increment sector# in sidedefs too. that's
+  all ?
+- Select all linedefs that in same path as the highlighted one.  This
+  can be hairy when the same vertex is shared by more than 2 sidedefs.
+  Ideas that come to mind :
   - only single-sided linedefs,
   - only linedefs that have as many sides as the reference linedef,
-  - called from sector mode: select all linedefs that form the
-    boundary of the sector and switch to linedef mode,
+  - called from sector mode: select all linedefs that form the boundary
+    of the sector and switch to linedef mode,
   - only linedefs that form a chain (last (n-1) == first (n)).
-- Fix the mess with duplicating linedefs. The ideal would be to
+- Duplicating/copying linedefs: fix the mess. The ideal would be to
   duplicate sidedefs, but to be also able to share them (if asked
   explicitly). Maybe by using a modifier when copying like [Alt]...
+- Duplicating/copying linedefs: allow user to specify whether or not
+  sectors should be duplicated too.
 - Function to substitute sidedef texture.
 - Dragging linedefs is still slower than dragging vertices. But it might
   be just because of the overhead of highlighting all those linedefs.
@@ -185,20 +361,38 @@ Editing linedefs and sidedefs
                   --x--     ===>     --x  x--
                     |                     |
 
-  The way to use it could be : select one or more linedefs that have
-  a common vertex. That vertex is duplicated, moved aside a little bit
-  (so as to reduce the lengths of the linedefs and the vertex reference
-  of the concerned linedefs is changed. Instead of moving it, it could
-  be selected for dragging automatically...
-  Could be called "unlink vertex".
+  The way to use it could be : select one or more linedefs that have a
+  common vertex. That vertex is duplicated, moved aside a little bit (so
+  as to reduce the lengths of the linedefs and the vertex reference of
+  the concerned linedefs is changed. Instead of moving it, it could be
+  selected for dragging automatically...  Could be called "unlink
+  vertex".
+- Cut corner : must select a vertex shared by two linedefs. The linedefs
+  are shortened and the vertex is replaced by a linedef connecting the
+  two other linedefs, an forming the same angle with both of them
+  (typically, 45°)
+
+                   x---              x--
+		   |       ===>     /
+		   |               x
+		   |               |
+
+  It should be possible to set the length of the new linedef in an
+  interactive fashion. But I don't see how to do that without having a
+  modeful interface.
+- Linedef type : give choice of format between signed decimal, unsigned
+  decimal, hexadecimal. Default format is specified by config parameter
+  format_thing_type. Also have a key binding to cycle between the three.
+- Linedef tag : same thing.
 
 Editing sectors
 - Set floor height to ceiling height - headroom.
 - Set ceiling height to floor height + headroom.
-- "Change sector reference" or "substitute sector"
-  Change sector reference for all the sidedefs that reference one of the
-  selected sectors.
-- Paint sectors with colour depending on tallness, brightness, texture...
+- "Change sector reference" or "substitute sector" Change sector
+  reference for all the sidedefs that reference one of the selected
+  sectors.
+- Paint sectors with colour depending on tallness, brightness,
+  texture...
 - Function to substitute sector texture.
 - Dragging sectors is still slower than dragging vertices. But it might
   be because of the overhead incurred by highlighting all the linedefs.
@@ -214,6 +408,17 @@ Editing sectors
 	|			|
 
 
+- Sector type : give choice of format between signed decimal, unsigned
+  decimal, hexadecimal. Default format is specified by config parameter
+  format_thing_type. Also have a key binding to cycle between the three.
+- Sector tag : same thing.
+- Eye candy: animate flats
+- Bug: in sectors mode, [n], [p] and [<] sometimes loop over the same
+  sector forever because GoToObject() does not do quite the right thing
+  regarding subsectors. [>] is not subject to this problem because then
+  [Shift] is on. [If you're confused by this entry, look at the layout
+  for a french PC keyboard in xkeycaps.]
+
 Keyboard interface
 - Proposition: in linedef mode, <letter><letter> gives access to
   parameter.
@@ -228,167 +433,174 @@ Unimportant :
 - Search for .cfg in directory where .wad is. hm-hm...
 - Nodes: have an option to pipe the output file through BSP.
 
-Picture viewer
+Flat/sprite/texture viewer
 - Use other palettes than #0 (also when saving).
 - Use COLORMAPs (also when saving).
+- Reimplement "save image to file" with PPM, PNG and perhaps XPM.
 - Zoom.
-- Toggle between SW1* and SW2*.
-- Go to next sprite (E.G. advance until root changes).
+- Add binding to toggle between SW1* and SW2*, cycle through the frames
+  of an animation. For Hexen, it's much more complicated (3-frame
+  switches...).
 - Display number of patches (and posts, and patch list...).
+- Find a way to reduce flicker in the picture box.
+- Show several pictures at a time.
+- Texture viewer: wide textures (such as the SKY in darken2d.wad) are
+  not clipped.
+- PNAMES should probably be cached (if available memory permits).
+- Add a flag somewhere to allow choosing a flat/texture that's not in
+  the list.
+- Support pictures higher than 255 and textures higher than 128.
+- If the "view" command is given a lower case argument, the positionning
+  in the list of sprite names is wrong.
+- If the "view" command is given an argument that is the name of an
+  inexisting sprite, a random size is displayed.
 
 X11 port
-- Implement Beep() and its friend.
 - Implement -geometry and -display.
-- Implement several windows at once ?
-- Add an option like in Xmame to have either a private or shared colormap
-  (by default shared, at least in map mode).
+- Add an option like in Xmame to have either a private or shared
+  colormap (by default shared, at least in map mode).
 - Look into *WMHints*()
 - When drawing the map, etc, ignore some intermediate events (for mouse
   pointer position). Also, when several arrow key keystrokes are in the
   input key, just count them and redraw only once.
-- Displaying pointer coords; should look into using PutImageFont().
-- Replace all occurences of BLACK, WHITE, ... by logical colours.
 - Set WM hints (icon name, min size, max size, etc.).
 - Find a replacement for bioskey(0) in text mode.
 - Look into getting the status of scroll lock.
 - Handle KeymapNotify events.
 - Show cursor in input boxes and let user move it with arrows and mouse.
 - The numeric keypad does not seem to work.
-- The highlight proximity should always match the apparent size of the
-  object (done for things, to be done for vertices and linedefs).
-- Jump/GoToObject : object should not be put at the center of the screen
-  but under the pointer.
-- Grid: draws one line too many to the right, two lines too many to the
-  bottom and one line too few to the top. [fixed ?]
 - When there is another colour-hungry app running (like Netscape), get
   error upon freeing colours. I think Xmame has the same problem.
-- After pressing Alt-Fn, get "(state & Mod1Mask)=0 but is.alt=1"
-- Make sure that input.c intercepts only events concerning Yadex's window.
-- Externalize occurences of ".wad".
-- Externalize occurences of ".bak".
-- Let the selection include objects of different types.
+- Make sure that input.c intercepts only events concerning Yadex's
+  window.
+- After a resize, pointer_x/y are not updated so the wrong object is
+  highlighted.
+- After a resize, the map is redrawn 3 TIMES !  I know why : the window
+  manager (FVWM) send three sets of exposure events. Making drawmap()
+  and refresh in general able to do partial drawings will eliminate this
+  problem. And give better performance when moving a thing, or flipping
+  through the menus.
+- Replace putimage() by calls to display_game_image().  Implement the
+  BGI version of display_game_image().
+- Fonts: allow several font names in the config file. The first font
+  found is used. If none is found, use the default font.
+- Fonts: be able to use variable-width fonts.
+- With font "variable", in the flat viewer, underscores are not cleared
+  properly.
+- Why do I sometimes get this when closing a window :
+    X Error of failed request:  BadAccess (attempt to access private resource
+    denied)
+    Major opcode of failed request:  88 (X_FreeColors)
+    Serial number of failed request:  503121
+    Current serial number in output stream:  503135
+  I've trapped it in colour4.cc :
+    Warning: error freeing colour <hex number> (<cause>)
+  If you can reproduce this error, mail me.
+
+Misc.
+- Implement several windows at once ?
+- Replace all occurrences of BLACK, WHITE, ... by logical colours.
+- The highlight proximity should always match the apparent size of the
+  object (done for things, to be done for vertices and linedefs).
 - GetCurObject(): the radius should not be expressed in map units but in
   screen units and should depend on the apparent size of the object.
-  Indeed, 20 is too much for linedefs at high zoom factors and too little
-  for vertexes at low zoom factors.
-- There is something that sucks in the edit loop ; when you scroll without
-  moving the mouse, the selection box always "lags behind" because its
-  map coordinates are updated only _after_ the next screen refresh.
+  Indeed, 20 is too much for linedefs at high zoom factors and too
+  little for vertexes at low zoom factors.
+- Highlighthing things: if there is a small thing and a large thing in
+  the same spot, when you're "in" the small thing, it should be
+  highlighted, even if it's higher-numbered. At the moment, it's the
+  lowest-numbered thing that's highlighted.
+- Grid: draws one line too many to the right, two lines too many to the
+  bottom and one line too few to the top. [fixed ?]
+- Externalize occurrences of ".wad".
+- Externalize occurrences of ".bak".
+- Let the selection include objects of different types.
+- There is something that sucks in the edit loop ; when you scroll
+  without moving the mouse, the selection box always "lags behind"
+  because its map coordinates are updated only _after_ the next screen
+  refresh.
 - Select all.
 - Reverse selection (select everything that's not selected and unselect
   everything that's selected).
 - Edit functions : copy, cut, paste.
 - Crop (delete all unselected objects).
 - Persistent box for cropping ?
+- BD suggests sector creation à la DCK ([r] then draw box).
 - Be able to select objects of several types at once.
 - Modelessness ?
-- When there are several objects under the pointer, report it and give
-  a way to access any one of them. Or maybe implement planes ?
-- When doing drag-n-drop, should the snap-to-grid be applied to
-  A. relative position since started dragging
-  B. or to the highlighted object ?
-  If A, you can't use drag-n-drop to snap-to-grid objects that aren't.
-  If B, you can't drag correctly objects that are not aligned on grid.
-- Object number: the type should be "u16", not "int" (cf. SelPtr).
-- Object number: the test for none should be "==0xffff", not "<0".
-- Add a special function (like ProgError) to report bugs. It shall
-  display the message along with something like : "This is a bug in
-  Yadex -- report this to amajorel@teaser.fr".
+- When there are several objects under the pointer, report it and give a
+  way to access any one of them. Or maybe implement planes ?
+- When doing drag-n-drop, should the snap-to-grid be applied to A.
+  relative position since started dragging B. or to the highlighted
+  object ?  If A, you can't use drag-n-drop to snap-to-grid objects that
+  aren't.  If B, you can't drag correctly objects that are not aligned
+  on grid.
+- Object number: the type should be "i16", not "int" (cf. SelPtr).
+- Object number: the test for "none" should not be hard-coded "< 0".
 - Browse mode, as in xv and psp, to browse through a large number of
   wads.
 - Be able to open zipped files ?
-- After a resize, pointer_x/y are not updated so the wrong object is
-  highlighted.
-- After a resize, the map is redrawn 3 TIMES !
-  I know why : the window manager (FVWM) send three sets of exposure
-  events. Making drawmap() and refresh in general able to do partial
-  drawings will eliminate this problem. And give better performance
-  when moving a thing, or flipping through the menus.
-- On ProgError(), save current data to a file named yadexcrash.wad.
-  On startup, if that file exists, propose to use it.
+- On ProgError(), save current data to a file named yadexcrash.wad.  On
+  startup, if that file exists, propose to use it.
 - If DOOMWADDIR exists, use it ? But overridden by yadex.cfg & -iwad
 - Texture browser : it's so slow that, even on a K6/200, some textures
   are slow to come (AMRIBS). Should cache patches ?
-- JVDV suggests single-key sector splitting à la WinDEU.
-- BD suggests sector creation à la DCK ("r" then draw box).
 - Parameters :
   - colour# used to represent transparent colour when saving textures,
   - rgb used to represent transparent colour when saving textures,
   - rgb used to represent transparent colour when displaying textures,
-- Replace putimage() by calls to display_game_image().
-  Implement the BGI version of display_game_image().
-- Sprite viewer does not work well (should wait for first expose event).
 - While dragging or drawing a selbox, prevent Del, Ins, etc. from
   working. E.G. Del would suppress the object being dragged !
-- Add config file parameters for initial snap_to_grid and lock_grid_step.
+- Add config file parameters for initial snap_to_grid and
+  lock_grid_step.
 - Scale: make it local to an edit window.
 - MadeChanges: make it local to an edit window.
 - MadeMapChanges: make it local to an edit window.
-- When saving with F2, ".wad" should be appended automatically.
-- Log file: create/update it iff the PWAD file is modified.
+- When saving with [F2], ".wad" should be appended automatically.
+- Log file: create/update it iff the pwad file is modified.
 - Things: the name is sometimes too long and cut off. It looks bad.
-- Highlighthing things: if there is a small thing and a large thing
-  in the same spot, when you're "in" the small thing, it should be
-  highlighted, even if it's higher-numbered. At the moment, it's the
-  lowest-numbered thing that's highlighted.
 - A function that would be really very useful would be the possibility
   to change the start/end vertex of a linedef. That could be done by
-  holding, say, Alt, down and dragging the start/end until on top of
-  another vertex. When the button is released, the linedef start/end
-  is changed and the sector references of the impacted linedefs are
+  holding, say, [Alt], down and dragging the start/end until on top of
+  another vertex. When the button is released, the linedef start/end is
+  changed and the sector references of the impacted linedefs are
   updated.
-- Texture viewer: wide textures (such as the SKY in darken2d.wad) are
-  not clipped.
 - Events; generalize internal events and hold refresh until all events
   have been processed. Though autoscroll could bite me.
 - Delete all those "huge" qualifiers ; means nothing for Unix and the
   DOS version should be compiled with -mh anyway.
-- Flat viewer: with mm2.wad, thinks "FF_END" is a flat.
-- With font "variable", in the flat viewer, underscores are not cleared
-  properly.
-- Ctrl + Click:
-    Press button: do nothing.
-    Release button: select or unselect IF STILL ON TOP OF OBJECT.
-  Thus we can use Ctrl + drag to copy :-).
-- XLoadFont(): handle errors more gracefully.
-- Makefile: differences between "make" for end users and "make"
-  for hackers :
-  - make compiles with -g and possibly -lefence
-  - make installs automatically
-  - make runs Yadex automatically (perhaps with -v)
-- Vertex on linedef: lower tolerance when zoom factor is high.
-  [partly done as of 1998-12-20 but still needs work].
-- Check self-consistency of level data: for each linedef, v1 and v2
-  must be either OBJ_NO_NONE or between 0 and NumVertexes and
-  s1 and s2 must be either OBJ_NO_NONE or between 0 and NumSideDefs.
+- Displaying pointer coords; should look into using PutImageFont().
+- [Ctrl][Click]: Press button: do nothing.  Release button: select or
+  unselect IF STILL ON TOP OF OBJECT.  Thus we can use [Ctrl] + drag to
+  copy :-).
+- Vertex on linedef: lower tolerance when zoom factor is high.  [partly
+  done as of 1998-12-20 but still needs work].
+- Check self-consistency of level data: for each linedef, v1 and v2 must
+  be either OBJ_NO_NONE or between 0 and NumVertexes and s1 and s2 must
+  be either OBJ_NO_NONE or between 0 and NumSideDefs.
 - Showing linedef textures: several solutions:
   - easiest: show raw middle texture,
   - easy: show raw upper, middle and lower textures,
-  - hardest: show as Doom would render it, with offsets, LTU, UTU
-    and all. Scale it down so as to fit in the window that has a
-    fixed size. Optionally apply brightness. Maybe show
-    the edge of the neighbouring walls, it might help for alignment.
-    ISSUE: it might not be a good thing to respect the length of
-    the linedef as, for long linedefs, it will force us to scale
-    down too much.
-  For textures that don't exist, show background with cross. For
-  texture "-", show background only. For transparent texture,
-  background sees through. It's probably better to use a special
-  colour (like black) for background as the user might want to
-  use a bright colour for window backgrounds, which wouldn't look
-  too good with Doom's dark textures.
+  - hardest: show as Doom would render it, with offsets, LTU, UTU and
+    all. Scale it down so as to fit in the window that has a fixed size.
+    Optionally apply brightness. Maybe show the edge of the neighbouring
+    walls, it might help for alignment.  ISSUE: it might not be a good
+    thing to respect the length of the linedef as, for long linedefs, it
+    will force us to scale down too much.  For textures that don't
+    exist, show background with cross. For texture "-", show background
+    only. For transparent texture, background sees through. It's
+    probably better to use a special colour (like black) for background
+    as the user might want to use a bright colour for window
+    backgrounds, which wouldn't look too good with Doom's dark textures.
 - Showing sector textures: optionally apply brightness.
-- Goto function: takes as an argument either the centre of the level
-  or a previously set mark. Like in vi: m<mark>, '<mark>. Maybe ''
-  to go to centre ?
-- One day, should try to make "n", "N", "<" and ">" work better
-  (i.e. not need [Shift]).
+- Goto function: takes as an argument either the centre of the level or
+  a previously set mark. Like in vi: m<mark>, '<mark>. Maybe '' to go to
+  centre ?
 - Clicking and superimposed objects: if n1 and n2 (n1 < n2) are
-  superimposed, n1 is not selected but n2 is selected and you click
-  on them, Yadex thinks you are starting a new selection because
+  superimposed, n1 is not selected but n2 is selected and you click on
+  them, Yadex thinks you are starting a new selection because
   is_selected (highlight) is false.
-- objects.cc: GetObjectCoords(): should use center_of_objects()
-  instead.
+- objects.cc: GetObjectCoords(): should use center_of_objects() instead.
 - Grid: have a choice between lines and dots
 - Permanently show a 64-wide object to scale ?
 - Right-button menus: access to many different menus (no modifier,
@@ -407,9 +619,8 @@ X11 port
   highlight the objects it hides.
 - Replace "insert rectangle"/"insert polygon" by :
   - insert pillar (nb. of sides, size)
-  - insert subsector
-    Differences in floor/ceiling height/textures and lighting level could be
-    set by predefined styles :
+  - insert subsector Differences in floor/ceiling height/textures and
+    lighting level could be set by predefined styles :
     - pedestal (floor + 48, ceiling - ...)
     - hanging from ceiling
     - teleporters
@@ -423,49 +634,91 @@ X11 port
   bitvectors instead of arrays of ints used as booleans ?
 - Setting options: add a "set name value" prompt command.
 - Setting options: make "set" stop after each screenful.
-- Setting options: modify the "Preferences" menu so that all options
-  can be changed from there and modifications are saved.
-- The popup menus should get the pointer position event when there
-  is no motion event. It's an issue when, to close a submenu, you
-  click on the parent menu; until you move, the parent menu still
-  highlights the old line.
-- Object info box: if the box is already drawn, don't draw it again;
-  it makes the strings and, more importantly, the sprite window flash
+- Setting options: modify the "Preferences" menu so that all options can
+  be changed from there and modifications are saved.
+- The popup menus should get the pointer position event when there is no
+  motion event. It's an issue when, to close a submenu, you click on the
+  parent menu; until you move, the parent menu still highlights the old
+  line.
+- Object info box: if the box is already drawn, don't draw it again; it
+  makes the strings and, more importantly, the sprite window flash
   (black -> WINBG -> black).
 - [Alt] alone should highlight the menu bar.
 - Minor glitch: when a popup menu is active, the spot is still shown
-- Minor glitch: when a popup menu becomes active (active again) it
-  does not try to check if the pointer is over it. It waits for the
-  first motion event. I'm not sure whether this is the right thing.
-- Popup menus: that code is brittle because the same menu_c object
-  is used for popups and pull-downs. For example, if a menu was pulled
-  down before the same menu (that was previously popped up) was undrawn,
+- Minor glitch: when a popup menu becomes active (active again) it does
+  not try to check if the pointer is over it. It waits for the first
+  motion event. I'm not sure whether this is the right thing.
+- Popup menus: that code is brittle because the same menu_c object is
+  used for popups and pull-downs. For example, if a menu was pulled down
+  before the same menu (that was previously popped up) was undrawn,
   weird things might happen. I don't like the idea of duplicating the
   whole menus, though. It would be cleaner to split the menu_c class
   into a constant part and a dynamic part but it would be a lot of work.
 - Highlighting sectors: for a constant number of sectors to highlight,
-  gets slower as the total number of sectors increases. Might have to
-  do with the search for tagged linedefs.
+  gets slower as the total number of sectors increases. Might have to do
+  with the search for tagged linedefs.
 - Highlighting linedefs: same problem when some of the linedefs to
-  highlight have a non-zero tag. IMO, the key of the problem is the
-  O(2) part in the highlighting of sectors. Should restructure 
+  highlight have a non-zero tag. IMO, the key of the problem is the O(2)
+  part in the highlighting of sectors. Should restructure
   HighlightObject() and HighlightObjects(). Build a bit vector of all
   linedefs that should be highlighted and do them all in a loop, without
   recursion. And thus we would not highlight the same linedef more than
   once anymore.
-- Highlighting linedefs: the test "tag > 0" is arguable. Shouldn't it
-  be "tag != 0" ?
+- Highlighting linedefs: the test "tag > 0" is arguable. Shouldn't it be
+  "tag != 0" ?
 - When merging superimposed 1S linedefs, the resulting 2S linedef often
   has the middle textures the 1S linedefs had.
-- It's impossible to create a level that does not already exist in the
-  iwad.
-- [Shift]-[Ins] doesn't work.
+- [Shift][Ins] doesn't work.
 - Split linedefs and sector: if there is no sector between the linedefs,
   they shouldn't be split.
-- Split linedefs and sector: if only one linedef is selected/highlighted,
-  assume that the other linedef is the one opposite.
+- Split linedefs and sector: if only one linedef is
+  selected/highlighted, assume that the other linedef is the one
+  opposite.
 - Split linedef: if pointer is somewhere on top of linedef, split it
   there (not in the middle).
+- Split linedef: buglet: the new vertex is initially put at (0,0) and
+  MapMaxX and friends are updated accordingly. So if the centre of the
+  map is way off (0,0), the next centre-map command will appear to put
+  the map off-centre.
+- Moving/scrolling: centre view around spot under pointer (binding :
+  perhaps [Ctrl][But2]).
+- BUG: ['] and [`] don't go to the current centre of the map but to
+  where it was when the level was loaded.
+- Instead of { Beep(); Notify (); }, should have a specialized function.
+- Somehow unify configuration variables and game definition variables,
+  at least so that "set" displays both.
+
+To do soon
+- Generate home page from the makefile. Make it contain news and
+  a screenshot, and also old archives (at least the previous one) in
+  case something goes wrong with the latest one.
+- Generate history from news
+- Generate text announcement (yadex-announce, freshmeat, rgcde, cola)
+- Test XK_*_ISO_* on SCO X11R5
+- Add option to let Yadex tell you with which options it was compiled.
+- Test on Final Doom
+- Fix the tendency of the makefile to ignore the .h dependencies
+  (it's like yadex.dep wasn't there).
+- Fix the tendency of the makefile to remake doc/ every time a source
+  file has changed.
+- Finish window_to_rgbbmp()
+- Transfer rgbbmp_to_rawppm() in another file (rgbppm2.cc ?)
+- Rename rgbbmp_to_rawppm() -> _ppm(), and add a parameter to choose
+  between P3 and P6.
+- Add a parameter in the config file to choose between P3 and P6 for
+  - screenshots
+  - pictures saved
+- Try to restore the "save image to file" function. The data should
+  not be taken from the window, since clipping could occur, but directly
+  from the buffer.
+- Talk about the above in the doc. Mention that ppm files are always
+  created with NL = LF.
+- Fix any remaining problems that might remain in saving.
+- "create": Fix the problem with levelname being NULL in EditLoop().
+  Check [F3].
+- "create": every time you [F2], the wad name is reset to the default
+  (E.G. "map01.wad")
+- Find a good convention for the location of the alpha iwads.
 
 
 ----------------------------------------
@@ -474,18 +727,19 @@ MISCELLANEOUS MUSINGS
 
 ----------------------------------------
 
+
 COLOUR HANDLING
 [AYM 1998-11-30: don't trust this, it's partially obsolete]
-Yadex can run on "a variety of displays". We can have anything from 16 to
-16M colours. It needs to be able to handle this variability correctly and
-quickly. I have to following idea : the code uses internal colour numbers
-(ICN) to specify colours. When a part of the code needs a certain colour,
-it calls a particular function with the RGB spec of that colour and the
-function returns an ICN. Only the function knows how many colours are
-really available. The rest of the code does not have to deal with that.
-If more colours than that are asked for, it tries to allocate colours
-anyway, possibly by approximating the required colour by an already
-existing one or even by reshuffling the palette.
+Yadex can run on "a variety of displays". We can have anything from 16
+to 16M colours. It needs to be able to handle this variability correctly
+and quickly. I have to following idea : the code uses internal colour
+numbers (ICN) to specify colours. When a part of the code needs a
+certain colour, it calls a particular function with the RGB spec of that
+colour and the function returns an ICN. Only the function knows how many
+colours are really available. The rest of the code does not have to deal
+with that.  If more colours than that are asked for, it tries to
+allocate colours anyway, possibly by approximating the required colour
+by an already existing one or even by reshuffling the palette.
 
 The colour allocation function uses an internal table which has as many
 entries as there are allocated colours. Each entry contains the RGB
@@ -569,5 +823,60 @@ When dragging a group of objects, I see two possible policies:
 2. snap relative displacement
 The inconvenient of (1) is that, if no object was aligned, it is difficult
 to move the group by a whole number of grid steps.
+
+MOVING AND DRAGGING WITH THE KEYBOARD
+From main mode:
+  [c]  move cursor
+  [d]  drag objects
+  [f]  find object
+
+Followed by displacement commands.
+Displacement command:
+  [h]  west
+  [j]  south
+  [k]  north
+  [l]  east
+  [y]  north west
+  [u]  north east
+  [b]  south west
+  [n]  south east
+Optional displacement command prefix:
+  [f]  finer (grid step /= 4)
+  [c]  coarser (grid step *= 4)
+Any other key returns to main mode.
+
+FASTER DISPLAY
+I think that screen refreshes could be sped up a lot by avoiding to
+clear the pixmap but instead redrawing every widget as black. It would
+involve more CPU time per pixel but it would also divide the number of
+pixels to clear by between 10 and 100, depending on the zoom factor.
+
+It would not be very complicated to add a draw_with_background_colour()
+method to edwidget_c. But, between the moment the widgets are first
+drawn and the moment they're drawn again with the background colour, the
+level data is likely to have changed. For example, a group of vertices
+might have been dragged.
+
+I could save the level data as I draw it. The parts of the data that
+need to be saved : the vertices (x,y), the linedefs (v0,v1) and the
+things (x,y,type). For a very large level (600 things, 4000 vertices,
+4000 linedefs), that's 4000 * 4 + 4000 * 4 + 600 * 6 = 35 kB. Sounds
+quite acceptable to me, especially as compared to the 800*600*3 = 1.4 MB
+of the pixmap to clear. Idea: fold vertices data (no vertices, linedef
+is defined by x0, y0, x1, y1). A bit larger, a bit faster.
+
+I could use the undo information. But redoing might make that too
+complex.  Oh, and undoing it still not implemented ;-).
+
+I could embed some sort of versioning within the level data but I
+wouldn't like to slow down access to the level data, which is critical
+in certain parts of the application.
+
+If it works well, I might even get be able to do without a pixmap :-).
+
+FILE SELECTION BOX
+It would be nice to have a file selection box with a small window that
+shows a preview of the level(s) and also a few indicators for textures,
+flats and other lumps.
 
 

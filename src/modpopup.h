@@ -42,13 +42,13 @@ public :
 /*
  *	EditorLoop() side methods
  */
-inline modpopup_c ()
+modpopup_c ()
 {
 menu = 0;
 menu_disp = 0;
 }
 
-inline void set (menu_c *menu, int force_numbers)
+void set (menu_c *menu, int force_numbers)
 {
 if (menu_disp)
    menu_disp->set_visible (0);
@@ -60,14 +60,14 @@ menu->set_item_no       (0);
 menu->set_visible       (1);
 }
 
-inline void unset ()
+void unset ()
 {
 if (menu_disp)
    menu_disp->set_visible (0);
 menu = 0;
 }
 
-inline menu_c *get ()
+menu_c *get ()
 {
 return menu;
 }
@@ -75,7 +75,7 @@ return menu;
 /*
  *	edisplay_c side methods
  */
-inline void draw ()
+void draw ()
 {
 if (menu)
    {
@@ -84,7 +84,7 @@ if (menu)
    }
 }
 
-inline void undraw ()
+void undraw ()
 {
 if (menu_disp)
    {
@@ -93,7 +93,7 @@ if (menu_disp)
    }
 }
 
-inline int can_undraw ()
+int can_undraw ()
 {
 if (menu_disp)
    return menu_disp->can_undraw ();
@@ -101,7 +101,7 @@ else
    return 1;
 }
 
-inline int need_to_clear ()
+int need_to_clear ()
 {
 if (menu_disp)
    return menu_disp->need_to_clear ();
@@ -109,7 +109,7 @@ else
    return 0;
 }
 
-inline void clear ()
+void clear ()
 {
 if (menu_disp)
    menu_disp->clear ();

@@ -42,6 +42,7 @@ Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 #include "oldmenus.h"
 #include "selectn.h"
 #include "t_spin.h"
+#include "x_mirror.h"
 #include "x_rotate.h"
 
 
@@ -312,12 +313,8 @@ int  entry2_text_x0;
 int  entry2_text_y0;
 
 HideMousePointer ();
-#ifdef Y_SNPRINTF
-snprintf (prompt, sizeof prompt, "Give the %s and %s for the object:",
+y_snprintf (prompt, sizeof prompt, "Give the %s and %s for the object:",
    name1, name2);
-#else
-sprintf (prompt, "Give the %s and %s for the object:", name1, name2);
-#endif
 maxlen = strlen (prompt);
 if (x0 < 0)
    x0 = (ScrMaxX - 25 - FONTW * maxlen) / 2;
@@ -587,10 +584,12 @@ if (val > 1 && ! *list)
 switch (val)
    {
    case 1:
+      // * -> First free tag number
       sprintf (msg, "First free tag number: %d", FindFreeTag ());
       Notify (-1, -1, msg, 0);
       break;
    case 2:
+      // * -> Rotate and scale
       if ((objtype == OBJ_THINGS
          || objtype == OBJ_VERTICES) && ! (*list)->next)
 	 {
@@ -608,15 +607,12 @@ switch (val)
             (double) scale * 0.01);
       break;
    case 3:
-      if (objtype == OBJ_VERTICES)
-	 {
-	 DeleteVerticesJoinLineDefs (*list);
-	 ForgetSelection (list);
-	 }
-      else if (objtype == OBJ_LINEDEFS)
+      // Linedef -> Split
+      if (objtype == OBJ_LINEDEFS)
 	 {
 	 SplitLineDefs (*list);
 	 }
+      // Sector -> Make door from sector
       else if (objtype == OBJ_SECTORS)
 	 {
 	 if ((*list)->next)
@@ -629,15 +625,21 @@ switch (val)
 	    MakeDoorFromSector ((*list)->objnum);
 	    }
 	 }
+      // Thing -> Spin 45° clockwise
       else if (objtype == OBJ_THINGS)
+	 {
          spin_things (*list, -45);
+	 }
+      // Vertex -> Delete and join linedefs
+      else if (objtype == OBJ_VERTICES)
+	 {
+	 DeleteVerticesJoinLineDefs (*list);
+	 ForgetSelection (list);
+	 }
       break;
    case 4:
-      if (objtype == OBJ_VERTICES)
-	 {
-	 MergeVertices (list);
-	 }
-      else if (objtype == OBJ_LINEDEFS)
+      // Linedef -> Split linedefs and sector
+      if (objtype == OBJ_LINEDEFS)
 	 {
 	 if (! (*list)->next || (*list)->next->next)
 	    {
@@ -650,6 +652,7 @@ switch (val)
 	    ForgetSelection (list);
 	    }
 	 }
+      // Sector -> Make lift from sector
       else if (objtype == OBJ_SECTORS)
 	 {
 	 if ((*list)->next)
@@ -662,27 +665,22 @@ switch (val)
 	    MakeLiftFromSector ((*list)->objnum);
 	    }
 	 }
+      // Thing -> Spin 45° counter-clockwise
       else if (objtype == OBJ_THINGS)
          spin_things (*list, 45);
+      // Vertex -> Merge
+      else if (objtype == OBJ_VERTICES)
+	 {
+	 MergeVertices (list);
+	 }
       break;
    case 5:
-      if (objtype == OBJ_VERTICES)
-	 {
-	 if (! (*list)->next || (*list)->next->next)
-	    {
-	    Beep ();
-	    Notify (-1, -1, "You must select exactly two Vertices", 0);
-	    }
-	 else
-	    {
-	    SplitSector ((*list)->objnum, (*list)->next->objnum);
-	    ForgetSelection (list);
-	    }
-	 }
-      else if (objtype == OBJ_LINEDEFS)
+      // Linedef -> Delete linedefs and join sectors
+      if (objtype == OBJ_LINEDEFS)
 	 {
 	 DeleteLineDefsJoinSectors (list);
 	 }
+      // Sector -> Distribute sector floor heights
       else if (objtype == OBJ_SECTORS)
 	 {
 	 if (! (*list)->next || ! (*list)->next->next)
@@ -695,12 +693,33 @@ switch (val)
 	    DistributeSectorFloors (*list);
 	    }
 	 }
+      // Thing -> Mirror horizontally
+      else if (objtype == OBJ_THINGS)
+         {
+	 flip_mirror (*list, OBJ_THINGS, 'm');
+	 }
+      // Vertex -> Add linedef and split sector
+      else if (objtype == OBJ_VERTICES)
+	 {
+	 if (! (*list)->next || (*list)->next->next)
+	    {
+	    Beep ();
+	    Notify (-1, -1, "You must select exactly two vertices", 0);
+	    }
+	 else
+	    {
+	    SplitSector ((*list)->next->objnum, (*list)->objnum);
+	    ForgetSelection (list);
+	    }
+	 }
       break;
    case 6:
+      // Linedef -> Flip
       if (objtype == OBJ_LINEDEFS)
 	 {
 	 FlipLineDefs (*list, 1);
 	 }
+      // Sector -> Distribute ceiling heights
       else if (objtype == OBJ_SECTORS)
 	 {
 	 if (! (*list)->next || ! (*list)->next->next)
@@ -713,8 +732,19 @@ switch (val)
 	    DistributeSectorCeilings (*list);
 	    }
 	 }
+      // Things -> Mirror vertically
+      else if (objtype == OBJ_THINGS)
+	 {
+	 flip_mirror (*list, OBJ_THINGS, 'f');
+         }
+      // Vertex -> Mirror horizontally
+      else if (objtype == OBJ_VERTICES)
+	 {
+	 flip_mirror (*list, OBJ_VERTICES, 'm');
+	 }
       break;
    case 7:
+      // Linedefs -> Swap sidedefs
       if (objtype == OBJ_LINEDEFS)
 	 {
 	 if (Expert
@@ -723,15 +753,19 @@ switch (val)
                "You may get strange results if you don't know what you are doing..."))
 	    FlipLineDefs (*list, 0);
 	 }
+      // Sectors -> Raise or lower
       else if (objtype == OBJ_SECTORS)
-	RaiseOrLowerSectors (*list);
+	 {
+	 RaiseOrLowerSectors (*list);
+	 }
+      // Vertices -> Mirror vertically
+      else if (objtype == OBJ_VERTICES)
+	 {
+	 flip_mirror (*list, OBJ_VERTICES, 'f');
+	 }
       break;
    case 8:
-      if (objtype == OBJ_SECTORS)
-	 {
-	 BrightenOrDarkenSectors (*list);
-	 break;
-	 }
+      // Linedef ->  Align textures vertically
       if (objtype == OBJ_LINEDEFS)
 	 {
 	 SelPtr sdlist, cur;
@@ -749,13 +783,14 @@ switch (val)
 	 /* align the textures along the Y axis (height) */
 	 AlignTexturesY (&sdlist);
 	 }
-      /* AYM 19971219 : is the fall through intentional ? */
-   case 9:
-      if (objtype == OBJ_SECTORS)
+      // Sector -> Brighten or darken
+      else if (objtype == OBJ_SECTORS)
 	 {
-	 NotImplemented ();  // FIXME
-	 break;
+	 BrightenOrDarkenSectors (*list);
 	 }
+      break;
+   case 9:
+      // Linedef -> Align texture horizontally
       if (objtype == OBJ_LINEDEFS)
 	 {
 	 SelPtr sdlist, cur;
@@ -772,6 +807,12 @@ switch (val)
 	    }
 	 /* align the textures along the X axis (width) */
 	 AlignTexturesX (&sdlist);
+	 }
+      // Sector -> Unlink room
+      else if (objtype == OBJ_SECTORS)
+	 {
+	 NotImplemented ();  // FIXME
+	 break;
 	 }
       break;
 
@@ -791,12 +832,22 @@ switch (val)
                cross-references check will delete it anyway. */
 	    }
 	 }
+      // Sector -> Mirror horizontally
+      else if (objtype == OBJ_SECTORS)
+	 {
+	 flip_mirror (*list, OBJ_SECTORS, 'm');
+	 }
       break;
 
    case 11:
       // Linedef -> Make rectangular nook
       if (objtype == OBJ_LINEDEFS)
 	 MakeRectangularNook (*list, 32, 16, 0);
+      // Sector -> Mirror vertically
+      else if (objtype == OBJ_SECTORS)
+	 {
+	 flip_mirror (*list, OBJ_SECTORS, 'f');
+	 }
       break;
 
    case 12:
@@ -837,6 +888,16 @@ switch (val)
       // Linedef -> Unlink 2nd sidedef
       if (objtype == OBJ_LINEDEFS)
          unlink_sidedef (*list, 0, 1);
+      break;
+
+   case 17:
+      // Linedef -> Mirror horizontally
+      flip_mirror (*list, OBJ_LINEDEFS, 'm');
+      break;
+      
+   case 18 :
+      // Linedef -> Mirror vertically
+      flip_mirror (*list, OBJ_LINEDEFS, 'f');
       break;
 
    }

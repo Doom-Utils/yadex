@@ -323,8 +323,8 @@ if (delete_after_use)
  *	set_coords
  *	Position or reposition the menu window.
  *	(<x0>,<y0>) is the top left corner.
- *	If <x0> is < 0, the window is horizontally centered.
- *	If <y0> is < 0, the window is vertically centered.
+ *	If <x0> is < 0, the window is horizontally centred.
+ *	If <y0> is < 0, the window is vertically centred.
  */
 void menu_c::set_coords (int x0, int y0)
 {
@@ -668,7 +668,7 @@ if (from_scratch)
    DrawScreenBox3D (ox0, oy0, ox1, oy1);
    set_colour (YELLOW);
    if (popup && title != NULL)
-      DrawScreenText (ix0 + WIDE_HSPACING, ty0, title);
+      DrawScreenString (ix0 + WIDE_HSPACING, ty0, title);
    ShowMousePointer ();
 
    for (use_list ?   al_lrewind (list) : 0,            l = 0;
@@ -743,22 +743,22 @@ DrawScreenBox (ix0, y, ix1, y + FONTH - 1);
 set_colour (menu_colour[grayed_out][highlighted].fg);
 if (ticked)
    {
-   DrawScreenText (x, y, ticked[line] ? "*" : " ");
+   DrawScreenString (x, y, ticked[line] ? "*" : " ");
    x += 2 * FONTW;
    }
 if (force_numbers || ! this->shortcut_index)
    {
    DrawScreenText (x, y, "(%c)", al_adigits[line + 1]);
-   DrawScreenText (x + FONTW, y + FONTU, "_");
+   DrawScreenString (x + FONTW, y + FONTU, "_");
    x += 4 * FONTW;
    }
-DrawScreenText (x, y, "%s", text);
+DrawScreenString (x, y, text);
 if (! force_numbers && shortcut_index >= 0)
-   DrawScreenText (x + shortcut_index * FONTW, y + FONTU, "_");
+   DrawScreenString (x + shortcut_index * FONTW, y + FONTU, "_");
 if (! force_numbers && shortcut_key != -1)
    {
    const char *string = key_to_string (shortcut_key);
-   DrawScreenText (ix1 + 1 - FONTW - strlen (string) * FONTW, y, string);
+   DrawScreenString (ix1 + 1 - FONTW - strlen (string) * FONTW, y, string);
    }
 ShowMousePointer ();
 }

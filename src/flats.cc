@@ -32,15 +32,24 @@ Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 #include "yadex.h"
 #include "flats.h"
 #include "gfx.h"
+#include "levels.h"
 #include "dispimg.h"
 
 
 /*
    choose a floor or ceiling texture
+   FIXME the <list> and <listsize> parameters are ignored since 1999-07-10.
 */
 
 void ChooseFloorTexture (int x0, int y0, const char *prompt, int listsize, char **list, char *name)
 {
+(void) list;
+(void) listsize;
+// Build a list of char *, for InputNameFromListWithFunc()'s sake
+char **flat_names = (char **) GetMemory (NumFTexture * sizeof *flat_names);
+for (size_t n = 0; n < NumFTexture; n++)
+   flat_names[n] = flat_list[n].name;
+
 HideMousePointer ();
 
 SwitchToVGA256 ();
@@ -51,11 +60,25 @@ if (GfxMode > -2)
    x0 = -1;
    y0 = -1;
    }
-InputNameFromListWithFunc (x0, y0, prompt, listsize, list, 5, name,
+InputNameFromListWithFunc (x0, y0, prompt, NumFTexture, flat_names, 5, name,
   64, 64, DisplayFloorTexture);
 SwitchToVGA16 ();
 
 ShowMousePointer ();
+FreeMemory (flat_names);
+}
+
+
+/*
+ *	flat_list_entry_match
+ *	Function used by bsearch() to locate a particular 
+ *	flat in the FTexture.
+ */
+static int flat_list_entry_match (const void *key, const void *flat_list_entry)
+{
+return y_strnicmp ((const char *) key,
+    ((const flat_list_entry_t *) flat_list_entry)->name,
+    WAD_FLAT_NAME);
 }
 
 
@@ -66,72 +89,36 @@ ShowMousePointer ();
 
 void DisplayFloorTexture (hookfunc_comm_t *c)
 {
-MDirPtr        dir;	/* main directory pointer to the texture entry */
 unsigned char *pixels;	/* array of pixels that hold the image */
 
 c->width  = DOOM_FLAT_WIDTH;  // Big deal !
 c->height = DOOM_FLAT_HEIGHT;
 c->flags  = HOOK_SIZE_VALID;
 
-/* AYM 1997-08-17
-   Now handles replaced textures by searching for the texture c->name
-   in all the F1_START/F1_END F2_START/F2_END and FF_START/F_END groups
-   in the main directory.
-   Bugfix: not confused anymore by non-texture lumps of same name. */
-{
-char state;
-MDirPtr wdir;
-
-dir = 0;
-for (wdir = MasterDir, state = 0; wdir; wdir = wdir->next)
-   {
-   if (! state)
-      {
-      if (! strncmp (wdir->dir.name, "F1_START", 8))
-	 state = '1';
-      else if (! strncmp (wdir->dir.name, "F2_START", 8))
-	 state = '2';
-      else if (! strncmp (wdir->dir.name, "F3_START", 8))
-	 state = '3';
-      else if (! strncmp (wdir->dir.name, "FF_START", 8))
-	 state = 'f';
-      }
-   else if (state == '1' && ! strncmp (wdir->dir.name, "F1_END", 8))
-      state = 0; 
-   else if (state == '2' && ! strncmp (wdir->dir.name, "F2_END", 8))
-      state = 0; 
-   else if (state == '3' && ! strncmp (wdir->dir.name, "F3_END", 8))
-      state = 0; 
-   else if (state == 'f' && ! strncmp (wdir->dir.name, "F_END", 8))
-      state = 0; 
-   else if (state && ! strncmp (wdir->dir.name, c->name, 8))
-      dir = wdir;
-   }
-if (state)
-   fatal_error ("Reached end of master directory with state=\"%c\"", state);
-}
-  
-if (! dir)
+flat_list_entry_t *flat = (flat_list_entry_t *)
+  bsearch (c->name, flat_list, NumFTexture, sizeof *flat_list,
+      flat_list_entry_match);
+if (! flat)  // Not found in list
    {
    set_colour (WINFG_DIM);
    DrawScreenLine (c->x0, c->y0, c->x1, c->y1);
    DrawScreenLine (c->x0, c->y1, c->x1, c->y0);
    return;
    }
-
-wad_seek (dir->wadfile, dir->dir.start);
+WadPtr wadfile = flat->wadfile;
+wad_seek (wadfile, flat->offset);
 
 #if defined Y_X11
 
 pixels = (unsigned char huge *) GetFarMemory (c->width * c->height);
-wad_read_bytes (dir->wadfile, pixels, (long) c->width * c->height);
+wad_read_bytes (wadfile, pixels, (long) c->width * c->height);
 display_game_image (pixels, c->width, c->height, c->x0, c->y0,
    c->x1 - c->x0 + 1, c->y1 - c->y0 + 1);
 
 #elif defined Y_BGI
 
 pixels = GetFarMemory (c->width * c->height + 4);
-wad_read_bytes (dir->wadfile, pixels + 4, (long) c->width * c->height);
+wad_read_bytes (wadfile, pixels + 4, (long) c->width * c->height);
 if (GfxMode < -1)
    {
    /* Probably a bug in the VESA driver...    */

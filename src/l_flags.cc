@@ -59,7 +59,10 @@ for (cur = list; cur; cur = cur->next)
    else if (op == YO_TOGGLE)
       LineDefs[cur->objnum].flags ^= mask;
    else
-      fatal_error ("frob_linedef_flags: op=%02X", op);
+      {
+      nf_bug ("frob_linedef_flags: op=%02X", op);
+      break;
+      }
    }
 }
 

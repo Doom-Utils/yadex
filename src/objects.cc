@@ -59,7 +59,7 @@ for (cur = list; cur; cur = cur->next)
 /*
    get the number of objets of a given type minus one
 */
-int GetMaxObjectNum (int objtype)
+obj_no_t GetMaxObjectNum (int objtype)
 {
 switch (objtype)
    {
@@ -258,8 +258,13 @@ switch (objtype)
 	 methods fails miserably. I suppose that the solution would be to look
 	 for intersections in BOTH directions and pick the closest. Remind me
 	 to look into it one of these days :-). */
+      /* AYM 1999-03-18
+         Initializing curx to 32767 instead of MapMaxX + 1. Fixes the old
+	 DEU bug where sometimes you couldn't select a newly created sector
+	 to the west of the level until you saved. (MapMaxX got out of date
+	 and SaveLevelData() refreshed it.) */
       ObjectsNeeded (OBJ_LINEDEFS, OBJ_VERTICES, 0);
-      curx = MapMaxX + 1;
+      curx = 32767;  // Oh yes, one more hard-coded constant!
       for (n = 0; n < NumLineDefs; n++)
 	 if ((Vertices[LineDefs[n].start].y > y)
 	  != (Vertices[LineDefs[n].end].y > y))
@@ -276,7 +281,7 @@ switch (objtype)
 	       best_match = n;
 	       }
 	    }
-      /* now look if this LineDef has a SideDef bound to one sector */
+      /* now look if this linedef has a sidedef bound to one sector */
       if (best_match >= 0)
 	 {
 	 if (Vertices[LineDefs[best_match].start].y
@@ -298,116 +303,6 @@ switch (objtype)
    }
 
 return best_match;
-}
-
-
-
-/*
-   select all objects inside a given box
-*/
-
-void SelectObjectsInBox (SelPtr *list, int objtype, int x0, int y0, int x1, int y1) /* SWAP! */
-{
-int n, m;
-
-if (x1 < x0)
-   {
-   n = x0;
-   x0 = x1;
-   x1 = n;
-   }
-if (y1 < y0)
-   {
-   n = y0;
-   y0 = y1;
-   y1 = n;
-   }
-
-switch (objtype)
-   {
-   case OBJ_THINGS:
-      ObjectsNeeded (OBJ_THINGS, 0);
-      for (n = 0; n < NumThings; n++)
-	 if (Things[n].xpos >= x0 && Things[n].xpos <= x1
-	  && Things[n].ypos >= y0 && Things[n].ypos <= y1)
-            select_unselect_obj (list, n);
-      break;
-   case OBJ_VERTICES:
-      ObjectsNeeded (OBJ_VERTICES, 0);
-      for (n = 0; n < NumVertices; n++)
-	 if (Vertices[n].x >= x0 && Vertices[n].x <= x1
-	  && Vertices[n].y >= y0 && Vertices[n].y <= y1)
-            select_unselect_obj (list, n);
-      break;
-   case OBJ_LINEDEFS:
-      ObjectsNeeded (OBJ_LINEDEFS, OBJ_VERTICES, 0);
-      for (n = 0; n < NumLineDefs; n++)
-	 {
-	 /* the two ends of the line must be in the box */
-	 m = LineDefs[n].start;
-	 if (Vertices[m].x < x0 || Vertices[m].x > x1
-	  || Vertices[m].y < y0 || Vertices[m].y > y1)
-	    continue;
-	 m = LineDefs[n].end;
-	 if (Vertices[m].x < x0 || Vertices[m].x > x1
-	  || Vertices[m].y < y0 || Vertices[m].y > y1)
-	    continue;
-         select_unselect_obj (list, n);
-	 }
-      break;
-   case OBJ_SECTORS:
-      {
-      signed char *sector_status;
-      LDPtr ld;
-
-      sector_status = (signed char *) GetMemory (NumSectors);
-      memset (sector_status, 0, NumSectors);
-      for (n = 0, ld = LineDefs; n < NumLineDefs; n++, ld++)
-         {
-         VPtr v1, v2;
-         int s1, s2;
-
-         v1 = Vertices + ld->start;
-         v2 = Vertices + ld->end;
-
-         // Get the numbers of the sectors on both sides of the linedef
-         s1 = is_sector (SideDefs[ld->sidedef1].sector)
-            ? SideDefs[ld->sidedef1].sector : OBJ_NO_NONE;
-         s2 = is_sector (SideDefs[ld->sidedef2].sector)
-            ? SideDefs[ld->sidedef2].sector : OBJ_NO_NONE;
-
-         // The linedef is entirely within bounds.
-         // The sectors it touches _might_ be within bounds too.
-         if (v1->x >= x0 && v1->x <= x1
-          && v1->y >= y0 && v1->y <= y1
-          && v2->x >= x0 && v2->x <= x1
-          && v2->y >= y0 && v2->y <= y1)
-            {
-            if (is_sector (s1) && sector_status[s1] >= 0)
-               sector_status[s1] = 1;
-            if (is_sector (s2) && sector_status[s2] >= 0)
-               sector_status[s2] = 1;
-            }
-
-         // It's not. The sectors it touches _can't_ be within bounds.
-         else
-            {
-            if (is_sector (s1))
-               sector_status[s1] = -1;
-            if (is_sector (s2))
-               sector_status[s2] = -1;
-            }
-         }
-
-      // Now select all the sectors we found to be within bounds
-      ForgetSelection (list);
-      for (n = 0; n < NumSectors; n++)
-         if (sector_status[n] > 0)
-            SelectObject (list, n);
-      FreeMemory (sector_status);
-      }
-      break;
-   }
 }
 
 
@@ -606,14 +501,14 @@ switch (objtype)
          MadeMapChanges = 1;
       /* AYM 19980203 I've removed the deletion of sidedefs
          because if several linedefs use the same sidedef, this
-         lead would to trouble. Instead, I let the xref checking
+         would lead to trouble. Instead, I let the xref checking
          take care of that. */
       while (*list)
 	 {
 	 ObjectsNeeded (OBJ_LINEDEFS, 0);
 	 objnum = (*list)->objnum;
 
-	 /* delete the LineDef */
+	 /* delete the linedef */
 	 NumLineDefs--;
 	 if (NumLineDefs > 0)
 	    {
@@ -639,7 +534,7 @@ switch (objtype)
       while (*list)
 	 {
 	 objnum = (*list)->objnum;
-	 /* change the LineDefs references */
+	 /* change the linedefs references */
 	 ObjectsNeeded (OBJ_LINEDEFS, 0);
 	 for (n = 0; n < NumLineDefs; n++)
 	    {
@@ -652,7 +547,7 @@ switch (objtype)
 	    else if (LineDefs[n].sidedef2 >= objnum)
 	       LineDefs[n].sidedef2--;
 	    }
-	 /* delete the SideDef */
+	 /* delete the sidedef */
 	 ObjectsNeeded (OBJ_SIDEDEFS, 0);
 	 NumSideDefs--;
 	 if (NumSideDefs > 0)
@@ -685,7 +580,7 @@ switch (objtype)
 	      DeleteObject (OBJ_SIDEDEFS, n--);
 	   else if (SideDefs[n].sector >= objnum)
 	      SideDefs[n].sector--;
-	/* delete the Sector */
+	/* delete the sector */
 	ObjectsNeeded (OBJ_SECTORS, 0);
 	NumSectors--;
 	if (NumSectors > 0)
@@ -707,7 +602,7 @@ switch (objtype)
 	}
       break;
    default:
-      Beep ();
+      nf_bug ("DeleteObjects: bad objtype %d", (int) objtype);
    }
 }
 
@@ -812,9 +707,9 @@ switch (objtype)
 	 {
 	 SideDefs[last].xoff = SideDefs[copyfrom].xoff;
 	 SideDefs[last].yoff = SideDefs[copyfrom].yoff;
-	 strncpy (SideDefs[last].tex1, SideDefs[copyfrom].tex1, 8);
-	 strncpy (SideDefs[last].tex2, SideDefs[copyfrom].tex2, 8);
-	 strncpy (SideDefs[last].tex3, SideDefs[copyfrom].tex3, 8);
+	 strncpy (SideDefs[last].tex1, SideDefs[copyfrom].tex1, WAD_TEX_NAME);
+	 strncpy (SideDefs[last].tex2, SideDefs[copyfrom].tex2, WAD_TEX_NAME);
+	 strncpy (SideDefs[last].tex3, SideDefs[copyfrom].tex3, WAD_TEX_NAME);
 	 SideDefs[last].sector = SideDefs[copyfrom].sector;
 	 }
       else
@@ -839,8 +734,8 @@ switch (objtype)
 	 {
 	 Sectors[last].floorh  = Sectors[copyfrom].floorh;
 	 Sectors[last].ceilh   = Sectors[copyfrom].ceilh;
-	 strncpy (Sectors[last].floort, Sectors[copyfrom].floort, 8);
-	 strncpy (Sectors[last].ceilt, Sectors[copyfrom].ceilt, 8);
+	 strncpy (Sectors[last].floort, Sectors[copyfrom].floort, WAD_FLAT_NAME);
+	 strncpy (Sectors[last].ceilt, Sectors[copyfrom].ceilt, WAD_FLAT_NAME);
 	 Sectors[last].light   = Sectors[copyfrom].light;
 	 Sectors[last].special = Sectors[copyfrom].special;
 	 Sectors[last].tag     = Sectors[copyfrom].tag;
@@ -849,15 +744,15 @@ switch (objtype)
 	 {
 	 Sectors[last].floorh  = default_floor_height;
 	 Sectors[last].ceilh   = default_ceiling_height;
-	 strncpy (Sectors[last].floort, default_floor_texture, 8);
-	 strncpy (Sectors[last].ceilt, default_ceiling_texture, 8);
+	 strncpy (Sectors[last].floort, default_floor_texture, WAD_FLAT_NAME);
+	 strncpy (Sectors[last].ceilt, default_ceiling_texture, WAD_FLAT_NAME);
 	 Sectors[last].light   = default_light_level;
 	 Sectors[last].special = 0;
 	 Sectors[last].tag     = 0;
 	 }
       break;
    default:
-      Beep ();
+      nf_bug ("InsertObject: bad objtype %d", (int) objtype);
    }
 }
 
@@ -877,32 +772,32 @@ int i;
 
 /* do you like mathematics? */
 if (lx0 >= x0 && lx0 <= x1 && ly0 >= y0 && ly0 <= y1)
-   return 1; /* the LineDef start is entirely inside the square */
+   return 1; /* the linedef start is entirely inside the square */
 if (lx1 >= x0 && lx1 <= x1 && ly1 >= y0 && ly1 <= y1)
-   return 1; /* the LineDef end is entirely inside the square */
+   return 1; /* the linedef end is entirely inside the square */
 if ((ly0 > y0) != (ly1 > y0))
    {
    i = lx0 + (int) ((long) (y0 - ly0) * (long) (lx1 - lx0) / (long) (ly1 - ly0));
    if (i >= x0 && i <= x1)
-      return 1; /* the LineDef crosses the y0 side (left) */
+      return 1; /* the linedef crosses the y0 side (left) */
    }
 if ((ly0 > y1) != (ly1 > y1))
    {
    i = lx0 + (int) ((long) (y1 - ly0) * (long) (lx1 - lx0) / (long) (ly1 - ly0));
    if (i >= x0 && i <= x1)
-      return 1; /* the LineDef crosses the y1 side (right) */
+      return 1; /* the linedef crosses the y1 side (right) */
    }
 if ((lx0 > x0) != (lx1 > x0))
    {
    i = ly0 + (int) ((long) (x0 - lx0) * (long) (ly1 - ly0) / (long) (lx1 - lx0));
    if (i >= y0 && i <= y1)
-      return 1; /* the LineDef crosses the x0 side (down) */
+      return 1; /* the linedef crosses the x0 side (down) */
    }
 if ((lx0 > x1) != (lx1 > x1))
    {
    i = ly0 + (int) ((long) (x1 - lx0) * (long) (ly1 - ly0) / (long) (lx1 - lx0));
    if (i >= y0 && i <= y1)
-      return 1; /* the LineDef crosses the x1 side (up) */
+      return 1; /* the linedef crosses the x1 side (up) */
    }
 return 0;
 }
@@ -910,7 +805,7 @@ return 0;
 
 
 /*
-   get the Sector number of the SideDef opposite to this SideDef
+   get the sector number of the sidedef opposite to this sidedef
    (returns -1 if it cannot be found)
 */
 

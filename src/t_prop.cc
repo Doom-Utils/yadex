@@ -64,12 +64,12 @@ int    subwin_y0;
 
 for (n = 0; n < 6; n++)
    menustr[n] = (char *) GetMemory (60);
-sprintf (menustr[5], "Edit Thing #%d", obj->objnum);
-sprintf (menustr[0], "Change Type          (Current: %s)",
+sprintf (menustr[5], "Edit thing #%d", obj->objnum);
+sprintf (menustr[0], "Change type          (Current: %s)",
          get_thing_name (Things[obj->objnum].type));
-sprintf (menustr[1], "Change Angle         (Current: %s)",
+sprintf (menustr[1], "Change angle         (Current: %s)",
          GetAngleName (Things[obj->objnum].angle));
-sprintf (menustr[2], "Change When Appears  (Current: %s)",
+sprintf (menustr[2], "Change flags         (Current: %s)",
          GetWhenName (Things[obj->objnum].when));
 sprintf (menustr[3], "Change X position    (Current: %d)",
          Things[obj->objnum].xpos);
@@ -91,7 +91,7 @@ switch (val)
      break;
 
   case 2:
-     switch (DisplayMenu (x0 + 42, subwin_y0, "Select Angle",
+     switch (DisplayMenu (x0 + 42, subwin_y0, "Select angle",
 			  "North",
 			  "NorthEast",
 			  "East",
@@ -239,10 +239,7 @@ for (;;)
    /* First let user select a thinggroup */
    if (DisplayMenuList (x0+42, y0, "Select group", thinggroup,
     PrintThinggroup, &tgno) < 0)
-      {
-      Beep ();
       return 1;
-      }
    if (al_lseek (thinggroup, tgno, SEEK_SET))
       fatal_error ("%s ITT1 (%s)", msg_unexpected, al_astrerror (al_aerrno));
    tg = CUR_THINGGROUP->thinggroup;
@@ -294,7 +291,7 @@ return 0;
 static const char *PrintThinggroup (void *ptr)
 {
 if (ptr == NULL)
-   fatal_error ("PTG1");
+   return "PrintThinggroup: (null)";
 return ((thinggroup_t *)ptr)->desc;
 }
 
@@ -306,7 +303,7 @@ return ((thinggroup_t *)ptr)->desc;
 static const char *PrintThingdef (void *ptr)
 {
 if (ptr == NULL)
-   fatal_error ("PTD1");
+   return "PrintThingdef: (null)";
 return (*((thingdef_t **)ptr))->desc;
 }
 

@@ -15,6 +15,9 @@
 #ifdef __TURBOC__
 #include <alloc.h>
 #endif
+#ifndef MSDOS
+#include <unistd.h>  /* Unix: isatty() */
+#endif
 
 /*- boolean constants ------------------------------------------------------*/
 

@@ -37,7 +37,7 @@ Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 
 
 /*
-   turn a Sector into a lift: change the LineDefs and SideDefs
+   turn a Sector into a lift: change the linedefs and sidedefs
 */
 
 void MakeLiftFromSector (int sector) /* SWAP! */
@@ -52,7 +52,7 @@ ldok = NULL;
 ldflip = NULL;
 ld1s = NULL;
 sect = NULL;
-/* build lists of LineDefs that border the Sector */
+/* build lists of linedefs that border the Sector */
 for (n = 0; n < NumLineDefs; n++)
 {
    ObjectsNeeded (OBJ_LINEDEFS, 0);
@@ -93,7 +93,7 @@ if (sect == NULL)
    ForgetSelection (&ld1s);
    return;
 }
-/* flip the LineDefs that have the wrong orientation */
+/* flip the linedefs that have the wrong orientation */
 if (ldflip != NULL)
    FlipLineDefs (ldflip, 1);
 /* merge the two selection lists */
@@ -131,7 +131,7 @@ if (Sectors[sector].ceilh < maxh + DOOM_PLAYER_HEIGHT)
 /* assign the new tag number to the lift */
 Sectors[sector].tag = tag;
 
-/* change the LineDefs and SideDefs */
+/* change the linedefs and sidedefs */
 while (ldok != NULL)
    {
    /* give the "lower lift" type and flags to the linedef */
@@ -142,48 +142,48 @@ while (ldok != NULL)
    LineDefs[n].tag = tag;
    sd1 = LineDefs[n].sidedef1; /* outside */
    sd2 = LineDefs[n].sidedef2; /* inside */
-   /* adjust the textures for the SideDef visible from the outside */
+   /* adjust the textures for the sidedef visible from the outside */
    ObjectsNeeded (OBJ_SIDEDEFS, 0);
-   if (strncmp (SideDefs[sd1].tex3, "-", 8))
+   if (strncmp (SideDefs[sd1].tex3, "-", WAD_TEX_NAME))
       {
-      if (!strncmp (SideDefs[sd1].tex2, "-", 8))
-	 strncpy (SideDefs[sd1].tex2, SideDefs[sd1].tex3, 8);
-      strncpy (SideDefs[sd1].tex3, "-", 8);
+      if (!strncmp (SideDefs[sd1].tex2, "-", WAD_TEX_NAME))
+	 strncpy (SideDefs[sd1].tex2, SideDefs[sd1].tex3, WAD_TEX_NAME);
+      strncpy (SideDefs[sd1].tex3, "-", WAD_TEX_NAME);
       }
-   if (!strncmp (SideDefs[sd1].tex2, "-", 8))
-      strncpy (SideDefs[sd1].tex2, "SHAWN2", 8);
-   /* adjust the textures for the SideDef visible from the lift */
-   strncpy (SideDefs[sd2].tex3, "-", 8);
+   if (!strncmp (SideDefs[sd1].tex2, "-", WAD_TEX_NAME))
+      strncpy (SideDefs[sd1].tex2, "SHAWN2", WAD_TEX_NAME);
+   /* adjust the textures for the sidedef visible from the lift */
+   strncpy (SideDefs[sd2].tex3, "-", WAD_TEX_NAME);
    s = SideDefs[sd1].sector;
    ObjectsNeeded (OBJ_SECTORS, 0);
    if (Sectors[s].floorh > minh)
       {
       ObjectsNeeded (OBJ_SIDEDEFS, 0);
-      if (strncmp (SideDefs[sd2].tex3, "-", 8))
+      if (strncmp (SideDefs[sd2].tex3, "-", WAD_TEX_NAME))
       {
-	 if (!strncmp (SideDefs[sd2].tex2, "-", 8))
-	    strncpy (SideDefs[sd2].tex2, SideDefs[sd1].tex3, 8);
-	 strncpy (SideDefs[sd2].tex3, "-", 8);
+	 if (!strncmp (SideDefs[sd2].tex2, "-", WAD_TEX_NAME))
+	    strncpy (SideDefs[sd2].tex2, SideDefs[sd1].tex3, WAD_TEX_NAME);
+	 strncpy (SideDefs[sd2].tex3, "-", WAD_TEX_NAME);
       }
-      if (!strncmp (SideDefs[sd2].tex2, "-", 8))
-	 strncpy (SideDefs[sd2].tex2, "SHAWN2", 8);
+      if (!strncmp (SideDefs[sd2].tex2, "-", WAD_TEX_NAME))
+	 strncpy (SideDefs[sd2].tex2, "SHAWN2", WAD_TEX_NAME);
       }
    else
       {
       ObjectsNeeded (OBJ_SIDEDEFS, 0);
-      strncpy (SideDefs[sd2].tex2, "-", 8);
+      strncpy (SideDefs[sd2].tex2, "-", WAD_TEX_NAME);
       }
-   strncpy (SideDefs[sd2].tex3, "-", 8);
+   strncpy (SideDefs[sd2].tex3, "-", WAD_TEX_NAME);
    ObjectsNeeded (OBJ_SECTORS, 0);
-   /* if the ceiling of the Sector is lower than that of the lift */
+   /* if the ceiling of the sector is lower than that of the lift */
    if (Sectors[s].ceilh < Sectors[sector].ceilh)
       {
       ObjectsNeeded (OBJ_SIDEDEFS, 0);
-      if (strncmp (SideDefs[sd2].tex1, "-", 8))
-	 strncpy (SideDefs[sd2].tex1, default_upper_texture, 8);
+      if (strncmp (SideDefs[sd2].tex1, "-", WAD_TEX_NAME))
+	 strncpy (SideDefs[sd2].tex1, default_upper_texture, WAD_TEX_NAME);
       }
    ObjectsNeeded (OBJ_SECTORS, 0);
-   /* if the floor of the Sector is above the lift */
+   /* if the floor of the sector is above the lift */
    if (Sectors[s].floorh >= Sectors[sector].floorh)
       {
       ObjectsNeeded (OBJ_LINEDEFS, 0);
@@ -205,12 +205,12 @@ while (ld1s != NULL)
    n = ld1s->objnum;
    LineDefs[n].flags = 0x01;
    sd1 = LineDefs[n].sidedef1;
-   /* adjust the textures for the SideDef */
+   /* adjust the textures for the sidedef */
    ObjectsNeeded (OBJ_SIDEDEFS, 0);
-   if (!strncmp (SideDefs[sd1].tex3, "-", 8))
-      strncpy (SideDefs[sd1].tex3, default_middle_texture, 8);
-   strncpy (SideDefs[sd1].tex1, "-", 8);
-   strncpy (SideDefs[sd1].tex2, "-", 8);
+   if (!strncmp (SideDefs[sd1].tex3, "-", WAD_TEX_NAME))
+      strncpy (SideDefs[sd1].tex3, default_middle_texture, WAD_TEX_NAME);
+   strncpy (SideDefs[sd1].tex1, "-", WAD_TEX_NAME);
+   strncpy (SideDefs[sd1].tex2, "-", WAD_TEX_NAME);
    UnSelectObject (&ld1s, n);
    }
 }

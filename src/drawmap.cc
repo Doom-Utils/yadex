@@ -295,7 +295,7 @@ if (e->obj_type != OBJ_THINGS)
 int max_radius = get_max_thing_radius ();
 
 // A thing is guaranteed to be totally off-screen
-// if its center is more than <max_radius> units
+// if its centre is more than <max_radius> units
 // beyond the edge of the screen.
 mapx0 -= max_radius;
 mapx9 += max_radius;

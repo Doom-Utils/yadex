@@ -32,47 +32,119 @@ Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 
 
 #include "yadex.h"
+#include "bitvec.h"
 #include "dialog.h"
+#include "game.h"
+#include "levels.h"
 #include "wstructs.h"
 #include "things.h"
 #include "wads.h"
 
 
-/* the global data */
-MDirPtr Level = 0;		/* master dictionary entry for the level */
-int NumThings = 0;		/* number of things */
+/*
+ 	FIXME
+	All these variables should be turned
+	into members of a "Level" class.
+*/
+MDirPtr Level;			/* master dictionary entry for the level */
+int NumThings;			/* number of things */
 TPtr Things;			/* things data */
-int NumLineDefs = 0;		/* number of line defs */
+int NumLineDefs;		/* number of line defs */
 LDPtr LineDefs;			/* line defs data */
-int NumSideDefs = 0;		/* number of side defs */
+int NumSideDefs;		/* number of side defs */
 SDPtr SideDefs;			/* side defs data */
-int NumVertices = 0;		/* number of vertexes */
+int NumVertices;		/* number of vertexes */
 VPtr Vertices;			/* vertex data */
-int NumSectors = 0;		/* number of sectors */
+int NumSectors;			/* number of sectors */
 SPtr Sectors;			/* sectors data */
-int NumSegs = 0;		/* number of segments */
-int NumWTexture = 0;		/* number of wall textures */
+
+// FIXME should be somewhere else
+int NumWTexture;		/* number of wall textures */
 char **WTexture;		/* array of wall texture names */
-int NumFTexture = 0;		/* number of floor/ceiling textures */
-char **FTexture;		/* array of texture names */
+
+// FIXME all the flat list stuff should be put in a separate class
+int NumFTexture;		/* number of floor/ceiling textures */
+flat_list_entry_t *flat_list;	// List of all flats in the directory
+
 int MapMaxX = -32767;		/* maximum X value of map */
 int MapMaxY = -32767;		/* maximum Y value of map */
 int MapMinX = 32767;		/* minimum X value of map */
 int MapMinY = 32767;		/* minimum Y value of map */
-Bool MadeChanges = 0;	/* made changes? */
-Bool MadeMapChanges = 0;	/* made changes that need rebuilding? */
+Bool MadeChanges;		/* made changes? */
+Bool MadeMapChanges;		/* made changes that need rebuilding? */
+
+char Level_name[WAD_NAME + 1];	/* The name of the level (E.G.
+				   "MAP01" or "E1M1"), followed by a
+				   NUL. If the Level has been created as
+				   the result of a "c" command with no
+				   argument, an empty string. The name
+				   is not necesarily in upper case but
+				   it always a valid lump name, not a
+				   command line shortcut like "17". */
+
+y_file_name_t Level_file_name;	/* The name of the file in which
+				   the level would be saved. If the
+				   level has been created as the result
+				   of a "c" command, with or without
+				   argument, an empty string. */
+
+y_file_name_t Level_file_name_saved;  /* The name of the file in
+				   which the level was last saved. If
+				   the Level has never been saved yet,
+				   an empty string. */
+
+void EmptyLevelData (const char *levelname)
+{
+Things = 0;
+NumThings = 0;
+LineDefs = 0;
+NumLineDefs = 0;
+SideDefs = 0;
+NumSideDefs = 0;
+Sectors = 0;
+NumSectors = 0;
+Vertices = 0;
+NumVertices = 0;
+}
+
+
+/*
+ *	texno_texname
+ *	A convenience function when loading Doom alpha levels
+ */
+static char *tex_list = 0;
+static size_t ntex = 0;
+static char tex_name[WAD_TEX_NAME + 1];
+inline const char *texno_texname (i16 texno)
+{
+if (texno < 0)
+   return "-";
+else
+   if (yg_texture_format == YGTF_ALPHA04)
+      {
+      sprintf (tex_name, "TEX%05u", (unsigned) (texno + 1));
+      return tex_name;
+      }
+   else
+      {
+      if (texno < ntex)
+	 return tex_list + WAD_TEX_NAME * texno;
+      else
+	 return "unknown";
+      }
+}
 
 
 /*
    read in the level data
 */
 
-void ReadLevelData (const char *levelname) /* SWAP! */
+int ReadLevelData (const char *levelname) /* SWAP! */
 {
+int rc = 0;
 MDirPtr dir;
-int n, m;
 int OldNumVertices;
-int *VertexUsed;
+int n;
 
 /* No objects are needed: they may be swapped after they have been read */
 ObjectsNeeded (0);
@@ -83,72 +155,157 @@ Level = FindMasterDir (MasterDir, levelname);
 if (!Level)
    fatal_error ("level data not found");
 
-/* Get the number of Vertices */
-dir = FindMasterDir (Level, "VERTEXES");
+/* Get the number of vertices */
+i32 v_offset;
+i32 v_length;
+if (yg_level_format == YGLF_ALPHA)  // Doom alpha
+   dir = FindMasterDir (Level, "POINTS");
+else
+   dir = FindMasterDir (Level, "VERTEXES");
 if (dir)
-   OldNumVertices = (int) (dir->dir.size / 4L);
+   {
+   v_offset = dir->dir.start;
+   v_length = dir->dir.size;
+   if (yg_level_format == YGLF_ALPHA)  // Doom alpha: skip leading count
+      {
+      v_offset += 4;
+      v_length -= 4;
+      }
+   OldNumVertices = (int) (v_length / WAD_VERTEX_BYTES);
+   if (OldNumVertices * WAD_VERTEX_BYTES != v_length)
+      warn ("the %s lump has a weird size."
+        " The wad might be corrupt.\n",
+	yg_level_format == YGLF_ALPHA ? "POINTS" : "VERTEXES");
+   }
 else
    OldNumVertices = 0;
-if (OldNumVertices > 0)
-   {
-   VertexUsed = (int *) GetMemory (OldNumVertices * sizeof (int));
-   for (n = 0; n < OldNumVertices; n++)
-      VertexUsed[n] = 0;
-   }
 
-/* Read in the Things data */
+// Read THINGS
 verbmsg ("Reading %s things", levelname);
+i32 offset;
+i32 length;
 dir = FindMasterDir (Level, "THINGS");
 if (dir)
-   NumThings = (int) (dir->dir.size / 10L);
+   {
+   offset = dir->dir.start;
+   length = dir->dir.size;
+   if (MainWad == Iwad4)  // Hexen mode
+      {
+      NumThings = (int) (length / WAD_HEXEN_THING_BYTES);
+      if (NumThings * WAD_HEXEN_THING_BYTES != length)
+         warn ("the THINGS lump has a weird size."
+            " The wad might be corrupt.\n");
+      }
+   else                    // Doom/Heretic/Strife mode
+      {
+      if (yg_level_format == YGLF_ALPHA)  // Doom alpha: skip leading count
+	 {
+	 offset += 4;
+	 length -= 4;
+	 }
+      size_t thing_size = yg_level_format == YGLF_ALPHA ? 12 : WAD_THING_BYTES;
+      NumThings = (int) (length / thing_size);
+      if (NumThings * thing_size != length)
+         warn ("the THINGS lump has a weird size."
+            " The wad might be corrupt.\n");
+      }
+   }
 else
    NumThings = 0;
 if (NumThings > 0)
    {
    Things = (TPtr) GetFarMemory ((unsigned long) NumThings
       * sizeof (struct Thing));
-   wad_seek (dir->wadfile, dir->dir.start);
-   for (n = 0; n < NumThings; n++)
-      {
-      wad_read_i16 (dir->wadfile, &(Things[n].xpos ));
-      wad_read_i16 (dir->wadfile, &(Things[n].ypos ));
-      wad_read_i16 (dir->wadfile, &(Things[n].angle));
-      wad_read_i16 (dir->wadfile, &(Things[n].type ));
-      wad_read_i16 (dir->wadfile, &(Things[n].when ));
-      }
+   wad_seek (dir->wadfile, offset);
+   if (MainWad == Iwad4)  // Hexen mode
+      for (n = 0; n < NumThings; n++)
+	 {
+         u8 dummy2[6];
+	 wad_read_i16   (dir->wadfile);				// Tid
+	 wad_read_i16   (dir->wadfile, &(Things[n].xpos ));
+	 wad_read_i16   (dir->wadfile, &(Things[n].ypos ));
+	 wad_read_i16   (dir->wadfile);				// Height
+	 wad_read_i16   (dir->wadfile, &(Things[n].angle));
+	 wad_read_i16   (dir->wadfile, &(Things[n].type ));
+	 wad_read_i16   (dir->wadfile, &(Things[n].when ));
+         wad_read_bytes (dir->wadfile, dummy2, sizeof dummy2);
+	 }
+   else                   // Doom/Heretic/Strife mode
+      for (n = 0; n < NumThings; n++)
+	 {
+	 wad_read_i16 (dir->wadfile, &(Things[n].xpos ));
+	 wad_read_i16 (dir->wadfile, &(Things[n].ypos ));
+	 wad_read_i16 (dir->wadfile, &(Things[n].angle));
+	 wad_read_i16 (dir->wadfile, &(Things[n].type ));
+	 if (yg_level_format == YGLF_ALPHA)
+	    wad_read_i16 (dir->wadfile);  // Alpha. Don't know what its for.
+	 wad_read_i16 (dir->wadfile, &(Things[n].when ));
+	 }
    }
 
-/* Read in the LineDef information */
-verbmsg (" linedefs");
-dir = FindMasterDir (Level, "LINEDEFS");
-if (dir)
-   NumLineDefs = (int) (dir->dir.size / 14L);
-else
-   NumLineDefs = 0;
-if (NumLineDefs > 0)
+// Read LINEDEFS
+if (yg_level_format != YGLF_ALPHA)
    {
-   LineDefs = (LDPtr) GetFarMemory ((unsigned long) NumLineDefs
-      * sizeof (struct LineDef));
-   wad_seek (dir->wadfile, dir->dir.start);
-   for (n = 0; n < NumLineDefs; n++)
+   verbmsg (" linedefs");
+   dir = FindMasterDir (Level, "LINEDEFS");
+   if (dir)
+      if (MainWad == Iwad4)  // Hexen mode
+	 {
+	 NumLineDefs = (int) (dir->dir.size / WAD_HEXEN_LINEDEF_BYTES);
+	 if (NumLineDefs * WAD_HEXEN_LINEDEF_BYTES != dir->dir.size)
+	    warn ("the LINEDEFS lump has a weird size."
+	       " The wad might be corrupt.\n");
+	 }
+      else                   // Doom/Heretic/Strife mode
+	 {
+	 NumLineDefs = (int) (dir->dir.size / WAD_LINEDEF_BYTES);
+	 if (NumLineDefs * WAD_LINEDEF_BYTES != dir->dir.size)
+	    warn ("the LINEDEFS lump has a weird size."
+	       " The wad might be corrupt.\n");
+	 }
+   else
+      NumLineDefs = 0;
+   if (NumLineDefs > 0)
       {
-      wad_read_i16 (dir->wadfile, &(LineDefs[n].start   ));
-      VertexUsed[LineDefs[n].start] = 1;
-      wad_read_i16 (dir->wadfile, &(LineDefs[n].end     ));
-      VertexUsed[LineDefs[n].end] = 1;
-      wad_read_i16 (dir->wadfile, &(LineDefs[n].flags   ));
-      wad_read_i16 (dir->wadfile, &(LineDefs[n].type    ));
-      wad_read_i16 (dir->wadfile, &(LineDefs[n].tag     ));
-      wad_read_i16 (dir->wadfile, &(LineDefs[n].sidedef1));
-      wad_read_i16 (dir->wadfile, &(LineDefs[n].sidedef2));
+      LineDefs = (LDPtr) GetFarMemory ((unsigned long) NumLineDefs
+	 * sizeof (struct LineDef));
+      wad_seek (dir->wadfile, dir->dir.start);
+      if (MainWad == Iwad4)  // Hexen mode
+	 for (n = 0; n < NumLineDefs; n++)
+	    {
+	    u8 dummy[6];
+	    wad_read_i16   (dir->wadfile, &(LineDefs[n].start   ));
+	    wad_read_i16   (dir->wadfile, &(LineDefs[n].end     ));
+	    wad_read_i16   (dir->wadfile, &(LineDefs[n].flags   ));
+	    wad_read_bytes (dir->wadfile, dummy, sizeof dummy);
+	    wad_read_i16   (dir->wadfile, &(LineDefs[n].sidedef1));
+	    wad_read_i16   (dir->wadfile, &(LineDefs[n].sidedef2));
+	    LineDefs[n].type = dummy[0];
+	    }
+      else                   // Doom/Heretic/Strife mode
+	 for (n = 0; n < NumLineDefs; n++)
+	    {
+	    wad_read_i16 (dir->wadfile, &(LineDefs[n].start   ));
+	    wad_read_i16 (dir->wadfile, &(LineDefs[n].end     ));
+	    wad_read_i16 (dir->wadfile, &(LineDefs[n].flags   ));
+	    wad_read_i16 (dir->wadfile, &(LineDefs[n].type    ));
+	    wad_read_i16 (dir->wadfile, &(LineDefs[n].tag     ));
+	    wad_read_i16 (dir->wadfile, &(LineDefs[n].sidedef1));
+	    wad_read_i16 (dir->wadfile, &(LineDefs[n].sidedef2));
+	    }
       }
    }
 
-/* Read in the SideDef information */
+// Read SIDEDEFS
 verbmsg (" sidedefs");
 dir = FindMasterDir (Level, "SIDEDEFS");
 if (dir)
-   NumSideDefs = (int) (dir->dir.size / 30L);
+   {
+   NumSideDefs = (int) (dir->dir.size / WAD_SIDEDEF_BYTES);
+   if (NumSideDefs * WAD_SIDEDEF_BYTES != dir->dir.size)
+      warn ("the SIDEDEFS lump has a weird size."
+         " The wad might be corrupt.\n");
+   }
 else
    NumSideDefs = 0;
 if (NumSideDefs > 0)
@@ -158,112 +315,394 @@ if (NumSideDefs > 0)
    wad_seek (dir->wadfile, dir->dir.start);
    for (n = 0; n < NumSideDefs; n++)
       {
-      wad_read_i16 (dir->wadfile, &(SideDefs[n].xoff));
-      wad_read_i16 (dir->wadfile, &(SideDefs[n].yoff));
-      wad_read_bytes (dir->wadfile, &(SideDefs[n].tex1), 8);
-      wad_read_bytes (dir->wadfile, &(SideDefs[n].tex2), 8);
-      wad_read_bytes (dir->wadfile, &(SideDefs[n].tex3), 8);
-      wad_read_i16 (dir->wadfile, &(SideDefs[n].sector));
+      wad_read_i16   (dir->wadfile, &(SideDefs[n].xoff));
+      wad_read_i16   (dir->wadfile, &(SideDefs[n].yoff));
+      wad_read_bytes (dir->wadfile, &(SideDefs[n].tex1), WAD_TEX_NAME);
+      wad_read_bytes (dir->wadfile, &(SideDefs[n].tex2), WAD_TEX_NAME);
+      wad_read_bytes (dir->wadfile, &(SideDefs[n].tex3), WAD_TEX_NAME);
+      wad_read_i16   (dir->wadfile, &(SideDefs[n].sector));
       }
    }
 
-/* Read in the Vertices which are all the corners of the level,
-   but ignore the Vertices not used in any LineDef (they usually
-   are at the end of the list). */
+/* Sanity checkings on linedefs: the 1st and 2nd vertices
+   must exist. The 1st and 2nd sidedefs must exist or be
+   set to -1. */
+for (n = 0; n < NumLineDefs; n++)
+   {
+   if (LineDefs[n].sidedef1 != -1
+      && outside (LineDefs[n].sidedef1, 0, NumSideDefs - 1))
+      {
+      warn ("linedef %d has bad 1st sidedef number %d\n",
+	 n, LineDefs[n].sidedef1);
+      rc = 1;
+      goto byebye;
+      }
+   if (LineDefs[n].sidedef2 != -1
+      && outside (LineDefs[n].sidedef2, 0, NumSideDefs - 1))
+      {
+      warn ("linedef %d has bad 2nd sidedef number %d\n",
+	 n, LineDefs[n].sidedef2);
+      rc = 1;
+      goto byebye;
+      }
+   if (outside (LineDefs[n].start, 0, OldNumVertices -1))
+      {
+      warn ("linedef %d has bad 1st vertex number %d\n",
+	 n, LineDefs[n].start);
+      rc = 1;
+      goto byebye;
+      }
+   if (outside (LineDefs[n].end, 0, OldNumVertices - 1))
+      {
+      warn ("linedef %d has bad 2nd vertex number %d\n",
+	 n, LineDefs[n].end);
+      rc = 1;
+      goto byebye;
+      }
+   }
+
+// Read LINES (Doom alpha only)
+if (yg_level_format == YGLF_ALPHA)
+   {
+   verbmsg (" lines");
+   dir = FindMasterDir (Level, "LINES");
+   if (dir)
+      {
+      if ((dir->dir.size - 4) % 36)
+	 warn ("the LINES lump has a weird size. The wad might be corrupt.\n");
+      const size_t nlines = dir->dir.size / 36;
+      NumLineDefs = nlines;
+      NumSideDefs = 2 * nlines;  // Worst case. We'll adjust later.
+      LineDefs = (LDPtr) GetFarMemory ((unsigned long) NumLineDefs
+	 * sizeof (struct LineDef));
+      SideDefs = (SDPtr) GetFarMemory ((unsigned long) NumSideDefs
+	 * sizeof (struct SideDef));
+      // Read TEXTURES
+      if (yg_texture_format != YGTF_ALPHA04)
+      {
+	 ntex = 0;
+	 MDirPtr d = FindMasterDir (MasterDir, "TEXTURES");
+	 if (! d)
+	    warn ("TEXTURES lump not found. Will not be able to"
+		  " import texture names.\n");
+	 else
+	    {
+	    wad_seek (d->wadfile, d->dir.start);
+	    i32 num;
+	    wad_read_i32 (d->wadfile, &num);
+	    if (num < 0 || num > 32767)
+	       warn ("TEXTURES has bad name count. Ignoring TEXTURES.\n");
+	    else
+	       {
+	       ntex = num;
+	       i32 *offset_table = new i32[ntex];
+	       for (size_t n = 0; n < ntex; n++)
+		  wad_read_i32 (d->wadfile, offset_table + n);
+	       tex_list = (char *) GetMemory (ntex * WAD_TEX_NAME);
+	       for (size_t n = 0; n < ntex; n++)
+		  {
+		  wad_seek (d->wadfile, d->dir.start + offset_table[n]);
+		  wad_read_bytes (d->wadfile, tex_list + WAD_TEX_NAME * n,
+		      WAD_TEX_NAME);
+		  }
+	       delete[] offset_table;
+	       }
+	    }
+
+      }
+
+      wad_seek (dir->wadfile, dir->dir.start + 4);
+      size_t s = 0;
+      for (size_t n = 0; n < nlines; n++)
+	 {
+	 LDPtr ld = LineDefs + n;
+	 ld->start   = wad_read_i16 (dir->wadfile);
+	 ld->end     = wad_read_i16 (dir->wadfile);
+	 ld->flags   = wad_read_i16 (dir->wadfile);
+	               wad_read_i16 (dir->wadfile);  // Unused ?
+	 ld->type    = wad_read_i16 (dir->wadfile);
+	 ld->tag     = wad_read_i16 (dir->wadfile);
+	               wad_read_i16 (dir->wadfile);  // Unused ?
+	 i16 sector1 = wad_read_i16 (dir->wadfile);
+	 i16 xofs1   = wad_read_i16 (dir->wadfile);
+	 i16 tex1m   = wad_read_i16 (dir->wadfile);
+	 i16 tex1u   = wad_read_i16 (dir->wadfile);
+	 i16 tex1l   = wad_read_i16 (dir->wadfile);
+	               wad_read_i16 (dir->wadfile);  // Unused ?
+	 i16 sector2 = wad_read_i16 (dir->wadfile);
+	 i16 xofs2   = wad_read_i16 (dir->wadfile);
+	 i16 tex2m   = wad_read_i16 (dir->wadfile);
+	 i16 tex2u   = wad_read_i16 (dir->wadfile);
+	 i16 tex2l   = wad_read_i16 (dir->wadfile);
+	 if (sector1 >= 0)			// Create first sidedef
+	    {
+	    ld->sidedef1 = s;
+	    SDPtr sd = SideDefs + s;
+	    sd->xoff = xofs1;
+	    sd->yoff = 0;
+	    memcpy (sd->tex1, texno_texname (tex1u), sizeof sd->tex1);
+	    memcpy (sd->tex2, texno_texname (tex1l), sizeof sd->tex2);
+	    memcpy (sd->tex3, texno_texname (tex1m), sizeof sd->tex3);
+	    sd->sector = sector1;
+	    s++;
+	    }
+	 else  // No first sidedef !
+	    ld->sidedef1 = -1;
+	 if (ld->flags & 0x04)			// Create second sidedef
+	    {
+	    ld->sidedef2 = s;
+	    SDPtr sd = SideDefs + s;
+	    sd->xoff = xofs2;
+	    sd->yoff = 0;
+	    memcpy (sd->tex1, texno_texname (tex2u), sizeof sd->tex1);
+	    memcpy (sd->tex2, texno_texname (tex2l), sizeof sd->tex2);
+	    memcpy (sd->tex3, texno_texname (tex2m), sizeof sd->tex3);
+	    sd->sector = sector2;
+	    s++;
+	    }
+	 else
+	    ld->sidedef2 = -1;
+	 if (dir->wadfile->error)
+	    {
+	    warn ("read error in %s\n", dir->wadfile->filename);
+	    break;
+	    }
+	 }
+      if (NumSideDefs > s)  // Almost always true.
+         {
+	 NumSideDefs = s;
+         SideDefs = (SDPtr) ResizeFarMemory (SideDefs,
+	     (unsigned long) NumSideDefs * sizeof (struct SideDef));
+         }
+      if (tex_list)
+         FreeMemory (tex_list);
+      tex_list = 0;
+      ntex = 0;
+      }
+   }
+
+/* Read the vertices. If the wad has been run through a nodes
+   builder, there is a bunch of vertices at the end that are not
+   used by any linedefs. Those vertices have been created by the
+   nodes builder for the segs. We ignore them, because they're
+   useless to the level designer. However, we do NOT ignore
+   unused vertices in the middle because that's where the
+   "string art" bug came from.
+
+   Note that there is absolutely no guarantee that the nodes
+   builders add their own vertices at the end, instead of at the
+   beginning or right in the middle, AFAIK. It's just that they
+   all seem to do that (1). What if some don't ? Well, we would
+   end up with many unwanted vertices in the level data. Nothing
+   that a good CheckCrossReferences() couldn't take care of. */
+{
 verbmsg (" vertices");
-NumVertices = 0;
-for (n = 0; n < OldNumVertices; n++)
-   if (VertexUsed[n])
-      NumVertices++;
+int last_used_vertex = -1;
+for (n = 0; n < NumLineDefs; n++)
+   {
+   last_used_vertex = max (last_used_vertex, LineDefs[n].start);
+   last_used_vertex = max (last_used_vertex, LineDefs[n].end);
+   }
+NumVertices = last_used_vertex + 1;
+// This block is only here to warn me if (1) is false.
+{
+  bitvec_c vertex_used (OldNumVertices);
+  for (int n = 0; n < NumLineDefs; n++)
+     {
+     vertex_used.set (LineDefs[n].start);
+     vertex_used.set (LineDefs[n].end);
+     }
+  int unused = 0;
+  for (int n = 0; n <= last_used_vertex; n++)
+     {
+     if (! vertex_used.get (n))
+	unused++;
+     }
+  if (unused > 0)
+     {
+     warn ("this level has unused vertices in the middle.\n");
+     warn ("total %d, tail %d (%d%%), unused %d (",
+	OldNumVertices,
+	OldNumVertices - NumVertices,
+	NumVertices - unused
+	   ? 100 * (OldNumVertices - NumVertices) / (NumVertices - unused)
+	   : 0,
+	unused);
+     int first = 1;
+     for (int n = 0; n <= last_used_vertex; n++)
+        {
+	if (! vertex_used.get (n))
+	   {
+	   if (n == 0 || vertex_used.get (n - 1))
+	      {
+	      if (first)
+	         first = 0;
+	      else
+	         warn (", ");
+	      warn ("%d", n);
+	      }
+	   else if (n == last_used_vertex || vertex_used.get (n + 1))
+	      warn ("-%d", n);
+	   }
+	}
+     warn (")\n");
+     }
+}
+// Now load all the vertices except the unused ones at the end.
 if (NumVertices > 0)
    {
    Vertices = (VPtr) GetFarMemory ((unsigned long) NumVertices
       * sizeof (struct Vertex));
-   dir = FindMasterDir (Level, "VERTEXES");
-   wad_seek (dir->wadfile, dir->dir.start);
-   MapMaxX = -32767;
-   MapMaxY = -32767;
-   MapMinX = 32767;
-   MapMinY = 32767;
-   m = 0;
-   for (n = 0; n < OldNumVertices; n++)
+   if (yg_level_format == YGLF_ALPHA)  // Doom alpha
+      dir = FindMasterDir (Level, "POINTS");
+   else
+      dir = FindMasterDir (Level, "VERTEXES");
+   if (dir)
       {
-      i16 val;
-      wad_read_i16 (dir->wadfile, &val);
-      if (VertexUsed[n])
-         {
+      wad_seek (dir->wadfile, v_offset);
+      MapMaxX = -32767;
+      MapMaxY = -32767;
+      MapMinX = 32767;
+      MapMinY = 32767;
+      for (n = 0; n < NumVertices; n++)
+	 {
+	 i16 val;
+	 wad_read_i16 (dir->wadfile, &val);
 	 if (val < MapMinX)
 	    MapMinX = val;
 	 if (val > MapMaxX)
 	    MapMaxX = val;
-	 Vertices[m].x = val;
-         }
-      wad_read_i16 (dir->wadfile, &val);
-      if (VertexUsed[n])
-         {
+	 Vertices[n].x = val;
+	 wad_read_i16 (dir->wadfile, &val);
 	 if (val < MapMinY)
 	    MapMinY = val;
 	 if (val > MapMaxY)
 	    MapMaxY = val;
-	 Vertices[m].y = val;
-	 m++;
-         }
+	 Vertices[n].y = val;
+	 }
       }
-   if (m != NumVertices)
-      fatal_error ("inconsistency in the vertices data\n");
    }
+}
 
-if (OldNumVertices > 0)
-   {
-   /* Update the Vertex numbers in the LineDefs
-      (not really necessary, but...) */
-   m = 0;
-   for (n = 0; n < OldNumVertices; n++)
-      if (VertexUsed[n])
-	 VertexUsed[n] = m++;
-   ObjectsNeeded (OBJ_LINEDEFS, 0);
-   for (n = 0; n < NumLineDefs; n++)
-      {
-      LineDefs[n].start = VertexUsed[LineDefs[n].start];
-      LineDefs[n].end = VertexUsed[LineDefs[n].end];
-      }
-   ObjectsNeeded (0);
-   FreeMemory (VertexUsed);
-   }
+// Ignore SEGS, SSECTORS and NODES
 
-/* Ignore the Segs, SSectors and Nodes */
-
-/* Read in the Sectors information */
+// Read SECTORS
 verbmsg (" sectors\n");
 dir = FindMasterDir (Level, "SECTORS");
-if (dir)
-   NumSectors = (int) (dir->dir.size / 26L);
-else
-   NumSectors = 0;
-if (NumSectors > 0)
+if (yg_level_format != YGLF_ALPHA)
    {
-   Sectors = (SPtr) GetFarMemory ((unsigned long) NumSectors
-      * sizeof (struct Sector));
-   wad_seek (dir->wadfile, dir->dir.start);
-   for (n = 0; n < NumSectors; n++)
+   if (dir)
       {
-      wad_read_i16 (dir->wadfile, &(Sectors[n].floorh ));
-      wad_read_i16 (dir->wadfile, &(Sectors[n].ceilh  ));
-      wad_read_bytes (dir->wadfile, &(Sectors[n].floort ), 8);
-      wad_read_bytes (dir->wadfile, &(Sectors[n].ceilt  ), 8);
-      wad_read_i16 (dir->wadfile, &(Sectors[n].light  ));
-      wad_read_i16 (dir->wadfile, &(Sectors[n].special));
-      wad_read_i16 (dir->wadfile, &(Sectors[n].tag    ));
+      NumSectors = (int) (dir->dir.size / WAD_SECTOR_BYTES);
+      if (NumSectors * WAD_SECTOR_BYTES != dir->dir.size)
+	 warn ("the SECTORS lump has a weird size."
+	   " The wad might be corrupt.\n");
+      }
+   else
+      NumSectors = 0;
+   if (NumSectors > 0)
+      {
+      Sectors = (SPtr) GetFarMemory ((unsigned long) NumSectors
+	 * sizeof (struct Sector));
+      wad_seek (dir->wadfile, dir->dir.start);
+      for (n = 0; n < NumSectors; n++)
+	 {
+	 wad_read_i16   (dir->wadfile, &(Sectors[n].floorh ));
+	 wad_read_i16   (dir->wadfile, &(Sectors[n].ceilh  ));
+	 wad_read_bytes (dir->wadfile, &(Sectors[n].floort ), WAD_FLAT_NAME);
+	 wad_read_bytes (dir->wadfile, &(Sectors[n].ceilt  ), WAD_FLAT_NAME);
+	 wad_read_i16   (dir->wadfile, &(Sectors[n].light  ));
+	 wad_read_i16   (dir->wadfile, &(Sectors[n].special));
+	 wad_read_i16   (dir->wadfile, &(Sectors[n].tag    ));
+	 }
+      }
+   }
+else  // Doom alpha--a wholly different SECTORS format
+   {
+   if (dir)
+      {
+      wad_seek (dir->wadfile, dir->dir.start);
+      i32 nsectors;
+      i32 nflatnames = 0;
+      char *flatnames = 0;
+      wad_read_i32 (dir->wadfile, &nsectors);
+      NumSectors = nsectors;
+      Sectors = (SPtr) GetFarMemory ((unsigned long) NumSectors
+	 * sizeof (struct Sector));
+      i32 *offset_table = new i32[nsectors];
+      for (size_t n = 0; n < nsectors; n++)
+	 wad_read_i32 (dir->wadfile, offset_table + n);
+      // Load FLATNAME
+      {
+	 MDirPtr dir2 = FindMasterDir (Level, "FLATNAME");
+	 if (dir2)
+	    {
+	    wad_seek (dir2->wadfile, dir2->dir.start);
+	    wad_read_i32 (dir2->wadfile, &nflatnames);
+	    if (nflatnames < 0 || nflatnames > 32767)
+	       {
+	       warn ("FLATNAME has bad name count. Ignoring FLATNAME.\n");
+	       nflatnames = 0;
+	       }
+	    else
+	       {
+	       flatnames = new char[WAD_FLAT_NAME * nflatnames];
+	       wad_read_bytes (dir2->wadfile, flatnames,
+		   WAD_FLAT_NAME * nflatnames);
+	       }
+	    }
+      }
+      for (size_t n = 0; n < nsectors; n++)
+	 {
+	 wad_seek (dir->wadfile, dir->dir.start + offset_table[n]);
+	 i16 index;
+	 wad_read_i16 (dir->wadfile, &(Sectors[n].floorh));
+	 wad_read_i16 (dir->wadfile, &(Sectors[n].ceilh ));
+	 wad_read_i16 (dir->wadfile, &index);
+	 if (nflatnames && flatnames && index >= 0 && index < nflatnames)
+	    memcpy (Sectors[n].floort, flatnames + WAD_FLAT_NAME * index,
+		WAD_FLAT_NAME);
+	 else
+	    strcpy (Sectors[n].floort, "unknown");
+	 wad_read_i16 (dir->wadfile, &index);
+	 if (nflatnames && flatnames && index >= 0 && index < nflatnames)
+	    memcpy (Sectors[n].ceilt, flatnames + WAD_FLAT_NAME * index,
+		WAD_FLAT_NAME);
+	 else
+	    strcpy (Sectors[n].ceilt, "unknown");
+	 wad_read_i16 (dir->wadfile, &(Sectors[n].light  ));
+	 wad_read_i16 (dir->wadfile, &(Sectors[n].special));
+	 wad_read_i16 (dir->wadfile, &(Sectors[n].tag));
+	 // Don't know what the tail is for. Ignore it.
+	 }
+      delete[] offset_table;
+      if (flatnames)
+	 delete[] flatnames;
       }
    }
 
-/* Ignore the last entries (Reject & BlockMap) */
+/* Sanity checking on sidedefs: the sector must exist. I don't
+   make this a fatal error, though, because it's not exceptional
+   to find wads with unused sidedefs with a sector# of -1. Well
+   known ones include dyst3 (MAP06, MAP07, MAP08), mm (MAP16),
+   mm2 (MAP13, MAP28) and requiem (MAP03, MAP08, ...). */
+for (n = 0; n < NumSideDefs; n++)
+   {
+   if (outside (SideDefs[n].sector, 0, NumSectors - 1))
+      warn ("sidedef %d has bad sector number %d\n",
+	 n, SideDefs[n].sector);
+   }
 
-/* Silly statistics */
+// Ignore REJECT and BLOCKMAP
+
+// Silly statistics
 verbmsg ("  %d things, %d vertices, %d linedefs, %d sidedefs, %d sectors\n",
    (int) NumThings, (int) NumVertices, (int) NumLineDefs,
    (int) NumSideDefs, (int) NumSectors);
-verbmsg ("  Map: %d,%d-%d,%d\n", MapMinX, MapMinY, MapMaxX, MapMaxY);
+verbmsg ("  Map: (%d,%d)-(%d,%d)\n", MapMinX, MapMinY, MapMaxX, MapMaxY);
+
+byebye:
+return rc;
 }
 
 
@@ -274,35 +713,35 @@ verbmsg ("  Map: %d,%d-%d,%d\n", MapMinX, MapMinY, MapMaxX, MapMaxY);
 
 void ForgetLevelData () /* SWAP! */
 {
-/* forget the Things */
+/* forget the things */
 ObjectsNeeded (OBJ_THINGS, 0);
 NumThings = 0;
 if (Things)
    FreeFarMemory (Things);
 Things = 0;
 
-/* forget the Vertices */
+/* forget the vertices */
 ObjectsNeeded (OBJ_VERTICES, 0);
 NumVertices = 0;
 if (Vertices)
    FreeFarMemory (Vertices);
 Vertices = 0;
 
-/* forget the LineDefs */
+/* forget the linedefs */
 ObjectsNeeded (OBJ_LINEDEFS, 0);
 NumLineDefs = 0;
 if (LineDefs)
    FreeFarMemory (LineDefs);
 LineDefs = 0;
 
-/* forget the SideDefs */
+/* forget the sidedefs */
 ObjectsNeeded (OBJ_SIDEDEFS, 0);
 NumSideDefs = 0;
 if (SideDefs)
    FreeFarMemory (SideDefs);
 SideDefs = 0;
 
-/* forget the Sectors */
+/* forget the sectors */
 ObjectsNeeded (OBJ_SECTORS, 0);
 NumSectors = 0;
 if (Sectors)
@@ -313,32 +752,75 @@ ObjectsNeeded (0);
 
 
 /*
-   save the level data to a pwad file
-*/
+ *	Save the level data to a pwad file
+ *	The name of the level is always obtained from
+ *	<level_name>, whether or not the level was created from
+ *	scratch.
+ *
+ *	The previous contents of the pwad file are lost. Yes, it
+ *	sucks but it's not easy to fix.
+ *
+ *	The lumps are always written in the same order, the same
+ *	as the one in the Doom iwad. The length field of the
+ *	marker lump is always set to 0. Its offset field is
+ *	always set to the offset of the first lump of the level
+ *	(THINGS).
+ *
+ *	If the level has been created by editing an existing
+ *	level and has not been changed in a way that calls for a
+ *	rebuild of the nodes, the VERTEXES, SEGS, SSECTORS,
+ *	NODES, REJECT and BLOCKMAP lumps are copied from the
+ *	original level. Otherwise, they are created with a
+ *	length of 0 bytes and an offset equal to the offset of
+ *	the previous lump plus its length.
+ *
+ *	Returns 0 on success and non-zero on failure (see errno).
+ */
 
-void SaveLevelData (const char *outfile) /* SWAP! */
+#ifdef NEW_SAVE_METHOD
+int SaveLevelData (const char *outfile, const char *level_name) /* SWAP! */
 {
 FILE   *file;
 MDirPtr dir;
-i32     counter;
 int     n;
-i32     size;
-i32     dirstart;
-i32     blocksize;
-i32     rejectsize;
+long	lump_offset[WAD_LL__];
+size_t	lump_size[WAD_LL__];
+wad_level_lump_no_t l;
 
+if (yg_level_format == YGLF_HEXEN || ! strcmp (Game, "hexen"))
+   {
+   Notify (-1, -1, "I refuse to save. Hexen mode is still",
+                   "too badly broken. You would lose data.");
+   return 1;
+   }
+if (! level_name || ! levelname2levelno (level_name))
+   {
+   nf_bug ("SaveLevelData called with bad level_name.\n"
+       "Using \"E1M1\" instead.");
+   level_name = "E1M1";
+   }
 DisplayMessage (-1, -1, "Saving data to \"%s\"...", outfile);
 LogMessage (": Saving data to \"%s\"...\n", outfile);
-/* open the file */
 if ((file = fopen (outfile, "wb")) == NULL)
    fatal_error ("Unable to open file \"%s\"", outfile);
-WriteBytes (file, "PWAD", 4);   /* Pwad file */
-file_write_i32 (file, 11);   /* 11 entries */
-file_write_i32 (file, 0);    /* fix this up later */
-counter = 12;
-dir = Level->next;
 
-/* Output the THINGS data */
+// Write the pwad header
+WriteBytes (file, "PWAD", 4);		// Pwad file
+file_write_i32 (file, WAD_LL__);	// Number of entries = 11
+file_write_i32 (file, 0);		// Fix this up later
+if (Level)
+   dir = Level->next;
+else
+   dir = 0;  // Useless except to trap accidental dereferences
+
+// The label (EnMm or MAPnm)
+l = WAD_LL_LABEL;
+lump_offset[l] = ftell (file);	// By definition
+lump_size[l]   =  0;		// By definition
+ 
+// Write the THINGS lump
+l = WAD_LL_THINGS;
+lump_offset[l] = ftell (file);
 ObjectsNeeded (OBJ_THINGS, 0);
 for (n = 0; n < NumThings; n++)
    {
@@ -347,11 +829,170 @@ for (n = 0; n < NumThings; n++)
    file_write_i16 (file, Things[n].angle);
    file_write_i16 (file, Things[n].type );
    file_write_i16 (file, Things[n].when );
-   counter += 10;
    }
-dir = dir->next;
+lump_size[l] = ftell (file) - lump_offset[l];
+if (Level)
+   dir = dir->next;
+
+// Write the LINEDEFS lump
+l = WAD_LL_LINEDEFS;
+lump_offset[WAD_LL_LINEDEFS] = ftell (file);
+ObjectsNeeded (OBJ_LINEDEFS, 0);
+for (n = 0; n < NumLineDefs; n++)
+   {
+   file_write_i16 (file, LineDefs[n].start   );
+   file_write_i16 (file, LineDefs[n].end     );
+   file_write_i16 (file, LineDefs[n].flags   );
+   file_write_i16 (file, LineDefs[n].type    );
+   file_write_i16 (file, LineDefs[n].tag     );
+   file_write_i16 (file, LineDefs[n].sidedef1);
+   file_write_i16 (file, LineDefs[n].sidedef2);
+   }
+lump_size[l] = ftell (file) - lump_offset[l];
+if (Level)
+   dir = dir->next;
+
+// Write the SIDEDEFS lump
+l = WAD_LL_SIDEDEFS;
+lump_offset[l] = ftell (file);
+ObjectsNeeded (OBJ_SIDEDEFS, 0);
+for (n = 0; n < NumSideDefs; n++)
+   {
+   file_write_i16 (file, SideDefs[n].xoff);
+   file_write_i16 (file, SideDefs[n].yoff);
+   WriteBytes     (file, &(SideDefs[n].tex1), WAD_TEX_NAME);
+   WriteBytes     (file, &(SideDefs[n].tex2), WAD_TEX_NAME);
+   WriteBytes     (file, &(SideDefs[n].tex3), WAD_TEX_NAME);
+   file_write_i16 (file, SideDefs[n].sector);
+   }
+lump_size[l] = ftell (file) - lump_offset[l];
+if (Level)
+   dir = dir->next;
+
+// Write the VERTEXES lump
+l = WAD_LL_VERTEXES;
+lump_offset[WAD_LL_VERTEXES] = ftell (file);
+if (! Level || MadeMapChanges)
+   {
+   /* Write the vertices */
+   ObjectsNeeded (OBJ_VERTICES, 0);
+   for (n = 0; n < NumVertices; n++)
+      {
+      file_write_i16 (file, Vertices[n].x);
+      file_write_i16 (file, Vertices[n].y);
+      }
+   }
+else
+   {
+   /* Copy the vertices */
+   ObjectsNeeded (0);
+   wad_seek (dir->wadfile, dir->dir.start);
+   CopyBytes (file, dir->wadfile->fd, dir->dir.size);
+   }
+lump_size[l] = ftell (file) - lump_offset[l];
+if (Level)
+   dir = dir->next;
+
+// Write the SEGS, SSECTORS and NODES lumps
+for (n = 0; n < 3; n++)
+   {
+   if (n == 0)
+      l = WAD_LL_SEGS;
+   else if (n == 1)
+      l = WAD_LL_SSECTORS;
+   else if (n == 2)
+      l = WAD_LL_NODES;
+   lump_offset[l] = ftell (file);
+   if (Level && ! MadeMapChanges)
+      {
+      wad_seek (dir->wadfile, dir->dir.start);
+      CopyBytes (file, dir->wadfile->fd, dir->dir.size);
+      }
+   lump_size[l] = ftell (file) - lump_offset[l];
+   if (Level)
+      dir = dir->next;
+   }
+
+// Write the SECTORS lump
+l = WAD_LL_SECTORS;
+lump_offset[l] = ftell (file);
+ObjectsNeeded (OBJ_SECTORS, 0);
+for (n = 0; n < NumSectors; n++)
+   {
+   file_write_i16 (file, Sectors[n].floorh);
+   file_write_i16 (file, Sectors[n].ceilh );
+   WriteBytes     (file, Sectors[n].floort, WAD_FLAT_NAME);
+   WriteBytes     (file, Sectors[n].ceilt,  WAD_FLAT_NAME);
+   file_write_i16 (file, Sectors[n].light  );
+   file_write_i16 (file, Sectors[n].special);
+   file_write_i16 (file, Sectors[n].tag    );
+   }
+lump_size[l] = ftell (file) - lump_offset[l];
+if (Level)
+   dir = dir->next;
+
+// Write the REJECT lump
+l = WAD_LL_REJECT;
+lump_offset[l] = ftell (file);
+if (Level && ! MadeMapChanges)
+   {
+   /* Copy the REJECT data */
+   ObjectsNeeded (0);
+   wad_seek (dir->wadfile, dir->dir.start);
+   CopyBytes (file, dir->wadfile->fd, dir->dir.size);
+   }
+lump_size[l] = ftell (file) - lump_offset[l];
+if (Level)
+   dir = dir->next;
+
+// Write the BLOCKMAP lump
+l = WAD_LL_BLOCKMAP;
+lump_offset[l] = ftell (file);
+if (Level && ! MadeMapChanges)
+   {
+   ObjectsNeeded (0);
+   wad_seek (dir->wadfile, dir->dir.start);
+   CopyBytes (file, dir->wadfile->fd, dir->dir.size);
+   }
+lump_size[l] = ftell (file) - lump_offset[l];
+if (Level)
+   dir = dir->next;
+
+// Write the actual directory
+long dir_offset = ftell (file);
+for (int L = 0; L < (int) WAD_LL__; L++)
+   {
+   file_write_i32 (file, lump_offset[L]);
+   file_write_i32 (file, lump_size[L]);
+   if (L == (int) WAD_LL_LABEL)
+      file_write_name (file, level_name);
+   else
+      file_write_name (file, wad_level_lump[L].name);
+   }
+
+/* Fix up the directory start information */
+if (fseek (file, 8, SEEK_SET))
+   fatal_error ("error writing to file");
+file_write_i32 (file, dir_offset);
+
+/* Close the file */
+fclose (file);
+
+/* The file is now up to date */
+if (! Level || MadeMapChanges)
+   remind_to_build_nodes = 1;
+MadeChanges = 0;
+MadeMapChanges = 0;
+ObjectsNeeded (0);
+
+/* Update pointers in Master Directory */
+OpenPatchWad (outfile);
+
+/* This should free the old "*.bak" file */
+CloseUnusedWadFiles ();
 
 /* Update MapMinX, MapMinY, MapMaxX, MapMaxY */
+// Probably not necessary anymore -- AYM 1999-04-05
 ObjectsNeeded (OBJ_VERTICES, 0);
 MapMaxX = -32767;
 MapMaxY = -32767;
@@ -368,8 +1009,68 @@ for (n = 0; n < NumVertices; n++)
    if (Vertices[n].y > MapMaxY)
       MapMaxY = Vertices[n].y;
    }
+return 0;
+}
+#else
+int SaveLevelData (const char *outfile, const char *level_name) /* SWAP! */
+{
+FILE   *file;
+MDirPtr dir;
+int     n;
+long	lump_offset[WAD_LL__];
+size_t	lump_size[WAD_LL__];
+wad_level_lump_no_t l;
 
-/* Output the LINEDEFS */
+if (yg_level_format == YGLF_HEXEN || ! strcmp (Game, "hexen"))
+   {
+   Notify (-1, -1, "I refuse to save. Hexen mode is still",
+                   "too badly broken. You would lose data.");
+   return 1;
+   }
+if (! level_name || ! levelname2levelno (level_name))
+   {
+   nf_bug ("SaveLevelData: bad level_name \"%s\", using \"E1M1\" instead.",
+       level_name);
+   level_name = "E1M1";
+   }
+DisplayMessage (-1, -1, "Saving data to \"%s\"...", outfile);
+LogMessage (": Saving data to \"%s\"...\n", outfile);
+if ((file = fopen (outfile, "wb")) == NULL)
+   fatal_error ("Unable to open file \"%s\"", outfile);
+
+// Write the pwad header
+WriteBytes (file, "PWAD", 4);		// Pwad file
+file_write_i32 (file, WAD_LL__);	// Number of entries = 11
+file_write_i32 (file, 0);		// Fix this up later
+if (Level)
+   dir = Level->next;
+else
+   dir = 0;  // Useless except to trap accidental dereferences
+
+// The label (EnMm or MAPnm)
+l = WAD_LL_LABEL;
+lump_offset[l] = ftell (file);	// By definition
+lump_size[l]   =  0;		// By definition
+ 
+// Write the THINGS lump
+l = WAD_LL_THINGS;
+lump_offset[l] = ftell (file);
+ObjectsNeeded (OBJ_THINGS, 0);
+for (n = 0; n < NumThings; n++)
+   {
+   file_write_i16 (file, Things[n].xpos );
+   file_write_i16 (file, Things[n].ypos );
+   file_write_i16 (file, Things[n].angle);
+   file_write_i16 (file, Things[n].type );
+   file_write_i16 (file, Things[n].when );
+   }
+lump_size[l] = ftell (file) - lump_offset[l];
+if (Level)
+   dir = dir->next;
+
+// Write the LINEDEFS lump
+l = WAD_LL_LINEDEFS;
+lump_offset[WAD_LL_LINEDEFS] = ftell (file);
 ObjectsNeeded (OBJ_LINEDEFS, 0);
 for (n = 0; n < NumLineDefs; n++)
    {
@@ -380,208 +1081,139 @@ for (n = 0; n < NumLineDefs; n++)
    file_write_i16 (file, LineDefs[n].tag     );
    file_write_i16 (file, LineDefs[n].sidedef1);
    file_write_i16 (file, LineDefs[n].sidedef2);
-   counter += 14;
    }
-dir = dir->next;
+lump_size[l] = ftell (file) - lump_offset[l];
+if (Level)
+   dir = dir->next;
 
-/* Output the SIDEDEFS */
+// Write the SIDEDEFS lump
+l = WAD_LL_SIDEDEFS;
+lump_offset[l] = ftell (file);
 ObjectsNeeded (OBJ_SIDEDEFS, 0);
 for (n = 0; n < NumSideDefs; n++)
    {
    file_write_i16 (file, SideDefs[n].xoff);
    file_write_i16 (file, SideDefs[n].yoff);
-   WriteBytes (file, &(SideDefs[n].tex1), 8L);
-   WriteBytes (file, &(SideDefs[n].tex2), 8L);
-   WriteBytes (file, &(SideDefs[n].tex3), 8L);
+   WriteBytes     (file, &(SideDefs[n].tex1), WAD_TEX_NAME);
+   WriteBytes     (file, &(SideDefs[n].tex2), WAD_TEX_NAME);
+   WriteBytes     (file, &(SideDefs[n].tex3), WAD_TEX_NAME);
    file_write_i16 (file, SideDefs[n].sector);
-   counter += 30;
    }
-dir = dir->next;
+lump_size[l] = ftell (file) - lump_offset[l];
+if (Level)
+   dir = dir->next;
 
-if (MadeMapChanges)
+// Write the VERTEXES lump
+l = WAD_LL_VERTEXES;
+lump_offset[WAD_LL_VERTEXES] = ftell (file);
+if (! Level || MadeMapChanges)
    {
-   /* Output the VERTEXES */
+   /* Write the vertices */
    ObjectsNeeded (OBJ_VERTICES, 0);
    for (n = 0; n < NumVertices; n++)
       {
       file_write_i16 (file, Vertices[n].x);
       file_write_i16 (file, Vertices[n].y);
-      counter += 4;
       }
    }
 else
    {
-   /* Copy the VERTEXES */
+   /* Copy the vertices */
    ObjectsNeeded (0);
-   size = dir->dir.size;
-   counter += size;
    wad_seek (dir->wadfile, dir->dir.start);
-   CopyBytes (file, dir->wadfile->fd, size);
+   CopyBytes (file, dir->wadfile->fd, dir->dir.size);
    }
-dir = dir->next;
+lump_size[l] = ftell (file) - lump_offset[l];
+if (Level)
+   dir = dir->next;
 
-/* SEGS, SSECTORS and NODES */
+// Write the SEGS, SSECTORS and NODES lumps
 for (n = 0; n < 3; n++)
    {
-   if (! MadeMapChanges)
+   if (n == 0)
+      l = WAD_LL_SEGS;
+   else if (n == 1)
+      l = WAD_LL_SSECTORS;
+   else if (n == 2)
+      l = WAD_LL_NODES;
+   lump_offset[l] = ftell (file);
+   if (Level && ! MadeMapChanges)
       {
-      size = dir->dir.size;
-      counter += size;
       wad_seek (dir->wadfile, dir->dir.start);
-      CopyBytes (file, dir->wadfile->fd, size);
+      CopyBytes (file, dir->wadfile->fd, dir->dir.size);
       }
-   dir = dir->next;
+   lump_size[l] = ftell (file) - lump_offset[l];
+   if (Level)
+      dir = dir->next;
    }
 
-/* Output the SECTORS */
+// Write the SECTORS lump
+l = WAD_LL_SECTORS;
+lump_offset[l] = ftell (file);
 ObjectsNeeded (OBJ_SECTORS, 0);
 for (n = 0; n < NumSectors; n++)
    {
    file_write_i16 (file, Sectors[n].floorh);
    file_write_i16 (file, Sectors[n].ceilh );
-   WriteBytes (file, &(Sectors[n].floort), 8);
-   WriteBytes (file, &(Sectors[n].ceilt),  8);
+   WriteBytes     (file, Sectors[n].floort, WAD_FLAT_NAME);
+   WriteBytes     (file, Sectors[n].ceilt,  WAD_FLAT_NAME);
    file_write_i16 (file, Sectors[n].light  );
    file_write_i16 (file, Sectors[n].special);
    file_write_i16 (file, Sectors[n].tag    );
-   counter += 26;
    }
-dir = dir->next;
+lump_size[l] = ftell (file) - lump_offset[l];
+if (Level)
+   dir = dir->next;
 
-/* REJECT */
-if (! MadeMapChanges)
+// Write the REJECT lump
+l = WAD_LL_REJECT;
+lump_offset[l] = ftell (file);
+if (Level && ! MadeMapChanges)
    {
    /* Copy the REJECT data */
    ObjectsNeeded (0);
-   rejectsize = dir->dir.size;
-   size = rejectsize;
-   counter += size;
    wad_seek (dir->wadfile, dir->dir.start);
-   CopyBytes (file, dir->wadfile->fd, size);
+   CopyBytes (file, dir->wadfile->fd, dir->dir.size);
    }
-dir = dir->next;
+lump_size[l] = ftell (file) - lump_offset[l];
+if (Level)
+   dir = dir->next;
 
-/* Copy the BLOCKMAP data */
-if (! MadeMapChanges)
+// Write the BLOCKMAP lump
+l = WAD_LL_BLOCKMAP;
+lump_offset[l] = ftell (file);
+if (Level && ! MadeMapChanges)
    {
    ObjectsNeeded (0);
-   blocksize = dir->dir.size;
-   size = blocksize;
-   counter += size;
    wad_seek (dir->wadfile, dir->dir.start);
-   CopyBytes (file, dir->wadfile->fd, size);
+   CopyBytes (file, dir->wadfile->fd, dir->dir.size);
    }
-dir = dir->next;
+lump_size[l] = ftell (file) - lump_offset[l];
+if (Level)
+   dir = dir->next;
 
-
-/* output the actual directory */
-dirstart = counter;
-counter = 12;
-size = 0;
-dir = Level;
-file_write_i32 (file, counter);
-file_write_i32 (file, size);
-WriteBytes (file, &(dir->dir.name), 8);
-dir = dir->next;
-
-size = (i32) NumThings * 10;
-file_write_i32 (file, counter);
-file_write_i32 (file, size);
-WriteBytes (file, "THINGS\0\0", 8);
-counter += size;
-dir = dir->next;
-
-size = (i32) NumLineDefs * 14;
-file_write_i32 (file, counter);
-file_write_i32 (file, size);
-WriteBytes (file, "LINEDEFS", 8);
-counter += size;
-dir = dir->next;
-
-size = (i32) NumSideDefs * 30;
-file_write_i32 (file, counter);
-file_write_i32 (file, size);
-WriteBytes (file, "SIDEDEFS", 8);
-counter += size;
-dir = dir->next;
-
-if (MadeMapChanges)
-   size = (i32) NumVertices * 4;
-else
-   size = dir->dir.size;
-file_write_i32 (file, counter);
-file_write_i32 (file, size);
-WriteBytes (file, "VERTEXES", 8);
-counter += size;
-dir = dir->next;
-
-if (MadeMapChanges)
-  size = 0;
-else
-  size = dir->dir.size;
-file_write_i32 (file, counter);
-file_write_i32 (file, size);
-WriteBytes (file, "SEGS\0\0\0\0", 8);
-counter += size;
-dir = dir->next;
-
-if (MadeMapChanges)
-  size = 0;
-else
-  size = dir->dir.size;
-file_write_i32 (file, counter);
-file_write_i32 (file, size);
-WriteBytes (file, "SSECTORS", 8);
-counter += size;
-dir = dir->next;
-
-if (MadeMapChanges)
-  size = 0;
-else
-  size = dir->dir.size;
-file_write_i32 (file, counter);
-file_write_i32 (file, size);
-WriteBytes (file, "NODES\0\0\0", 8);
-counter += size;
-dir = dir->next;
-
-size = (i32) NumSectors * 26;
-file_write_i32 (file, counter);
-file_write_i32 (file, size);
-WriteBytes (file, "SECTORS\0", 8);
-counter += size;
-dir = dir->next;
-
-if (MadeMapChanges)
-  size = 0;
-else
-  size = rejectsize;
-file_write_i32 (file, counter);
-file_write_i32 (file, size);
-WriteBytes (file, "REJECT\0\0", 8);
-counter += size;
-dir = dir->next;
-
-if (MadeMapChanges)
-  size = 0;
-else
-  size = blocksize;
-file_write_i32 (file, counter);
-file_write_i32 (file, size);
-WriteBytes (file, "BLOCKMAP", 8);
-counter += size;
-dir = dir->next;
+// Write the actual directory
+long dir_offset = ftell (file);
+for (int L = 0; L < (int) WAD_LL__; L++)
+   {
+   file_write_i32 (file, lump_offset[L]);
+   file_write_i32 (file, lump_size[L]);
+   if (L == (int) WAD_LL_LABEL)
+      file_write_name (file, level_name);
+   else
+      file_write_name (file, wad_level_lump[L].name);
+   }
 
 /* Fix up the directory start information */
 if (fseek (file, 8, SEEK_SET))
    fatal_error ("error writing to file");
-file_write_i32 (file, dirstart);
+file_write_i32 (file, dir_offset);
 
 /* Close the file */
 fclose (file);
 
 /* The file is now up to date */
-if (MadeMapChanges)
+if (! Level || MadeMapChanges)
    remind_to_build_nodes = 1;
 MadeChanges = 0;
 MadeMapChanges = 0;
@@ -592,21 +1224,56 @@ OpenPatchWad (outfile);
 
 /* This should free the old "*.bak" file */
 CloseUnusedWadFiles ();
-}
 
+/* Update MapMinX, MapMinY, MapMaxX, MapMaxY */
+// Probably not necessary anymore -- AYM 1999-04-05
+ObjectsNeeded (OBJ_VERTICES, 0);
+MapMaxX = -32767;
+MapMaxY = -32767;
+MapMinX = 32767;
+MapMinY = 32767;
+for (n = 0; n < NumVertices; n++)
+   {
+   if (Vertices[n].x < MapMinX)
+      MapMinX = Vertices[n].x;
+   if (Vertices[n].x > MapMaxX)
+      MapMaxX = Vertices[n].x;
+   if (Vertices[n].y < MapMinY)
+      MapMinY = Vertices[n].y;
+   if (Vertices[n].y > MapMaxY)
+      MapMaxY = Vertices[n].y;
+   }
+return 0;
+}
+#endif  /* NEW_SAVE_METHOD */
+
+
+/*
+ *	flat_list_entry_cmp
+ *	Function used by qsort() to sort the flat_list_entry array
+ *	by ascending flat name.
+ */
+static int flat_list_entry_cmp (const void *a, const void *b)
+{
+return y_strnicmp (
+    ((const flat_list_entry_t *) a)->name,
+    ((const flat_list_entry_t *) b)->name,
+    WAD_FLAT_NAME);
+}
 
 
 /*
    function used by qsort to sort the texture names
 */
-int SortTextures (const void *a, const void *b)
+static int SortTextures (const void *a, const void *b)
 {
-return strcmp (*((const char *const *)a), *((const char *const *)b));
+return y_strnicmp (*((const char *const *)a), *((const char *const *)b),
+    WAD_TEX_NAME);
 }
 
 
 /*
-   read in the wall texture names
+   read the texture names
 */
 void ReadWTextureNames ()
 {
@@ -616,26 +1283,88 @@ int n;
 i32 val;
 
 verbmsg ("Reading texture names\n");
-dir = FindMasterDir (MasterDir, "TEXTURE1");
-wad_seek (dir->wadfile, dir->dir.start);
-wad_read_i32 (dir->wadfile, &val);
-NumWTexture = (int) val + 1;
-/* read in the offsets for texture1 names */
-offsets = (i32 *) GetMemory ((long) NumWTexture * 4);
-wad_read_i32 (dir->wadfile, offsets + 1, NumWTexture - 1);
-/* read in the actual names */
-WTexture = (char **) GetMemory ((long) NumWTexture * sizeof (char *));
-WTexture[0] = (char *) GetMemory (9);
-strcpy (WTexture[0], "-");
-for (n = 1; n < NumWTexture; n++)
+
+// Doom alpha 0.4 : "TEXTURES", no names
+if (yg_texture_lumps == YGTL_TEXTURES
+ && yg_texture_format == YGTF_ALPHA04)
    {
-   WTexture[n] = (char *) GetMemory (9);
-   wad_seek (dir->wadfile, dir->dir.start + offsets[n]);
-   wad_read_bytes (dir->wadfile, WTexture[n], 8);
-   WTexture[n][8] = '\0';
+   dir = FindMasterDir (MasterDir, "TEXTURES");
+   if (dir != NULL)
+      {
+      wad_seek (dir->wadfile, dir->dir.start);
+      wad_read_i32 (dir->wadfile, &val);
+      NumWTexture = (int) val + 1;
+      WTexture = (char **) GetMemory ((long) NumWTexture * sizeof *WTexture);
+      WTexture[0] = (char *) GetMemory (WAD_TEX_NAME + 1);
+      strcpy (WTexture[0], "-");
+      if (WAD_TEX_NAME != 8) nf_bug ("WAD_TEX_NAME is not 8");  // Sanity
+      for (long n = 1; n <= val; n++)
+	 {
+	 WTexture[n] = (char *) GetMemory (WAD_TEX_NAME + 1);
+	 if (n > 99999)
+	    {
+	    warn ("more than 99999 textures. Ignoring excess.\n");
+	    break;
+	    }
+	 sprintf (WTexture[n], "TEX%05ld", n);
+	 }
+      }
    }
-FreeMemory (offsets);
-if (Registered)
+// Doom alpha 0.5 : only "TEXTURES"
+else if (yg_texture_lumps == YGTL_TEXTURES
+      && yg_texture_format == YGTF_NORMAL)
+   {
+   dir = FindMasterDir (MasterDir, "TEXTURES");
+   if (dir != NULL)  // In theory it always exists, though
+      {
+      wad_seek (dir->wadfile, dir->dir.start);
+      wad_read_i32 (dir->wadfile, &val);
+      NumWTexture = (int) val + 1;
+      /* read in the offsets for texture1 names */
+      offsets = (i32 *) GetMemory ((long) NumWTexture * 4);
+      wad_read_i32 (dir->wadfile, offsets + 1, NumWTexture - 1);
+      /* read in the actual names */
+      WTexture = (char **) GetMemory ((long) NumWTexture * sizeof (char *));
+      WTexture[0] = (char *) GetMemory (WAD_TEX_NAME + 1);
+      strcpy (WTexture[0], "-");
+      for (n = 1; n < NumWTexture; n++)
+	 {
+	 WTexture[n] = (char *) GetMemory (WAD_TEX_NAME + 1);
+	 wad_seek (dir->wadfile, dir->dir.start + offsets[n]);
+	 wad_read_bytes (dir->wadfile, WTexture[n], WAD_TEX_NAME);
+	 WTexture[n][WAD_TEX_NAME] = '\0';
+	 }
+      FreeMemory (offsets);
+      }
+   else
+      warn ("TEXTURES lump not found. Iwad might be corrupt.\n");
+   }
+// Other iwads : "TEXTURE1" and possibly "TEXTURE2"
+else if (yg_texture_lumps == YGTL_TEXTURE1
+      && yg_texture_format == YGTF_NORMAL)
+   {
+   dir = FindMasterDir (MasterDir, "TEXTURE1");
+   if (dir != NULL)  // In theory it always exists, though
+      {
+      wad_seek (dir->wadfile, dir->dir.start);
+      wad_read_i32 (dir->wadfile, &val);
+      NumWTexture = (int) val + 1;
+      /* read in the offsets for texture1 names */
+      offsets = (i32 *) GetMemory ((long) NumWTexture * 4);
+      wad_read_i32 (dir->wadfile, offsets + 1, NumWTexture - 1);
+      /* read in the actual names */
+      WTexture = (char **) GetMemory ((long) NumWTexture * sizeof (char *));
+      WTexture[0] = (char *) GetMemory (WAD_TEX_NAME + 1);
+      strcpy (WTexture[0], "-");
+      for (n = 1; n < NumWTexture; n++)
+	 {
+	 WTexture[n] = (char *) GetMemory (WAD_TEX_NAME + 1);
+	 wad_seek (dir->wadfile, dir->dir.start + offsets[n]);
+	 wad_read_bytes (dir->wadfile, WTexture[n], WAD_TEX_NAME);
+	 WTexture[n][WAD_TEX_NAME] = '\0';
+	 }
+      FreeMemory (offsets);
+      }
    {
    dir = FindMasterDir (MasterDir, "TEXTURE2");
    if (dir)  /* Doom II has no TEXTURE2 */
@@ -650,15 +1379,19 @@ if (Registered)
 	 (NumWTexture + val) * sizeof (char *));
       for (n = 0; n < val; n++)
 	 {
-	 WTexture[NumWTexture + n] = (char *) GetMemory (9);
+	 WTexture[NumWTexture + n] = (char *) GetMemory (WAD_TEX_NAME + 1);
 	 wad_seek (dir->wadfile, dir->dir.start + offsets[n]);
-	 wad_read_bytes (dir->wadfile, WTexture[NumWTexture + n], 8);
-	 WTexture[NumWTexture + n][8] = '\0';
+	 wad_read_bytes (dir->wadfile, WTexture[NumWTexture + n], WAD_TEX_NAME);
+	 WTexture[NumWTexture + n][WAD_TEX_NAME] = '\0';
 	 }
       NumWTexture += val;
       FreeMemory (offsets);
       }
    }
+   }
+else
+   nf_bug ("Invalid texture_format/texture_lumps combination.");
+
 /* sort the names */
 qsort (WTexture, NumWTexture, sizeof (char *), SortTextures);
 }
@@ -666,7 +1399,7 @@ qsort (WTexture, NumWTexture, sizeof (char *), SortTextures);
 
 
 /*
-   forget the wall texture names
+   forget the texture names
 */
 
 void ForgetWTextureNames ()
@@ -685,7 +1418,7 @@ FreeMemory (WTexture);
 
 
 /*
-   read in the floor/ceiling texture names
+   read the flat names
 */
 
 void ReadFTextureNames ()
@@ -693,131 +1426,130 @@ void ReadFTextureNames ()
 MDirPtr dir;
 int n, m;
 
-verbmsg ("Reading flat names\n");
-/* count the names */
-dir = FindMasterDir (MasterDir, "F1_START");
-dir = dir->next;
-for (n = 0; dir && strcmp (dir->dir.name, "F1_END"); n++)
-   dir = dir->next;
-NumFTexture = n;
-/* get the actual names from master dir. */
-dir = FindMasterDir (MasterDir, "F1_START");
-dir = dir->next;
-FTexture = (char **) GetMemory (NumFTexture * sizeof (char *));
-for (n = 0; n < NumFTexture; n++)
-   {
-   FTexture[n] = (char *) GetMemory (9);
-   strncpy (FTexture[n], dir->dir.name, 8);
-   FTexture[n][8] = '\0';
-   dir = dir->next;
-   }
+verbmsg ("Reading flat names");
+NumFTexture = 0;
 
-if (Registered)
+for (dir = MasterDir; (dir = FindMasterDir (dir, "F_START", "FF_START"));)
    {
-   /* count the names */
-   dir = FindMasterDir (MasterDir, "F2_START");
-   dir = dir->next;
-   for (n = 0; dir && strcmp (dir->dir.name, "F2_END"); n++)
-      dir = dir->next;
-   /* get the actual names from master dir. */
-   dir = FindMasterDir (MasterDir, "F2_START");
-   dir = dir->next;
-   FTexture = (char **) ResizeMemory (FTexture,
-      (NumFTexture + n) * sizeof (char *));
-   for (m = NumFTexture; m < NumFTexture + n; m++)
-      {
-      FTexture[m] = (char *) GetMemory (9);
-      strncpy (FTexture[m], dir->dir.name, 8);
-      FTexture[m][8] = '\0';
-      dir = dir->next;
-      }
-   NumFTexture += n;
-   }
-
-/* AYM 19971130 added reading of F3_START if present (Doom II) */
-   {
-   /* count the names */
-   dir = FindMasterDir (MasterDir, "F3_START");
-   if (dir)
-      {
-      dir = dir->next;
-      for (n = 0; dir && strcmp (dir->dir.name, "F3_END"); n++)
-	 dir = dir->next;
-      /* get the actual names from master dir. */
-      dir = FindMasterDir (MasterDir, "F3_START");
-      dir = dir->next;
-      FTexture = (char **) ResizeMemory (FTexture,
-	 (NumFTexture + n) * sizeof (char *));
-      for (m = NumFTexture; m < NumFTexture + n; m++)
-	 {
-	 FTexture[m] = (char *) GetMemory (9);
-	 strncpy (FTexture[m], dir->dir.name, 8);
-	 FTexture[m][8] = '\0';
-	 dir = dir->next;
-	 }
-      NumFTexture += n;
-      }
-   }
-
-/* AYM 19970815: reads new floor/ceiling textures between all
-   (FF_START, F_END) pairs */
-for (dir = MasterDir; (dir = FindMasterDir (dir, "FF_START")) != NULL;)
-   {
+   bool ff_start = ! y_strnicmp (dir->dir.name, "FF_START", WAD_NAME);
    MDirPtr dir0;
    /* count the names */
    dir = dir->next;
    dir0 = dir;
-   for (n = 0; dir && strcmp (dir->dir.name, "F_END"); n++)
-      dir = dir->next;
-   /* get the actual names from master dir. */
-   FTexture = (char **) ResizeMemory (FTexture,
-      (NumFTexture + n) * sizeof (char *));
-   for (m = NumFTexture; m < NumFTexture + n; m++)
+   for (n = 0; dir && y_strnicmp (dir->dir.name, "F_END", WAD_NAME)
+	 && (! ff_start || y_strnicmp (dir->dir.name, "FF_END", WAD_NAME));
+	 dir = dir->next)
       {
-      FTexture[m] = (char *) GetMemory (9);
-      strncpy (FTexture[m], dir0->dir.name, 8);
-      FTexture[m][8] = '\0';
-      dir0 = dir0->next;
+      if (dir->dir.start == 0 || dir->dir.size == 0)
+	 {
+	 if (! (toupper (dir->dir.name[0]) == 'F'
+	     && (dir->dir.name[1] == '1'
+	      || dir->dir.name[1] == '2'
+	      || dir->dir.name[1] == '3'
+	      || toupper (dir->dir.name[1]) == 'F')
+	     && dir->dir.name[2] == '_'
+	     && (! y_strnicmp (dir->dir.name + 3, "START", WAD_NAME - 3)
+		 || ! y_strnicmp (dir->dir.name + 3, "END", WAD_NAME - 3))))
+	    warn ("unexpected label \"%.*s\" among flats.\n",
+		  WAD_NAME, dir->dir.name);
+	 continue;
+	 }
+      if (dir->dir.size != 4096)
+	 warn ("flat \"%.*s\" has weird size %lu."
+	     " Using 4096 instead.\n",
+	       WAD_NAME, dir->dir.name, (unsigned long) dir->dir.size);
+      n++;
+      }
+   /* If FF_START/FF_END followed by F_END (mm2.wad), advance
+      past F_END. In fact, this does not work because the F_END
+      that follows has been snatched by OpenPatchWad(), that
+      thinks it replaces the F_END from the iwad. OpenPatchWad()
+      needs to be kludged to take this special case into
+      account. Fortunately, the only consequence is a useless
+      "this wad uses FF_END" warning. -- AYM 1999-07-10 */
+   if (ff_start && dir && ! y_strnicmp (dir->dir.name, "FF_END", WAD_NAME))
+      if (dir->next && ! y_strnicmp (dir->next->dir.name, "F_END", WAD_NAME))
+         dir = dir->next;
+
+   verbmsg (" FF_START/%s %d", dir->dir.name, n);
+   if (! y_strnicmp (dir->dir.name, "FF_END", WAD_NAME))
+      warn ("this wad uses FF_END. That won't work with Doom."
+	 " Use F_END instead.\n");
+   /* get the actual names from master dir. */
+   flat_list = (flat_list_entry_t *) ResizeMemory (flat_list,
+      (NumFTexture + n) * sizeof *flat_list);
+   for (m = NumFTexture; m < NumFTexture + n; dir0 = dir0->next)
+      {
+      // Skip all labels.
+      if (dir0->dir.start == 0
+	 || dir0->dir.size == 0
+	 || (toupper (dir0->dir.name[0]) == 'F'
+	     && (dir0->dir.name[1] == '1'
+	      || dir0->dir.name[1] == '2'
+	      || dir0->dir.name[1] == '3'
+	      || toupper (dir0->dir.name[1]) == 'F')
+	     && dir0->dir.name[2] == '_'
+	     && (! y_strnicmp (dir0->dir.name + 3, "START", WAD_NAME - 3)
+		 || ! y_strnicmp (dir0->dir.name + 3, "END", WAD_NAME - 3))
+	     ))
+	 continue;
+      *flat_list[m].name = '\0';
+      strncat (flat_list[m].name, dir0->dir.name, sizeof flat_list[m].name - 1);
+      flat_list[m].wadfile = dir0->wadfile;
+      flat_list[m].offset  = dir0->dir.start;
+      m++;
       }
    NumFTexture += n;
    }
 
-/* sort the names */
-qsort (FTexture, NumFTexture, sizeof (char *), SortTextures);
+verbmsg ("\n");
 
-/* AYM 19970817: eliminate all but the last duplicates of a texture */
+/* sort the flats by names */
+qsort (flat_list, NumFTexture, sizeof *flat_list, flat_list_entry_cmp);
+
+/* AYM 19970817: eliminate all but the last duplicates of a flat */
 for (n = 0; n < NumFTexture; n++)
    {
-   if (n+1 < NumFTexture && ! strcmp (FTexture[n], FTexture[n+1]))
+   if (n+1 < NumFTexture
+       && ! flat_list_entry_cmp (flat_list + n, flat_list + n + 1))
       {
-      FreeMemory (FTexture[n]);
-      for (m = n; m+1 < NumFTexture; m++)
-	 FTexture[m] = FTexture[m+1];
-      FTexture[m] = NULL;  /* useless but cleaner */
-      NumFTexture--;       /* I don't bother resizing FTexture */
+      for (m = n; m + 1 < NumFTexture; m++)
+	 flat_list[m] = flat_list[m + 1];
+
+      // Not strictly necessary but could help catching bugs
+      strcpy (flat_list[m].name, "deleted");
+      flat_list[m].wadfile = NULL;
+      flat_list[m].offset  = 0;
+      NumFTexture--;       /* I don't bother resizing flat_list */
       }
    }
 }
 
 
+/*
+ *	is_flat_name_in_list
+ *	FIXME should use bsearch()
+ */
+int is_flat_name_in_list (const char *name)
+{
+if (! flat_list)
+  return 0;
+for (size_t n = 0; n < NumFTexture; n++)
+  if (! y_strnicmp (name, flat_list[n].name, WAD_FLAT_NAME))
+    return 1;
+return 0;
+}
+
 
 /*
-   forget the floor/ceiling texture names
+   forget the flat names
 */
 
 void ForgetFTextureNames ()
 {
-int n;
-
-/* forget all names */
-for (n = 0; n < NumFTexture; n++)
-   FreeMemory (FTexture[n]);
-
-/* forget the array */
 NumFTexture = 0;
-FreeMemory (FTexture);
+FreeMemory (flat_list);
+flat_list = 0;
 }
 
 
-
-/* end of file */

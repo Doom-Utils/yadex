@@ -45,14 +45,18 @@ specially ; since it changes very often, it can undraw itself.
 #include "infobar.h"
 
 
+const char infobar_c::FILE_NAME_UNSET[1];  // A special pointer value 
+const char infobar_c::LEVEL_NAME_UNSET[1];  // A special pointer value
+
+
 infobar_c::infobar_c ()
 {
 visible               = 0;
 visible_disp          = 0;
 file_name             = 0;
-file_name_disp        = 0;
+file_name_disp        = FILE_NAME_UNSET;
 level_name            = 0;
-level_name_disp       = 0;
+level_name_disp       = LEVEL_NAME_UNSET;
 obj_type              = OBJ_NONE;
 obj_type_disp         = OBJ_NONE;
 changes               = -1;
@@ -100,27 +104,50 @@ if (redraw_from_scratch)
    }
 
 set_colour (WINFG);
+
 // The name of the file being edited.
 {
-al_fbase_t filebase;
-al_fext_t fileext;
-// FIXME wasteful to do it each time
-al_fana (file_name, 0, 0, filebase, fileext);
-if (redraw_from_scratch || file_name_disp != file_name)
+int chars;
+if (! file_name)
    {
-   DrawScreenText (x, text_y0, "%s%s", filebase, fileext);
-   file_name_disp = file_name;
+   const char *const msg = "(New level)";
+   if (redraw_from_scratch || file_name_disp != file_name)
+      DrawScreenText (x, text_y0, msg);
+   chars = strlen (msg);
    }
-x += (strlen (filebase) + strlen (fileext) + 2) * FONTW;
+else
+   {
+   al_fbase_t filebase;
+   al_fext_t fileext;
+   // FIXME wasteful to do it each time
+   al_fana (file_name, 0, 0, filebase, fileext);
+   if (redraw_from_scratch || file_name_disp != file_name)
+      DrawScreenText (x, text_y0, "%s%s", filebase, fileext);
+   chars = strlen (filebase) + strlen (fileext);
+   }
+x += (chars + 2) * FONTW;
+file_name_disp = file_name;
 }
 
 // The name of the level being edited.
-if (redraw_from_scratch || level_name_disp != level_name)
+{
+int chars;
+if (! level_name)
    {
-   DrawScreenText (x, text_y0, "%.5s", level_name);
-   level_name_disp = level_name;
+   const char *const msg = "(n/s)";
+   if (redraw_from_scratch || level_name_disp != level_name)
+      DrawScreenText (x, text_y0, msg);
+   chars = strlen (msg);
    }
-x += (7) * FONTW;
+else
+   {
+   if (redraw_from_scratch || level_name_disp != level_name)
+      DrawScreenText (x, text_y0, "%.5s", level_name);
+   chars = strlen (level_name);
+   }
+x += (chars + 2) * FONTW;
+level_name_disp = level_name;
+}
 
 // Type of objects being edited.
 if (redraw_from_scratch || obj_type_disp != obj_type)
@@ -212,8 +239,8 @@ if ((flags & pointer_set)
 void infobar_c::clear ()
 {
 visible_disp          = 0;
-file_name_disp        = 0;
-level_name_disp       = 0;
+file_name_disp        = FILE_NAME_UNSET;
+level_name_disp       = LEVEL_NAME_UNSET;
 obj_type_disp         = OBJ_NONE;
 changes_disp          = -1;
 grid_snap_disp        = -1;

@@ -40,11 +40,14 @@ Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 #include "editgrid.h"
 #include "editloop.h"
 #include "editobj.h"
+#include "editsave.h"
 #include "editzoom.h"
 #include "entry.h"
+#include "entry2.h"
 #include "events.h"
 #include "gfx.h"
 #include "gfx2.h"	// show_character_set() show_pcolours()
+#include "gfx3.h"
 #include "gotoobj.h"
 #include "help2.h"
 #include "l_flags.h"
@@ -53,12 +56,16 @@ Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 #include "menu.h"
 #include "modpopup.h"
 #include "prefer.h"
+#include "rgbbmp.h"
 #include "selbox.h"
 #include "selectn.h"
+#include "selpath.h"
 #include "spot.h"
 #include "t_flags.h"
 #include "t_spin.h"
 #include "x_centre.h"
+#include "x_exchng.h"
+#include "xref.h"
 
 #ifdef Y_X11
 #include <X11/Xlib.h>
@@ -81,13 +88,25 @@ static int menubar_out_y1;	/* FIXME */
 static int SortLevels (const void *item1, const void *item2);
 
 /*
-   select a level
-*/
-
+ *	SelectLevel
+ *	Prompt the user for a level name (EnMn or MAPnm). The
+ *	name chosen must be present in the master directory
+ *	(iwad or pwads).
+ *
+ *	If <levelno> is 0, the level name can be picked from all
+ *	levels present in the master directory. If <levelno> is
+ *	non-zero, the level name can be picked only from those
+ *	levels in the master directory for which
+ *	levelname2levelno() % 100 is equal to <levelno>. For
+ *	example, if <levelno> is equal to 12, only E1M2 and
+ *	MAP12 would be listed. This feature is not used anymore
+ *	because "e" now requires an argument and tends to deal
+ *	with ambiguous level names (like "12") itself.
+ */
 const char *SelectLevel (int levelno)
 {
 MDirPtr dir;
-static char name[9]; /* AYM it was [7] previously */
+static char name[WAD_NAME + 1]; /* AYM it was [7] previously */
 char **levels;
 int n = 0;           /* number of levels in the dir. that match */
 
@@ -110,12 +129,13 @@ if (n == 0 && levelno != 0)  /* In case no level matched levelno */
    levelno = 0;               /* List ALL levels instead */
    goto get_levels_that_match;
    }
-/* So that InputNameFromList don't fail if you mix EnMn's and MAPnn's */
+/* So that InputNameFromList doesn't fail if you
+   have both EnMn's and MAPnn's in the master dir. */
 qsort (levels, n, sizeof (char *), SortLevels);
 al_scps (name, levels[0], sizeof name - 1);
 if (n == 1)
    return name;
-InputNameFromList (-1, -1, "Select a level to edit :", n, levels, name);
+InputNameFromList (-1, -1, "Level name :", n, levels, name);
 FreeMemory (levels);
 return name;
 }
@@ -127,65 +147,9 @@ return name;
 
 static int SortLevels (const void *item1, const void *item2)
 {
-/* FIXME should probably use stricmp() instead */
+/* FIXME should probably use y_stricmp() instead */
 return strcmp (*((const char * const *) item1),
                *((const char * const *) item2));
-}
-
-
-/*
-   get the name of the new wad file (returns NULL on Esc)
-*/
-
-char *GetWadFileName (const char *levelname)
-{
-#define BUFSZ 79
-char *outfile = (char *) GetMemory (BUFSZ + 1);
-WadPtr wad;
-
-/* get the file name */
-if (! fncmp (Level->wadfile->filename, MainWad))
-   {
-   al_scpslower (outfile, levelname, BUFSZ);
-   al_saps (outfile, ".wad", BUFSZ);
-   }
-else
-   strcpy (outfile, Level->wadfile->filename);
-do
-   InputFileName (-1, -1, "Name of the new wad file:", BUFSZ, outfile);
-while (! fncmp (outfile, MainWad));
-/* escape */
-if (outfile[0] == '\0')
-   {
-   FreeMemory (outfile);
-   return 0;
-   }
-/* if the wad file already exists, rename it to "*.bak" */
-for (wad = WadFileList; wad; wad = wad->next)
-   if (! fncmp (outfile, wad->filename))
-   {
-   al_fdrv_t drv;
-   al_fpath_t path;
-   al_fbase_t base;
-
-   al_fana (wad->filename, drv, path, base, 0);
-   sprintf (wad->filename, "%s%s%s.bak", drv, path, base);
-   /* Need to close, then reopen: problems with SHARE.EXE */
-   fclose (wad->fd);
-   if (rename (outfile, wad->filename) < 0)
-      {
-      if (remove (wad->filename))
-	 fatal_error ("could not delete file \"%s\"", wad->filename);
-      if (rename (outfile, wad->filename))
-	 fatal_error ("could not rename \"%s\" to \"%s\"", outfile,
-            wad->filename);
-      }
-   wad->fd = fopen (wad->filename, "rb");
-   if (! wad->fd)
-      fatal_error ("could not reopen file \"%s\"", wad->filename);
-   break;
-   }
-return outfile;
 }
 
 
@@ -300,15 +264,16 @@ e.menubar->compute_menubar_coords (0, 0, ScrMaxX, ScrMaxY);
 e.mb_menu[MBM_FILE] = new menu_c (NULL,
    "Save",       0, YK_F2, 0,
    "Save as...", 5, YK_F3, 0,
-   "Print",      0, -1,    MEN_GRAY,
+// "Print",      0, -1,    MEN_GRAY,
    "Quit",       0, 'q',   0,
    NULL);
 
 e.mb_menu[MBM_EDIT] = new menu_c (NULL,
-   "Copy object(s)",   0, 'o',    0,
-   "Add object",       0, YK_INS, 0,
-   "Delete object(s)", 0, YK_DEL, 0,
-   "Preferences",      0, YK_F5,  0,
+   "Copy object(s)",          0, 'o',    0,
+   "Add object",              0, YK_INS, 0,
+   "Delete object(s)",        0, YK_DEL, 0,
+   "Exchange object numbers", 0, 24,     0,
+   "Preferences",             0, YK_F5,  0,
    NULL);
 
 // If you change the order of modes here, don't forget
@@ -323,61 +288,69 @@ e.mb_menu[MBM_VIEW] = new menu_c (NULL,
    "Zoom in",             5, '+',        0,
    "Zoom out",            5, '-',        0,
    "Extra zoom",          6, ' ',        MEN_TICK, !! e.extra_zoom,
-   "3D preview",          0, '3',        MEN_GRAY,
+// "3D preview",          0, '3',        MEN_GRAY,
    NULL);
 
 e.mb_menu[MBM_SEARCH] = new menu_c (NULL,
-   "Find/change",       0, YK_F4, MEN_GRAY,
-   "Repeat last find",  0, -1,    MEN_GRAY,
+// "Find/change",       0, YK_F4, MEN_GRAY,
+// "Repeat last find",  0, -1,    MEN_GRAY,
    "Next object",       0, 'n',   0,
    "Prev object",       0, 'p',   0,
    "Jump to object...", 0, 'j',   0,
    NULL);
 
 e.mb_menu[MBM_MISC_L] = new menu_c ("Misc. operations",
-   "Find first free tag number",            16, -1, 0,
-   "Rotate and scale linedefs",              0, -1, 0,
-   "Split linedef (add new vertex)",        23, -1, 0,
-   "Split linedefs and sector",              0, -1, 0,
-   "Delete linedefs and join sectors",       0, -1, 0,
-   "Flip linedef",                           0, -1, 0,
-   "Swap sidedefs",                          1, -1, 0,
-   "Align textures (Y offset)",             16, -1, 0,
-   "Align textures (X offset)",             16, -1, 0,
-   "Remove 2nd sidedef (make single-sided)", 7, -1, 0,
-   "Make rectangular nook (32x16)",         17, -1, 0,
-   "Make rectangular boss (32x16)",         17, -1, 0,
-   "Set length (move 1st vertex)...",        4, -1, 0,
-   "Set length (move 2nd vertex)...",       -1, -1, 0,
-   "Unlink 1st sidedef",                     0, -1, 0,
-   "Unlink 2nd sidedef",                    -1, -1, 0,
+   "Find first free tag number",		16, -1, 0,
+   "Rotate and scale linedefs",			 0, -1, 0,
+   "Split linedefs (add new vertex)",		23, -1, 0,
+   "Split linedefs and sector",			 0, -1, 0,
+   "Delete linedefs and join sectors",		 0, -1, 0,
+   "Flip linedefs",				 0, -1, 0,
+   "Swap sidedefs",				 1, -1, 0,
+   "Align textures (Y offset)",			16, -1, 0,
+   "Align textures (X offset)",			16, -1, 0,
+   "Remove 2nd sidedef (make single-sided)",	 7, -1, 0,
+   "Make rectangular nook (32x16)",		17, -1, 0,
+   "Make rectangular boss (32x16)",		17, -1, 0,
+   "Set length (move 1st vertex)...",		 4, -1, 0,
+   "Set length (move 2nd vertex)...",		-1, -1, 0,
+   "Unlink 1st sidedef",			 0, -1, 0,
+   "Unlink 2nd sidedef",			-1, -1, 0,
+   "Mirror horizontally",			 0, -1, 0,
+   "Mirror vertically",				 0, -1, 0,
    NULL);
 
 e.mb_menu[MBM_MISC_S] = new menu_c ("Misc. operations",
-   "Find first free tag number",        16, -1, 0,
-   "Rotate and scale sectors",           0, -1, 0,
-   "Make door from sector",              5, -1, 0,
-   "Make lift from sector",              5, -1, 0,
-   "Distribute sector floor heights",   18, -1, 0,
-   "Distribute sector ceiling heights", 18, -1, 0,
-   "Raise or lower sectors...",          9, -1, 0,
-   "Brighten or darken sectors...",      0, -1, 0,
-   //"Unlink area",                        0, -1, 0,
+   "Find first free tag number",	16, -1, 0,
+   "Rotate and scale sectors",		 0, -1, 0,
+   "Make door from sector",		 5, -1, 0,
+   "Make lift from sector",		 5, -1, 0,
+   "Distribute sector floor heights",	18, -1, 0,
+   "Distribute sector ceiling heights",	18, -1, 0,
+   "Raise or lower sectors...",		 9, -1, 0,
+   "Brighten or darken sectors...",	 0, -1, 0,
+   "Unlink room",			 0, -1, 0,
+   "Mirror horizontally",		 0, -1, 0,
+   "Mirror vertically",			 0, -1, 0,
    NULL);
 
 e.mb_menu[MBM_MISC_T] = new menu_c ("Misc. operations",
-   "Find first free tag number",        16,  -1, 0,
-   "Rotate and scale things",            0,  -1, 0,
-   "Spin things 45° clockwise",          0, 'x', 0,
-   "Spin things 45° counter-clockwise", 16, 'w', 0,
+   "Find first free tag number",	16,  -1, 0,
+   "Rotate and scale things",		 0,  -1, 0,
+   "Spin things 45° clockwise",		 0, 'x', 0,
+   "Spin things 45° counter-clockwise",	16, 'w', 0,
+   "Mirror horizontally",		 0,  -1, 0,
+   "Mirror vertically",			 0,  -1, 0,
    NULL);
 
 e.mb_menu[MBM_MISC_V] = new menu_c ("Misc. operations",
-   "Find first free tag number",      16, -1, 0,
-   "Rotate and scale vertices",        0, -1, 0,
-   "Delete vertex and join linedefs",  0, -1, 0,
-   "Merge several vertices into one",  0, -1, 0,
-   "Add a linedef and split sector",  18, -1, 0,
+   "Find first free tag number",	16, -1, 0,
+   "Rotate and scale vertices",		 0, -1, 0,
+   "Delete vertex and join linedefs",	 0, -1, 0,
+   "Merge several vertices into one",	 0, -1, 0,
+   "Add a linedef and split sector",	18, -1, 0,
+   "Mirror horizontally",		 0, -1, 0,
+   "Mirror vertically",			 0, -1, 0,
    NULL);
 
 e.mb_menu[MBM_OBJECTS] = new menu_c ("Insert a pre-defined object",
@@ -386,11 +359,11 @@ e.mb_menu[MBM_OBJECTS] = new menu_c ("Insert a pre-defined object",
    NULL);
 
 e.mb_menu[MBM_CHECK] = new menu_c ("Check level consistency",
-   "Number of objects",                 0,  -1, 0,
-   "Check if all sectors are closed",   13, -1, 0,
-   "Check all cross-references",        10, -1, 0,
-   "Check for missing textures",        10, -1, 0,
-   "Check texture names",               6,  -1, 0,
+   "Number of objects",			 0, -1, 0,
+   "Check if all sectors are closed",	13, -1, 0,
+   "Check all cross-references",	10, -1, 0,
+   "Check for missing textures",	10, -1, 0,
+   "Check texture names",		 6, -1, 0,
    NULL);
 
 e.mb_menu[MBM_HELP] = new menu_c (NULL,
@@ -429,9 +402,15 @@ menu_c *menu_linedef_flags = new menu_c (NULL,
    "Lower texture unpegged",	0, -1, 0,
    "Secret (shown as normal)",	0, -1, 0,
    "Blocks sound",		0, -1, 0,
-   "Invisible",			2, -1, 0,
-   "Always shown",		0, -1, 0,
-   "Pass through",		0, -1, 0,  // Boom extension
+   "Never shown on the map",	0, -1, 0,
+   "Always shown on the map",	0, -1, 0,
+   "Pass through [Boom]",	0, -1, 0,  // Boom extension
+   "b10 0400h",			2, -1, 0,  // Undefined
+   "b11 0800h",			2, -1, 0,  // Undefined
+   "Translucent [Strife]",	0, -1, 0,  // Strife
+   "b13 2000h",			2, -1, 0,  // Undefined
+   "b14 4000h",			2, -1, 0,  // Undefined
+   "b15 8000h",			2, -1, 0,  // Undefined
    NULL);
 
 menu_c *menu_thing_flags = new menu_c (NULL,
@@ -440,8 +419,17 @@ menu_c *menu_thing_flags = new menu_c (NULL,
    "Hard",			0, -1, 0,
    "Deaf",			0, -1, 0,
    "Multiplayer",		0, -1, 0,
-   "Not in DM   (Boom)",	0, -1, 0,  // Boom extension
-   "Not in coop (Boom)", 	7, -1, 0,  // Boom extension
+   "Not in DM [Boom]",		0, -1, 0,  // Boom extension
+   "Not in coop [Boom]", 	7, -1, 0,  // Boom extension
+   "Friendly [MBF]",		1, -1, 0,  // MBF extension
+   "b8  0100h",			1, -1, 0,  // Undefined
+   "b9  0200h",			1, -1, 0,  // Undefined
+   "b10 0400h",			2, -1, 0,  // Undefined
+   "b11 0800h",			2, -1, 0,  // Undefined
+   "b12 1000h",			2, -1, 0,  // Undefined
+   "b13 2000h",			2, -1, 0,  // Undefined
+   "b14 4000h",			2, -1, 0,  // Undefined
+   "b15 8000h",			2, -1, 0,  // Undefined
    NULL);
 
 /* AYM 1998-06-22
@@ -464,9 +452,11 @@ for (RedrawMap = 1; ; RedrawMap = 0)
     *  Step 1 -- Do all the displaying work
     */
 
+#ifdef Y_BATCH
    // Hold refresh until all events are processed
-   // if (! has_event () && ! has_input_event ())
-   //   {
+   if (! has_event () && ! has_input_event ())
+      {
+#endif
       if (is_obj (e.highlight_obj_no))				// FIXME
 	 e.edisplay->highlight_object (e.highlight_obj_no);	// Should
       else							// be in
@@ -480,7 +470,9 @@ for (RedrawMap = 1; ; RedrawMap = 0)
 
       e.edisplay->refresh ();
       /* The display is now up to date */
-   //   }
+#ifdef Y_BATCH
+      }
+#endif
 
 
    /*
@@ -1071,33 +1063,15 @@ for (RedrawMap = 1; ; RedrawMap = 0)
       else if (is.key == YK_ALT + 'h')
 	 e.menubar->pull_down (e.mb_ino[MBI_HELP]);
 
-      /* user wants to exit */
-      else if (is.key == 'q')
-         {
-	 ForgetSelection (&e.Selected);
-	 if (CheckStartingPos ())
-	    {
-	    if (Registered && MadeChanges)
-	       {
-	       char *outfile;
 
-	       outfile = GetWadFileName (levelname);
-	       if (outfile)
-	          {
-		  SaveLevelData (outfile);
-		  break;
-	          }
-	       }
-	    else
-	       break;
-	    }
-	 RedrawMap = 1;
-         }
-      else if (is.key == '\f')  /* Ctrl-L : force redraw */
+      // [Ctrl][L]: force redraw
+      else if (is.key == '\f')
 	{
 	RedrawMap = 1;
 	}
-      else if (is.key == YK_ESC) /* 'Esc' */
+
+      // [Esc], [q]: close
+      else if (is.key == YK_ESC || is.key == 'q')
          {
 	 if (DragObject)
 	    DragObject = 0;
@@ -1114,80 +1088,117 @@ for (RedrawMap = 1; ; RedrawMap = 0)
 	    }
          }
 
-      /* user is lost */
+      // [F1]: pop up "Help" window
       else if (is.key == YK_F1) /* 'F1' */
          {
 	 DisplayHelp ();
 	 RedrawMap = 1;
          }
 
-      /* pop up the About... window */
-      else if (is.key == YK_ALT + 'a')  /* Alt-A */
+      // [Alt][a]: pop up the "About..." window
+      else if (is.key == YK_ALT + 'a')
          {
          about_yadex ();
          RedrawMap = 1;
          }
 
-      /* user wants to save a screen shot into yadex.gif */
-      else if (is.key == YK_F1 + YK_SHIFT)  /* shift-F1 */
+      // [Shift][F1]: save a screen shot into yadex.gif.
+      // FIXME doesn't work in the Unix port
+      else if (is.key == YK_F1 + YK_SHIFT)
 	 {
-	 ScreenShot ();
+	 Rgbbmp b;
+	 window_to_rgbbmp (0, 0, (int) ScrMaxX + 1, (int) ScrMaxY + 1, b);
+	 rgbbmp_to_rawppm (b, "yadex.ppm");
+	 //ScreenShot ();
 	 }
 
-      /* user wants to save the level data */
-      else if (is.key == YK_F2 && Registered) /* 'F2' */
-         {
-	 char *outfile;
+      // [Shift][F2]: undocumented--test of Entry2
+      else if (is.key == YK_F2 + YK_SHIFT)
+	 {
+	 char buf1[10];
+	 char buf2[30];
+	 char buf3[20];
+	 strcpy (buf1, "buf1");
+	 strcpy (buf2, "buf2");
+	 strcpy (buf3, "buf3");
+	 Entry2 e ("Title of window", "Buf 1%*sBuf 2%*sBuf 3%*s",
+	     sizeof buf1 - 1, buf1,
+	     sizeof buf2 - 1, buf2,
+	     sizeof buf3 - 1, buf3);
+	 e.loop ();
+	 printf ("bufs: \"%s\", \"%s\", \"%s\"\n", buf1, buf2, buf3);
+	 RedrawMap = 1;
+	 }
 
-	 if (CheckStartingPos ())
+      /* [F2] save level into pwad, prompt for the file name
+         every time but keep the same level name. */
+      else if (is.key == YK_F2 && Registered)
+         {
+	 if (! CheckStartingPos ())
+	    goto cancel_save;
+	 char *outfile;
+	 const char *newlevelname;
+	 if (levelname)
+	    newlevelname = levelname;
+	 else
 	    {
-	    outfile = GetWadFileName (levelname);
-	    if (outfile)
-	       SaveLevelData (outfile);
+	    newlevelname = SelectLevel (0);
+	    if (! *newlevelname)
+	       goto cancel_save;
 	    }
+	 outfile = GetWadFileName (newlevelname);
+	 if (! outfile)
+	    goto cancel_save;
+	 SaveLevelData (outfile, newlevelname);
+cancel_save:
 	 RedrawMap = 1;
          }
 
-      /* user wants to save and change the episode and mission numbers */
-      else if (is.key == YK_F3 && Registered) /* 'F3' */
+      /* [F3] save level into pwad, prompt for the file name and
+         level name. */
+      else if (is.key == YK_F3 && Registered)
          {
 	 char *outfile;
-	 int   m;
+	 const char *newlevelname;
 	 MDirPtr newLevel, oldl, newl;
 
-	 if (CheckStartingPos ())
+	 if (! CheckStartingPos ())
+	    goto cancel_save_as;
+	 newlevelname = SelectLevel (0);
+	 if (! *newlevelname)
+	    goto cancel_save_as;
+	 if (! levelname || y_stricmp (newlevelname, levelname))
 	    {
-	    outfile = GetWadFileName (levelname);
-	    if (outfile)
+	    /* horrible but it works... */
+	    // Horrible indeed -- AYM 1999-07-30
+	    newLevel = FindMasterDir (MasterDir, newlevelname);
+	    if (! newLevel)
+	       nf_bug ("newLevel is NULL");
+	    oldl = Level;
+	    newl = newLevel;
+	    for (int m = 0; m < 11; m++)
 	       {
-	       const char *newlevelname;
-	       newlevelname = SelectLevel (0);
-	       if (newlevelname && strcmp (newlevelname, levelname))
-	          {
-		  /* horrible but it works... */
-		  newLevel = FindMasterDir (MasterDir, newlevelname);
-		  oldl = Level;
-		  newl = newLevel;
-		  for (m = 0; m < 11; m++)
-		     {
-		     newl->wadfile = oldl->wadfile;
-		     if (m > 0)
-			newl->dir = oldl->dir;
-		     /*
-		     if (!fncmp (outfile, oldl->wadfile->filename))
-		        {
-			oldl->wadfile = WadFileList;
-			oldl->dir = lost...
-		        }
-		     */
-		     oldl = oldl->next;
-		     newl = newl->next;
-	   	     }
-		  Level = newLevel;
-	          }
-	       SaveLevelData (outfile);
+	       newl->wadfile = oldl->wadfile;
+	       if (m > 0)
+		  newl->dir = oldl->dir;
+	       /*
+	       if (!fncmp (outfile, oldl->wadfile->filename))
+		  {
+		  oldl->wadfile = WadFileList;
+		  oldl->dir = lost...
+		  }
+	       */
+	       oldl = oldl->next;
+	       newl = newl->next;
 	       }
+	    Level = newLevel;
 	    }
+	 outfile = GetWadFileName (newlevelname);
+	 if (! outfile)
+	    goto cancel_save_as;
+	 SaveLevelData (outfile, newlevelname);
+	 levelname = newlevelname;
+cancel_save_as:
 	 RedrawMap = 1;
          }
 
@@ -1301,11 +1312,11 @@ for (RedrawMap = 1; ; RedrawMap = 0)
       // [0], [1], ... [9]: set the zoom factor
       else if (is.key >= '0' && is.key <= '9')
          {
-         edit_set_zoom (&e, is.key == '0' ? 0.1 : 1.0 / (is.key - '0'));
+         edit_set_zoom (&e, is.key == '0' ? 0.1 : 1.0 / dectoi (is.key));
 	 RedrawMap = 1;
          }
 
-      // [']: center window on center of map
+      // [']: centre window on centre of map
       else if (is.key == '\'')
          {
          CenterMapAroundCoords ((MapMinX + MapMaxX) / 2,
@@ -1313,7 +1324,7 @@ for (RedrawMap = 1; ; RedrawMap = 0)
          RedrawMap = 1;
          }
 
-      // [`]: center window on center of map
+      // [`]: centre window on centre of map
       // and set zoom to view the entire map
       else if (is.key == '`')
          {
@@ -1391,18 +1402,18 @@ for (RedrawMap = 1; ; RedrawMap = 0)
 	 OrigX += (int) ((double) ScrMaxX * scroll_less / 100 / Scale);
 	 RedrawMap = 1;
 	 }
-      else if (is.key == YK_UP && MAPY (ScrCenterY) > -20000)
+      else if (is.key == YK_UP && MAPY (ScrCenterY) < 20000)
          {
 	 OrigY += (int) ((double) ScrMaxY * scroll_less / 100 / Scale);
 	 RedrawMap = 1;
 	 }
-      else if (is.key == YK_DOWN && MAPY (ScrCenterY) < 20000)
+      else if (is.key == YK_DOWN && MAPY (ScrCenterY) > -20000)
          {
 	 OrigY -= (int) ((double) ScrMaxY * scroll_less / 100 / Scale);
 	 RedrawMap = 1;
 	 }
 
-      // [Page-up], [Page-down], [Home], [End]:
+      // [Pgup], [Pgdn], [Home], [End]:
       // scroll <scroll_more> percents of a screenful.
       else if (is.key == YK_PU && MAPY (ScrCenterY) < /*MapMaxY*/ 20000)
 	 {
@@ -1439,7 +1450,7 @@ for (RedrawMap = 1; ; RedrawMap = 0)
          RedrawMap = 1;
          }
 
-      /* user wants to change the edit mode */
+      // [Tab], [l], [s], [t], [v]: switch mode
       else if (is.key == YK_TAB || is.key == YK_BACKTAB
        || is.key == 't' || is.key == 'v' || is.key == 'l' || is.key == 's')
 	 {
@@ -1577,7 +1588,45 @@ for (RedrawMap = 1; ; RedrawMap = 0)
 	 RedrawMap = 1;
 	 }
 
-      /* User wants to increase the grid step */
+      // [e]: Select/unselect all linedefs in non-forked path
+      else if (is.key == 'e'
+	  && e.highlight_obj_type == OBJ_LINEDEFS
+	  && e.highlight_obj_no != OBJ_NO_NONE)
+	 {
+	 ForgetSelection (&e.Selected);
+	 select_linedefs_path (&e.Selected, e.highlight_obj_no, YS_ADD);
+	 RedrawMap = 1;
+	 }
+
+      // [Ctrl][e] Select/unselect all linedefs in path
+      else if (is.key == '\5' && ! is.shift
+	  && e.highlight_obj_type == OBJ_LINEDEFS
+	  && e.highlight_obj_no != OBJ_NO_NONE)
+	 {
+	 select_linedefs_path (&e.Selected, e.highlight_obj_no, YS_TOGGLE);
+	 RedrawMap = 1;
+	 }
+
+      // [E]: Select/unselect all 1s linedefs in path
+      else if (is.key == 'E'
+	  && e.highlight_obj_type == OBJ_LINEDEFS
+	  && e.highlight_obj_no != OBJ_NO_NONE)
+	 {
+	 ForgetSelection (&e.Selected);
+	 select_1s_linedefs_path (&e.Selected, e.highlight_obj_no, YS_ADD);
+	 RedrawMap = 1;
+	 }
+
+      // [Ctrl][Shift][e]: Select/unselect all 1s linedefs in path
+      else if (is.key == '\5' && is.shift
+	  && e.highlight_obj_type == OBJ_LINEDEFS
+	  && e.highlight_obj_no != OBJ_NO_NONE)
+	 {
+	 select_1s_linedefs_path (&e.Selected, e.highlight_obj_no, YS_TOGGLE);
+	 RedrawMap = 1;
+	 }
+
+      // [G]: to increase the grid step
       else if (is.key == 'G')
 	 {
 	 if (e.grid_step < e.grid_step_max)
@@ -1587,7 +1636,7 @@ for (RedrawMap = 1; ; RedrawMap = 0)
 	 RedrawMap = 1;
 	 }
 
-      /* User wants to decrease the grid step */
+      // [g]: decrease the grid step
       else if (is.key == 'g')
 	 {
 	 if (e.grid_step > e.grid_step_min)
@@ -1597,53 +1646,65 @@ for (RedrawMap = 1; ; RedrawMap = 0)
 	 RedrawMap = 1;
 	 }
 
-      /* user wants to display or hide the grid */
+      // [h]: display or hide the grid
       else if (is.key == 'h')
 	 {
 	 e.grid_shown = ! e.grid_shown;
 	 RedrawMap = 1;
 	 }
 
-      /* Reset the grid to grid_step_max */
+      // [H]: reset the grid to grid_step_max
       else if (is.key == 'H')
 	 {
 	 e.grid_step = e.grid_step_max;
 	 RedrawMap = 1;
 	 }
 
-      /* Toggle the snap_to_grid flag */
+      // [y]: toggle the snap_to_grid flag
       else if (is.key == 'y')
          {
          e.grid_snap = ! e.grid_snap;
          }
 
-      /* Toggle the lock_grip_step flag */
+      // [z]: toggle the lock_grip_step flag
       else if (is.key == 'z')
          {
          e.grid_step_locked = ! e.grid_step_locked;
          }
  
-      /* user wants to toggle the rulers */
+      // [r]: toggle the rulers
       else if (is.key == 'r')
 	 e.rulers_shown = !e.rulers_shown;
 
-      /* user wants to select the next or previous object */
+      // [n], [>]: highlight the next object
       else if (is.key == 'n' || is.key == '>')
 	 {
-	 if (e.highlight_obj_no < GetMaxObjectNum (e.obj_type))
-            e.highlight_obj_no++;
-	 else if (GetMaxObjectNum (e.obj_type) >= 0)
-	    e.highlight_obj_no = 0;
+	 obj_no_t nmax = GetMaxObjectNum (e.obj_type);
+	 if (is_obj (nmax))
+	    {
+	    e.highlight_obj_no++;
+	    if (e.highlight_obj_no > nmax)
+	       e.highlight_obj_no = 0;
+	    GoToObject (e.obj_type, e.highlight_obj_no);
+	    RedrawMap = 1;
+	    }
 	 }
 
+      // [p], [<]: highlight the previous object
       else if (is.key == 'p' || is.key == '<')
 	 {
-	 if (is_obj (e.highlight_obj_no) && e.highlight_obj_no > 0)
-            e.highlight_obj_no--;
-	 else
-	    e.highlight_obj_no = GetMaxObjectNum (e.obj_type);
+	 obj_no_t nmax = GetMaxObjectNum (e.obj_type);
+	 if (is_obj (nmax))
+	    {
+	    e.highlight_obj_no--;
+	    if (e.highlight_obj_no < 0)
+	       e.highlight_obj_no = nmax;
+	    GoToObject (e.obj_type, e.highlight_obj_no);
+	    RedrawMap = 1;
+	    }
 	 }
 
+      // [j], [#]: jump to object by number
       else if (is.key == 'j' || is.key == '#')
 	 {
 	 e.highlight_obj_no = InputObjectNumber (-1, -1, e.obj_type,
@@ -1653,7 +1714,8 @@ for (RedrawMap = 1; ; RedrawMap = 0)
 	 RedrawMap = 1;
 	 }
 
-      /* user wants to clear all marks and redraw the map */
+#if 0
+      // [c]: clear selection and redraw the map
       else if (is.key == 'c')
 	 {
 	 ForgetSelection (&e.Selected);
@@ -1661,8 +1723,9 @@ for (RedrawMap = 1; ; RedrawMap = 0)
 	 DragObject = 0;
 	 StretchSelBox = 0;
 	 }
+#endif
 
-      /* user wants to copy a group of objects */
+      // [o]: copy a group of objects
       else if (is.key == 'o'
          && (e.Selected || is_obj (e.highlight_obj_no)))
 	 {
@@ -1774,17 +1837,37 @@ for (RedrawMap = 1; ; RedrawMap = 0)
          StretchSelBox = 0;
          }
 
-      /* user wants to delete the current object */
+      // [Ctrl][x]: exchange objects numbers
+      else if (is.key == 24)
+	 {
+	 if (! e.Selected
+	     || ! e.Selected->next
+	     || (e.Selected->next)->next)
+	    {
+	    Beep ();
+	    Notify (-1, -1, "You must select exactly two objects", 0);
+	    RedrawMap = 1;
+	    }
+	 else
+	    {
+	    exchange_objects_numbers (e.obj_type, e.Selected, true);
+	    RedrawMap = 1;
+	    }
+	 }
+
+      // [Del]: delete the current object
       else if (is.key == YK_DEL
          && (e.Selected || e.highlight_obj_no >= 0)) /* 'Del' */
 	 {
 	 if (e.obj_type == OBJ_THINGS
 	  || Expert
 	  || Confirm (-1, -1,
-		(e.Selected ? "Do you really want to delete these objects?"
-			  : "Do you really want to delete this object?"),
-		(e.Selected ? "This will also delete the objects bound to them."
-			  : "This will also delete the objects bound to it.")))
+		(e.Selected && e.Selected->next ?
+		     "Do you really want to delete these objects?"
+		   : "Do you really want to delete this object?"),
+		(e.Selected && e.Selected->next ?
+		     "This will also delete the objects bound to them."
+	           : "This will also delete the objects bound to it.")))
 	    {
 	    if (e.Selected)
 	       DeleteObjects (e.obj_type, &e.Selected);
@@ -1902,16 +1985,17 @@ for (RedrawMap = 1; ; RedrawMap = 0)
 			Sectors[e.highlight_obj_no].floorh = Sectors[s].floorh;
 			Sectors[e.highlight_obj_no].ceilh = Sectors[s].ceilh;
 			strncpy (Sectors[e.highlight_obj_no].floort,
-			   Sectors[s].floort, 8);
+			   Sectors[s].floort, WAD_FLAT_NAME);
 			strncpy (Sectors[e.highlight_obj_no].ceilt,
-			   Sectors[s].ceilt, 8);
+			   Sectors[s].ceilt, WAD_FLAT_NAME);
 			Sectors[e.highlight_obj_no].light = Sectors[s].light;
 			}
 		     LineDefs[cur->objnum].sidedef2 = NumSideDefs - 1;
 		     LineDefs[cur->objnum].flags = 4;
-		     strncpy (SideDefs[NumSideDefs - 1].tex3, "-", 8);
+		     strncpy (SideDefs[NumSideDefs - 1].tex3,
+			 "-", WAD_TEX_NAME);
 		     strncpy (SideDefs[LineDefs[cur->objnum].sidedef1].tex3,
-		        "-", 8);
+			 "-", WAD_TEX_NAME);
 		     }
 		  else
 		     LineDefs[cur->objnum].sidedef1 = NumSideDefs - 1;
@@ -1997,13 +2081,43 @@ for (RedrawMap = 1; ; RedrawMap = 0)
       else if (is.key == '@')
          {
          show_font ();
+	 RedrawMap = 1;
          }
 
       /* Show colours (not documented) */
       else if (is.key == '|')
          {
          show_colours ();
+	 RedrawMap = 1;
          }
+
+#if 0
+      /* Xref for sidedef (not documented) */
+      else if (is.key == '^')
+	 {
+	 xref_sidedef ();
+	 }
+#endif
+
+      // [Ctrl][b] Select linedefs whose sidedefs reference non-existant sectors
+      else if (is.key == 2)
+	 {
+	 bad_sector_number (&e.Selected);
+	 RedrawMap = 1;
+         }
+
+      // [Ctrl][u] Select linedefs with unknown type (not documented)
+      else if (is.key == '\x15')
+	 {
+	 unknown_linedef_type (&e.Selected);
+	 RedrawMap = 1;
+	 }
+
+      // [Ctrl][s] List secret sectors (not documented)
+      else if (is.key == '\x13')
+	 {
+	 secret_sectors ();
+	 }
 
       /* Show object numbers */
       else if (is.key == '&')

@@ -42,7 +42,7 @@ Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 const char *what ()
 {
 static char buf[40];
-snprintf (buf, sizeof buf, "Yadex %s (%s)", yadex_version, yadex_source_date);
+y_snprintf (buf, sizeof buf, "Yadex %s (%s)", yadex_version, yadex_source_date);
 return buf;
 }
 
@@ -57,6 +57,8 @@ fprintf (fd, "%s\n", what ());
 fprintf (fd, "Usage: yadex [options] [<pwad_file> ...]\n");
 fprintf (fd, "Options:\n");
 dump_command_line_options (fd);
+fprintf (fd, " %-32sSame as -?\n", "--help");
+fprintf (fd, " %-32sPrint version and exit\n", "--version");
 fprintf (fd, "Put a \"+\" instead of a \"-\" before boolean options"
              " to reverse their effect.\n");
 }
@@ -98,8 +100,14 @@ fprintf (fd, "**\n"
 		"** stable but it's been given only limited testing. So do\n"
 		"** yourself a favour and make backup copies of your data.\n"
 		"**\n");
+#else
+fprintf (fd, "**\n"
+		"** This version is believed to be stable but you never\n"
+		"** know so make backup copies of your data anyway.\n"
+		"**\n");
 #endif
-fprintf (fd, "** Yadex is work in progress. Keep an eye on the web page.\n");
+fprintf (fd, "** Yadex is work in progress. Subscribe to yadex-announce\n");
+fprintf (fd, "** or keep an eye on the web page.\n");
 fprintf (fd, "** To edit an existing level, type \"e <level_name>\".\n");
 fprintf (fd, "** To create a new level, type \"c <level_name>\".\n"
                 "\n");

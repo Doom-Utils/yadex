@@ -41,7 +41,7 @@ Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 
 /*
  *	centre_of_objects
- *	Return the coordinates of the center of a group of objects
+ *	Return the coordinates of the centre of a group of objects
  *	of type <obj_type>.
  */
 void centre_of_objects (int obj_type, SelPtr list, int *x, int *y)

@@ -84,7 +84,7 @@ for (;;)
       }
    firstkey = 0;
    if (val < 3275 && key >= '0' && key <= '9')
-      val = val * 10 + key - '0';
+      val = val * 10 + dectoi (key);
    else if (val > 0 && key == YK_BACKSPACE)
       val = val / 10;
    else if (neg && key == YK_BACKSPACE)
@@ -124,12 +124,8 @@ int  val, key;
 char prompt[80];
 
 HideMousePointer ();
-#ifdef Y_SNPRINTF
-snprintf (prompt, sizeof prompt, "Enter a decimal number between %d and %d:",
+y_snprintf (prompt, sizeof prompt, "Enter a decimal number between %d and %d:",
    minv, maxv);
-#else
-sprintf (prompt, "Enter a decimal number between %d and %d:", minv, maxv);
-#endif
 if (x0 < 0)
    x0 = (ScrMaxX - 25 - FONTW * strlen (prompt)) / 2;
 if (y0 < 0)
@@ -218,7 +214,8 @@ for (;;)
    set_colour (WHITE);
    if (l > boxlen)
       {
-      DrawScreenText (entry_text_x0, entry_text_y0, "<%s", filename + (l - boxlen + 1));
+      DrawScreenText (entry_text_x0, entry_text_y0, "<%s",
+	  filename + (l - boxlen + 1));
       }
    else
       DrawScreenText (entry_text_x0, entry_text_y0, filename);
@@ -232,16 +229,16 @@ for (;;)
    firstkey = 0;
    if (l < maxlen && is_ordinary (key))
       {
-      filename [l] = key;
-      filename [l+1] = '\0';
+      filename[l] = key;
+      filename[l + 1] = '\0';
       }
    else if (l > 0 && key == YK_BACKSPACE)
-      filename [l-1] = '\0';
+      filename[l-1] = '\0';
    else if (key == YK_RETURN)
       break;  /* return "filename" */
    else if (key == YK_ESC)
       {
-      filename [0] = '\0'; /* return an empty string */
+      filename[0] = '\0'; /* return an empty string */
       break;
       }
    else

@@ -58,7 +58,7 @@ class menubar_c : public edwidget_c
       int add_item (const char *text, int shortcut_index, int right_aligned,
          menu_c *menu);
       void set_menu (int number, menu_c *menu);
-      menu_c *menubar_c::get_menu (int number);
+      menu_c *get_menu (int number);
       void compute_menubar_coords (int scrx0, int scrx1, int scry0, int scry1);
       void highlight (int number);
       void pull_down (int number);
@@ -72,10 +72,10 @@ class menubar_c : public edwidget_c
        *	widget
        */
       void draw ();
-      inline void undraw () { }  // I can't undraw myself
-      inline int can_undraw () { return 0; }  // I can't undraw myself
+      void undraw () { }  // I can't undraw myself
+      int can_undraw () { return 0; }  // I can't undraw myself
 
-      inline int need_to_clear ()
+      int need_to_clear ()
          {
          return bar_visible_disp && ! bar_visible
             || pulled_down_no_disp && ! pulled_down_no

@@ -36,6 +36,13 @@ Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 #include "wads.h"
 
 
+typedef enum { _MT_BADOFS, _MT_TOOLONG } _msg_type_t;
+
+
+static void add_msg (char type, int arg);
+static void flush_msg (const char *picname);
+
+
 /*
  *	LoadPicture
  *	Read a picture from a wad file and store it into a buffer.
@@ -44,8 +51,8 @@ Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  *	and the picture don't have to have the same dimensions. Thanks
  *	to this, it can also be used to compose textures : you allocate
  *	a single buffer for the whole texture and then you call
- *	LoadPicture() once for each patch. LoadPicture() takes care of
- *	all the necessary clipping.
+ *	LoadPicture() on it once for each patch. LoadPicture() takes
+ *	care of all the necessary clipping.
  *
  *	If pic_x_offset == INT_MIN, the picture is centred horizontally.
  *	If pic_y_offset == INT_MIN, the picture is centred vertically.
@@ -86,13 +93,47 @@ c->flags = 0;
 
 dir = (MDirPtr) FindMasterDir (MasterDir, picname);
 if (dir == NULL)
+   {
+   //warn ("picture %.*s does not exist.\n", WAD_PIC_NAME, picname);
    return 1;
+   }
+bool dummy_bytes  = dir->wadfile->pic_format == YGPF_NORMAL;
+bool long_header  = dir->wadfile->pic_format != YGPF_ALPHA;
+bool long_offsets = dir->wadfile->pic_format == YGPF_NORMAL;
 
-wad_seek (dir->wadfile, dir->dir.start);
-wad_read_i16 (dir->wadfile, &_pic_width          );
-wad_read_i16 (dir->wadfile, &_pic_height         );
-wad_read_i16 (dir->wadfile, &pic_intrinsic_x_ofs);  /* Read but ignored */
-wad_read_i16 (dir->wadfile, &pic_intrinsic_y_ofs);  /* Read but ignored */
+
+if (wad_seek2 (dir->wadfile, dir->dir.start))
+   {
+   warn ("picture %.*s: can't seek to %s(%08lXh)."
+      " Bailing out.\n",
+         WAD_PIC_NAME, picname,
+	 dir->wadfile->filename,
+	 (unsigned long) dir->dir.start);
+   return 1;
+   }
+if (long_header)
+   {
+   wad_read_i16 (dir->wadfile, &_pic_width         );
+   wad_read_i16 (dir->wadfile, &_pic_height        );
+   wad_read_i16 (dir->wadfile, &pic_intrinsic_x_ofs);  // Read but ignored
+   wad_read_i16 (dir->wadfile, &pic_intrinsic_y_ofs);  // Read but ignored
+   }
+else
+   {
+   _pic_width          = getc (dir->wadfile->fd);
+   _pic_height         = getc (dir->wadfile->fd);
+   pic_intrinsic_x_ofs = getc (dir->wadfile->fd);  // Read but ignored
+   pic_intrinsic_y_ofs = getc (dir->wadfile->fd);  // Read but ignored
+   if (feof (dir->wadfile->fd))
+      {
+      warn ("picture %.*s: unexpected EOF in header at %s(%08lXh)."
+	 " Bailing out.\n",
+	    WAD_PIC_NAME, picname,
+	    dir->wadfile->filename,
+	    (unsigned long) dir->dir.start);
+      return 1;
+      }
+   }
 #if 0
 c->width  = _pic_width;
 c->height = _pic_height;
@@ -107,19 +148,30 @@ if (pic_y_offset == INT_MIN)
 
 /* AYM 19971202: 17 kB is large enough for 128x128 patches. */
 #define TEX_COLUMNBUFFERSIZE ((long) 17 * 1024)
-/* AYM 19971202: where does 512 come from ? I think that the worst
-case (every second pixel transparent) is 64 * 5 + 1 = 321 */
-#define TEX_COLUMNSIZE	     512L
+/* Maximum number of bytes per column. The worst case is a
+   509-high column, with every second pixel transparent. That
+   makes 255 posts of 1 pixel, and a final FFh. The total is
+   (255 x 5 + 1) = 1276 bytes per column. */
+#define TEX_COLUMNSIZE  1300
 
 ColumnData    = (u8 *) GetMemory (TEX_COLUMNBUFFERSIZE);
 /* FIXME DOS and _pic_width > 16000 */
 NeededOffsets = (i32 *) GetMemory ((long) _pic_width * 4);
 
-wad_read_i32 (dir->wadfile, NeededOffsets, _pic_width);
+if (long_offsets)
+   wad_read_i32 (dir->wadfile, NeededOffsets, _pic_width);
+else
+   for (size_t n = 0; n < _pic_width; n++)
+      {
+      i16 ofs;
+      wad_read_i16 (dir->wadfile, &ofs);
+      NeededOffsets[n] = ofs;
+      }
 
 /* Read first column data, and subsequent column data */
-if (NeededOffsets[0] != 8 + (long) _pic_width * 4)
-  wad_seek (dir->wadfile, dir->dir.start + NeededOffsets[0]);
+if (long_offsets && NeededOffsets[0] != 8 + (long) _pic_width * 4
+|| !long_offsets && NeededOffsets[0] != 4 + (long) _pic_width * 2)
+   wad_seek (dir->wadfile, dir->dir.start + NeededOffsets[0]);
 ActualBufLen = wad_read_bytes2 (dir->wadfile, ColumnData, TEX_COLUMNBUFFERSIZE);
 
 /* Clip the picture horizontally and vertically. */
@@ -155,7 +207,12 @@ for (pic_x = pic_x0,
    else
       {
       Column = (u8 *) GetFarMemory (TEX_COLUMNSIZE);
-      wad_seek (dir->wadfile, dir->dir.start + CurrentOffset);
+      if (wad_seek2 (dir->wadfile, dir->dir.start + CurrentOffset))
+         {
+	 add_msg (_MT_BADOFS, (short) pic_x);
+         FreeFarMemory (Column);
+	 continue;  // Give up on this column
+         }
       wad_read_bytes2 (dir->wadfile, Column, TEX_COLUMNSIZE);
       }
    filedata = Column;
@@ -175,11 +232,17 @@ for (pic_x = pic_x0,
       int post_y1;	/* relative to top of post */
 
       if (post - filedata > TEX_COLUMNSIZE)
-         fatal_error ("Post too long. Wad file might be corrupt.");
+         {
+	 add_msg (_MT_TOOLONG, (short) pic_x);
+	 break;  // Give up on this column
+	 }
 
       post_y_offset = *post++;
       post_height = *post++;
-      post++;  // Skip that dummy byte
+      //printf ("x=%d yofs=%d height=%d\n", (int) pic_x, (int)
+      //  post_y_offset, (int) post_height);
+      if (dummy_bytes)
+         post++;  // Skip that dummy byte
 
       /* Clip the post vertically. */
       post_pic_y0 = post_y_offset;
@@ -202,21 +265,28 @@ for (pic_x = pic_x0,
 	 b += buf_width, post_y++)
          {
          if (b < buffer)
-            fatal_error ("b < buffer");
+	    {
+            nf_bug ("Picture %.*s(%d): b < buffer",
+		WAD_PIC_NAME, picname, (int) pic_x);
+	    goto next_column;
+	    }
 	 *b = (game_image_pixel_t) post[post_y];
          }
       }
 
       post += post_height;
-      post++;  // Skip the trailing dummy byte
+      if (dummy_bytes)
+         post++;  // Skip the trailing dummy byte
       }  // Post loop
    }
 
+next_column :
    if (!ColumnInMemory)
       FreeFarMemory (Column);
    }  // Column loop
 FreeMemory (ColumnData);
 FreeMemory (NeededOffsets);
+flush_msg (picname);
 #if 0
 c->flags |= HOOK_DRAWN;
 #endif
@@ -225,6 +295,99 @@ if (pic_width)
 if (pic_height)
    *pic_height = _pic_height;
 return 0;
+}
+
+
+/*
+ *	List to hold pending warning messages
+ */
+typedef struct
+{
+   char type;
+   short arg;
+} _msg_t;
+static _msg_t *_msg_list = 0;
+static size_t _nmsg = 0;
+const size_t _granularity = 128;
+
+
+/*
+ *	add_msg
+ *	Add a warning message to the list
+ */
+static void add_msg (char type, int arg)
+{
+if ((_nmsg + 1) % _granularity == 1)  // Grow list if necessary
+   {
+   _msg_t *new_list = (_msg_t *) realloc (_msg_list,
+	 (_nmsg / _granularity + 1) * _granularity * sizeof *_msg_list);
+   if (new_list == 0)  // Not enough memory ? Ignore the new message
+      return;
+   _msg_list = new_list;
+   }
+_msg_list[_nmsg].type = type;
+_msg_list[_nmsg].arg  = arg;
+_nmsg++;
+}
+
+
+/*
+ *	flush_msg
+ *	Output all pending warning messages in an smart fashion
+ */
+static void flush_msg (const char *picname)
+{
+if (_nmsg == 0 || _msg_list == 0)
+   return;
+
+for (_msg_type_t t = _MT_BADOFS; t <= _MT_TOOLONG; ((int &) t)++)
+   {
+   size_t first_msg = AL_ASIZE_T_MAX;
+   size_t last_msg = AL_ASIZE_T_MAX;
+   const char *str = "unknown error";
+   if (t == _MT_BADOFS)
+      str = "bad file offset";
+   else
+      str = "post too long";
+
+   for (size_t n = 0; n < _nmsg; n++)
+      {
+      if (_msg_list[n].type == t)
+	 {
+	 if (first_msg == AL_ASIZE_T_MAX)
+	    {
+	    first_msg = n;
+	    last_msg = n;
+	    }
+	 else
+	    {
+	    if (_msg_list[last_msg].arg != _msg_list[n].arg - 1)
+	       {
+	       warn ("picture %.*s(%d",
+		  WAD_PIC_NAME, picname, (int) _msg_list[first_msg].arg);
+	       if (last_msg != first_msg)
+		  warn ("-%d", (int) _msg_list[last_msg].arg);
+	       warn ("): %s. Corrupt wad ?\n", str);
+	       first_msg = n;
+	       last_msg = n;
+	       }
+	    else
+	       last_msg = n;
+	    }
+	 }
+      }
+   if (first_msg != AL_ASIZE_T_MAX)
+      {
+      warn ("picture %.*s(%d",
+	    WAD_PIC_NAME, picname, (int) _msg_list[first_msg].arg);
+      if (last_msg != first_msg)
+	 warn ("-%d", (int) _msg_list[last_msg].arg);
+      warn ("): %s. Corrupt wad ?\n", str);
+      }
+   }
+_nmsg = 0;
+free (_msg_list);
+_msg_list = 0;
 }
 
 

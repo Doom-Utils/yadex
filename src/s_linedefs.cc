@@ -61,3 +61,36 @@ delete sectors;
 return linedefs;
 }
 
+
+/*
+ *	linedefs_of_sector
+ *	Returns the number of linedefs that face sector <s>
+ *	and, if that number is greater than zero, sets <array>
+ *	to point on a newly allocated array filled with the
+ *	numbers of those linedefs. It's up to the caller to
+ *	delete[] the array after use.
+ */
+int linedefs_of_sector (obj_no_t s, obj_no_t *&array)
+{
+int count = 0;
+for (int n = 0; n < NumLineDefs; n++)
+   if (   is_sidedef (LineDefs[n].sidedef1)
+          && SideDefs[LineDefs[n].sidedef1].sector == s
+       || is_sidedef (LineDefs[n].sidedef2)
+          && SideDefs[LineDefs[n].sidedef2].sector == s)
+      count++;
+if (count > 0)
+   {
+   array = new obj_no_t[count];
+   count = 0;
+   for (int n = 0; n < NumLineDefs; n++)
+      if (   is_sidedef (LineDefs[n].sidedef1)
+	     && SideDefs[LineDefs[n].sidedef1].sector == s
+	  || is_sidedef (LineDefs[n].sidedef2)
+	     && SideDefs[LineDefs[n].sidedef2].sector == s)
+	 array[count++] = n;
+   }
+return count;
+}
+
+

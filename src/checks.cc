@@ -439,8 +439,7 @@ for (n = NumLineDefs - 1; n >= 1; n--)
    }
 if (cur
   && (Expert
-      || Confirm (-1, -1,
-	   "There are multiple linedefs between the same vertices",
+   || Confirm (-1, -1, "There are multiple linedefs between the same vertices",
 	   "Do you want to delete the redundant linedefs?")))
    DeleteObjects (OBJ_LINEDEFS, &cur);
 else
@@ -451,12 +450,13 @@ CheckingObjects ();
 for (n = 0; n < NumLineDefs; n++)
    if ((LineDefs[n].flags & 0x01) == 0 && LineDefs[n].sidedef2 < 0)
       SelectObject (&cur, n);
-if (cur && (Expert || Confirm (-1, -1,
- "Some linedefs have only one side but their Im bit is not set",
- "Do you want to set the 'Impassible' flag?")))
+if (cur && (Expert
+    || Confirm (-1, -1, "Some linedefs have only one side but their I flag is"
+	" not set",
+        "Do you want to set the 'Impassible' flag?")))
    while (cur)
       {
-      LogMessage  ("Check: 1-sided linedef without Im bit: %d", cur->objnum);
+      LogMessage  ("Check: 1-sided linedef without I flag: %d", cur->objnum);
       LineDefs[cur->objnum].flags |= 0x01;
       UnSelectObject (&cur, cur->objnum);
       }
@@ -469,8 +469,8 @@ for (n = 0; n < NumLineDefs; n++)
       SelectObject (&cur, n);
 if (cur
   && (Expert
-      || Confirm (-1, -1,
-	   "Some linedefs have only one side but their 2S bit is set",
+      || Confirm (-1, -1, "Some linedefs have only one side but their 2 flag"
+	  " is set",
 	   "Do you want to clear the 'two-sided' flag?")))
    {
    while (cur)
@@ -662,7 +662,7 @@ for (n = 0; n < NumLineDefs; n++)
 	    GoToObject (OBJ_LINEDEFS, n);
 	    return;
 	    }
-	 strncpy (SideDefs[sd1].tex3, default_middle_texture, 8);
+	 strncpy (SideDefs[sd1].tex3, default_middle_texture, WAD_TEX_NAME);
          MadeChanges = 1;
 	 CheckingObjects ();
 	 }
@@ -670,8 +670,8 @@ for (n = 0; n < NumLineDefs; n++)
    if (is_obj (s1) && is_obj (s2) && Sectors[s1].ceilh > Sectors[s2].ceilh)
       {
       if (SideDefs[sd1].tex1[0] == '-' && SideDefs[sd1].tex1[1] == '\0'
-	  && (strncmp (Sectors[s1].ceilt, "F_SKY1", 8)
-	   || strncmp (Sectors[s2].ceilt, "F_SKY1", 8)))
+	  && (strncmp (Sectors[s1].ceilt, "F_SKY1", WAD_TEX_NAME)
+	   || strncmp (Sectors[s2].ceilt, "F_SKY1", WAD_TEX_NAME)))
 	 {
 	 sprintf (msg1, "Error in first sidedef of linedef #%d:"
 	   " sidedef #%d has no upper texture", n, sd1);
@@ -682,7 +682,7 @@ for (n = 0; n < NumLineDefs; n++)
 	    GoToObject (OBJ_LINEDEFS, n);
 	    return;
 	    }
-	 strncpy (SideDefs[sd1].tex1, default_upper_texture, 8);
+	 strncpy (SideDefs[sd1].tex1, default_upper_texture, WAD_TEX_NAME);
          MadeChanges = 1;
 	 CheckingObjects ();
 	 }
@@ -700,7 +700,7 @@ for (n = 0; n < NumLineDefs; n++)
 	    GoToObject (OBJ_LINEDEFS, n);
 	    return;
 	    }
-	 strncpy (SideDefs[sd1].tex2, default_lower_texture, 8);
+	 strncpy (SideDefs[sd1].tex2, default_lower_texture, WAD_TEX_NAME);
          MadeChanges = 1;
 	 CheckingObjects ();
 	 }
@@ -708,8 +708,8 @@ for (n = 0; n < NumLineDefs; n++)
    if (is_obj (s1) && is_obj (s2) && Sectors[s2].ceilh > Sectors[s1].ceilh)
       {
       if (SideDefs[sd2].tex1[0] == '-' && SideDefs[sd2].tex1[1] == '\0'
-	  && (strncmp (Sectors[s1].ceilt, "F_SKY1", 8)
-	   || strncmp (Sectors[s2].ceilt, "F_SKY1", 8)))
+	  && (strncmp (Sectors[s1].ceilt, "F_SKY1", WAD_TEX_NAME)
+	   || strncmp (Sectors[s2].ceilt, "F_SKY1", WAD_TEX_NAME)))
 	 {
 	 sprintf (msg1, "Error in second sidedef of linedef #%d:"
 	   " sidedef #%d has no upper texture", n, sd2);
@@ -720,7 +720,7 @@ for (n = 0; n < NumLineDefs; n++)
 	    GoToObject (OBJ_LINEDEFS, n);
 	    return;
 	    }
-	 strncpy (SideDefs[sd2].tex1, default_upper_texture, 8);
+	 strncpy (SideDefs[sd2].tex1, default_upper_texture, WAD_TEX_NAME);
          MadeChanges = 1;
 	 CheckingObjects ();
 	 }
@@ -738,7 +738,7 @@ for (n = 0; n < NumLineDefs; n++)
 	    GoToObject (OBJ_LINEDEFS, n);
 	    return;
 	    }
-	 strncpy (SideDefs[sd2].tex2, default_lower_texture, 8);
+	 strncpy (SideDefs[sd2].tex2, default_lower_texture, WAD_TEX_NAME);
          MadeChanges = 1;
 	 CheckingObjects ();
 	 }
@@ -756,7 +756,7 @@ Bool IsTextureNameInList (char *name, char **list, int numelems)
 int n;
 
 for (n = 0; n < numelems; n++)
-   if (! strnicmp (name, list[n], 8))
+   if (! y_strnicmp (name, list[n], WAD_TEX_NAME))
       return 1;
 return 0;
 }
@@ -778,11 +778,11 @@ if (! FindMasterDir (MasterDir, "F2_START"))
 ObjectsNeeded (OBJ_SECTORS, 0);
 for (n = 0; n < NumSectors; n++)
    {
-   if (! IsTextureNameInList (Sectors[n].ceilt, FTexture, NumFTexture))
+   if (! is_flat_name_in_list (Sectors[n].ceilt))
       {
       sprintf (msg1, "Invalid ceiling texture in sector #%d", n);
-      sprintf (msg2, "The name \"%.8s\" is not a floor/ceiling texture",
-	Sectors[n].ceilt);
+      sprintf (msg2, "The name \"%.*s\" is not a floor/ceiling texture",
+	WAD_FLAT_NAME, Sectors[n].ceilt);
       if (CheckFailed (-1, -1, msg1, msg2, 0))
 	 {
 	 GoToObject (OBJ_SECTORS, n);
@@ -790,11 +790,11 @@ for (n = 0; n < NumSectors; n++)
 	 }
       CheckingObjects ();
       }
-   if (! IsTextureNameInList (Sectors[n].floort, FTexture, NumFTexture))
+   if (! is_flat_name_in_list (Sectors[n].floort))
       {
       sprintf (msg1, "Invalid floor texture in sector #%d", n);
-      sprintf (msg2, "The name \"%.8s\" is not a floor/ceiling texture",
-	Sectors[n].floort);
+      sprintf (msg2, "The name \"%.*s\" is not a floor/ceiling texture",
+	WAD_FLAT_NAME, Sectors[n].floort);
       if (CheckFailed (-1, -1, msg1, msg2, 0))
 	 {
 	 GoToObject (OBJ_SECTORS, n);
@@ -809,8 +809,8 @@ for (n = 0; n < NumSideDefs; n++)
    if (! IsTextureNameInList (SideDefs[n].tex1, WTexture, NumWTexture))
       {
       sprintf (msg1, "Invalid upper texture in sidedef #%d", n);
-      sprintf (msg2, "The name \"%.8s\" is not a wall texture",
-	SideDefs[n].tex1);
+      sprintf (msg2, "The name \"%.*s\" is not a wall texture",
+	WAD_TEX_NAME, SideDefs[n].tex1);
       if (CheckFailed (-1, -1, msg1, msg2, 0))
 	 {
 	 GoToObject (OBJ_SIDEDEFS, n);
@@ -821,8 +821,8 @@ for (n = 0; n < NumSideDefs; n++)
    if (! IsTextureNameInList (SideDefs[n].tex2, WTexture, NumWTexture))
       {
       sprintf (msg1, "Invalid lower texture in sidedef #%d", n);
-      sprintf (msg2, "The name \"%.8s\" is not a wall texture",
-	SideDefs[n].tex2);
+      sprintf (msg2, "The name \"%.*s\" is not a wall texture",
+	WAD_TEX_NAME, SideDefs[n].tex2);
       if (CheckFailed (-1, -1, msg1, msg2, 0))
 	 {
 	 GoToObject (OBJ_SIDEDEFS, n);
@@ -833,8 +833,8 @@ for (n = 0; n < NumSideDefs; n++)
    if (! IsTextureNameInList (SideDefs[n].tex3, WTexture, NumWTexture))
       {
       sprintf (msg1, "Invalid middle texture in sidedef #%d", n);
-      sprintf (msg2, "The name \"%.8s\" is not a wall texture",
-	SideDefs[n].tex3);
+      sprintf (msg2, "The name \"%.*s\" is not a wall texture",
+	WAD_TEX_NAME, SideDefs[n].tex3);
       if (CheckFailed (-1, -1, msg1, msg2, 0))
 	 {
 	 GoToObject (OBJ_SIDEDEFS, n);
@@ -877,11 +877,11 @@ for (t = 0; t < NumThings; t++)
 if (! p1)
    {
    Beep ();
-   sprintf (msg1,
-     "Warning: there is no player 1 starting point!  Doom will crash if");
-   sprintf (msg2,
-     "you play with this level.  Do you really want to save it?");
-   return Confirm (-1, -1, msg1, msg2);
+   if (! Confirm (-1, -1, "Warning: there is no player 1 starting point. The"
+       " game", "will crash if you play with this level. Save anyway ?"))
+      return 0;
+   else 
+      return 1;  // No point in doing further checking !
    }
 if (Expert)
    return 1;
@@ -893,26 +893,30 @@ if (! p2 || ! p3 || ! p4)
      t = 3;
    if (! p2)
      t = 2;
-   sprintf (msg1, "Warning: there is no player %d starting point."
-     "  You will not be able to", t);
-   sprintf (msg2, "use this level for multi-player games."
-     "  Press Y to return to the editor.");
-   return !Confirm (-1, -1, msg1, msg2);
+   sprintf (msg1, "Warning: there is no player %d start."
+     " You will not be able", t);
+   sprintf (msg2, "to use this level for multi-player games."
+     " Save anyway ?");
+   if (! Confirm (-1, -1, msg1, msg2))
+      return 0;
+   else
+      return 1;  // No point in doing further checking !
    }
 if (dm < DOOM_MIN_DEATHMATCH_STARTS)
    {
    if (dm == 0)
-     sprintf (msg1, "Warning: there are no deathmatch starting points."
-       "  You need at least %d", DOOM_MIN_DEATHMATCH_STARTS);
+     sprintf (msg1, "Warning: there are no deathmatch starts."
+       " You need at least %d", DOOM_MIN_DEATHMATCH_STARTS);
    else if (dm == 1)
-     sprintf (msg1, "Warning: there is only one deathmatch starting point."
-       "  You need at least %d", DOOM_MIN_DEATHMATCH_STARTS);
+     sprintf (msg1, "Warning: there is only one deathmatch start."
+       " You need at least %d", DOOM_MIN_DEATHMATCH_STARTS);
    else
-     sprintf (msg1, "Warning: there are only %d deathmatch starting points."
-       "  You need at least %d", dm, DOOM_MIN_DEATHMATCH_STARTS);
-   sprintf (msg2, "starting points to play deathmatch games."
-     "  Press Y to return to the editor.");
-   return !Confirm (-1, -1, msg1, msg2);
+     sprintf (msg1, "Warning: there are only %d deathmatch starts."
+       " You need at least %d", dm, DOOM_MIN_DEATHMATCH_STARTS);
+   sprintf (msg2, "deathmatch starts to play deathmatch games."
+     " Save anyway ?");
+   if (! Confirm (-1, -1, msg1, msg2))
+     return 0;
    }
 return 1;
 }

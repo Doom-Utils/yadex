@@ -41,31 +41,31 @@ Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 
 static const char *help_text[] =
   {
-  "Keyboard :",
-  "q     Quit, saving changes      PgUp  Scroll up",
-  "Esc   Quit without saving       PgDn  Scroll down",
-  "                                Home  Scroll left",
-  "Tab   Next mode                 End   Scroll right",
-  "ShiftTab Previous mode          '     Go to centre of map",
-  "l     Linedefs & sidedefs mode  `     Show whole map",
-  "s     Sectors mode              n,>   Jump to next object",
-  "t     Things mode               p,<   Jump to previous object",
-  "v     Vertices mode             j,#   Jump to object #N",
-  "&     Show/hide object numbers",
-  "                                +/-   Zoom in/out",
-  "Ins   Insert a new object       g/G   Decr./incr. the grid step",
-  "Del   Delete the object(s)      h     Hide/show the grid",
-  "Enter Edit object properties    H     Reset grid step to the max",
-  "x/w   Spin things cw/ccw        z     Lock the grid step",
-  "x     Split linedefs            y     Snap to grid on/off",
-  "w     Split linedefs & sector   Space Toggle extra zoom",
-  "a     Set things/ld flags",
-  "b     Toggle things/ld flags",
-  "c     Clear things/ld flags",
-  "F8    Misc. operations          F5    Preferences",
-  "F9    Insert compound object    F10   Checks"
+  "             Keyboard :",
+  "Esc/q Quit                      Pgup  Scroll up",
+  "                                Pgdn  Scroll down",
+  "Tab   Next mode                 Home  Scroll left",
+  "ShiftTab Previous mode          End   Scroll right",
+  "l     Linedefs & sidedefs mode  '     Go to centre of map",
+  "s     Sectors mode              `     Show whole map",
+  "t     Things mode               n,>   Jump to next object",
+  "v     Vertices mode             p,<   Jump to previous object",
+  "&     Show/hide object numbers  j,#   Jump to object #N",
   "",
-  "Mouse :",
+  "Ins   Insert a new object       +/-   Zoom in/out",
+  "Del   Delete the object(s)      g/G   Decr./incr. the grid step",
+  "Enter Edit object properties    h     Hide/show the grid",
+  "x/w   Spin things cw/ccw        H     Reset grid step to the max",
+  "x     Split linedefs            z     Lock the grid step",
+  "w     Split linedefs & sector   y     Snap to grid on/off",
+  "a     Set things/ld flags       Space Toggle extra zoom",
+  "b     Toggle things/ld flags",
+  "c     Clear things/ld flags     e     Select linedefs in path",
+  "F8    Misc. operations          E     Select 1s linedefs in path",
+  "F9    Insert compound object",
+  "                                F5    Preferences",
+  "                                F10   Checks",
+  "             Mouse :",
   "- Clicking on an object with the left button selects it (and",
   "  unselects everything else unless [Ctrl] is pressed).",
   "- Clicking on an already selected object with the left button with",
@@ -124,7 +124,7 @@ ShowMousePointer ();
 void about_yadex ()
 {
 int width  = 2 * BOX_BORDER + 2 * WIDE_HSPACING + 42 * FONTW;
-int height = 2 * BOX_BORDER + 2 * WIDE_VSPACING + 14 * FONTH;
+int height = 2 * BOX_BORDER + 2 * WIDE_VSPACING + 22 * FONTH;
 int x0 = (ScrMaxX + 1 - width) / 2;
 int y0 = (ScrMaxY + 1 - height) / 2;
 
@@ -138,10 +138,18 @@ DrawScreenText (-1, -1, "Copyright © 1997-1999 André Majorel");
 DrawScreenText (-1, -1, "Yadex is derived from DEU 5.21 by");
 DrawScreenText (-1, -1, "Raphaël Quinet and Brendon Wyber.");
 DrawScreenText (-1, -1, "");
-DrawScreenText (-1, -1, "The home page of Yadex is :");
+DrawScreenText (-1, -1, "Home page :");
 DrawScreenText (-1, -1, "http://www.teaser.fr/~amajorel/yadex/");
+DrawScreenText (-1, -1, "http://www.linuxgames.com/yadex/");
 DrawScreenText (-1, -1, "");
-DrawScreenText (-1, -1, "To contact the maintainer, send email to :");
+DrawScreenText (-1, -1, "Mailing lists :");
+DrawScreenText (-1, -1, "yadex@middleearth.telefragged.com");
+DrawScreenText (-1, -1, "yadex-announce@middleearth.telefragged.com");
+DrawScreenText (-1, -1, "To subscribe, send mail with the");
+DrawScreenText (-1, -1, "subject \"subscribe <list_name>\"");
+DrawScreenText (-1, -1, "to listar@middleearth.telefragged.com");
+DrawScreenText (-1, -1, "");
+DrawScreenText (-1, -1, "Maintainer :");
 DrawScreenText (-1, -1, "André Majorel <amajorel@teaser.fr>");
 DrawScreenText (-1, -1, "");
 DrawScreenText (-1, -1, "");

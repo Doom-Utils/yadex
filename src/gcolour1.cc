@@ -60,14 +60,14 @@ pcolour_t *game_colours = 0;
 dir = FindMasterDir (MasterDir, "PLAYPAL");
 if (dir == NULL)
    {
-   printf ("Warning: PLAYPAL lump not found.\n");
+   warn ("PLAYPAL lump not found.\n");
    return 0;
    }
 
 int playpal_count = dir->dir.size / (3 * DOOM_COLOURS);
 if (playpalnum < 0 || playpalnum >= playpal_count)
    {
-   printf ("Warning: playpalnum %d out of range (0-%d). Using #0 instead.\n",
+   warn ("playpalnum %d out of range (0-%d). Using #0 instead.\n",
       playpalnum, playpal_count - 1);
    playpalnum = 0;
    }

@@ -32,6 +32,7 @@ Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 #include "yadex.h"
 #include "disppic.h"
 #include "flats.h"	// DisplayFloorTexture()
+#include "game.h"	// THINGDEF_SPECTRAL
 #include "gfx.h"
 #include "levels.h"
 #include "objinfo.h"
@@ -54,7 +55,7 @@ out_y1      = 0;
 
 void objinfo_c::draw ()
 {
-char texname[9];
+char texname[WAD_TEX_NAME + 1];
 int  tag, n;
 int  sd1, sd2, s1, s2;
 int  x0, y0;		// Outer top left corner
@@ -99,7 +100,7 @@ switch (obj_type)
       DrawScreenText (-1, iy0 + (int) (1.5 * FONTH), 0);
       DrawScreenText (-1, -1, "Coords: (%d, %d)",
          Things[obj_no].xpos, Things[obj_no].ypos);
-      DrawScreenText (-1, -1, "Type:   %04Xh",
+      DrawScreenText (-1, -1, "Type:   %d",
          Things[obj_no].type);
       DrawScreenText (-1, -1, "Desc:   %s",
 	 get_thing_name (Things[obj_no].type));
@@ -117,6 +118,7 @@ switch (obj_type)
          HOLLOW_BORDER, 0);
       {
       const char *sprite_root = get_thing_sprite (Things[obj_no].type);
+      char flags = get_thing_flags (Things[obj_no].type);
       if (sprite_root != NULL)
          {
          const char *sprite_name = sprite_by_root (sprite_root);
@@ -130,6 +132,7 @@ switch (obj_type)
 	    c.xofs = INT_MIN;
 	    c.yofs = INT_MIN;
 	    c.name = sprite_name;
+	    c.flags = (flags & THINGDEF_SPECTRAL) ? HOOK_SPECTRAL : 0;
 	    display_pic (&c);
 	    }
          }
@@ -149,7 +152,7 @@ switch (obj_type)
       }
       break;
    case OBJ_LINEDEFS:
-      width  = 2 * BOX_BORDER + 2 * WIDE_HSPACING + 29 * FONTW;
+      width  = 2 * BOX_BORDER + 2 * WIDE_HSPACING + 26 * FONTW;
       height = 2 * BOX_BORDER + 2 * WIDE_VSPACING + (int) (8.5 * FONTH);
       x0 = 0;
       y0 = out_y1 - height + 1;
@@ -162,7 +165,7 @@ switch (obj_type)
 	 DrawScreenText (ix0, iy0, "Linedef #%d", obj_no);
 	 set_colour (WINFG);
 	 DrawScreenText (-1, iy0 + (int) (1.5 * FONTH),
-                         "Flags:%3d    %s",
+                         "Flags:%3d %s",
                          LineDefs[obj_no].flags,
                          GetLineDefFlagsName (LineDefs[obj_no].flags));
 	 DrawScreenText (-1, -1, "Type: %3d %s",
@@ -183,16 +186,16 @@ switch (obj_type)
 	 else
 	    n = NumSectors;
 	 if (n < NumSectors)
-	    DrawScreenText (-1, -1, "Sector tag:  %d (#%d)", tag, n);
+	    DrawScreenText (-1, -1, "Tag:      %d (#%d)", tag, n);
 	 else
-	    DrawScreenText (-1, -1, "Sector tag:  %d (none)", tag);
-	 DrawScreenText (-1, -1, "Vertices:    (#%d, #%d)", s1, s2);
+	    DrawScreenText (-1, -1, "Tag:      %d (none)", tag);
+	 DrawScreenText (-1, -1, "Vertices: (#%d, #%d)", s1, s2);
 	 ObjectsNeeded (OBJ_VERTICES, 0);
 	 n = ComputeDist (Vertices[s2].x - Vertices[s1].x,
                           Vertices[s2].y - Vertices[s1].y);
-	 DrawScreenText (-1, -1, "Length:      %d", n);
-	 DrawScreenText (-1, -1, "1st sidedef: #%d", sd1);
-	 DrawScreenText (-1, -1, "2nd sidedef: #%d", sd2);
+	 DrawScreenText (-1, -1, "Length:   %d", n);
+	 DrawScreenText (-1, -1, "1st sd:   #%d", sd1);
+	 DrawScreenText (-1, -1, "2nd sd:   #%d", sd2);
 	 if (sd1 >= 0)
 	    s1 = SideDefs[sd1].sector;
 	 else
@@ -228,7 +231,7 @@ switch (obj_type)
 	    set_colour (WINFG);
 
 	 DrawScreenText (-1, iy0 + (int) (1.5 * FONTH),
-	    "Normal texture: %.8s", SideDefs[sd1].tex3);
+	    "Normal texture: %.*s", WAD_TEX_NAME, SideDefs[sd1].tex3);
 	 if (s1 >= 0 && s2 >= 0 && Sectors[s1].ceilh > Sectors[s2].ceilh)
 	    {
 	    if (SideDefs[sd1].tex1[0] == '-' && SideDefs[sd1].tex1[1] == '\0')
@@ -238,7 +241,8 @@ switch (obj_type)
 	    }
 	 else
 	    set_colour (WINFG_DIM);
-	 DrawScreenText (-1, -1, "Upper texture:  %.8s", SideDefs[sd1].tex1);
+	 DrawScreenText (-1, -1, "Upper texture:  %.*s",
+	     WAD_TEX_NAME, SideDefs[sd1].tex1);
 	 if (s1 >= 0 && s2 >= 0 && Sectors[s1].floorh < Sectors[s2].floorh)
 	    {
 	    if (SideDefs[sd1].tex2[0] == '-' && SideDefs[sd1].tex2[1] == '\0')
@@ -248,7 +252,8 @@ switch (obj_type)
 	    }
 	 else
 	    set_colour (WINFG_DIM);
-	 DrawScreenText (-1, -1, "Lower texture:  %.8s", SideDefs[sd1].tex2);
+	 DrawScreenText (-1, -1, "Lower texture:  %.*s",
+	     WAD_TEX_NAME, SideDefs[sd1].tex2);
 	 set_colour (WINFG);
 	 DrawScreenText (-1, -1, "Tex. X offset:  %d", SideDefs[sd1].xoff);
 	 DrawScreenText (-1, -1, "Tex. Y offset:  %d", SideDefs[sd1].yoff);
@@ -270,11 +275,11 @@ switch (obj_type)
 	 set_colour (YELLOW);
 	 DrawScreenText (ix0, iy0, "Second sidedef (#%d)", sd2);
 	 set_colour (WINFG);
-	 texname[8] = '\0';
-	 strncpy (texname, SideDefs[sd2].tex3, 8);
+	 texname[WAD_TEX_NAME] = '\0';
+	 strncpy (texname, SideDefs[sd2].tex3, WAD_TEX_NAME);
 	 DrawScreenText (-1, iy0 + (int) (1.5 * FONTH),
 	    "Normal texture: %s", texname);
-	 strncpy (texname, SideDefs[sd2].tex1, 8);
+	 strncpy (texname, SideDefs[sd2].tex1, WAD_TEX_NAME);
 	 if (s1 >= 0 && s2 >= 0 && Sectors[s2].ceilh > Sectors[s1].ceilh)
 	    {
 	    if (texname[0] == '-' && texname[1] == '\0')
@@ -284,7 +289,7 @@ switch (obj_type)
 	    set_colour (WINFG_DIM);
 	 DrawScreenText (-1, -1, "Upper texture:  %s", texname);
 	 set_colour (WINFG);
-	 strncpy (texname, SideDefs[sd2].tex2, 8);
+	 strncpy (texname, SideDefs[sd2].tex2, WAD_TEX_NAME);
 	 if (s1 >= 0 && s2 >= 0 && Sectors[s2].floorh < Sectors[s1].floorh)
 	    {
 	    if (texname[0] == '-' && texname[1] == '\0')
@@ -376,10 +381,12 @@ switch (obj_type)
 	 DrawScreenText (-1, -1,
 	    "Ceiling height:  %d",   Sectors[obj_no].ceilh);
          }
-      DrawScreenText (-1, -1, "Headroom (C-F):  %d",   Sectors[obj_no].ceilh
+      DrawScreenText (-1, -1, "Headroom:        %d",   Sectors[obj_no].ceilh
                                                      - Sectors[obj_no].floorh);
-      DrawScreenText (-1, -1, "Floor texture:   %.8s", Sectors[obj_no].floort);
-      DrawScreenText (-1, -1, "Ceiling texture: %.8s", Sectors[obj_no].ceilt);
+      DrawScreenText (-1, -1, "Floor texture:   %.*s",
+	  WAD_FLAT_NAME, Sectors[obj_no].floort);
+      DrawScreenText (-1, -1, "Ceiling texture: %.*s",
+	  WAD_FLAT_NAME, Sectors[obj_no].ceilt);
       DrawScreenText (-1, -1, "Light level:     %d",   Sectors[obj_no].light);
       DrawScreenText (-1, -1, "Type: %3d        %s",   Sectors[obj_no].special,
                                   GetSectorTypeName (Sectors[obj_no].special));
@@ -392,13 +399,13 @@ switch (obj_type)
 	    if (LineDefs[n].tag == tag)
 	       break;
       if (n < NumLineDefs)
-	 DrawScreenText (-1, -1, "Linedef tag:     %d (#%d)", tag, n);
+	 DrawScreenText (-1, -1, "Tag:             %d (#%d)", tag, n);
       else if (tag == 99 || tag == 999)
-	 DrawScreenText (-1, -1, "Linedef tag:     %d (stairs?)", tag);
+	 DrawScreenText (-1, -1, "Tag:             %d (stairs?)", tag);
       else if (tag == 666)
-	 DrawScreenText (-1, -1, "Linedef tag:     %d (lower@end)", tag);
+	 DrawScreenText (-1, -1, "Tag:             %d (lower@end)", tag);
       else
-	 DrawScreenText (-1, -1, "Linedef tag:     %d (none)", tag);
+	 DrawScreenText (-1, -1, "Tag:             %d (none)", tag);
       {
       hookfunc_comm_t block;
 

@@ -100,7 +100,8 @@ const char *GetLineDefFlagsName (int flags)
 {
 static char buf[17];
 // "P" is a Boom extension ("pass through")
-const char *flag_chars = "??????PAVBSLU2MI";
+// "T" is for Strife ("translucent")
+const char *flag_chars = "???T??PANBSLU2MI";
 int n;
 
 for (n = 0; n < 16; n++)
@@ -168,15 +169,17 @@ return temp;
 
 const char *GetLineDefFlagsLongName (int flags)
 {
-if (flags & 0x100) return "Already on the map at startup";
-if (flags & 0x80)  return "Invisible on the map";
-if (flags & 0x40)  return "Blocks sound";
-if (flags & 0x20)  return "Secret (shown as normal on the map)";
-if (flags & 0x10)  return "Lower texture is \"unpegged\"";
-if (flags & 0x08)  return "Upper texture is \"unpegged\"";
-if (flags & 0x04)  return "Two-sided (may be transparent)";
-if (flags & 0x02)  return "Monsters cannot cross this line";
-if (flags & 0x01)  return "Impassible";
+if (flags & 0x1000) return "Translucent [Strife]";
+if (flags & 0x200)  return "Pass-through [Boom]";
+if (flags & 0x100)  return "Always shown on the map";
+if (flags & 0x80)   return "Never shown on the map";
+if (flags & 0x40)   return "Blocks sound";
+if (flags & 0x20)   return "Secret (shown as normal on the map)";
+if (flags & 0x10)   return "Lower texture is \"unpegged\"";
+if (flags & 0x08)   return "Upper texture is \"unpegged\"";
+if (flags & 0x04)   return "Two-sided (may be transparent)";
+if (flags & 0x02)   return "Monsters cannot cross this line";
+if (flags & 0x01)   return "Impassible";
 return "UNKNOWN";
 }
 
@@ -197,7 +200,9 @@ if (CUR_STDEF != NULL && CUR_STDEF->number == type)
 for (al_lrewind (stdef); ! al_leol (stdef); al_lstep (stdef))
   if (CUR_STDEF->number == type)
     return CUR_STDEF->shortdesc;
-return "DO NOT USE!";
+static char buf[30];
+sprintf (buf, "UNKNOWN (%d)", type);
+return buf;
 }
 
 
@@ -217,7 +222,9 @@ if (CUR_STDEF != NULL && CUR_STDEF->number == type)
 for (al_lrewind (stdef); ! al_leol (stdef); al_lstep (stdef))
   if (CUR_STDEF->number == type)
     return CUR_STDEF->longdesc;
-return "DO NOT USE!";
+static char buf[30];
+sprintf (buf, "UNKNOWN (%d)", type);
+return buf;
 }
 
 

@@ -268,8 +268,8 @@ if (bar_visible && ! bar_visible_disp
 	 DrawScreenBox (item_x0[n], menubar_in_y0, item_x1[n], menubar_in_y1);
 	 set_colour (menu_colour[0][1].fg);
 	 }
-      DrawScreenText (item_x0[n] + spacing, menubar_text_y0, item_text[n]);
-      DrawScreenText (item_x0[n] + spacing + item_shortcut_index[n] * FONTW,
+      DrawScreenString (item_x0[n] + spacing, menubar_text_y0, item_text[n]);
+      DrawScreenString (item_x0[n] + spacing + item_shortcut_index[n] * FONTW,
 		      menubar_text_y0 + FONTU, "_");
       if (n == highlighted_no)
 	 pop_colour ();  /* 2 */

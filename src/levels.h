@@ -1,17 +1,20 @@
 /*
  *	levels.h
  *	BW & RQ sometime in 1993 or 1994
+ *	FIXME all those variables should become members of a
+ *	"Level" class.
  */
 
 
-#ifndef YH_LEVELS
-#define YH_LEVELS
+#ifndef YH_LEVELS  /* Prevent multiple inclusion */
+#define YH_LEVELS  /* Prevent multiple inclusion */
 
-/* the includes */
+
 #include "wstructs.h"
 #include "things.h"
 
-/* the external variables from levels.c */
+
+// Defined in levels.cc
 extern MDirPtr Level;		/* master dictionary entry for the level */
 
 extern int   NumThings;		/* number of things */
@@ -23,27 +26,47 @@ extern SDPtr SideDefs;		/* sidedefs data */
 extern int   NumVertices;	/* number of vertices */
 extern VPtr  Vertices;		/* vertices data */
 extern int   NumSegs;		/* number of segments */
-#if 0				/* Was needed by the node builder { */
-extern SEPtr Segs;		/* list of segments */
-extern SEPtr LastSeg;		/* last segment in the list */
-extern int   NumSSectors;	/* number of subsectors */
-extern SSPtr SSectors;		/* list of subsectors */
-extern SSPtr LastSSector;	/* last subsector in the list */
-#endif                          /* } */
 extern int   NumSectors;	/* number of sectors */
 extern SPtr  Sectors;		/* sectors data */
+
+// FIXME should be somewhere else
 extern int   NumWTexture;	/* number of wall textures */
 extern char  **WTexture;	/* array of wall texture names */
 extern int   NumFTexture;	/* number of floor/ceiling textures */
-extern char  **FTexture;	/* array of texture names */
+typedef struct
+{
+  char   name[WAD_NAME + 1];	// Name of flat
+  WadPtr wadfile;		// Pointer on wad where flat comes from
+  i32    offset;		// Offset of flat in wad
+} flat_list_entry_t;			// Length is implicit (always 4096)
+extern flat_list_entry_t *flat_list;	// List of all flats in the directory
 
 extern int   MapMaxX;		/* maximum X value of map */
 extern int   MapMaxY;		/* maximum Y value of map */
 extern int   MapMinX;		/* minimum X value of map */
 extern int   MapMinY;		/* minimum Y value of map */
-
 extern Bool  MadeChanges;	/* made changes? */
 extern Bool  MadeMapChanges;	/* made changes that need rebuilding? */
 
+extern char Level_name[WAD_NAME + 1]; /* The name of the level (E.G.
+				   "MAP01" or "E1M1"), followed by a
+				   NUL. If the Level has been created as
+				   the result of a "c" command with no
+				   argument, an empty string. The name
+				   is not necesarily in upper case but
+				   it always a valid lump name, not a
+				   command line shortcut like "17". */
 
-#endif	// Prevent multiple inclusion
+extern y_file_name_t Level_file_name;  /* The name of the file in which
+				   the level would be saved. If the
+				   level has been created as the result
+				   of a "c" command, with or without
+				   argument, an empty string. */
+
+extern y_file_name_t Level_file_name_saved;  /* The name of the file in
+				   which the level was last saved. If
+				   the Level has never been saved yet,
+				   an empty string. */
+
+void EmptyLevelData (const char *levelname);
+#endif	/* DO NOT ADD ANYTHING AFTER THIS LINE */

@@ -78,3 +78,36 @@ assert_wrap (i32, 2147483647, -2147483648);
 }
 
 
+/*
+ *	check_charset
+ *	If this test fails on your platform, send me a postcard
+ *	from your galaxy.
+ */
+void check_charset ()
+{
+  // Always false, unless your platform uses a
+  // character set even worse than EBCDIC (yet
+  // unseen).
+  if (   '0' + 1 != '1'
+      || '1' + 1 != '2'
+      || '2' + 1 != '3'
+      || '3' + 1 != '4'
+      || '4' + 1 != '5'
+      || '5' + 1 != '6'
+      || '6' + 1 != '7'
+      || '7' + 1 != '8'
+      || '8' + 1 != '9'
+      || 'a' + 1 != 'b'
+      || 'b' + 1 != 'c'
+      || 'c' + 1 != 'd'
+      || 'd' + 1 != 'e'
+      || 'e' + 1 != 'f'
+      || 'A' + 1 != 'B'
+      || 'B' + 1 != 'C'
+      || 'C' + 1 != 'D'
+      || 'D' + 1 != 'E'
+      || 'E' + 1 != 'F')
+    fatal_error ("This platform uses a terminally broken character set");
+}
+
+

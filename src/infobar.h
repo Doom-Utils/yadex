@@ -38,41 +38,41 @@ class infobar_c : public edwidget_c
    public :
       infobar_c ();
 
-      inline void set_visible (int visible) { this->visible = visible; }
+      void set_visible (int visible) { this->visible = visible; }
 
-      inline void set_file_name (const char *file_name)
+      void set_file_name (const char *file_name)
 	 { this->file_name = file_name; }
 
-      inline void set_level_name (const char *level_name)
+      void set_level_name (const char *level_name)
 	 { this->level_name = level_name; }
 
-      inline void set_obj_type  (int obj_type)  { this->obj_type = obj_type; }
-      inline void set_changes   (int changes)   { this->changes = changes; }
-      inline void set_grid_snap (int grid_snap) { this->grid_snap = grid_snap; }
+      void set_obj_type  (int obj_type)  { this->obj_type = obj_type; }
+      void set_changes   (int changes)   { this->changes = changes; }
+      void set_grid_snap (int grid_snap) { this->grid_snap = grid_snap; }
 
-      inline void set_grid_step_locked (int grid_step_locked)
+      void set_grid_step_locked (int grid_step_locked)
 	 { this->grid_step_locked = grid_step_locked; } 
 
-      inline void set_scale     (float scale)   { this->scale = scale; }
-      inline void set_grid_step (int grid_step) { this->grid_step = grid_step; }
+      void set_scale     (float scale)   { this->scale = scale; }
+      void set_grid_step (int grid_step) { this->grid_step = grid_step; }
 
-      inline void set_pointer (int x, int y)
+      void set_pointer (int x, int y)
 	 {
 	 flags |= pointer_set;
 	 pointer_x = x;
 	 pointer_y = y;
 	 }
 
-      inline void unset_pointer ()
+      void unset_pointer ()
 	 { flags &= ~ pointer_set; }
 
       /* Methods declared in edwidget_c */
       void draw ();
 
-      inline void undraw ()
+      void undraw ()
          { } // I can't undraw myself
 
-      inline int can_undraw ()
+      int can_undraw ()
          { return 0; }  // I don't have the ability to undraw myself
 
       int  need_to_clear ()
@@ -80,32 +80,34 @@ class infobar_c : public edwidget_c
 
       void clear ();
 
-      inline int req_width ()
+      int req_width ()
          { return -1; /* Infinite */ }
 
-      inline int req_height ()
+      int req_height ()
          { return 2 * BOX_BORDER + 2 * NARROW_VSPACING + FONTH; }
 
-      inline void set_x0 (int x0)
+      void set_x0 (int x0)
          { out_x0 = x0; text_x0 = x0 + BOX_BORDER + NARROW_HSPACING; }
 
-      inline void set_y0 (int y0)
+      void set_y0 (int y0)
          { out_y0 = y0; text_y0 = y0 + BOX_BORDER + NARROW_VSPACING; }
 
-      inline void set_x1 (int x1)
+      void set_x1 (int x1)
          { out_x1 = x1; text_x1 = x1 - BOX_BORDER - NARROW_HSPACING; }
 
-      inline void set_y1 (int y1)
+      void set_y1 (int y1)
          { out_y1 = y1; text_y1 = y1 - BOX_BORDER - NARROW_VSPACING; }
 
-      inline int get_x0 () { return out_x0; }
-      inline int get_y0 () { return out_y0; }
-      inline int get_x1 () { return out_x1; }
-      inline int get_y1 () { return out_y1; }
+      int get_x0 () { return out_x0; }
+      int get_y0 () { return out_y0; }
+      int get_x1 () { return out_x1; }
+      int get_y1 () { return out_y1; }
 
    private :
-      const int pointer_set      = 1;
-      const int pointer_disp_set = 2;
+      static const char FILE_NAME_UNSET[1];  // A special pointer value 
+      static const char LEVEL_NAME_UNSET[1];  // A special pointer value
+      static const int pointer_set      = 1;
+      static const int pointer_disp_set = 2;
 
       int visible;
       int visible_disp;
