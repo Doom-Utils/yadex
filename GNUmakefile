@@ -16,6 +16,7 @@
 # Don't change these lines.
 DEFINES =
 VERSION := $(shell cat VERSION)
+VERPREV := $(shell test -f VERSION~ && cat VERSION~)
 
 ########################################################################
 #
@@ -78,8 +79,8 @@ else
 endif
 
 # Your C and C++ compilers.
-CC = zzgcc
-CXX = zzg++
+CC = cc
+CXX = c++
 
 #
 #	Definitions that only hackers
@@ -313,8 +314,11 @@ ARC_FILES = $(sort $(DOC1) $(DOC1_SRC) $(DOC2_SRC_HTML) $(DOC2_SRC_MISC)\
 BINDIR  = $(OBJDIR)
 DBINDIR = $(DOBJDIR)
 
-# The basename of the archive.
+# The "root" directory of the archives. The
+# basename of the archives is also based on this.
 ARCHIVE := yadex-$(VERSION)
+ARCPREV := yadex-$(VERPREV)
+ARCDIFF := yadex-$(VERSION).diff
 
 # Where "make install" puts things.
 INST_BINDIR = $(PREFIX)/bin
@@ -492,13 +496,13 @@ dg:
 dd:
 	ddd $(DBINDIR)/yadex
 
-# Generate the distribution archive. Requires GNU tar,
+# Generate the distribution archives. Requires GNU tar,
 # GNU cp, gzip and optionally bzip2. bzip2 is cool but,
-# in this case, it's 1000% slower than gzip while being
+# in this case, it's 900% slower than gzip while being
 # only 15% more efficient. That's why the creation
 # of the .tar.bz2 archive is commented out.
 .PHONY: dist
-dist: changes distimage distgz #distbz2
+dist: changes distimage distgz distdiff #distbz2
 	@echo Removing distribution image tree $(ARCHIVE)
 	@rm -r $(ARCHIVE)
 
@@ -517,6 +521,27 @@ distgz: distimage
 .PHONY: distbz2
 distbz2: distimage
 	tar -cIf $(ARCHIVE).tar.bz2 $(ARCHIVE)
+
+.PHONY: distdiff
+TMP0 = $$HOME/tmp
+TMPDIFF = $(TMP0)/$(ARCDIFF)
+TMPPREV = $(TMP0)/$(ARCPREV)
+distdiff:
+	@echo "> Building the diff distribution"
+	@echo ">> Creating the diff"
+	mkdir -p $(TMPDIFF)
+	scripts/process docsrc/README.diff >$(TMPDIFF)/README
+	tar -xzf ../yadex-arc/$(ARCPREV).tar.gz -C $(TMP0)
+	export ARCDIR=$$PWD/$(ARCHIVE); cd $(TMPPREV)\
+	  && diff -c -N -r . $$ARCDIR >$(TMPDIFF)/$(ARCDIFF) || true
+	cd $(TMPDIFF)/.. && tar -czf $(ARCDIFF).tar.gz $(ARCDIFF)
+	@echo ">> Verifying the diff"
+	cd $(TMPPREV) && patch -i $(TMPDIFF)/$(ARCDIFF) -p 0
+	diff -r $(TMPPREV) $(ARCHIVE)
+	mv $(TMPDIFF).tar.gz .
+	@echo ">> Cleaning up"
+	rm -rf $(TMPDIFF)
+	rm -rf $(TMPPREV)
 
 .PHONY: showconf
 showconf:

@@ -9,6 +9,7 @@
 # - "$DATE"        by the YYYY-MM-DD current time,
 # - "$SELF_DATE"   by the YYYY-MM-DD mtime of <file>,
 # - "$SOURCE_DATE" by the contents of the file ./.srcdate,
+# - "$VERPREV"     by the contents of the file ./VERSION~.
 # - "$VERSION"     by the contents of the file ./VERSION.
 # Output is written on stdout.
 
@@ -17,4 +18,5 @@ shift
 sed -e "s/\$DATE/`date +%Y-%m-%d`/;
 	s/\$SELF_DATE/`scripts/ftime -d $file`/;
 	s/\$SOURCE_DATE/`cat src/.srcdate`/;
+	s/\$VERPREV/`test -f VERSION~ && cat VERSION~`/;
 	s/\$VERSION/`cat VERSION`/;" $file

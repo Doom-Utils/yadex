@@ -1,6 +1,12 @@
 
                                     Changes
                                        
+Yadex 1.3.2 (2000-01-14)
+
+     * Build: Oops ! I had forgotten to set CC and CXX back to their
+       "sane" values before cutting the 1.3.1 tarball.
+     * Code: "make dist" now also generates a diff.
+       
 Yadex 1.3.1 (2000-01-12)
 
      * Build: Fix for "Ras2"'s compile error with g++ 2.7.2.3 :
