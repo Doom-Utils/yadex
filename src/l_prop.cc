@@ -614,3 +614,37 @@ static const char *PrintLdtgroup (void *ptr)
   return ((ldtgroup_t *)ptr)->desc;
 }
 
+/*
+ *   TransferLinedefProperties
+ *
+ *   Note: right now nothing is done about sidedefs.  Being able to
+ *   (intelligently) transfer sidedef properties from source line to
+ *   destination linedefs could be a useful feature -- though it is
+ *   unclear the best way to do it.  OTOH not touching sidedefs might
+ *   be useful too.
+ *
+ *   -AJA- 2001-05-27
+ */
+#define LINEDEF_FLAG_KEEP  (1 + 4)
+
+void TransferLinedefProperties (int src_linedef, SelPtr linedefs)
+{
+   SelPtr cur;
+   wad_ldflags_t src_flags = LineDefs[src_linedef].flags & ~LINEDEF_FLAG_KEEP;
+
+   for (cur=linedefs; cur; cur=cur->next)
+   {
+      if (! is_obj(cur->objnum))
+         continue;
+
+      // don't transfer certain flags
+      LineDefs[cur->objnum].flags &= LINEDEF_FLAG_KEEP;
+      LineDefs[cur->objnum].flags |= src_flags;
+
+      LineDefs[cur->objnum].type = LineDefs[src_linedef].type;
+      LineDefs[cur->objnum].tag  = LineDefs[src_linedef].tag;
+
+      MadeChanges = 1;
+   }
+}
+

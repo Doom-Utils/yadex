@@ -1723,7 +1723,15 @@ cancel_save_as:
 	 select_linedefs_path (&e.Selected, e.highlighted.num, YS_TOGGLE);
 	 RedrawMap = 1;
 	 }
-
+      // [E]: add linedef and split sector -- [AJA]
+      else if (is.key == 'E' && e.obj_type == OBJ_VERTICES)
+        {
+        if (e.Selected)
+          {
+          MiscOperations (e.obj_type, &e.Selected, 5);
+          RedrawMap = 1;
+          }
+        }
       // [E]: Select/unselect all 1s linedefs in path
       else if (is.key == 'E' && e.highlighted._is_linedef ())
 	 {
@@ -1982,6 +1990,17 @@ cancel_save_as:
          && e.Selected && e.Selected->next && ! e.Selected->next->next)
          {
          SplitLineDefsAndSector (e.Selected->next->objnum, e.Selected->objnum);
+         ForgetSelection (&e.Selected);
+         RedrawMap = 1;
+         DragObject = false;
+         StretchSelBox = false;
+         }
+
+      // [w]: split sector between vertices
+      else if (is.key == 'w' && e.obj_type == OBJ_VERTICES
+         && e.Selected && e.Selected->next && ! e.Selected->next->next)
+         {
+         SplitSector (e.Selected->next->objnum, e.Selected->objnum);
          ForgetSelection (&e.Selected);
          RedrawMap = 1;
          DragObject = false;
@@ -2268,6 +2287,21 @@ cancel_save_as:
 	 RedrawMap = 1;
 	 }
 
+      // [Z] Set sector on surrounding linedefs (AJA)
+      else if (is.key == 'Z' && e.pointer_in_window) 
+         {
+         if (e.obj_type == OBJ_SECTORS && e.Selected)
+            {
+            SuperSectorSelector (e.pointer_x, e.pointer_y,
+               e.Selected->objnum);
+            }
+         else
+            {
+            SuperSectorSelector (e.pointer_x, e.pointer_y, OBJ_NO_NONE);
+            }
+         RedrawMap = 1;
+         }
+
       // [!] Debug info (not documented)
       else if (is.key == '!')
          {
@@ -2286,6 +2320,30 @@ cancel_save_as:
          {
          show_font ();
 	 RedrawMap = 1;
+         }
+
+      // [T] Transfer properties to selected objects (AJA)
+      else if (is.key == 'T' && e.Selected 
+            && e.highlighted.num >= 0)
+         {
+         switch (e.obj_type)
+            {
+            case OBJ_SECTORS:
+               TransferSectorProperties (e.highlighted.num, e.Selected);
+               RedrawMap = 1;
+               break;
+            case OBJ_THINGS:
+               TransferThingProperties (e.highlighted.num, e.Selected);
+               RedrawMap = 1;
+               break;
+            case OBJ_LINEDEFS:
+               TransferLinedefProperties (e.highlighted.num, e.Selected);
+               RedrawMap = 1;
+               break;
+            default:
+               Beep ();
+               break;
+            }
          }
 
       // [|] Show colours (not documented)

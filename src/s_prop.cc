@@ -98,6 +98,35 @@ const char *Menu_data_st::operator[] (size_t n) const
 
 
 /*
+ *   TransferSectorProperties
+ *
+ *   -AJA- 2001-05-27
+ */
+void TransferSectorProperties (int src_sector, SelPtr sectors)
+{
+   SelPtr cur;
+
+   for (cur=sectors; cur; cur=cur->next)
+   {
+      if (! is_obj(cur->objnum))
+         continue;
+
+      strncpy (Sectors[cur->objnum].floort, Sectors[src_sector].floort,
+            WAD_FLAT_NAME);
+      strncpy (Sectors[cur->objnum].ceilt, Sectors[src_sector].ceilt,
+            WAD_FLAT_NAME);
+
+      Sectors[cur->objnum].floorh  = Sectors[src_sector].floorh;
+      Sectors[cur->objnum].ceilh   = Sectors[src_sector].ceilh;
+      Sectors[cur->objnum].light   = Sectors[src_sector].light;
+      Sectors[cur->objnum].special = Sectors[src_sector].special;
+      Sectors[cur->objnum].tag     = Sectors[src_sector].tag;
+
+      MadeChanges = 1;
+   }
+}
+
+/*
  *	SectorProperties
  *	Sector properties "dialog"
  */

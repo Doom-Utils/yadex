@@ -36,6 +36,8 @@ Place, Suite 330, Boston, MA 02111-1307, USA.
 #include "gfx.h"
 #include "levels.h"
 #include "oldmenus.h"
+#include "objid.h"
+#include "objects.h"
 #include "selectn.h"
 #include "things.h"
 
@@ -448,6 +450,32 @@ static const char *PrintThingdef (void *ptr)
 if (ptr == NULL)
    return "PrintThingdef: (null)";
 return (*((thingdef_t **)ptr))->desc;
+}
+
+
+/*
+ *   TransferThingProperties
+ *
+ *   -AJA- 2001-05-27
+ */
+void TransferThingProperties (int src_thing, SelPtr things)
+{
+   SelPtr cur;
+
+   for (cur=things; cur; cur=cur->next)
+   {
+      if (! is_obj(cur->objnum))
+         continue;
+
+      Things[cur->objnum].angle = Things[src_thing].angle;
+      Things[cur->objnum].type  = Things[src_thing].type;
+      Things[cur->objnum].when  = Things[src_thing].when;
+
+      MadeChanges = 1;
+
+      things_types++;
+      things_angles++;
+   }
 }
 
 
