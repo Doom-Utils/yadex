@@ -1,0 +1,126 @@
+<h3>Sector miscellaneous operations</h3>
+
+<p>
+  Unless otherwise specified, all the operations below act on all the objects
+  in the <em>working set</em>.
+  If there is at least one selected object, the working set is equal to the
+  selection.
+  If there is no selected object, the working set is the currently highlighted
+  object (the object under the pointer).
+  If there is no selection and no highlighted object, the selection is empty,
+  of course.
+  If there is a selection and an object outside the selection, the latter is
+  <em>not</em> part of the working set.
+</p>
+
+<dl>
+  <dt>Find first free tag number
+  <dd>
+    Displays the smallest tag number greater than 0 and not used by any linedef
+    or sector.
+  </dd>
+
+  <dt>Rotate and scale sectors
+  <dd>(description to be written)
+
+  <dt>Make door from sector
+  <dd>(description to be written)
+
+  <dt>Make lift from sector
+  <dd>(description to be written)
+
+  <dt>Distribute sector floor heights
+  <dd>(description to be written)
+
+  <dt>Distribute sector ceiling heights
+  <dd>(description to be written)
+
+  <dt>Raise or lower sectors...
+  <dd>
+    Prompts you for a number (<var>N</var>) and adds that number to the floor
+    and ceiling heights of all the sectors in the working set.
+    If <var>N</var> is positive, this results in raising the sectors by
+    <var>N</var> units.
+    If <var>N</var> is negative, this results in lowering the sectors by
+    -<var>N</var> units.
+
+  <dt>Brighten or darken sectors...
+  <dd>
+    Prompts you for a number (<var>N</var>) and adds that number to the light
+    level of all the sectors in the working set.
+    If <var>N</var> is positive, this results in sectors becoming brighter.
+    If <var>N</var> is positive, this results in sectors becoming darker.
+    No light level is decreased below 0 or increased above 255.
+
+  <dt>Unlink room
+  <dd>This function is not implemented yet.
+
+  <dt>Mirror horizontally
+  <dd>
+    <p>
+      This function starts by determining the set <var>S</var> of vertices that
+      are used by the sectors in the working set.
+      Then all the vertices in <var>S</var> have their x-coordinate changed so
+      that they're "mirrored" around the vertical axis that intersects the
+      geometric centre of <var>S</var>.
+      Finally, all the linedefs whose both vertices belong to <var>S</var> are
+      flipped so that the sector references remain correct.
+    </p>
+
+    <p>
+      This function is designed to be used on either the whole level or a group
+      of isolated sectors (like in the screenshots below).
+      It is not recommended to use it on a group of sectors if that group is
+      connected to other sectors.
+      You can do it but the resulting mess might take you some time to
+      untangle, especially if there are many connecting linedefs.
+    </p>
+
+    <p>
+      A common use for this function is when you have a symmetrical room with,
+      say, the same staircase on both sides of the axis of symmetry.
+      You can build one staircase, make a copy of it, mirror the copy and paste
+      it on the other side of the room.
+    </p>
+
+    <p>
+      See the "Mirror horizontally" linedef function.
+    </p>
+
+  <dt>Mirror vertically
+  <dd>
+    <p>
+      This function starts by determining the set <var>S</var> of vertices that
+      are used by the sectors in the working set.
+      Then all the vertices in <var>S</var> have their y-coordinate changed so
+      that they're "mirrored" around the horizontal axis that intersects the
+      geometric centre of <var>S</var>.
+      Finally, all the linedefs whose both vertices belong to <var>S</var> are
+      flipped so that the sector references remain correct.
+    </p>
+
+    <p>
+      This function is designed to be used on either the whole level or a group
+      of isolated sectors (like in the screenshots below).
+      It is not recommended to use it on a group of sectors if that group is
+      connected to other sectors.
+      You can do it but the resulting mess might take you some time to
+      untangle, especially if there are many connecting linedefs.
+    </p>
+
+    <p>
+      A common use for this function is when you have a symmetrical room with,
+      say, the same staircase on both sides of the axis of symmetry.
+      You can build one staircase, make a copy of it, mirror the copy and paste
+      it on the other side of the room.
+    </p>
+
+    <p>
+      See the "Mirror vertically" linedef function.
+    </p>
+
+  <dt>Swap flats
+  <dd>For each sector in the working set, exchange the floor
+    texture with the ceiling texture.
+
+</dl>

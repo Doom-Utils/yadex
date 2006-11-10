@@ -5,13 +5,9 @@ TO-DO LIST FOR YADEX
 ----------------------------------------
 
 Before 1.8.0:
-- Finish Boom generalised linedef types
-- Correct $(mtime)
 - l_merge
 - Recover if perl isn't available
 - Users's guide TOC ?
-- Make the doc as close as possible to 1.7.0 ? The extensions have changed
-  anyway.
 
 General
 - Automatically adapt to the level to edit; if it's a Doom level (ExMy),
@@ -622,6 +618,11 @@ Editing things:
   just don't have a root.
 
 Editing vertices:
+- Divide/separate/split/unmerge/unshare vertices: all selected vertices
+  are duplicated enough times that none is used by more than one
+  linedef. Maybe change their position as well to make it more obvious
+  what happened and easier to pick the right vertex. See also
+  linedef-detach.
 
 Editing linedefs and sidedefs
 - Linedef type : show long name.
@@ -818,6 +819,12 @@ Editing linedefs and sidedefs
   get a "Bug: GetObjectCoords: bad sector# x" message.
 - For linedef types that take a tag to another linedef, show the correct
   object number in the info box and highlight the other linedef.
+- linedef-detach: all selected linedef are "detached" from whatever
+  they're attached to by duplicating their start and end vertices.
+- linedef-detach-end: similar to linedef-detach but only detach the end
+  vertex.
+- linedef-detach-start: similar to linedef-detach but only detach the
+  start vertex.
 
 Editing sectors
 - Set floor height to ceiling height - headroom.
@@ -886,6 +893,10 @@ Documentation
   - the names of the copyright holders (contributors et al.)
   - the name of the maintainer
 - Each file should have its own copyright statement.
+- The "options" section in users_guide.html is vague, sometimes out of
+  date and does not even point at the man page.
+- The dates $(mtime) are incorrect (show the last revision date of the
+  current file which may not be the most recent one).
 
 Unimportant :
 - If bgi= or -bgi specifies a path for the .bgi driver, handle it.

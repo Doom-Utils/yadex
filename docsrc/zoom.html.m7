@@ -1,0 +1,31 @@
+<h3>Zooming in and out</h3>
+
+<p>
+  The current zoom factor is shown on the info bar, after the word
+  "<code>Scale:</code>".
+  It is shown in pixels per map units.
+  The indication "<code>Scale: 50%</code>" means that one pixel of the display
+  corresponds to 2 map units.
+</p>
+
+<p>
+  You can zoom in by pressing $k + or $k = or the 4th mouse button or by moving
+  the mouse wheel "up".
+  See the <code>zoom_default</code> and <code>zoom_step</code> variables.
+</p>
+
+<p>
+  You can zoom out by pressing $k - or $k _ or the 5th mouse button or by
+  moving the mouse wheel "down".
+  See the <code>zoom_default</code> and <code>zoom_step</code> variables.
+</p>
+
+<p>
+  You can also set the zoom factor directly with the keys $k 1 through $k 9 and
+  $(k 0).
+  $k 1 sets the zoom factor to a value that is controlled by the
+  <code>digit_zoom_base</code> variable (by default, 100%).
+  Each successive key down the keyboard sets the zoom factor
+  <code>digit_zoom_step</code> percents higher than the previous one (by
+  default, -29%).
+</p>

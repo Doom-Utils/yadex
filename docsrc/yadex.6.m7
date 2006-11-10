@@ -6,6 +6,11 @@
 .de OP
 \\fB\-\\$$1\\fP, \\fB\-\\$$2\\fP \\fI\\$$3\\fP
 ..
+\" Approximation of eacute
+.ds ea \o"\'e"
+\" Approximation of euml. Just "e" really because there's no easy way to
+\" get a trema in troff.
+.ds et e
 .SH NAME
 yadex \- a Doom/Heretic/Strife level editor
 .SH SYNOPSIS
@@ -22,7 +27,7 @@ Yadex can be used to view, create and modify levels for
 Doom\fP, \fBDoom press release pre beta\fP and \fBHeretic\fP.
 It also supports, to a lesser extent, \fBDoom alpha\fP,
 \fBHexen\fP and \fBStrife\fP.
-
+.PP
 See \fBREADME\fP for a quick start.
 .br
 To know what's new in this release, see \fBCHANGES\fP.
@@ -35,14 +40,14 @@ if \fBverbose\fP is set to 1 in the configuration file. For non
 boolean options, \fB+\fP is equivalent to \fB\-\fP (note: the
 fact that a misimplementation is documented should not be
 construed as an incitement to make use of it).
-
+.PP
 For options that take a parameter, the option and the parameter
 must be in separate command\-line arguments, i.e. you
 \fIcannot\fP write \fB\-gdoom\fP.
-
+.PP
 It is not possible to run options together, i.e. you \fIcan't\fP
 use \fB\-dv\fP as short for \fB\-d\fP \fB\-v\fP.
-
+.PP
 The \fB\-\-\fP "end-of-options" convention is not supported.
 .TP
 .BR \-? , \ \-help , \ \-\-help
@@ -104,8 +109,8 @@ Set the game to \fIstring\fP, which can be one of the following:
 This option is equivalent to and overrides the \fBgame\fP
 directive of the configuration file.
 .TP
-.BI \-G \ path
-Add \fIpath\fP to the .ygd file search path.
+.BI \-G \ directory
+Add \fIdirectory\fP to the game definition file search path.
 Directories specified with this option are searched before the system
 directories.
 If this option is used more than once, the corresponding directories are
@@ -298,66 +303,63 @@ None. Yadex does not use the X resources system.
 In certain circumstances, exposures are not handled.
 If the Yadex window turns black,
 back out by pressing [Esc], several times if necessary.
-
+.PP
 If you edit a level from a file that contains several and save it,
 all the other levels from that file are lost.
-
+.PP
 And many more. See \fBTODO\fP.
 .SH AUTHOR
-André Majorel (http://www.teaser.fr/~amajorel/)
-
+Andr\*(ea Majorel (http://www.teaser.fr/~amajorel/)
+.PP
 .nf
 Contributors:
 Andrew J. Apted (http://www.netspace.net.au/~ajapted/)
 Matthew W. Miller (zbp+ee+fhozhybp=eryyvzjz)
 .fi
-
-Yadex is derived from DEU 5.21 that was written by Raphaël Quinet,
+.PP
+Yadex is derived from DEU 5.21 that was written by Rapha\*(etl Quinet,
 Brendon Wyber and others.
-
+.PP
 See the HTML documentation for detailed credits.
 .SH LEGAL
 .SS Yadex
 .nf
 $COPYRIGHT_MAN
 .fi
-
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation; either version 2 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU Library General Public
-License along with this library; if not, write to the Free
-Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
-02111-1307, USA.
+.PP
+This program is free software; you can redistribute it and/or modify it under
+the terms of version 2 of the GNU General Public License as published by the
+Free Software Foundation.
+.PP
+This program is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+PARTICULAR PURPOSE.
+See the GNU General Public License for more details.
+.PP
+You should have received a copy of the GNU General Public License along with
+this program; if not, write to the Free Software Foundation, Inc., 51 Franklin
+Street, Fifth Floor, Boston, MA 02110-1301, USA.
 .SS Atclib
 The Yadex distribution includes a subset of Atclib.
-
-Atclib is copyright André Majorel 1995-1999 and distributed under the terms of
-version 2 of the GNU Library General Public License.
-
-This library is free software; you can redistribute it and/or
-modify it under the terms of version 2 of the GNU Library General Public
-License as published by the Free Software Foundation.
-
-This library is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-Library General Public License for more details.
-
-You should have received a copy of the GNU Library General Public
-License along with this library; if not, write to the Free
-Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
-MA 02111-1307, USA
+.PP
+Atclib is copyright Andr\*(ea Majorel 1995-1999 and distributed under the
+terms of version 2 of the GNU Library General Public License.
+.PP
+This library is free software; you can redistribute it and/or modify it under
+the terms of version 2 of the GNU Library General Public License as published
+by the Free Software Foundation.
+.PP
+This library is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+PARTICULAR PURPOSE.
+See the GNU Library General Public License for more details.
+.PP
+You should have received a copy of the GNU Library General Public License along
+with this library; if not, write to the Free Software Foundation, Inc., 51
+Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 .SS Boost
 The Yadex distribution includes a subset of Boost 1.25.0.
-
+.PP
 Boost 1.25.0 is copyright various authors and released under the following
 terms\ : Permission to copy, use, modify, sell and distribute this software is
 granted provided this copyright notice appears in all copies.
@@ -378,4 +380,4 @@ http://www.hut.fi/~jpakkane/why/
 .IP "Xwad (part of Dumb)"
 http://stekt.oulu.fi/~tosi/dumb/dumb.html
 .IP Xwadtools
-ftp://3darchives.in-span.net/pub/idgames/source/
+ftp://ftp.fu-berlin.de/pc/games/idgames/source/

@@ -36,11 +36,11 @@ Place, Suite 330, Boston, MA 02111-1307, USA.
 
 
 /*
- *	Patch_dir 
+ *	Patch_dir
  *	
  *	The purpose of this class is to hide the details of how
  *	patches are stored in the wads from Yadex. It provides
- *	two basic services :
+ *	those basic services :
  *
  *	- refresh()	Must be called every time the directory
  *			changes in any way.
@@ -92,7 +92,7 @@ class Patch_list
   public :
     Patch_list ();
     ~Patch_list ();
-    const char **data ();
+    const char *const *data ();
     size_t size ();
     void set (Patch_lumps_map& patch_lumps);
     void clear ();

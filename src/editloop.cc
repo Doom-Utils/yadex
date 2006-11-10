@@ -14,17 +14,16 @@ Yadex incorporates code from DEU 5.21 that was put in the public domain in
 The rest of Yadex is Copyright © 1997-2005 André Majorel and others.
 
 This program is free software; you can redistribute it and/or modify it under
-the terms of the GNU General Public License as published by the Free Software
-Foundation; either version 2 of the License, or (at your option) any later
-version.
+the terms of version 2 of the GNU Library General Public License as published
+by the Free Software Foundation.
 
 This program is distributed in the hope that it will be useful, but WITHOUT
 ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
 FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License along with
-this program; if not, write to the Free Software Foundation, Inc., 59 Temple
-Place, Suite 330, Boston, MA 02111-1307, USA.
+this program; if not, write to the Free Software Foundation, Inc., 51 Franklin
+Street, Fifth Floor, Boston, MA 02110-1301, USA.
 */
 
 
@@ -308,8 +307,8 @@ e.mb_menu[MBM_EDIT] = new Menu (NULL,
    "~Delete object(s)",        YK_DEL, 0,
    "~Exchange object numbers", 24,     0,
    "~Preferences...",          YK_F5,  0,
-   "~Snap to grid",            'y',    MIF_VTICK, &e.grid_snap,		     0,
-   "~Lock grid step",          'z',    MIF_VTICK, &e.grid_step_locked,	     0,
+   "~Snap to grid",            'y',    MIF_VTICK, &e.grid_snap,              0,
+   "~Lock grid step",          'z',    MIF_VTICK, &e.grid_step_locked,       0,
    NULL);
 
 // If you change the order of modes here, don't forget
@@ -1196,9 +1195,9 @@ for (RedrawMap = 1; ; RedrawMap = 0)
 	 strcpy (buf2, "buf2");
 	 strcpy (buf3, "buf3");
 	 Entry2 e ("Title of window", "Buf 1%*sBuf 2%*sBuf 3%*s",
-	     sizeof buf1 - 1, buf1,
-	     sizeof buf2 - 1, buf2,
-	     sizeof buf3 - 1, buf3);
+	     int (sizeof buf1 - 1), buf1,
+	     int (sizeof buf2 - 1), buf2,
+	     int (sizeof buf3 - 1), buf3);
 	 e.loop ();
 	 printf ("bufs: \"%s\", \"%s\", \"%s\"\n", buf1, buf2, buf3);
 	 RedrawMap = 1;
@@ -1584,7 +1583,8 @@ cancel_save_as:
 		  else
 		     {
 		     sd = LineDefs[l].sidedef2;
-		     if (sd >= 0 && IsSelected (e.Selected, SideDefs[sd].sector))
+		     if (sd >= 0
+			   && IsSelected (e.Selected, SideDefs[sd].sector))
 			SelectObject (&NewSel, l);
 		     }
 	          }
@@ -1767,7 +1767,7 @@ cancel_save_as:
          {
          e.grid_step_locked = ! e.grid_step_locked;
          }
- 
+
       // [r]: toggle the rulers
       else if (is.key == 'r')
 	 e.rulers_shown = !e.rulers_shown;
@@ -1985,7 +1985,7 @@ cancel_save_as:
          DragObject = false;
          StretchSelBox = false;
       }
-      
+
       // [Del]: delete the current object
       else if (is.key == YK_DEL
          && (e.Selected || e.highlighted ())) /* 'Del' */
@@ -2095,7 +2095,8 @@ cancel_save_as:
 		  char msg[80];
 
 		  Beep ();
-		  sprintf (msg, "Linedef #%d already has two sidedefs", cur->objnum);
+		  sprintf (msg, "Linedef #%d already has two sidedefs",
+		     cur->objnum);
 		  Notify (-1, -1, "Error: cannot add the new sector", msg);
 		  break;
 		  }

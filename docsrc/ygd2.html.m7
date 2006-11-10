@@ -1,0 +1,93 @@
+<h2>Game definition files</h2>
+
+<p>
+  Most of Yadex's knowledge about thing numbers and names,
+  linedef types etc. is retrieved from so-called game definition
+  files. When you specify "<code>-g&nbsp;foo</code>", it in
+  fact means that Yadex should use the game definition file
+  named "<code>foo.ygd</code>".
+</p>
+
+<h3>Contents of game definition files</h3>
+
+<p>
+  For Yadex to recognize the file as a game definition file, it
+  must begin with a certain magic string. If it doesn't, Yadex
+  will print an error message an bail out. The reason for being
+  so fussy is to avoid headaches when the game definition file
+  format changes and there are old game definition files lying
+  around in your directories.
+</p>
+
+<p>
+  Game definition files are not supposed to be modified in
+  normal use. Their format is described in <a
+  href="ygd.html"><code>ygd.html</code></a>.
+</p>
+
+<h3><a name="ygd_locate">Locating game definition files</a></h3>
+
+<p>
+  The algorithm used to locate game definition files is exactly
+  the same as the one described in  <a
+  href="#config_locate">Locating configuration files</a>. Only
+  the search path is different. As is the case for config files,
+  it depends on the prefix for which Yadex was compiled.
+</p>
+
+<dl>
+  <dt><code>/usr</code>&nbsp;:
+  <dd>
+    <ol>
+      <li><code>.</code>
+      <li><code>~/.yadex/$VERSION</code>
+      <li><code>~/.yadex</code>
+      <li><code>/usr/share/games/yadex/$VERSION</code>
+      <li><code>/usr/share/games/yadex</code>
+    </ol>
+
+  <dt><code>/usr/local</code>&nbsp;:
+  <dd>
+    <ol>
+      <li><code>.</code>
+      <li><code>~/.yadex/$VERSION</code>
+      <li><code>~/.yadex</code>
+      <li><code>/usr/local/share/games/yadex/$VERSION</code>
+      <li><code>/usr/local/share/games/yadex</code>
+    </ol>
+
+  <dt><code>/opt/<var>some/path</var></code>&nbsp;:
+  <dd>
+    <ol>
+      <li><code>.</code>
+      <li><code>~/.yadex/$VERSION</code>
+      <li><code>~/.yadex</code>
+      <li><code>/opt/<var>some/path</var>/share</code>
+    </ol>
+
+  <dt><code><var>/some/path</var></code>&nbsp;:
+  <dd>
+    <ol>
+      <li><code>.</code>
+      <li><code>~/.yadex/$VERSION</code>
+      <li><code>~/.yadex</code>
+      <li><code><var>/some/path</var>/share</code>
+    </ol>
+</dl>
+
+<p>
+  Additional directories can be prepended to the search path with the
+  <code>-G</code> option.
+  If <code>-G</code> is used more than once, the corresponding directories are
+  searched in the order they appear on the command line.
+</p>
+
+<h3>Use of game definition files</h3>
+
+<p>
+  On startup, Yadex loads the game definition file corresponding
+  to the <code>game</code> variable. It performs a front-to-back
+  search (see <a href="#ygd_locate">Locating game definition
+  files</a>) for a file named <code><var>game</var>.ygd</code>.
+  The first match is used.
+</p>

@@ -1,0 +1,7 @@
+<h3>Setting/toggling/clearing linedef flags</h3>
+
+<p>
+  In linedefs mode, press $k a to open the "set linedef flags" popup menu.
+  Press $k b to open the "toggle linedef flags" popup menu.
+  Press $k c to open the "clear linedef flags" popup menu.
+</p>

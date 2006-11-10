@@ -26,9 +26,11 @@ VERSION=`cat VERSION`
 
 AWK=awk
 CC=
-CFLAGS=-O
+CFLAGS=
+unset CFLAGS
 CXX=
-CXXFLAGS=-O
+CXXFLAGS=
+unset CXXFLAGS
 HAVE_GETTIMEOFDAY=
 HAVE_INTTYPES=
 HAVE_NANOSLEEP=
@@ -58,9 +60,12 @@ cerr=${APPNAME}_$$.err
 check () {
   printf '%s' "$3" >"$tmpdir/$cbasename"
   printf 'checking %s...' "$1"
-  if (cd "$tmpdir"
-     "$CC" $CFLAGS -o $obasename -c $cbasename
-     "$CC" $LDFLAGS -o $ebasename $obasename) >"$tmpdir/$cout" 2>&1
+  if
+  (
+    cd "$tmpdir"							&&
+      "$CC" $CFLAGS -o $obasename -c $cbasename				&&
+      "$CC" $LDFLAGS -o $ebasename $obasename
+  ) >"$tmpdir/$cout" 2>&1
   then
     echo " yes"
     eval "$2=1"
@@ -80,7 +85,7 @@ check () {
 checkxx () {
   printf '%s' "$3" >"$tmpdir/$cbasename"
   printf 'checking %s...' "$1"
-  if (cd "$tmpdir" && "$CXX" $CXXFLAGS -c $cbasename >$cout 2>&1)
+  if (cd "$tmpdir" && "$CXX" $CXXFLAGS -c $cbasename) >"$tmpdir/$cout" 2>&1
   then
     echo " yes"
     eval "$2=1"
@@ -152,7 +157,7 @@ genh () {
 	echo '//#define Y_DOS'
 	echo '#define Y_UNIX';;
       *)
-	echo "configure: bad \$PLATFORM \"$PLATFORM\"" >&2
+	echo "configure: invalid \$PLATFORM \"$PLATFORM\"" >&2
 	exit 1;;
     esac
     case "$INTERFACE" in
@@ -163,7 +168,7 @@ genh () {
 	echo '//#define Y_BGI'
 	echo '#define Y_X11';;
       *)
-	echo "configure: bad \$INTERFACE \"$INTERFACE\"" >&2
+	echo "configure: invalid \$INTERFACE \"$INTERFACE\"" >&2
 	exit 1;;
     esac
     genbool GETTIMEOFDAY
@@ -289,7 +294,7 @@ EOF
       ;;
 
     -*)
-      echo "configure: bad argument \"$1\"" 1>&2
+      echo "configure: invalid argument \"$1\"" 1>&2
       exit 1
       ;;
 
@@ -329,17 +334,17 @@ then
   printf ' using user-supplied value:'
 else
   CC=gcc
-  if type $CC >/dev/null 2>&1
+  if type "$CC" >/dev/null 2>&1
   then
-    CFLAGS="$CFLAGS -Wall"
+    :
   else
     CC=c89
-    if type $CC >/dev/null 2>&1
+    if type "$CC" >/dev/null 2>&1
     then
       :
     else
       CC=cc
-      if type $CC >/dev/null 2>&1
+      if type "$CC" >/dev/null 2>&1
       then
 	:
       else
@@ -353,15 +358,28 @@ fi
 echo " $CC"
 
 #
+#	Default CFLAGS
+#
+set | $GREP -q '^CFLAGS=' ||
+{
+  CFLAGS=-O
+  echo "$CC" | sed 's,.*/,,' | grep -q '^gcc' && CFLAGS='-O2 -Wall'
+}
+
+#
 #	does the C compiler actually work ?
 #
 printf "checking whether the C compiler works..."
 (
   cd "$tmpdir"
   echo 'main (int argc, char *argv[]) { return 0; }' >$cbasename
-  if ("$CC" $CFLAGS -o $obasename -c $cbasename
-      "$CC" $LDFLAGS -o $ebasename $obasename
-      ./$ebasename) >$cout 2>&1
+  if
+  (
+    "$CC" $CFLAGS -o $obasename -c $cbasename				&&
+      rm -f $ebasename							&&
+      "$CC" $LDFLAGS -o $ebasename $obasename				&&
+      ./$ebasename
+  ) >$cout 2>&1
   then
     echo " yes"
   else
@@ -370,7 +388,7 @@ printf "checking whether the C compiler works..."
     echo "error: looks like the C compiler is not working" 1>&2
     exit 1
   fi
-)
+) || exit 1
 
 #
 #	Do we have gettimeofday() ?
@@ -439,17 +457,17 @@ then
   printf ' using user-supplied value:'
 else
   CXX=g++
-  if type $CXX >/dev/null 2>&1
+  if type "$CXX" >/dev/null 2>&1
   then
-    CXXFLAGS="$CXXFLAGS -Wall"
+    :
   else
     CXX=c++
-    if type $CXX >/dev/null 2>&1
+    if type "$CXX" >/dev/null 2>&1
     then
       :
     else
       CXX=cxx
-      if type $CXX >/dev/null 2>&1
+      if type "$CXX" >/dev/null 2>&1
       then
 	:
       else
@@ -463,15 +481,28 @@ fi
 echo " $CXX"
 
 #
+#	Default CXXFLAGS
+#
+set | $GREP -q '^CXXFLAGS=' ||
+{
+  CXXFLAGS=-O
+  echo "$CXX" | sed 's,.*/,,' | grep -q '^g++' && CXXFLAGS='-O2 -Wall'
+}
+
+#
 #	Does the C++ compiler actually work ?
 #
 printf "checking whether the C++ compiler works..."
 (
   cd "$tmpdir"
   echo 'main (int argc, char *argv[]) { return 0; }' >$cbasename
-  if ("$CXX" $CXXFLAGS -o $obasename -c $cbasename
-      "$CXX" $LDFLAGS -o $ebasename $obasename
-      ./$ebasename) >$cout 2>&1
+  if
+  (
+    "$CXX" $CXXFLAGS -o $obasename -c $cbasename			&&
+      rm -f $ebasename							&&
+      "$CXX" $LDFLAGS -o $ebasename $obasename				&&
+      ./$ebasename
+  ) >$cout 2>&1
   then
     echo " yes"
   else
@@ -480,7 +511,7 @@ printf "checking whether the C++ compiler works..."
     echo "error: looks like the C++ compiler is not working" 1>&2
     exit 1
   fi
-)
+) || exit 1
 
 #
 #	Do we have inttypes.h ?
@@ -488,8 +519,8 @@ printf "checking whether the C++ compiler works..."
 printf 'checking for inttypes.h...'
 if
 (
-  cd "$tmpdir"
-  cat <<\EOF >$cxxbasename
+  cd "$tmpdir"								&&
+    cat <<\EOF >$cxxbasename						&&
 #include <inttypes.h>
 #include <stdio.h>
 
@@ -520,10 +551,11 @@ int main (int argc, char *argv[])
   return status;
 }
 EOF
-  "$CXX" $CXXFLAGS -o $obasename -c $cxxbasename
-  "$CXX" $LDFLAGS -o $ebasename $obasename
-  ./$ebasename >$cout 2>&1
-)
+    "$CXX" $CXXFLAGS -o $obasename -c $cxxbasename			&&
+    rm -f $ebasename							&&
+    "$CXX" $LDFLAGS -o $ebasename $obasename				&&
+    ./$ebasename
+) >"$tmpdir/$cout" 2>&1
 then
   echo " yes"
   HAVE_INTTYPES=1
@@ -540,8 +572,8 @@ then
   printf 'guessing at appropriate types for {int,uint}{8,16,32}_t...'
   if
   (
-    cd "$tmpdir"
-    cat <<\EOF >$cxxbasename
+    cd "$tmpdir"							&&
+      cat <<\EOF >$cxxbasename						&&
 #include <assert.h>
 #include <stdio.h>
 
@@ -550,7 +582,7 @@ int main (int argc, char *argv[])
   assert (sizeof (signed char) == 1);
   puts ("typedef signed char    int8_t;");
   assert (sizeof (short) == 2);
-  puts ("typedef signed short   int16_t;");
+  puts ("typedef short          int16_t;");
   if (sizeof (long) == 4)
     puts ("typedef long           int32_t;");
   else if (sizeof (int) == 4)
@@ -563,7 +595,7 @@ int main (int argc, char *argv[])
   assert (sizeof (unsigned char) == 1);
   puts ("typedef unsigned char  uint8_t;");
   assert (sizeof (unsigned short) == 2);
-  puts ("typedef signed short   uint16_t;");
+  puts ("typedef unsigned short uint16_t;");
   if (sizeof (unsigned long) == 4)
     puts ("typedef unsigned long  uint32_t;");
   else if (sizeof (unsigned int) == 4)
@@ -576,9 +608,10 @@ int main (int argc, char *argv[])
   return 0;
 }
 EOF
-    "$CXX" $CXXFLAGS -o $obasename -c $cxxbasename
-    "$CXX" $LDFLAGS -o $ebasename $obasename
-    ./$ebasename >$cout 2>$cerr
+      "$CXX" $CXXFLAGS -o $obasename -c $cxxbasename			&&
+      rm -f $ebasename							&&
+      "$CXX" $LDFLAGS -o $ebasename $obasename				&&
+      ./$ebasename >$cout 2>$cerr
   )
   then
     echo " success"
@@ -606,7 +639,7 @@ int main (int argc, char *argv[])
   return XOpenDisplay (0) == 0 ? 0 : 1;
 }
 EOF
-  if (cd "$tmpdir"; "$CC" $CFLAGS -o $obasename -c $cbasename >$cout 2>&1)
+  if (cd "$tmpdir" && "$CC" $CFLAGS -o $obasename -c $cbasename) >/dev/null 2>&1
   then
     echo " yes"
     X11INC=
@@ -679,9 +712,12 @@ int main (int argc, char *argv[])
 EOF
   o=
   [ -z "$X11INC" ] || o="-I$X11INC"
-  if (cd "$tmpdir"
-      "$CC" $CFLAGS $o -o $obasename -c $cbasename
-      "$CC" $LDFLAGS -o $ebasename $obasename) >"$tmpdir/$cout" 2>&1
+  if
+  (
+    cd "$tmpdir"							&&
+      "$CC" $CFLAGS $o -o $obasename -c $cbasename			&&
+      "$CC" $LDFLAGS -o $ebasename $obasename
+  ) >"$tmpdir/$cout" 2>&1
   then
     echo " yes"
     X11LIB=
@@ -743,16 +779,22 @@ fi
 #	Locate a POSIX-compatible awk(1)
 #
 printf "checking for a standard-compliant awk..."
-if (cd "$tmpdir"
-    echo a | $AWK '{ print sub(/^a/, "b") $0 }' >$cout 2>&1
-    [ "x`cat $tmpdir/$cout`" = "x1b" ])
+if
+(
+  cd "$tmpdir"								&&
+    echo a | $AWK '{ print sub(/^a/, "b") $0 }' >$cout 2>&1		&&
+    [ "x`cat $tmpdir/$cout`" = "x1b" ]
+)
 then
   echo " yes"
 else
   AWK=/usr/xpg4/bin/awk
-  if (cd "$tmpdir"
-      echo a | $AWK '{ print sub(/^a/, "b") $0 }' >$cout 2>&1
-      [ "x`cat $tmpdir/$cout`" = "x1b" ])
+  if
+  (
+    cd "$tmpdir"							&&
+      echo a | $AWK '{ print sub(/^a/, "b") $0 }' >$cout 2>&1		&&
+      [ "x`cat $tmpdir/$cout`" = "x1b" ]
+  )
   then
     echo " yes ($AWK)"
   else
@@ -775,7 +817,7 @@ mkdir -p $BUILDDIR
 #
 if expr "$PREFIX" : '//*usr/*$' >/dev/null
 then
-  BINDIR=/usr/bin		# FHS-ly correct is /usr/games
+  BINDIR=/usr/bin			# FHS-ly correct is /usr/games
   ETCDIR=/etc/$APPNAME/%v
   ETCDIRNV=/etc/$APPNAME
   MANDIR=/usr/share/man
@@ -783,7 +825,7 @@ then
   SHAREDIRNV=/usr/share/games/$APPNAME
 elif expr "$PREFIX" : '//*usr//*local/*$' >/dev/null
 then
-  BINDIR=/usr/local/bin		# FHS-ly correct is /usr/local/games
+  BINDIR=/usr/local/bin			# FHS-ly correct is /usr/local/games
   ETCDIR=/etc/$APPNAME/%v
   ETCDIRNV=/etc/$APPNAME
   MANDIR=/usr/local/man
@@ -838,7 +880,7 @@ echo generating $BUILDDIR/Makefile.config
   echo "SHAREDIRNV        = $SHAREDIRNV"
   echo "X11INC            = $X11INC"
   echo "X11LIB            = $X11LIB"
-) >$BUILDDIR/Makefile.config
+) >$BUILDDIR/Makefile.config || exit 1
 
 #
 #	YGD files search path
@@ -867,7 +909,7 @@ EOF
 #
 #	Write config.h and config.cc
 #
-genc 
+genc
 genh
 
 exit 0

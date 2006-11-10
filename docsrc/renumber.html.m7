@@ -1,0 +1,76 @@
+<h3>Renumbering objects</h3>
+
+<p>
+  Normally, you don't have to worry very much about the actual numbers of the
+  linedefs, sectors, sidedefs, things and vertices you manipulate.
+  You just have to be careful to use the correct numbers in references but
+  that's all.
+  You don't need to <em>change</em> the number that a given object bears.
+</p>
+
+<p>
+  However, for certain things, the <em>relative</em> numbers of objects
+  matter&nbsp;:
+</p>
+
+<ul>
+  <li>
+    if you have several player 1 starts in your level (which is how the voodoo
+    doll trick is done), it's the highest-numbered one that the player
+    incarnates in at level start,
+
+  <li>
+    if there are several teleport exits in the same sector, only the
+    lowest-numbered one is used (but I don't know of any interesting
+    application of this fact),
+
+  <li>
+    if there are several superimposed linedefs, the lowest-numbered one is
+    drawn like it was in front,
+
+  <li>
+    BSP's transparent doors need one of the door tracks to be the
+    lowest-numbered linedef,
+
+  <li>
+    certain linedef types apply only to the lowest-numbered of the tagged
+    sectors (IIRC),
+
+  <li>raising stairs use the lowest-numbered linedef.
+</ul>
+
+<p>
+  So how do you control the ordering of objects&nbsp;?
+</p>
+
+<h4>Exchanging objects numbers</h4>
+
+<p>
+  This function works the same way in all modes.
+  If you select exactly two objects and press $(k ctrl)-$k x (or use
+  "Edit-&gt;Exchange objects numbers") they exchange their numbers.
+  That is, if the first object had number <var>n1</var> and the second object
+  had number <var>n2</var>, the first object in renumbered to <var>n2</var> and
+  the second one to <var>n1</var>.
+  No other objects are affected.
+</p>
+
+<p>
+  At the same time the numbers are exchanged, all relevant references are fixed
+  up.
+  That is, if you exchange the numbers of two vertices, all the linedefs that
+  referred to them are changed accordingly.
+  And if you exchange the numbers of two sectors, all the sidedefs that
+  referred to them are fixed.
+  The thing to remember is that this function leaves the level functionally
+  identical to what it was before, except of course for the possible side
+  effects of the renumbering itself.
+</p>
+
+<p>
+  <small>(If you wanted (for some reason I can't imagine) to exchange the
+  numbers without fixing the references, you could do it by replacing
+  <code>true</code> by <code>false</code> in the call to
+  <code>exchange_objects_numbers()</code>.)</small>
+</p>
+

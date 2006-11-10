@@ -1,0 +1,62 @@
+<h3>Vertex miscellaneous operations</h3>
+
+<p>
+  Unless otherwise specified, all the operations below act on all the objects
+  in the <em>working set</em>.
+  If there is at least one selected object, the working set is equal to the
+  selection.
+  If there is no selected object, the working set is the currently highlighted
+  object (the object under the pointer).
+  If there is no selection and no highlighted object, the selection is empty,
+  of course.
+  If there is a selection and an object outside the selection, the latter is
+  <em>not</em> part of the working set.
+</p>
+
+<dl>
+  <dt>Find first free tag number
+  <dd>
+    Displays the smallest tag number greater than 0 and not used by any linedef
+    or sector.
+
+  <dt>Rotate and scale vertices
+  <dd>(description to be written)
+
+  <dt>Delete vertex and join linedefs
+  <dd>(description to be written)
+
+  <dt>Merge several vertices into one
+  <dd>(description to be written)
+
+  <dt>Add a linedef and split sector
+  <dd>
+    To perform this operation, you must have exactly two vertices in the
+    working set and there must be an uninterrupted path of linedefs that face a
+    common sector between them.
+    A new linedef is inserted from the first vertex to the second.
+    The newly created sector is put on the left side of the new linedef.
+
+  <dt>Mirror horizontally
+  <dd>
+    <p>
+      All the vertices in the working set have their x-coordinate changed so
+      that they're "mirrored" around the vertical axis that intersects the
+      geometric centre of the selected vertices.
+      Then all the linedefs whose both vertices belong to the group of selected
+      vertices are flipped so that the sector references remain correct.
+    </p>
+
+    <p>See the "Mirror horizontally" linedef function.
+
+  <dt>Mirror vertically
+  <dd>
+    <p>
+      All the vertices in the working set have their y-coordinate changed so
+      that they're "mirrored" around the horizontal axis that intersects the
+      geometric centre of the the selected vertices.
+      Then all the linedefs whose both vertices belong to the group of selected
+      vertices are flipped so that the sector references remain correct.
+    </p>
+
+    <p>See the "Mirror vertically" linedef function.
+</dl>

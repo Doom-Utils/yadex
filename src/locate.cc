@@ -4,7 +4,7 @@
  */
 
 /*
-This file is copyright André Majorel 2003.
+This file is copyright André Majorel 2003, 2005.
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of version 2 of the GNU General Public License as published by the
@@ -15,8 +15,8 @@ ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
 FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License along with
-this program; if not, write to the Free Software Foundation, Inc., 59 Temple
-Place, Suite 330, Boston, MA 02111-1307, USA.
+this program; if not, write to the Free Software Foundation, Inc., 51 Franklin
+Street, Fifth Floor, Boston, MA 02110-1301, USA.
 */
 
 
@@ -32,6 +32,26 @@ Place, Suite 330, Boston, MA 02111-1307, USA.
 
 /*
  *	Locate::Locate - ctor
+ */
+Locate::Locate () :
+  initialised	(false)
+{
+}
+
+
+/*
+ *	Locate::Locate - ctor
+ *
+ *	The parameters are the same as those of set().
+ */
+Locate::Locate (const char *const *search_path, const char *name, bool backw)
+{
+  set (search_path, name, backw);
+}
+
+
+/*
+ *	Locate::set - set the search parameters
  *
  *	- search_path points to a NULL-terminated array of C
  *	  strings (char *) constituting the search path. The
@@ -47,14 +67,17 @@ Place, Suite 330, Boston, MA 02111-1307, USA.
  *
  *	- backwards is the direction in which the search path is
  *	  walked. true is front-to-back, false is back-to-front.
+ *
+ *	Implies rewind().
  */
-Locate::Locate (const char *const *search_path, const char *name, bool backw)
+void Locate::set (const char *const *search_path, const char *name, bool backw)
 {
   this->search_path = search_path;
   this->name        = name;
   this->backwards   = backw;
   absolute          = is_absolute (name);
   rewound           = true;
+  initialised       = true;
   rewind ();
 }
 
@@ -65,9 +88,18 @@ Locate::Locate (const char *const *search_path, const char *name, bool backw)
  *	Calling this method will cause the next call to
  *	get_next() to return the first match, as if get_next()
  *	had never been called.
+ *
+ *	If the search parameters have not yet been set, emits a warning
+ *	with warn() and returns without doing anything.
  */
 void Locate::rewind ()
 {
+  if (! initialised)
+  {
+    warn ("Locate: rewind() called before set()");
+    return;
+  }
+
   rewound = true;
 
   if (backwards)
@@ -90,9 +122,18 @@ void Locate::rewind ()
  *	a null pointer if there are no more matches left. The
  *	returned pointer is valid until get_next() is called
  *	again or the Locate object is destroyed.
+ *
+ *	If the search parameters have not yet been set, emits a warning
+ *	with warn() and returns a null pointer.
  */
 const char *Locate::get_next ()
 {
+  if (! initialised)
+  {
+    warn ("Locate: get_next() called before set()");
+    return NULL;
+  }
+
   if (absolute)
   {
     if (! rewound)			// Result has exactly one element
@@ -152,6 +193,7 @@ const char *Locate::get_next ()
       }
       strcat (pathname, "/");
     }
+
     if (strlen (pathname) + strlen (name) + 1 >= sizeof pathname)
     {
       warn ("%s: file name too long, skipping\n", dirname);

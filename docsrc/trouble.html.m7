@@ -141,7 +141,7 @@
     one. Yadex is not crashed or hung. It just didn't realize that its window
     has been erased and needs to be redrawn. It still accepts input, though the
     display might look funny. If that disturbs you, you can back out by
-    pressing [<kbd>Esc</kbd>], several times if necessary, and everything will
+    pressing $(k esc), several times if necessary, and everything will
     return to normal.
 
 </dl>

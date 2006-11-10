@@ -1,107 +1,131 @@
-	<h2><a name="games">Supported games</a></h2>
+<h2><a name="games">Supported games</a></h2>
 
-		<h3>Doom</h3>
+<h3>Doom</h3>
 
-<p>Supported. Linedef types and sector types added in v. 1.666
-are supported and marked with "<code>[v1.6]</code>".
+<p>
+  Supported.
+  Linedef types and sector types added in v. 1.666 are supported and marked
+  with "<code>[v1.6]</code>".
+</p>
 
-		<h3>Doom II</h3>
-
-<p>Supported.
-
-		<h3>Doom alpha</h3>
-
-<p>Mostly supported. There are three Doom alpha versions that I
-know of&nbsp;: <a
-href="ftp://3darchives.in-span.net/pub/idgames/historic/doom0_2.zip">0.2</a>,
-<a
-href="ftp://3darchives.in-span.net/pub/idgames/historic/doom0_4.zip">0.4</a>
-and <a
-href="ftp://3darchives.in-span.net/pub/idgames/historic/doom0_5.zip">0.5</a>.
-They're supported to varying degrees of completeness. All
-graphics resources (flats, patches, <code>PLAYPAL</code>,
-sprites and textures) are supported for all versions with the
-exception of version 0.2, for which textures are not supported.
-
-<p>Reading levels does not work either for version 0.2. For
-version 0.4 and 0.5, it works, including levels
-<code>E1M10</code> through <code>E1M13</code>. There are some
-oddities in the levels, such as linedefs with negative types or
-things with strange bits set in their flags, but I don't think
-it's Yadex's fault.
-
-<p>You can edit and save alpha levels but they will be saved in
-the regular Doom format, not the alpha format. Writing levels in
-the Doom alpha format is not supported at all and probably never
-will, for three reasons. Firstly, there are parts of the format
-that I don't understand, and therefore don't know how to
-generate. Secondly, there is AFAIK no nodes builder for the
-alphas. Thirdly, even if the two above problems were solved, I
-don't expect many people to actually want to use the alphas
-because, from a player point of view, they're much less
-comfortable than the later versions of Doom. To say nothing of
-the fact that all we have is a DOS executable and no source
-code. That being said, I can't deny that it would indeed be cool
-to be able to generate wads for the alphas, if only for the fun
-of it. If you want to do it, I won't discourage you and I will
-gladly accept patches.
-
-		<h3>Doom press release pre-beta</h3>
-
-<p>Supported. The different picture format is handled. Things
-type 2016 (evil sceptre) and 2017 (unholy bible) are defined in
-<code>doom02.ygd</code>, <code>doom04.ygd</code>,
-<code>doom05.ygd</code>, <code>doompr.ygd</code>,
-<code>doom.ygd</code> and <code>doom2.ygd</code> and marked with
-"<code>[PR]</code>".  However, if you're using
-<code>betalevl.wad</code> and <code>betagrph.wad</code> supplied
-with MBF, you won't see the corresponding sprites because Yadex
-does not support sprites in pwads (yet). To see the sprites for
-the evil sceptre and the unholy bible as well as the alternate
-versions of the other sprites, you need to use the iwad from <a
-href="ftp://3darchives.in-span.net/pub/idgames/historic/doomprbt.zip"
-><code>doomprbt.zip</code></a>.
-
-		<h3>Final Doom</h3>
-
-<p>Supported, AFAIK. The iwads have no
-<code>F1_START/F1_END</code> labels and some levels contain a
-thing of type 0 which made older versions of Yadex crash. This
-has been fixed in version 1.1.0.
-
-		<h3>Heretic</h3>
+<h3>Doom II</h3>
 
 <p>Supported.
 
-		<h3>Hexen</h3>
+<h3>Doom alpha</h3>
 
-<p>Very rudimentary support. You can load Hexen wads and edit
-the maps but most of Hexen's special features are stripped off
-on reading. So don't try to save a Hexen level after editing it,
-you won't be able to use it with Hexen. And if you're saving it
-to the file it comes from, you'll lose your file. <strong>Don't
-save when in Hexen mode.</strong>. Here's the breakdown&nbsp;:
+<p>
+  Mostly supported.
+  There are three Doom alpha versions that I know of&nbsp;: <a
+  href="ftp://ftp.fu-berlin.de/pc/games/idgames/historic/doom0_2.zip">0.2</a>,
+  <a
+  href="ftp://ftp.fu-berlin.de/pc/games/idgames/historic/doom0_4.zip">0.4</a>
+  and <a
+  href="ftp://ftp.fu-berlin.de/pc/games/idgames/historic/doom0_5.zip">0.5</a>.
+  They're supported to varying degrees of completeness.
+  All graphics resources (flats, patches, <code>PLAYPAL</code>, sprites and
+  textures) are supported for all versions with the exception of version 0.2,
+  for which textures are not supported.
+</p>
+
+<p>
+  Reading levels does not work either for version 0.2.
+  For version 0.4 and 0.5, it works, including levels <code>E1M10</code>
+  through <code>E1M13</code>.
+  There are some oddities in the levels, such as linedefs with negative types
+  or things with strange bits set in their flags, but I don't think it's
+  Yadex's fault.
+</p>
+
+<p>
+  You can edit and save alpha levels but they will be saved in the regular Doom
+  format, not the alpha format.
+  Writing levels in the Doom alpha format is not supported at all and probably
+  never will, for three reasons.
+  Firstly, there are parts of the format that I don't understand, and therefore
+  don't know how to generate.
+  Secondly, there is AFAIK no nodes builder for the alphas.
+  Thirdly, even if the two above problems were solved, I don't expect many
+  people to actually want to use the alphas because, from a player point of
+  view, they're much less comfortable than the later versions of Doom.
+  To say nothing of the fact that all we have is a DOS executable and no source
+  code.
+  That being said, I can't deny that it would indeed be cool to be able to
+  generate wads for the alphas, if only for the fun of it.
+  If you want to do it, I won't discourage you and I will gladly accept
+  patches.
+</p>
+
+<h3>Doom press release pre-beta</h3>
+
+<p>
+  Supported.
+  The different picture format is handled.
+  Things type 2016 (evil sceptre) and 2017 (unholy bible) are defined in
+  <code>doom02.ygd</code>, <code>doom04.ygd</code>, <code>doom05.ygd</code>,
+  <code>doompr.ygd</code>, <code>doom.ygd</code> and <code>doom2.ygd</code> and
+  marked with "<code>[PR]</code>".
+  However, if you're using <code>betalevl.wad</code> and
+  <code>betagrph.wad</code> supplied with MBF, you won't see the corresponding
+  sprites because Yadex does not support sprites in pwads (yet).
+  To see the sprites for the evil sceptre and the unholy bible as well as the
+  alternate versions of the other sprites, you need to use the iwad from <a
+  href="ftp://ftp.fu-berlin.de/pc/games/idgames/historic/doomprbt.zip"
+  ><code>doomprbt.zip</code></a>.
+</p>
+
+<h3>Final Doom</h3>
+
+<p>
+  Supported, AFAIK.
+  The iwads have no <code>F1_START/F1_END</code> labels and some levels contain
+  a thing of type 0 which made older versions of Yadex crash.
+  This has been fixed in version 1.1.0.
+</p>
+
+<h3>Heretic</h3>
+
+<p>
+  Supported.
+</p>
+
+<h3>Hexen</h3>
+
+<p>
+  Very rudimentary support.
+  You can load Hexen wads and edit the maps but most of Hexen's special
+  features are stripped off on reading.
+  So don't try to save a Hexen level after editing it, you won't be able to use
+  it with Hexen.
+  And if you're saving it to the file it comes from, you'll lose your file.
+  <strong>Don't save when in Hexen mode.</strong>.
+  Here's the breakdown&nbsp;:
+</p>
 
 <ul>
-  <li>Most thing types, and some sector and linedef types are
-    missing from <code>hexen.ygd</code>.
-  <li>For things, <code>tid</code>, <code>z</code>,
-    <code>special</code> and <code>arg1</code> through
-    <code>arg5</code> are discarded. There is currently no way
-    to examine or manipulate them from Yadex.
-  <li>For linedefs, <code>arg1</code> is put into
-    <code>tag</code>. <code>arg2</code> through
-    <code>arg5</code> are discarded and there is currently no way
-    to examine or manipulate them from Yadex.
-  <li>The Hexen-specific thing and linedef flags are not
-    recognized (but you can manipulate them).
+  <li>
+    Most thing types, and some sector and linedef types are missing from
+    <code>hexen.ygd</code>.
+  <li>
+    For things, <code>tid</code>, <code>z</code>, <code>special</code> and
+    <code>arg1</code> through <code>arg5</code> are discarded.
+    There is currently no way to examine or manipulate them from Yadex.
+  <li>
+    For linedefs, <code>arg1</code> is put into <code>tag</code>.
+    <code>arg2</code> through <code>arg5</code> are discarded and there is
+    currently no way to examine or manipulate them from Yadex.
+  <li>
+    The Hexen-specific thing and linedef flags are not recognized (but you can
+    manipulate them).
   <li><code>BEHAVIOR</code> is ignored.
   <li><code>MAPINFO</code> is ignored.
 </ul>
 
-		<h3>Strife</h3>
+<h3>Strife</h3>
 
-<p>Supported, except that&nbsp;:
+<p>
+  Supported, except that&nbsp;:
+</p>
 
 <ul>
   <li>many thing types are missing,
@@ -111,21 +135,26 @@ save when in Hexen mode.</strong>. Here's the breakdown&nbsp;:
   <li>some sector types might be missing.
 </ul>
 
-And perhaps other things as well. If you're a Strife hacker,
-your help would be welcome.
+<p>
+  And perhaps other things as well.
+  If you're a Strife hacker, your help would be welcome.
+</p>
 
-<p>If you have Strife 1.0, you should use
-<code>-g&nbsp;strife10</code>. Strife&nbsp;1.0 uses the same
-format as Doom for textures, Strife&nbsp;1.1 and later use a
-different format.
+<p>
+  If you have Strife 1.0, you should use <code>-g&nbsp;strife10</code>.
+  Strife&nbsp;1.0 uses the same format as Doom for textures, Strife&nbsp;1.1
+  and later use a different format.
+</p>
 
-		<h3>Ultimate Doom</h3>
+<h3>Ultimate Doom</h3>
 
 <p>Supported.
 
-		<h3>Boom</h3>
+<h3>Boom</h3>
 
-<p>Kind of supported, only very inconvenient to use &lt;g&gt;.
+<p>
+  Kind of supported, only very inconvenient to use &lt;g&gt;.
+</p>
 
 <dl>
   <dt>New linedef flag "P" (pass through)
@@ -159,29 +188,40 @@ different format.
   <dd>Unsupported.
 </dl>
 
-In progress...
+<p>
+  In progress...
+</p>
 
-		<h3>EDGE</h3>
+<h3>EDGE</h3>
 
-<p>The default DDF definitions included in EDGE 1.24 have been
-added to <code>doom.ygd</code> and <code>doom2.ygd</code>,
-marked with "<code>[EDGE]</code>". When the pointer moves over a
-sector that has extrafloors, the object info window shows the
-information relevant to those. To see the sprite for the night
-vision goggles (thing #7000), you must load
-<code>edge.wad</code>.
+<p>
+  The default DDF definitions included in EDGE 1.24 have been added to
+  <code>doom.ygd</code> and <code>doom2.ygd</code>, marked with
+  "<code>[EDGE]</code>".
+  When the pointer moves over a sector that has extrafloors, the object info
+  window shows the information relevant to those.
+  To see the sprite for the night vision goggles (thing #7000), you must load
+  <code>edge.wad</code>.
+</p>
 
-<p>As of 1.5.0, the support for DDF is static&nbsp;: custom DDF
-files or DDF lumps are ignored. In other words, you are limited
-to the default DDF definitions.
+<p>
+  As of 1.5.0, the support for DDF is static&nbsp;: custom DDF files or DDF
+  lumps are ignored.
+  In other words, you are limited to the default DDF definitions.
+</p>
 
-		<h3>MBF</h3>
+<h3>MBF</h3>
 
-<p>Mostly supported, I think. Thing 888 (dog), thing flag 80h
-(friendly), linedef types 271 and 272 are all in. You can't see
-the sprite for the dog because it's embedded in the MBF
-executable.
+<p>
+  Mostly supported, I think.
+  Thing 888 (dog), thing flag 80h (friendly), linedef types 271 and 272 are all
+  in.
+  You can't see the sprite for the dog because it's embedded in the MBF
+  executable.
+</p>
 
-		<h3>Other derivatives</h3>
+<h3>Other derivatives</h3>
 
-<p>Not supported so far.</p>
+<p>
+  Not supported so far.
+</p>

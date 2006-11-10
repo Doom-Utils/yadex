@@ -84,7 +84,7 @@ class Lump_list
   public :
     Lump_list ();
     ~Lump_list ();
-    const char **data ();
+    const char *const *data ();
     size_t size ();
     void set (Lump_map& lump_map);
     void clear ();

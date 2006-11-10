@@ -1,0 +1,195 @@
+<h3>Using the flat/patch/sprite/texture selector</h3>
+
+<p>
+  Selecting (or browsing through) flats, patches, sprites and textures is done
+  with the flat/patch/sprite/texture selector.
+</p>
+
+<p align="center">
+  <img src="vflat.png" alt="Browsing flats" WIDTH=287 HEIGHT=104>
+
+<p align="center">
+  <img src="vsprite.png" alt="Browsing sprites" WIDTH=543 HEIGHT=221>
+
+<p align="center">
+  <img src="vtexture.png" alt="Browsing textures" WIDTH=735 HEIGHT=277>
+
+<p>
+  The elements of the window are, from the top left corner,
+</p>
+
+<dl>
+  <dt>The current name
+  <dd>
+    This field shows the name of the name that would be returned if $k return
+    was pressed.
+    The name is greyed out if no such object exists in the list.
+  </dd>
+
+  <dt>The dimension display
+  <dd>Disabled for flats.
+
+  <dt>The medusa effect indicator
+  <dd>
+    In the texture selector, the string "Medusa" appears if using the current
+    texture on a double-sided linedef would trigger the medusa effect.
+    This occurs on the original Doom engine when patches overlap horizontally
+    (i.e. at least one column of the texture has more than one patch in it).
+    Recent engines might not be subject to this limitation.
+    Boom isn't.
+  </dd>
+
+  <dt>The name list
+  <dd>
+    Shows the names to choose from.
+    The name at the top of the list is the first name that's greater than or
+    equal to the name in the entry box.
+  </dd>
+</dl>
+
+<p>The key bindings are as follows&nbsp;:
+
+<dl>
+  <dt>Editing
+  <dd>
+    <dl class="compact8">
+      <dt>$k backspace
+      <dd>Erase the rightmost character.
+
+      <dt>$(k ctrl)-$k u
+      <dd>Clear the current name.
+
+      <dt>$(k ctrl)-$k w
+      <dd>Clear the current name.
+
+      <dt>$k tab
+      <dd>
+	Name completion, as in certain Unix programs.
+	The current name is replaced by the name at the top of name list.
+	For example, if the current name is "<code>SW1</code>" and you press
+	$(k tab), the current name is set to the first name that begins
+	with "<code>SW1</code>".
+      </dd>
+    </dl>
+  </dd>
+
+  <dt>Moving
+  <dd>
+    <dl class="compact8">
+      <dt>$(k ctrl)-$k b
+      <dd>Move one page up in the list and update the current name.
+
+      <dt>$(k ctrl)-$k f
+      <dd>Move one page down in the list and update the current name.
+	
+      <dt>$(k ctrl)-$k n
+      <dd>
+	Move to the next sprite group, i.e. skip to the next name in the list
+	whose first four characters are not the same as the current name.
+	It's handy to skip the 69 animation frames of the heavy weapon dude at
+	once.
+      </dd>
+
+      <dt>$(k ctrl)-$k p
+      <dd>
+	Move to the previous sprite group (see
+	$(k ctrl)-$(k n))
+      </dd>
+
+      <dt>$(k ctrl)-$k v
+      <dd>Move one page down in the list and update the current name.
+
+      <dt>$k down
+      <dd>Set the current name to the second name from the top of the list.
+
+      <dt>$k end
+      <dd>Set the current name to the last name in the list.
+
+      <dt>$k home
+      <dd>Set the current name to the first name in the list.
+
+      <dt>$k pgdn
+      <dd>Move one page down in the list and update the current name.
+
+      <dt>$k pgup
+      <dd>Move one page up in the list and update the current name.
+
+      <dt>$k up
+      <dd>
+	Set the current name to the name in the list before the one currently
+	shown at the top.
+      </dd>
+    </dl>
+  </dd>
+
+  <dt>Exiting
+  <dd>
+    <dl class="compact8">
+      <dt>$k esc
+      <dd>Exit without validating any name (cancel).
+
+      <dt>$k return
+      <dd>
+	Validate the current name and exit.
+	Has no effect if the current name is greyed-out (invalid).
+      </dd>
+    </dl>
+  </dd>
+
+  <dt>Miscellaneous
+  <dd>
+    <dl class="compact8">
+      <dt>$(k ctrl)-$k a
+      <dd>Textures: increment the patch count limit.
+
+      <dt>$(k ctrl)-$k x
+      <dd>Textures: decrement the patch count limit.
+
+      <dt>$k f1
+      <dd>
+	For debugging.
+	Print to stdout the location (file name and offset) of the current
+	flat, patch or sprite.
+      </dd>
+
+      <dt>$(k shift)-$k f1
+      <dd>
+        <p>
+	  Save the current image to file, in packed PPM (<tt>P6</tt>) format.
+	  This can be useful for textures, as they cannot be directly extracted
+	  from wads.
+	  Transparent areas are represented according to the DeuTex convention
+	  by colour rgb:0/2f/2f (<img src="002f2f.png" alt="Swatch" width="8"
+	  height="8">).
+	  The file is created in the working directory and its name is the name
+	  of the image lowercased and suffixed by "<tt>.ppm</tt>".
+	  For example, flat "<tt>FLOOR0_7</tt>" would be saved as
+	  "<tt>./floor0_7.ppm</tt>".
+	  If the file already exists, it's mercilessly overwritten.
+	</p>
+
+	<p>
+	  Note that under MS-DOS, newlines in the PPM header are in Unix format
+	  (LF, not CR LF).
+	</p>
+      </dd>
+    </dl>
+  </dd>
+</dl>
+
+<p>
+  Whenever the current name changes, the name list scrolls automatically so
+  that the first line of the list shows the first valid name that's greater
+  than or equal to the current name.
+  If the current name does not belong to the list, it is greyed out and you
+  can't validate.
+  If it does, the corresponding image is shown in the box to the right.
+</p>
+
+<p>
+  There are a few bugs left in this function.
+  Textures are clipped to the dimension of the selector window.
+  Under MS-DOS, some "<tt>VILE*</tt>" sprites will not save, because their
+  names contain characters that are not allowed in file names ("<tt>[</tt>",
+  "<tt>\</tt>" and "<tt>]</tt>").
+</p>

@@ -1,0 +1,55 @@
+<h2>Known bugs</h2>
+
+<p>
+  Though Yadex has quite a few bugs, most of them are inconsequential, i.e. not
+  likely to make Yadex unusable or damage precious data.
+  On the other hand, <strong>some can bite</strong>.
+  Those are the ones you should know about&nbsp;:
+</p>
+
+<ul>
+  <li>
+    <p>
+      Command line options that take an argument need to have a space between
+      their argument and themselves.
+    </p>
+
+  <li>
+    <p>
+      Exposure events are not always handled.
+      If the Yadex window turns black, back out by pressing $(k esc), several
+      times if necessary.
+    </p>
+
+  <li>
+    <p>
+      If you edit a level from a file that contains several and save it, all
+      the other levels, textures, flats, etc. from that file are
+      <strong>lost</strong>.
+    </p>
+
+  <li>
+    <p>
+      Out-of-memory conditions and certain wad I/O errors are handled in a
+      <em>very</em> ungraceful manner.
+      Basically, Yadex aborts and if you haven't saved, you've lost all your
+      work.
+      My advice&nbsp;:
+    </p>
+
+    <ul>
+      <li>Make sure you have at least a couple of megs of free memory.
+      <li>Save often and make backups.
+      <li>Don't use wads that contain errors.
+      <li>Make sure you have enough disk space and adequate permissions.
+      <li>
+        Don't modify files with an external program while Yadex uses them.
+	For example, if you use a texture wad, don't rebuild it without
+	quitting Yadex first.
+    </ul>
+</ul>
+
+<p>
+  Check <a href="TODO"><code>TODO</code></a> for a complete list of things to
+  fix.
+</p>

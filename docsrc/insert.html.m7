@@ -1,0 +1,156 @@
+<h3>Inserting objects</h3>
+
+<p>
+  By pressing $(k ins), you insert a new object under the pointer.
+</p>
+
+<p>
+  The type of the new object is generally determined by the current mode.
+  That is, if you are in things mode, pressing $k ins will create a new thing.
+  However, this is not always true, particularly if some objects are already
+  selected&nbsp;:
+</p>
+
+<ul>
+  <li>
+    If you are in vertices mode and there are two or more vertices selected,
+    pressing $k ins will insert a linedef from the first vertex to the second,
+    another one from the second to the third and so on.
+    That is, a path of linedefs is created from the first to the last vertex.
+    The path is not closed (but see $(k shift)-$k ins below).
+  </li>
+
+  <li>
+    If you are in linedefs mode and there are selected linedefs, pressing
+    $k ins will create a new sector and new sidedefs that point to it and
+    assign them to the linedefs.
+    For the linedefs that had no first sidedef (whether or not they already had
+    a second sidedef), the new sidedef is attached as first sidedef.
+    For the linedefs that had a first sidedef but no second sidedef, the new
+    sidedef is attached as second sidedef.
+    If one or more of the selected linedefs already had two sidedefs, the
+    operation fails.
+    Bug: the side to which the new sidedef is attached is decided without
+    taking into account the actual orientation of the linedef.
+  </li>
+</ul>
+
+<p>
+  If an object of the same type is highlighted at the moment you press
+  $(k ins), the properties of the new object are copied from the
+  highlighted object.
+  In other words, the highlighted object serves as a "model".
+  Otherwise, the properties of the new object are set to default values.
+</p>
+
+<table border>
+  <tr valign=top>
+    <th>Object type
+    <th>Property
+    <th>Value if there is a model
+    <th>Value if there is no model
+
+  <tr valign=top>
+    <td rowspan=7>Linedef
+    <td>Start vertex
+    <td>Like the model
+    <td>If there are two selected vertices, the first.
+	    If not, you are prompted for a vertex number.
+
+  <tr valign=top>
+    <td>End vertex
+    <td>Like the model
+    <td>If there are two selected vertices, the second.
+	    If not, you are prompted for a vertex number.
+
+  <tr valign=top>
+    <td>Flags
+    <td>Like the model
+    <td>Impassable
+
+  <tr valign=top>
+    <td>Type
+    <td>Like the model
+    <td>0 (normal)
+
+  <tr valign=top>
+    <td>Sector tag
+    <td>Like the model
+    <td>0 (none)
+
+  <tr valign=top>
+    <td>First sidedef
+    <td colspan="2">FFFFh (none)
+
+  <tr valign=top>
+    <td>Second&nbsp;sidedef
+    <td colspan="2">FFFFh (none)
+
+  <tr valign=top>
+    <td rowspan=4>Thing
+    <td>Coordinates
+    <td colspan="2">Like the pointer
+
+  <tr valign=top>
+    <td>Type
+    <td>Like the model
+    <td><a href="#param_default_thing"><code>default_thing</code></a>
+
+  <tr valign=top>
+    <td>Flags
+    <td>Like the model
+    <td>D12 D3 D45
+
+  <tr valign=top>
+    <td>Angle
+    <td>Like the model
+    <td>0 (east)
+
+  <tr valign=top>
+    <td rowspan=7>Sector
+    <td>Floor height
+    <td>Like the model
+    <td><a href="#param_default_floor_height"><code>default_floor_height</code></a>
+
+  <tr>
+    <td>Ceiling height
+    <td>Like the model
+    <td><a href="#param_default_ceiling_height"><code>default_ceiling_height</code></a>
+
+  <tr>
+    <td>Floor texture
+    <td>Like the model
+    <td><a href="#param_default_floor_texture"><code>default_floor_texture</code></a>
+
+  <tr>
+    <td>Ceiling&nbsp;texture
+    <td>Like the model
+    <td><a href="#param_default_ceiling_texture"><code>default_ceiling_texture</code></a>
+
+  <tr>
+    <td>Light level
+    <td>Like the model
+    <td><a href="#param_default_light_level"><code>default_light_level</code></a>
+
+  <tr>
+    <td>Type
+    <td>Like the model
+    <td>0 (normal)
+
+  <tr>
+    <td>Tag
+    <td>Like the model
+    <td>0 (none)
+
+  <tr valign=top>
+    <td>Vertex
+    <td>Coordinates
+    <td colspan="2">Like the pointer
+  </tr>
+</table>
+
+<p>
+  In vertex mode, pressing $(k shift)-$k ins is the same as pressing $k ins
+  except that the path is closed (an additional linedef is created from the
+  last to the first vertex).
+</p>

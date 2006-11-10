@@ -14,17 +14,16 @@ Yadex incorporates code from DEU 5.21 that was put in the public domain in
 The rest of Yadex is Copyright © 1997-2005 André Majorel and others.
 
 This program is free software; you can redistribute it and/or modify it under
-the terms of the GNU General Public License as published by the Free Software
-Foundation; either version 2 of the License, or (at your option) any later
-version.
+the terms of version 2 of the GNU Library General Public License as published
+by the Free Software Foundation.
 
 This program is distributed in the hope that it will be useful, but WITHOUT
 ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
 FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License along with
-this program; if not, write to the Free Software Foundation, Inc., 59 Temple
-Place, Suite 330, Boston, MA 02111-1307, USA.
+this program; if not, write to the Free Software Foundation, Inc., 51 Franklin
+Street, Fifth Floor, Boston, MA 02110-1301, USA.
 */
 
 
@@ -240,14 +239,15 @@ for (n = 0; n < wad->dirsize; n++)
       if (names >= 6)
          {
 	 verbmsg ("\n  %-*s %-*s",
-	     strlen (replaces ? "Updating" : "Adding new"), "",
-	     strlen (entry_type), "");
+	     (int) strlen (replaces ? "Updating" : "Adding new"), "",
+	     (int) strlen (entry_type), "");
 	 names = 0;
          }
       verbmsg  (" %-*s", WAD_NAME, entryname);
       names++;
       if ((*entry_type == 'm' || *entry_type == 'l') && wad->directory[n].size)
-	 verbmsg (" warning: non-zero length (%ld)", wad->directory[n].size);
+	 verbmsg (" warning: non-zero length (%ld)",
+	     (long) wad->directory[n].size);
       }
    // Either F_END or FF_END mark the end of a
    // DeuTex-generated group of flats.
@@ -298,7 +298,7 @@ for (n = 0; n < wad->dirsize; n++)
                       || ! strcmp (entryname + 2, "_END"))))
          nitems++;
       }
-     
+
    /* if this entry is not in the master directory, then add it */
    if (!replaces)
       {
@@ -420,7 +420,7 @@ bool fail = false;
    wad_list pointer on the old wad (or at the end of the list if
    this is a new wad) so that the reopening a wad doesn't change
    it's relative position in the list.
-   
+
    FIXME if reopening fails, we're left in the cold. I'm not
    sure how to avoid that, though. */
 {
@@ -518,8 +518,10 @@ for (dir = MasterDir; dir; dir = dir->next)
    {
    strncpy (dataname, dir->dir.name, WAD_NAME);
    fprintf (file, "%-*s  %-50s  %6ld  x%08lx\n",
-    WAD_NAME, dataname, dir->wadfile->pathname (),
-    dir->dir.size, dir->dir.start);
+    WAD_NAME, dataname,
+    dir->wadfile->pathname (),
+    (long) dir->dir.size,
+    (unsigned long) dir->dir.start);
    if (file == stdout && lines++ > screen_lines - 4)
       {
       lines = 0;
@@ -556,9 +558,9 @@ for (n = 0; n < wad->dirsize; n++)
    strncpy (dataname, wad->directory[n].name, WAD_NAME);
    fprintf (file, "%-*s  %6ld  x%08lx  x%08lx\n",
      WAD_NAME, dataname,
-     wad->directory[n].size,
-     wad->directory[n].start,
-     wad->directory[n].size + wad->directory[n].start - 1);
+     (long) wad->directory[n].size,
+     (unsigned long) wad->directory[n].start,
+     (unsigned long) wad->directory[n].size + wad->directory[n].start - 1);
    if (file == stdout && lines++ > screen_lines - 4)
       {
       lines = 0;
@@ -683,7 +685,7 @@ for (MDirPtr entry = MasterDir; entry != 0; entry = entry->next)
    strncpy (dataname, entry->dir.name, WAD_NAME);
    dataname[WAD_NAME] = '\0';
    fprintf (file, "Contents of entry %s (size = %ld bytes):\n",
-      dataname, entry->dir.size);
+      dataname, (long) entry->dir.size);
    const Wad_file *wf = entry->wadfile;
    wf->seek (entry->dir.start);
    for (n = 0; n < entry->dir.size;)

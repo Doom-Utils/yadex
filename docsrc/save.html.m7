@@ -1,0 +1,36 @@
+<h3>Saving</h3>
+
+<p>
+  There are two ways to save&nbsp;:
+</p>
+
+<ul>
+  <li>
+    <p>
+      Press $k f2 or do "File-&gt;Save".
+      If the level comes from the iwad or if its level name or file name is
+      unknown (because it's a new level), you are prompted for a level name
+      (EnMn or MAPnm) and a file name first.
+      If the file name has changed since the last time you saved, and if a file
+      of that name already exists, you are asked confirmation before saving.
+    </p>
+
+    <p>
+      The level in the window is saved in the specified file, in the pwad
+      format, under the specified FIXME.
+    </p>
+
+  <li>
+    <p>
+      Press $k f3 or do "File-&gt;Save as".
+      This procedure is identical to the "Save" procedure except that the query
+      for a level name and file name is unconditional.
+    </p>
+</ul>
+
+<p>FIXME -- this needs to be written...
+
+<p>
+  If Yadex is in Hexen mode, saving is disabled because writing levels in the
+  Hexen format is not supported as of this release.
+</p>

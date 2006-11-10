@@ -12,17 +12,16 @@ Yadex incorporates code from DEU 5.21 that was put in the public domain in
 The rest of Yadex is Copyright © 1997-2005 André Majorel.
 
 This program is free software; you can redistribute it and/or modify it under
-the terms of the GNU General Public License as published by the Free Software
-Foundation; either version 2 of the License, or (at your option) any later
-version.
+the terms of version 2 of the GNU Library General Public License as published
+by the Free Software Foundation.
 
 This program is distributed in the hope that it will be useful, but WITHOUT
 ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
 FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License along with
-this program; if not, write to the Free Software Foundation, Inc., 59 Temple
-Place, Suite 330, Boston, MA 02111-1307, USA.
+this program; if not, write to the Free Software Foundation, Inc., 51 Franklin
+Street, Fifth Floor, Boston, MA 02110-1301, USA.
 */
 
 
@@ -313,11 +312,11 @@ opt_desc_t options[] =		// Description of the command line options
     "Game",
     &Game },
 
-  { 0,
+  { "ygd_user_search_path",
     "G",
     OPT_STRINGPTRACC,
     0,
-    ".ygd search path",
+    "Game definition file user search path",
     &ygd_user_path },
 
   { "grid_max",
@@ -1230,7 +1229,8 @@ void dump_parameters (FILE *fp)
   {
     if (! o->long_name)
       continue;
-    fprintf (fp, "%-*s  %-*s  ",name_maxlen, o->long_name, desc_maxlen, o->desc);
+    fprintf (fp, "%-*s  %-*s  ",
+	name_maxlen, o->long_name, desc_maxlen, o->desc);
     if (o->opt_type == OPT_BOOLEAN)
       fprintf (fp, "%s", *((bool *) o->data_ptr) ? "enabled" : "disabled");
     else if (o->opt_type == OPT_CONFIRM)
@@ -1299,6 +1299,8 @@ void dump_command_line_options (FILE *fd)
 
   for (o = options; o->opt_type != OPT_END; o++)
   {
+    if (! o->short_name)
+      continue;
 #if ! defined Y_BGI
     if (o->flags && strchr (o->flags, 'b'))
       continue;
@@ -1451,7 +1453,7 @@ int word_splitting (std::vector<std::string>& tokens, const char *string)
       in_token = false;
     }
   }
-  
+
   if (in_token)
     tokens.push_back (std::string (token_start, iptr - token_start));
 

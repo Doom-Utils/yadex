@@ -4,7 +4,7 @@
  */
 
 /*
-This file is copyright André Majorel 2003.
+This file is copyright André Majorel 2003, 2005.
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of version 2 of the GNU General Public License as published by the
@@ -27,11 +27,14 @@ Place, Suite 330, Boston, MA 02111-1307, USA.
 class Locate
 {
   public :
+    Locate ();
     Locate (const char *const *search_path, const char *name, bool backwards);
+    void set (const char *const *search_path, const char *name, bool backwards);
     void rewind ();
     const char *get_next ();
 
   private :
+    bool               initialised;
     const char *const *search_path;
     const char        *name;
     bool               absolute;

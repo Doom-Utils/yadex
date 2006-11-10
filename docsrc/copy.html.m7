@@ -1,0 +1,63 @@
+<h3>Copying objects</h3>
+
+<p>
+  When you press $(k o), the selected or highlighted object(s) is(are)
+  copied.
+  If only one object has been copied, the new copy is spawned under the
+  pointer.
+  If several objects have been copied, the new copies are spawned so that their
+  centre is under the pointer.
+</p>
+
+<p>
+  The new copies are spawned selected and everything else is unselected so that
+  you can easily drag them where you want.
+</p>
+
+<p>
+  All the properties of the new objects are copied from the original objects
+  with the notable exception of references.
+  If you are an OO programmer, think shallow copy vs. deep copy.
+  Otherwise, read on.
+</p>
+
+<p>
+  When you copy linedefs, the start and end vertices are copied too and the new
+  linedefs reference the new vertices instead of the old ones.
+  The same thing goes for sidedefs, except if the
+  <code>copy_linedef_reuse_sidedefs</code> flag is true.
+  In that case, each new linedef uses the same sidedefs as its "model" did.
+  This is useful when you want to create many similar structures, E.G. pillars
+  that stand in the same sector.
+  When all the structures use the same sidedefs, you can change all structures
+  at once by editing only one of them.
+  Another benefit of sharing sidedefs is that it makes your wad file somewhat
+  leaner, since the sidedef, at 30 bytes, is the largest level object.
+</p>
+
+<p>
+  However, sharing sidedefs makes impossible to change one structure
+  independantly of the others.
+  That's where the "unlink sidedef" function enters.
+  If you select one or more linedefs and unlink their sidedefs, Yadex makes the
+  necessary duplications so that none of the sidedefs they use is also used by
+  any other linedef outside the selection.
+  Thus you can edit your linedefs freely.
+  The "unlink sidedef" operation is described in detail <a
+  href="#unlink_sidedefs">there</a>.
+</p>
+
+<p>
+  Similarly, when you copy sectors, the linedefs, sidedefs and vertices are
+  duplicated and the new sectors use the copies, not the original ones.
+  Note that the <code>copy_linedef_reuse_sidedefs</code> has not effect when
+  copying sectors; the new linedefs always use new sidedefs, even if that flag
+  is set.
+</p>
+
+<p>
+  What about copying things and vertices&nbsp;?
+  Well, those don't contain references to other objects, so there are no
+  special precautions to take when duplicating them.
+  Except for the position, the copy is exactly identical to the original.
+</p>

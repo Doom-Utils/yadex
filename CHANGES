@@ -1,6 +1,6 @@
 Changes
 
-Yadex 1.8.0 (2005-??-??)
+Yadex 1.8.0 (2006-??-??)
 
   * Build: Don't omit config.h from yadex.dep when you update a source
     file before the first make all. Thanks to Andrew Apted for
@@ -17,13 +17,23 @@ Yadex 1.8.0 (2005-??-??)
 
   * Build: While checking that the C and C++ compiler actually work, ./
     configure now attempts to link and execute the objects. This helps
-    to catch certain errors sooner (libstdc++.so not in the SO path on
+    catching certain errors sooner (libstdc++.so not in the SO path on
     Solaris, for instance).
 
   * Build: If the compiler is GCC, builds are now done with -Wall by
     default.
 
-  * Build: If va_copy() is defined, it's used.
+  * Build: Use va_copy() if it's defined.
+
+  * Build: Included docsrc/README.diff.m7 in the distribution archive
+    so that "make dist" works.
+
+  * Build: Debug mode compilation flags (make dyadex) have lost
+    -Wmissing-prototypes (which doesn't apply to C++) and -O has been
+    replaced by -O0. [1.7.901]
+
+  * Build: Moved log2html to the scripts/ directory and added it to the
+    distribution archive. [1.7.901]
 
   * Code: On TrueColor and StaticGray visuals, compute pixel values
     instead of calling XAllocColors(). Over an ADSL link (average
@@ -42,6 +52,15 @@ Yadex 1.8.0 (2005-??-??)
     should be. If neither nanosleep() nor usleep() is available, we use
     select().
 
+  * Code: Silenced a number of GCC warnings reported by Darren Salt.
+    [1.7.901]
+
+  * Code: Fixed many message formatting bugs reported by Darren Salt.
+    [1.7.901]
+
+  * Code: Silenced GCC warning "this decimal constant is unsigned only
+    in ISO C90" in sanity.cc. [1.7.901]
+
   * Command-line: New option -G to specify additional search
     directories for YGD files (think "cc -I"). You can now use "make
     test" without installing first.
@@ -52,6 +71,15 @@ Yadex 1.8.0 (2005-??-??)
 
   * Doc: Documented the object info box, especially the conventions
     used in the short descriptions of the linedef types.
+
+  * Doc: Documented the commands. Folded the palette viewer
+    documentation back into the user's guide.
+
+  * Doc: Silenced warnings about non-ASCII characters in the man page
+    at the expense of accented characters on ISO 8859-1 systems.
+    [1.7.901]
+
+  * Doc: s/3darchives.in-span.net/ftp.fu-berlin.de/g.
 
   * Editing: FIXME The linedef merging that happens after dragging
     vertices has changed. You can now accept to merge or not each
@@ -73,13 +101,29 @@ Yadex 1.8.0 (2005-??-??)
   * Editing: Added an indicator for potential medusa effect in the
     texture selector.
 
-  * Game/wad: FIXME Decode Boom generalised linedef types.
+  * Editing: Fixed a bug introduced in 1.7.900 that would result in
+    Yadex abort()ing in the texture selector if compiled with GCC 4.1.
+    [1.7.901]
+
+  * Editing: Added special case code for right-angle rotations (0°,
+    90°, 180° and 270°). The new code involves no trig or floating
+    point math so it's guaranteed to be accurate. Also, for the general
+    case (other angles and scales other than 1), don't quantise vertex
+    coordinates to multiples of 2 as that seems to do more harm than
+    good.
+
+  * Game/wad: Boom: generalised linedef types are decoded.
 
   * Game/wad: New game definition directive flat_format. Possible
     values are "normal" (Doom and Strife, 64×64), "heretic" (Heretic,
     64×65 for scrolling flats) and "hexen" (Hexen, 64×128 for scrolling
     flats). This silences the warnings with Heretic and Hexen.
-    (Warning: flat "x" has weird size n. Using 4096 instead.).
+    ("Warning: flat "x" has weird size n. Using 4096 instead.").
+
+  * Legal: Changed the licence on my C++ code from GPL version >= 2 to
+    GPL version 2. Parts of the code are owned by others (Andrew J.
+    Apted and Matthew W. Miller). Pending an agreement with them, they
+    may retain their previous "GPL version >= 2" terms. [1.7.901]
 
   * Misc: New "dump_linedef_types" command.
 
@@ -94,8 +138,8 @@ Yadex 1.8.0 (2005-??-??)
 
   * Platform: ./configure now checks that the feature-test programs not
     only compile but link. This helps with Solaris where nanosleep() is
-    declared in time.h but lives in a separate library (-lrt), causing
-    Yadex to compile but not link. This is of course an expedient. It's
+    declared in time.h but lives in a separate library (-lrt) which
+    prevents Yadex from linking. This is of course an expedient. It's
     OK because we can fall back on usleep() or select().
 
 Yadex 1.7.0 (2003-12-28)

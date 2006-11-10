@@ -34,6 +34,7 @@ Place, Suite 330, Boston, MA 02111-1307, USA.
 class Menu_data
 {
   public :
+    virtual ~Menu_data () { };
     virtual size_t nitems () const = 0;
     virtual const char *operator[] (size_t n) const = 0;
 };

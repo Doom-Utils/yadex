@@ -1,0 +1,339 @@
+<h3>Linedef miscellaneous operations</h3>
+
+<p>
+  Unless otherwise specified, all the operations below act on all the objects
+  in the <em>working set</em>.
+  If there is at least one selected object, the working set is equal to the
+  selection. If there is no selected object, the working set is the currently
+  highlighted object (the object under the pointer).
+  If there is no selection and no highlighted object, the selection is empty,
+  of course.
+  If there is a selection and an object outside the selection, the latter is
+  <em>not</em> part of the working set.
+</p>
+
+<dl>
+  <dt>Find first free tag number
+  <dd>Displays the smallest tag number greater than 0 and not
+  used by any linedef or sector.
+
+  <dt>Rotate and scale LD &amp; SD...
+  <dd>(description to be written)
+
+  <dt>Split linedefs (add new vertex)
+  <dd>
+    <p>
+      Split all linedefs in the working set, by adding a vertex in the middle.
+    </p>
+
+    <p>
+      The key $k x is a shortcut to this function.
+    </p>
+
+  <dt>Split linedefs and sector
+  <dd>
+    <p>
+      Split both linedefs in the working set in the middle by adding a vertex
+      for each, create a linedef between the two new vertices and split the
+      sector with this new linedef.
+      There must be exactly 2 linedefs in the working set and they must face a
+      common sector.
+    </p>
+
+    <p>
+      The new linedef goes from the first linedef in the working set to the
+      second linedef in the working set.
+      The new sector is on the second sidedef of the new linedef.
+    </p>
+
+    <p>
+      There is a bug in this function&nbsp;; if the sector contains other
+      sectors, some sidedefs are given the wrong sector number.
+      Jim Flynn has recently fixed this in DETH.
+      Anyone to look into it&nbsp;?
+    </p>
+
+    <p>
+      The key $k w is a shortcut to this function.
+    </p>
+
+  <dt>Delete linedefs and join sector
+  <dd>(description to be written)
+
+  <dt>Flip linedefs
+  <dd>
+    <p>
+      The start and end vertices of the linedefs in the working set are
+      swapped.
+      Their sidedefs are also swapped, so that the sector references remain
+      correct.
+    </p>
+
+    <p>
+      If you want to flip linedefs without swapping their sidedefs, you have to
+      use "Flip linedefs" then "Swap sidedefs" on them.
+    </p>
+
+  <dt>Swap sidedefs
+  <dd>
+    <p>
+      Swap the sidedefs of the linedefs in the working set <em>without</em>
+      flipping the linedefs.
+      This means that the sector references are also swapped.
+      If you don't understand what this implies, don't use this function.
+    </p>
+
+  <dt>Align textures (Y offset)
+  <dd>This function is buggy.
+
+  <dt>Align textures (X offset)
+  <dd>This function is buggy.
+
+  <dt>Remove 2nd sidedef (make single-sided)
+  <dd>
+    <p>
+      When two superimposed linedefs are merged, the result is often a
+      two-sided linedefs, even though the second sidedef faces no sector.
+      Use this function to fix the mess.
+    </p>
+
+    <p>
+      It sets the I flag, clears the 2 flag, sets the second sidedef to -1,
+      clears the upper and lower texture and resets the middle texture to the
+      default (as defined in the preferences).
+    </p>
+
+  <dt>Make rectangular nook (32x16)
+  <dd>
+    <p>
+      This is a single-key function to make a rectangular nook in the middle of
+      a linedef.
+      "Nook" means that, seen from the first side of the original linedef, the
+      resulting 5 linedefs form a concave figure.
+    </p>
+
+    <p>
+      If the linedef is not long enough, the length of the nook is one third of
+      the length of the linedef.
+    </p>
+
+    <table align="center">
+      <tr>
+	<td><img src="nook1.png" alt="Before" WIDTH=127 HEIGHT=159>
+	<td><img src="nook2.png" alt="After" WIDTH=127 HEIGHT=159>
+      </tr>
+      <tr>
+	<td align="right"><i>Before</i>
+	<td align="right"><i>After</i>
+      </tr>
+    </table>
+
+  <dt>Make rectangular boss (32x16)
+  <dd>
+    Same thing as "Make rectangular nook" but the resulting figure is convex.
+
+  <dt>Set length (move 1st vertex)
+  <dd>
+    Prompts you for a length and moves the 1st vertex of the linedefs in the
+    working set so that they have the length you specified.
+
+  <dt>Set length (move 2nd vertex)
+  <dd>
+    Same thing as "Set length (move 1st vertex) but moves the 2nd vertex.
+
+  <dt><a name="unlink_sidedefs">Unlink 1st sidedef</a>
+  <dd>
+    <p>
+      This function is used when you have several linedefs sharing common
+      sidedefs and you don't want them to share any sidedefs anymore so that
+      you can, for instance, change the sector reference or texture of one of
+      the linedefs independently from the others.
+    </p>
+
+    <p>
+      Here is how it works&nbsp;: all sidedefs that are used on the first side
+      of any linedef in the working set and on any side of any linedef
+      <em>not</em> in the working set are duplicated and the first side of the
+      concerned linedefs in the working set is set to use the copy instead of
+      the original.
+    </p>
+
+    <p>
+      Gotcha&nbsp;: note that the linedefs in the working set are not
+      "unlinked" from each other.
+      They are only "unlinked" from any other (i.e. not in the working set)
+      linedefs.
+      Thus, if you have <em>n</em> linedefs that you want to unlink from each
+      other, you have to unlink every one of them separately.
+      This is so that, if you have, say, two square pillars (2 x 4 linedefs
+      that all use the same sidedef), you can easily unlink one pillar from the
+      other while still having its 4 linedefs all use the same sidedef.
+    </p>
+
+  <dt>Unlink 2nd sidedef
+  <dd>
+    Same as "Unlink 1st sidedef" but with second sidedef instead of first
+    sidedef.
+
+  <dt>Mirror horizontally
+  <dd>
+    <p>
+      This function starts by determining the set <var>S</var> of vertices that
+      are used by any of the linedefs in the working set.
+      Then all the vertices in <var>S</var> have their x-coordinate changed so
+      that they're "mirrored" around the vertical axis that intersects the
+      geometric centre of <var>S</var>.
+      Finally, all the linedefs whose both vertices belong to <var>S</var> are
+      flipped so that the sector references remain correct.
+    </p>
+
+    <table align="center">
+      <tr>
+	<td><img src="mirror0.png" alt="Before" WIDTH=125 HEIGHT=125>
+	<td><img src="mirrorh.png" alt="After" WIDTH=125 HEIGHT=125>
+      </tr>
+      <tr>
+	<td align="right"><i>Before</i>
+	<td align="right"><i>After</i>
+      </tr>
+    </table>
+
+    <p>
+      This function is designed to be used on either the whole level or a group
+      of isolated linedefs (like in the screenshots below).
+      It is not recommended to use it on a group of linedefs if that group is
+      connected to other linedefs.
+      You can do it but the resulting mess might take you some time to
+      untangle, especially if there are many connecting linedefs.
+    </p>
+
+    <p>
+      A common use for this function is when you have a symmetrical room with,
+      say, the same staircase on both sides of the axis of symmetry.
+      You can build one staircase, make a copy of it, mirror the copy and paste
+      it on the other side of the room.
+    </p>
+
+  <dt>Mirror vertically
+  <dd>
+    <p>
+      This function starts by determining the set <var>S</var> of vertices that
+      are used by any of the linedefs in the working set.
+      Then all the vertices in <var>S</var> have their y-coordinate changed so
+      that they're "mirrored" around the horizontal axis that intersects the
+      geometric centre of <var>S</var>.
+      Finally, all the linedefs whose both vertices belong to <var>S</var> are
+      flipped so that the sector references remain correct.
+    </p>
+
+    <table align="center">
+      <tr>
+	<td><img src="mirror0.png" alt="Before" WIDTH=125 HEIGHT=125>
+	<td><img src="mirrorv.png" alt="After" WIDTH=125 HEIGHT=125>
+      </tr>
+      <tr>
+	<td align="right"><i>Before</i>
+	<td align="right"><i>After</i>
+      </tr>
+    </table>
+
+    <p>
+      This function is designed to be used on either the whole level or a group
+      of isolated linedefs (like in the screenshots below). It is not
+      recommended to use it on a group of linedefs if that group is connected
+      to other linedefs.
+      You can do it but the resulting mess might take you some time to
+      untangle, especially if there are many connecting linedefs.
+    </p>
+
+    <p>
+      A common use for this function is when you have a symmetrical room with,
+      say, the same staircase on both sides of the axis of symmetry. You can
+      build one staircase, make a copy of it, mirror the copy and paste it on
+      the other side of the room.
+    </p>
+
+  <dt>Cut a slice out of a sector
+  <dd>
+    <p>
+      You must select exactly two linedefs that face the same sector S.
+      This function creates a linedef A that goes from the first selected
+      linedef to the second and a linedef B that goes from the second to the
+      first.
+      A new sector is created between those four linedefs, with attributes
+      identical to those of S.
+    </p>
+
+    <table align="center">
+      <tr>
+	<td><img src="slice1.png" alt="Before" WIDTH=150 HEIGHT=150>
+	<td><img src="slice2.png" alt="After" WIDTH=150 HEIGHT=150>
+      </tr>
+      <tr>
+	<td align="right"><i>Before</i>
+	<td align="right"><i>After</i>
+      </tr>
+    </table>
+
+    <p>
+      This function is somewhat similar to "split-linedefs-and-sector" except
+      that it creates two linedefs instead of one and that it works on
+      doughnut-shaped sectors.
+      In fact, this function is the only one that can split a sector when there
+      is no linedef path between the split points (which is the case when
+      splitting a doughnut-shaped sector between its inner and outer borders).
+    </p>
+
+    <p>
+      If there is a linedef path between the selected linedefs, this function
+      is equivalent to using "add-linedefs-and-split-sector" twice, except that
+      you end up with two sectors, not three.
+      FIXME - need a figure.
+    </p>
+
+    <p>
+      If the selected linedefs happen to share a vertex, only one linedef is
+      created and the new sector is triangular.
+      The linedefs must not be the same or superimposed.
+      FIXME - need a figure.
+    </p>
+
+    <p>
+      Linedefs A and B are created with all their attributes set to zero and
+      their middle textures set to "<tt>-</tt>".
+      They're oriented so that their right sidedefs face the new sector.
+      Linedef A is the lowest-numbered one.
+    </p>
+
+    <p>
+      The following restrictions apply&nbsp;:
+    </p>
+
+    <ul>
+      <li>selected linedefs must not have two sidedefs in the same sector,
+      <li>selected linedefs must not share more than one sector,
+      <li>there must be no linedef that would be superimposed with A or B.
+    </ul>
+
+    <p>
+      These restrictions are stricter than necessary.
+      They may be lifted in the future if time and brain power permit.
+    </p>
+
+    <p>
+      Because this function is not aware of the geometry of the selected
+      linedefs, but only of the sectors they face, it can be used to split
+      sectors in impossible ways.
+      FIXME - need a figure.
+    </p>
+
+    <p>
+      This function assumes the space between the selected linedefs is empty.
+      If there are any other linedefs there, you will have to fix their sector
+      references manually afterwards.
+    </p>
+
+    <p>
+      The key $(k ctrl)-$k k is a shortcut to this function.
+    </p>
+</dl>

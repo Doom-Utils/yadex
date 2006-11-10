@@ -13,17 +13,16 @@ Yadex incorporates code from DEU 5.21 that was put in the public domain in
 The rest of Yadex is Copyright © 1997-2005 André Majorel and others.
 
 This program is free software; you can redistribute it and/or modify it under
-the terms of the GNU General Public License as published by the Free Software
-Foundation; either version 2 of the License, or (at your option) any later
-version.
+the terms of version 2 of the GNU Library General Public License as published
+by the Free Software Foundation.
 
 This program is distributed in the hope that it will be useful, but WITHOUT
 ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
 FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License along with
-this program; if not, write to the Free Software Foundation, Inc., 59 Temple
-Place, Suite 330, Boston, MA 02111-1307, USA.
+this program; if not, write to the Free Software Foundation, Inc., 51 Franklin
+Street, Fifth Floor, Boston, MA 02110-1301, USA.
 */
 
 
@@ -1103,27 +1102,27 @@ void Menu_priv::draw_one_line (size_t line, bool highlighted)
     switch (i.flags & MIF_MTICK)
     {
       case MIF_NTICK:
-        have_tick = false;
-        break;
+	have_tick = false;
+	break;
 
       case MIF_STICK:
 	have_tick = true;
-        ticked    = i.tick.s;
-        break;
+	ticked    = i.tick.s;
+	break;
 
       case MIF_VTICK:
-        have_tick = true;
-        ticked    = *i.tick.v;
-        break;
+	have_tick = true;
+	ticked    = *i.tick.v;
+	break;
 
       case MIF_FTICK:
-        have_tick = true;
-        ticked    = i.tick.f.f (i.tick.f.a);
-        break;
+	have_tick = true;
+	ticked    = i.tick.f.f (i.tick.f.a);
+	break;
 
       default:
-        nf_bug ("Menu::draw_one_line: tick %02Xh", i.flags);
-        break;
+	nf_bug ("Menu::draw_one_line: tick %02Xh", i.flags);
+	break;
     }
     if (have_tick)
     {

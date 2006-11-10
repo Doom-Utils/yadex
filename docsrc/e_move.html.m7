@@ -1,0 +1,64 @@
+<h3>Moving around</h3>
+
+<h4>Moving the pointer</h4>
+
+<p>
+  In the X11 version, the only way to do that is to move the pointer device
+  (i.e. the mouse).
+</p>
+
+<h4>Scrolling</h4>
+
+<p>
+  The arrow keys $(k left), $(k right), $k up and $k down scroll a little at a
+  time, by default 10% of the screen/window width or height.
+  You can change the exact amount by setting the variable
+  <code>scroll_less</code> in the configuration file.
+</p>
+
+<p>
+  $(k pgup), $(k pgdn), $k home and $k end scroll more at a time, by default
+  90% of the screen/window width or height.
+  You can change the exact amount by setting the variable
+  <code>scroll_more</code> in the configuration file.
+</p>
+
+<h4>Autoscrolling</h4>
+
+<p>
+  By default, autoscrolling is disabled.
+  You can enable it by setting <code>autoscroll</code> to <code>true</code> in
+  the configuration file.
+</p>
+
+<p>
+  When it is enabled and the pointer is close to the edge of the screen/window,
+  the map scrolls automatically.
+  The closer you are to the edge, the faster it scrolls.
+  Autoscrolling is always disabled near the menu bar items so that the map does
+  not scroll when you're reaching for the menu.
+</p>
+
+<p>
+  You can fine tune autoscrolling by changing the variables
+  <code>autoscroll_amp</code> and <code>autoscroll_edge</code>.
+</p>
+
+<h4>Jumping</h4>
+
+<p>
+  I plan to develop a full set-mark/jump-to-mark system similar to the one in
+  <code>vi</code>, with <code>m<var>mark-name</var></code>,
+  <code>'<var>mark-name</var></code> and <code>`<var>mark-name</var></code>.
+</p>
+
+<p>
+  For the moment, if you press $(k '), the map scrolls so that its centre is at
+  the centre of the screen/window.
+</p>
+
+<p>
+  If you press $(k `), the map scrolls so that its centre is at the centre of
+  the screen/window and the zoom factor is adjusted so that the whole map is
+  visible and almost fills the screen/window.
+</p>

@@ -2,32 +2,57 @@ M7SRC = \
 	docsrc/README.doc.m7 \
 	docsrc/README.m7 \
 	docsrc/advanced.html.m7 \
+	docsrc/bugs.html.m7 \
+	docsrc/close.html.m7 \
+	docsrc/commands.html.m7 \
 	docsrc/common.m7 \
 	docsrc/config.html.m7 \
 	docsrc/contact.html.m7 \
+	docsrc/copy.html.m7 \
 	docsrc/credits.html.m7 \
+	docsrc/delete.html.m7 \
 	docsrc/deu_diffs.html.m7 \
+	docsrc/drag.html.m7 \
+	docsrc/e_move.html.m7 \
+	docsrc/edit.html.m7 \
 	docsrc/editing.html.m7 \
 	docsrc/editing_docs.html.m7 \
+	docsrc/env.html.m7 \
 	docsrc/faq.html.m7 \
 	docsrc/feedback.html.m7 \
+	docsrc/flagl.html.m7 \
+	docsrc/flagt.html.m7 \
 	docsrc/getting_started.html.m7 \
+	docsrc/grid.html.m7 \
 	docsrc/hackers_guide.html.m7 \
 	docsrc/help.html.m7 \
+	docsrc/highlight.html.m7 \
 	docsrc/index.html.m7 \
+	docsrc/insert.html.m7 \
 	docsrc/keeping_up.html.m7 \
 	docsrc/ldtypes.html.m7 \
 	docsrc/legal.html.m7 \
+	docsrc/log.html.m7 \
+	docsrc/miscl.html.m7 \
+	docsrc/miscs.html.m7 \
+	docsrc/misct.html.m7 \
+	docsrc/miscv.html.m7 \
 	docsrc/packagers_guide.html.m7 \
-	docsrc/palette.html.m7 \
+	docsrc/renumber.html.m7 \
 	docsrc/reporting.html.m7 \
+	docsrc/save.html.m7 \
+	docsrc/select.html.m7 \
+	docsrc/selector.html.m7 \
 	docsrc/style.html.m7 \
 	docsrc/support.html.m7 \
 	docsrc/tips.html.m7 \
 	docsrc/trivia.html.m7 \
 	docsrc/trouble.html.m7 \
+	docsrc/undo.html.m7 \
 	docsrc/users_guide.html.m7 \
 	docsrc/wad_specs.html.m7 \
 	docsrc/yadex.6.m7 \
 	docsrc/ygd.html.m7 \
+	docsrc/ygd2.html.m7 \
+	docsrc/zoom.html.m7 \
 

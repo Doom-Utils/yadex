@@ -1,0 +1,90 @@
+<h3>Selecting objects</h3>
+
+<p>
+  There are several ways to select objects.
+  The simplest is to click on an object with the left mouse button.
+  By default, when you do that, all other previously selected objects are
+  unselected.
+</p>
+
+<p>
+  If you want to select an object without unselecting everything else, do the
+  same thing but keep $k ctrl pressed while you click.
+  You can also unselect an object this way.
+</p>
+
+<p>
+  You can also select several objects at a time with a selection box.
+  You know how to draw a selection box, don't you&nbsp;?
+  Well, it works the same in Yadex.
+  If you press $k ctrl while setting the first corner of the box, all objects
+  in the box will be "toggle-selected" (that is, selected if they weren't,
+  unselected if they were).
+</p>
+
+<p>
+  A more advanced way to select objects is path-selection.
+  With path selection, you can easily select all the linedefs that form an
+  object with a single keystroke.
+  There are two variants of path selection.
+</p>
+
+<p>
+  To use the first, you must first highlight a linedef.
+  Then press $(k e).
+  All the linedefs that belong to the same non-forked path as the highlighted
+  linedef are selected.
+  For example&nbsp;:
+</p>
+
+<table align="center">
+  <tr>
+    <td><img src="e1.png" alt="Before pressing [e]" WIDTH=159 HEIGHT=127></td>
+    <td><img src="e2.png" alt="After pressing [e]" WIDTH=159 HEIGHT=127></td>
+  </tr>
+  <tr>
+    <td align="right"><i>Before pressing</i> $(k e)</td>
+    <td align="right"><i>After pressing</i> $(k e)</td>
+  </tr>
+</table>
+
+<p>
+  Note how the selection stops at the first fork in the path.
+  That kind of path selection is good to select a path of single- or
+  double-sided linedefs that belong to the same sector.
+</p>
+
+<p>
+  The other variant of path selection is better to select all the linedefs that
+  form a single pillar, even if not all of its sides face the same sector.
+  To use it, highlight a single-sided linedef and press $(k E).
+  All the single-sided linedefs that belong to the same path as the original
+  one are highlighted.
+  For example&nbsp;:
+</p>
+
+<table align="center">
+  <tr>
+    <td><img src="E1.png" alt="Before pressing [E]" WIDTH=156 HEIGHT=160></td>
+    <td><img src="E2.png" alt="After pressing [E]" WIDTH=154 HEIGHT=160></td>
+  </tr>
+  <tr>
+    <td align="right"><i>Before pressing</i> $(k E)</td>
+    <td align="right"><i>After pressing</i> $(k E)</td>
+  </tr>
+</table>
+
+<p>
+  Note that the selection is not stopped by the forks in the path.
+  Also note that the double-sided linedefs are not selected.
+</p>
+
+<p>
+  Like clicking, $k e and $k E have the effect of unselecting everything else
+  that was previously selected unless you use $(k ctrl).
+  If $k ctrl was pressed at the time you pressed $k e or $(k E), all the
+  linedefs that would have been selected if you didn't press $k ctrl are either
+  removed from the selection (if they were previously selected) or added to the
+  selection (if they weren't).
+  This is actually simpler than it sounds.
+</p>

@@ -4,7 +4,7 @@
  */
 
 /*
-This file is copyright André Majorel 2005.
+This file is copyright André Majorel 2005-2006.
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of version 2 of the GNU General Public License as published by the
@@ -15,11 +15,12 @@ ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
 FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License along with
-this program; if not, write to the Free Software Foundation, Inc., 59 Temple
-Place, Suite 330, Boston, MA 02111-1307, USA.
+this program; if not, write to the Free Software Foundation, Inc.,
+51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 */
 
 
+#include <ctype.h>
 #include <errno.h>
 #include <stdarg.h>
 #include <stddef.h>
@@ -49,7 +50,7 @@ Place, Suite 330, Boston, MA 02111-1307, USA.
 /*
  *	Types
  */
-const char *nullmacro           = "";
+const char *dropmacro           = "";
 const char *argmacro		= "\1";
 const char *default_time_format = "%Y-%m-%d";
 
@@ -132,6 +133,8 @@ struct Macdef
   {
   }
 
+  /* Not portable if va_start() is implemented as a macro (as opposed to
+     compiler magic). */
   Macdef (mdflags_t flags, const std::string &value, ...) :
     flags	(flags),
     func	(NULL),
@@ -199,7 +202,7 @@ class Context
     }
     const Macdef *getmacro (const macname_t &name) const;
     void setmacro (const macname_t &name, Macdef def);
-    // FIXME net something to unset a macro
+    // FIXME need something to unset a macro
 
   private :
     static Context nullctx;	// The notional parent of the root context
@@ -277,6 +280,8 @@ static int mac_set (Context &ctx, Input &input, Output &output,
     std::vector<std::string> &args);
 static int mac_source (Context &ctx, Input &input, Output &output,
     std::vector<std::string> &args);
+static int mac_value (Context &ctx, Input &input, Output &output,
+    std::vector<std::string> &args);
 static int mac_where (Context &ctx, Input &input, Output &output,
     std::vector<std::string> &args);
 
@@ -342,7 +347,7 @@ int main (int argc, char *argv[])
 
   if (argc == 2 && strcmp (argv[1], "--version") == 0)
   {
-    puts ("0.0.1");
+    puts ("0.0.2");
     exit (0);
   }
 
@@ -378,7 +383,7 @@ int main (int argc, char *argv[])
       {
 	if (strlen (optarg) != 1)
 	{
-	  err ("M7010", "-d: the argument length must be exactly 1");
+	  err ("M7010", "-m: the argument length must be exactly 1");
 	  exit (1);
 	}
 	syn_meta = *optarg;
@@ -519,15 +524,14 @@ static void register_intrinsics (Context &ctx)
 {
   const mdflags_t f = MDF_INTRINSIC;
 
-  ctx.setmacro
+  ctx.setmacro				// Null macro $()
   (
-    nullmacro,
+    "",
     Macdef
     (
       f,
-      mac_,
-      &Macargdef (MADF_GREEDY),		// $*
-      NULL
+      mac_,				// Expands to an empty string
+      NULL				// Takes no arguments
     )
   );
 
@@ -644,11 +648,37 @@ static void register_intrinsics (Context &ctx)
 
   ctx.setmacro
   (
+    "value",
+    Macdef
+    (
+      f,
+      mac_value,
+      &Macargdef (MADF_MAND | MADF_ID),	// name
+      NULL
+    )
+  );
+
+  ctx.setmacro
+  (
     "where",
     Macdef
     (
       f,
       mac_where,
+      NULL
+    )
+  );
+
+  /* Special macro definition used for ignored references to undefined
+     macros (E.G. $(-nosuchmacro)) */
+  ctx.setmacro
+  (
+    dropmacro,
+    Macdef
+    (
+      f,
+      mac_,
+      &Macargdef (MADF_GREEDY),		// $*
       NULL
     )
   );
@@ -683,7 +713,7 @@ static int expand_text (Context &ctx, int nest, Input &input,
       int r = expand_reference (ctx, nest + 1, input, output);
       if (r < 0 || r > 1)
       {
-	err ("M7150", "%s: parse_directive() error", input.where ());
+	err ("M7150", "%s: parse_directive() error", input.lastwhere ());
 	return 1;
       }
       if (r == 1)
@@ -748,18 +778,19 @@ static int expand_reference (Context &ctx, int nest, Input &input,
   if (c != syn_meta)
   {
     err ("M7155", "%s: internal error, report this bug (%02Xh)",
-	input.where (), c);
+	input.lastwhere (), c);
     exit (42);
   }
   const char *where_pathname = input.pathname ();
-  unsigned long where_line = input.line ();
-  unsigned long where_col = input.col ();
+  unsigned long where_line = input.lastline ();
+  unsigned long where_col = input.lastcol ();
 
   /* Get the next character */
   c = input.peekc ();
   if (c == EOF)
   {
-    err ("M7160", "%s: unexpected EOF after \"%c\"", input.where (), syn_meta);
+    err ("M7160", "%s: unexpected EOF after \"%c\"",
+	input.nextwhere (), syn_meta);
     return 2;
   }
   /* Escape metacharacters ("$", ")", "}" and whitespace) */
@@ -798,7 +829,7 @@ static int expand_reference (Context &ctx, int nest, Input &input,
 	if (hasparen != 0)
 	  err ("M7170",
 	      "%s: the \"*\" flag has no effect in long form references",
-	      input.where ());
+	      input.lastwhere ());
       }
       else if (c == '-')
       {
@@ -820,7 +851,6 @@ static int expand_reference (Context &ctx, int nest, Input &input,
   /* Read the keyword (the name of the macro) into token[] */
   char token[21];
   {
-    int c;
     char *p    = token;
     char *pmax = token + sizeof token - 1;
 
@@ -829,24 +859,25 @@ static int expand_reference (Context &ctx, int nest, Input &input,
       int c = input.getc ("refn", nest);
       if (p >= pmax)
       {
-	err ("M7180", "%s: directive too long", input.where ());
+	err ("M7180", "%s: directive too long", input.lastwhere ());
 	return 2;
       }
       *p++ = c;
     }
     *p = '\0';
     if (debug & DEBUG_SYNTAX)
-      err ("M7190", "%s: directive \"%s\"", input.where (), token);
-    if (p == token)
+      err ("M7190", "%s: directive \"%s\"", input.lastwhere (), token);
+    if (hasparen == 0 && p == token)
     {
-      err ("M7200", "%s: directive name missing", input.where ());
+      err ("M7200", "%s: expected flag or macro name, got %s",
+	  input.nextwhere (), quotechar (input.peekc ()));
       return 2;
     }
 #if 0
     c = input.peekc ();
     if (input.peekc () == EOF)
     {
-      err ("M7210", "%s: unexpected EOF in directive", input.where ());
+      err ("M7210", "%s: unexpected EOF in directive", input.lastwhere ());
       return 2;
     }
     else if ((hasparen == 1 && c != syn_end1
@@ -854,7 +885,7 @@ static int expand_reference (Context &ctx, int nest, Input &input,
 	&& ! isspace (c))
     {
       err ("M7220", "%s: unexpected character %02Xh in directive name",
-	  input.where (), unsigned (c));
+	  input.lastwhere (), unsigned (c));
       return 2;
     }
 #endif
@@ -879,16 +910,16 @@ static int expand_reference (Context &ctx, int nest, Input &input,
     {
       if (flags & MRF_IGNERR)
       {
-	md = ctx.getmacro (nullmacro);
+	md = ctx.getmacro (dropmacro);
 	if (md == NULL)			// Can't happen
 	{
-	  err ("M7230", "nullmacro not found, report this bug");
+	  err ("M7230", "dropmacro not found, report this bug");
 	  exit (1);
 	}
       }
       else
       {
-	err ("M7240", "%s: invalid macro \"%s\"", input.where (), token);
+	err ("M7240", "%s: invalid macro \"%s\"", input.lastwhere (), token);
 	return 2;
       }
     }
@@ -952,19 +983,19 @@ static int expand_reference (Context &ctx, int nest, Input &input,
     }
     if (r != 0)
     {
-      err ("M7270", "%s: an error occurred in argument %d of macro \"%s\"",
-	  input.where (), args.size () + 1, token);
+      err ("M7270", "%s: an error occurred in argument %lu of macro \"%s\"",
+	  input.lastwhere (), (unsigned long) args.size () + 1, token);
       return 2;
     }
     if (debug & DEBUG_SYNTAX)
-      err ("M7290", "%s: arg \"%s\"", input.where (), o.buf.c_str ());
+      err ("M7290", "%s: arg \"%s\"", input.lastwhere (), o.buf.c_str ());
 
     if (mad->flags & MADF_ID)  // Enforce MADF_ID (valid macro name)
       for (size_t i = 0; i < o.buf.length (); i++)
 	if (! isident (o.buf[i]))
 	{
 	  err ("M7300", "%s: not a valid macro name \"%s\"",
-	      input.where (), o.buf.c_str ());
+	      input.lastwhere (), o.buf.c_str ());
 	  return 2;
 	}
     if (mad->flags & MADF_UINT)	// Enforce MADF_UINT (unsigned integer)
@@ -972,7 +1003,7 @@ static int expand_reference (Context &ctx, int nest, Input &input,
 	if (! isdigit (o.buf[i]))
 	{
 	  err ("M7310", "%s: not an unsigned integer \"%s\"",
-	      input.where (), o.buf.c_str ());
+	      input.lastwhere (), o.buf.c_str ());
 	  return 2;
 	}
 
@@ -983,7 +1014,7 @@ static int expand_reference (Context &ctx, int nest, Input &input,
   if (args.size () < md->argmin)
   {
     err ("M7320", "%s: directive \"%s\" needs at least %hu argument(s)",
-	input.where (), token, md->argmin);
+	input.lastwhere (), token, md->argmin);
     return 2;
   }
   if (hasparen != 0)
@@ -1002,7 +1033,7 @@ static int expand_reference (Context &ctx, int nest, Input &input,
      || hasparen == 2 && input.peekc () != syn_end2)
     {
       err ("M7340", "%s: directive \"%s\" takes at most %lu argument(s)",
-	  input.where (), token, (unsigned long) md->argmax);
+	  input.lastwhere (), token, (unsigned long) md->argmax);
       return 2;
     }
     input.getc ("ref)", nest);
@@ -1038,7 +1069,7 @@ static int expand_reference (Context &ctx, int nest, Input &input,
 	  != 0)
       {
 	err ("M7350", "%s: could not expand macro %s",
-	    input.where (), token);
+	    input.lastwhere (), token);
 	return 2;
       }
     }
@@ -1157,7 +1188,7 @@ static int mac__hash (Input &input, Output &output,
     int c = input.getc ("#");
     if (c == EOF)
     {
-      err ("M7360", "%s: unexpected EOF in macro argument", input.where ());
+      err ("M7360", "%s: unexpected EOF in macro argument", input.lastwhere ());
       return 1;
     }
     if (c == syn_end)
@@ -1180,7 +1211,8 @@ static int mac_blob (Context &ctx, Input &input, Output &output,
   std::string pathname;
   if (locate_file (input.pathname (), args[0].c_str (), pathname) != 0)
   {
-    err ("M7370", "%s: cannot locate \"%s\"", input.where (), args[0].c_str ());
+    err ("M7370", "%s: cannot locate \"%s\"",
+	input.lastwhere (), args[0].c_str ());
     return 1;
   }
 
@@ -1190,7 +1222,7 @@ static int mac_blob (Context &ctx, Input &input, Output &output,
   if (fp == NULL)
   {
     err ("M7380", "%s: %s: %s",
-	input.where (), pathname.c_str (), strerror (errno));
+	input.lastwhere (), pathname.c_str (), strerror (errno));
     return 1;
   }
 
@@ -1259,7 +1291,8 @@ static int mac_define (Context &ctx, Input &input, Output &output,
 {
   if (args.size () < 3 || args.size () > 4)
   {
-    err ("M7410", "%s: define: need three or four arguments", input.where ());
+    err ("M7410", "%s: define: need three or four arguments",
+	input.lastwhere ());
     return 1;
   }
 
@@ -1269,7 +1302,7 @@ static int mac_define (Context &ctx, Input &input, Output &output,
   if (md != NULL && (md->flags & MDF_INTRINSIC))
   {
     err ("M7420", "%s: define: \"%s\" is an intrinsic",
-	input.where (), args[0].c_str ());
+	input.lastwhere (), args[0].c_str ());
     return 1;
   }
 
@@ -1321,7 +1354,8 @@ static int mac_file (Context &ctx, Input &input, Output &output,
   std::string pathname;
   if (locate_file (input.pathname (), args[0].c_str (), pathname) != 0)
   {
-    err ("M7440", "%s: cannot locate \"%s\"", input.where (), args[0].c_str ());
+    err ("M7440", "%s: cannot locate \"%s\"",
+	input.lastwhere (), args[0].c_str ());
     return 1;
   }
 
@@ -1331,7 +1365,7 @@ static int mac_file (Context &ctx, Input &input, Output &output,
   if (fp == NULL)
   {
     err ("M7450", "%s: %s: %s",
-	input.where (), pathname.c_str (), strerror (errno));
+	input.lastwhere (), pathname.c_str (), strerror (errno));
     return 1;
   }
 
@@ -1440,17 +1474,17 @@ static int mac_set (Context &ctx, Input &input, Output &output,
 {
   if (args.size () < 1 || args.size () > 2)
   {
-    err ("M7480", "%s: set: need one or two arguments", input.where ());
+    err ("M7480", "%s: set: need one or two arguments", input.lastwhere ());
     return 1;
   }
 
   // Don't let users overwrite built-ins
   const Macdef *md;
   md = ctx.getmacro (args[0]);
-  if (md && NULL && (md->flags & MDF_INTRINSIC))
+  if (md != NULL && (md->flags & MDF_INTRINSIC))
   {
     err ("M7490", "%s: set: \"%s\" is an intrinsic",
-	input.where (), args[0].c_str ());
+	input.lastwhere (), args[0].c_str ());
     return 1;
   }
 
@@ -1471,7 +1505,8 @@ static int mac_source (Context &ctx, Input &input, Output &output,
   std::string pathname;
   if (locate_file (input.pathname (), args[0].c_str (), pathname) != 0)
   {
-    err ("M7500", "%s: cannot locate \"%s\"", input.where (), args[0].c_str ());
+    err ("M7500", "%s: cannot locate \"%s\"",
+	input.lastwhere (), args[0].c_str ());
     return 1;
   }
 
@@ -1481,7 +1516,7 @@ static int mac_source (Context &ctx, Input &input, Output &output,
   if (fp == NULL)
   {
     err ("M7510", "%s: %s: %s",
-	input.where (), pathname.c_str (), strerror (errno));
+	input.lastwhere (), pathname.c_str (), strerror (errno));
     return 1;
   }
 
@@ -1490,7 +1525,7 @@ static int mac_source (Context &ctx, Input &input, Output &output,
   if (expand_text (ctx, 0/*FIXME*/, input_inc, output, scope_t (0)) != 0)
   {
     err ("M7520", "%s: %s: expand_text error",
-	input.where (), pathname.c_str ());
+	input.lastwhere (), pathname.c_str ());
     rc = 1;
   }
 
@@ -1500,13 +1535,68 @@ static int mac_source (Context &ctx, Input &input, Output &output,
 
 
 /*
+ *	mac_value - implementation of the "value" intrinsic
+ */
+static int mac_value (Context &ctx, Input &input, Output &output,
+    std::vector<std::string> &args)
+{
+  const Macdef *md;
+  md = ctx.getmacro (args[0]);
+  if (md != NULL && (md->flags & MDF_INTRINSIC))
+  {
+    err ("M7525", "%s: set: \"%s\" is an intrinsic",
+	input.lastwhere (), args[0].c_str ());
+    return 1;
+  }
+  output.write (md->value.c_str (), md->value.size (), 1);
+  return 0;
+}
+
+
+/*
  *	mac_where - implementation of the "where" intrinsic
  */
 static int mac_where (Context &ctx, Input &input, Output &output,
     std::vector<std::string> &args)
 {
-  output.puts (input.where ());
+  output.puts (input.lastwhere ());
   return 0;
+}
+
+
+/*
+ *	quotechar - return a safe representation of a char
+ *
+ *	Not reentrant (returns pointer on static buffer). The string is
+ *	guaranteed to be exactly three characters long and not contain
+ *	any control or non-ASCII characters.
+ *
+ *	FIXME not compatible with EBCDIC.
+ */
+static const char hex_digit[16] =
+{
+  '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'
+};
+
+const char *quotechar (char c)
+{
+  static char buf[4];
+
+  if (c >= 32 && c <= 126)
+  {
+    buf[0] = '"';
+    buf[1] = c;
+    buf[2] = '"';
+    buf[3] = '\0';
+  }
+  else
+  {
+    buf[0] = hex_digit[((unsigned char) c) >> 4];
+    buf[1] = hex_digit[((unsigned char) c) & 0x0f];
+    buf[2] = 'h';
+    buf[3] = '\0';
+  }
+  return buf;
 }
 
 
@@ -1516,9 +1606,15 @@ static int mac_where (Context &ctx, Input &input, Output &output,
 void err (const char *code, const char *fmt, ...)
 {
   va_list argp;
+  bool stdout_error = false;
+  int stdout_errno;
 
-  if (fileno (stdout) == fileno (stderr))
-    fflush (stdout);			// FIXME report errors
+  if (fileno (stdout) == fileno (stderr) && ! ferror (stdout))
+    if (fflush (stdout) != 0)
+    {
+      stdout_error = true;
+      stdout_errno = errno;
+    }
 
   fputs ("m7: ", stderr);
   fputs (code, stderr);
@@ -1527,5 +1623,11 @@ void err (const char *code, const char *fmt, ...)
   vfprintf (stderr, fmt, argp);
   va_end (argp);
   fputc ('\n', stderr);
+
+  /* The reporting of the error on stdout is delayed so that it doesn't
+     look like it's the _cause_. Don't recurse as there's a small risk
+     of infinite recursion. */
+  if (stdout_error)
+    fprintf (stderr, "m7: M7999: (stdout): %s", strerror (stdout_errno));
 }
 

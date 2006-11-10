@@ -14,17 +14,16 @@ Yadex incorporates code from DEU 5.21 that was put in the public domain in
 The rest of Yadex is Copyright © 1997-2005 André Majorel and others.
 
 This program is free software; you can redistribute it and/or modify it under
-the terms of the GNU General Public License as published by the Free Software
-Foundation; either version 2 of the License, or (at your option) any later
-version.
+the terms of version 2 of the GNU Library General Public License as published
+by the Free Software Foundation.
 
 This program is distributed in the hope that it will be useful, but WITHOUT
 ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
 FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License along with
-this program; if not, write to the Free Software Foundation, Inc., 59 Temple
-Place, Suite 330, Boston, MA 02111-1307, USA.
+this program; if not, write to the Free Software Foundation, Inc., 51 Franklin
+Street, Fifth Floor, Boston, MA 02110-1301, USA.
 */
 
 
@@ -66,8 +65,8 @@ const char *const msg_nomem      = "Not enough memory";
 
 
 /*
- *	Not real variables -- just unique pointer values
- *	used by functions that return pointers to 
+ *	Not real variables -- just unique pointer values used by
+ *	functions that return pointers to indicate errors.
  */
 char error_non_unique[1];  // Found more than one
 char error_none[1];        // Found none
@@ -88,7 +87,7 @@ Wad_res     wad_res (&MasterDir);
 bool      autoscroll			= 0;
 unsigned long autoscroll_amp		= 10;
 unsigned long autoscroll_edge		= 30;
-const char *config_file                 = NULL;
+const char *config_file			= NULL;
 int       copy_linedef_reuse_sidedefs	= 0;
 int       cpu_big_endian		= 0;
 bool      Debug				= false;
@@ -112,11 +111,11 @@ unsigned  idle_sleep_ms			= 50;
 bool      InfoShown			= true;
 int       zoom_default			= 0;  // 0 means fit
 int       zoom_step			= 0;  // 0 means sqrt(2)
-int       digit_zoom_base               = 100;
-int       digit_zoom_step               = 0;  // 0 means sqrt(2)
+int       digit_zoom_base		= 100;
+int       digit_zoom_step		= 0;  // 0 means sqrt(2)
 confirm_t insert_vertex_split_linedef	= YC_ASK_ONCE;
 confirm_t insert_vertex_merge_vertices	= YC_ASK_ONCE;
-bool      blindly_swap_sidedefs         = false;
+bool      blindly_swap_sidedefs		= false;
 const char *Iwad1			= NULL;
 const char *Iwad2			= NULL;
 const char *Iwad3			= NULL;
@@ -139,7 +138,7 @@ unsigned long scroll_less		= 10;
 unsigned long scroll_more		= 90;
 bool      Select0			= false;
 int       show_help			= 0;
-int       sprite_scale                  = 100;
+int       sprite_scale			= 100;
 bool      SwapButtons			= false;
 int       verbose			= 0;
 int       welcome_message		= 1;
@@ -945,7 +944,7 @@ for (;;)
       make_palette_ppm (0, out);
       }
 
-   // make_palette_ppm
+   // make_palette_ppm2
    else if (strcmp (com, "mp2") == 0)
       {
       out = strtok (NULL, "");
@@ -1096,7 +1095,7 @@ for (;;)
       TermGfx ();
       viewpal_end:;
       }
-   
+
    // "viewpat" - view the patches
    else if (strcmp (com, "viewpat") == 0)
       {
@@ -1391,11 +1390,13 @@ for (size_t n = 0; n < NCOLOURS; n++)
    else if (n == WINTITLE)		c.set (0xff, 0xff, 0x00);
 #endif
 
-   else					fatal_error ("Wrong acn %d", n);
+   else					fatal_error ("Wrong acn %lu",
+					   (unsigned long) n);
 
    acolour_t acn = add_app_colour (c);
    if (acn != n)
-      fatal_error ("add_base_colours: got %d for %d\n", acn, n);
+      fatal_error ("add_base_colours: got %d for %lu\n",
+	  acn, (unsigned long) n);
    }
 }
 

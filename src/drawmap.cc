@@ -13,17 +13,16 @@ Yadex incorporates code from DEU 5.21 that was put in the public domain in
 The rest of Yadex is Copyright © 1997-2005 André Majorel and others.
 
 This program is free software; you can redistribute it and/or modify it under
-the terms of the GNU General Public License as published by the Free Software
-Foundation; either version 2 of the License, or (at your option) any later
-version.
+the terms of version 2 of the GNU Library General Public License as published
+by the Free Software Foundation.
 
 This program is distributed in the hope that it will be useful, but WITHOUT
 ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
 FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License along with
-this program; if not, write to the Free Software Foundation, Inc., 59 Temple
-Place, Suite 330, Boston, MA 02111-1307, USA.
+this program; if not, write to the Free Software Foundation, Inc., 51 Franklin
+Street, Fifth Floor, Boston, MA 02110-1301, USA.
 */
 
 
@@ -65,7 +64,7 @@ static void draw_obj_no (int x, int y, int obj_no, acolour_t c);
  *
  *	Try this in Gnuplot :
  *
- *	  plot [0:10] x                                          
+ *	  plot [0:10] x
  *	  replot log(x+1.46)/log(1.5)-log(2.46)/log(1.5)+1
  */
 int vertex_radius (double scale)
@@ -186,7 +185,7 @@ static void draw_grid (edit_t *e)
 {
   if (! e->grid_shown)
     return;
-  
+
   int mapx0   = MAPX (0);
   int mapx1   = MAPX (ScrMaxX);
   int mapy0   = MAPY (ScrMaxY);
@@ -800,7 +799,7 @@ static void draw_things_sprites (edit_t *e)
 	sticker.clear ();  // We'll display the thing type instead
     }
 #endif
-    
+
     // Display it
     if (sticker.is_clear ())
       draw_vint (t.type, SCREENX (mapx), SCREENY (mapy), Scale);

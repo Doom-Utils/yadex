@@ -1,0 +1,23 @@
+<h3>Closing a window</h3>
+
+<p>There are two ways to close a window&nbsp;:
+
+<ul>
+  <li>
+    <p>
+      Press $(k esc).
+      If you have made changes since the last time you saved, or if you have
+      never saved, Yadex requires confirmation before closing the window.
+    </p>
+
+  <li>
+    <p>
+      Press $k q or do "File-&gt;Quit".
+      If you have made changes since the last time you saved, or if you have
+      never saved, Yadex first saves the level, using the same procedure as
+      when you press $(k f2).
+      After that the window is closed.
+      If the saving procedure is interactive (for example because it's the
+      first time you save), and if you cancel it, the window is not closed.
+    </p>
+</ul>

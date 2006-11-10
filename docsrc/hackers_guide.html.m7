@@ -1,39 +1,40 @@
 $(set c)
 <html>
-<head>
-<title>Yadex hacker's guide</title>
-<meta http-equiv="Content-Style-Type" content="text/css">
-<style type="text/css">
-  DT {
-    margin-bottom:       1em;
-    margin-top:          1em;
-    display:             list-item;
-    list-style-image:    none;
-    list-style-position: inside;
-    list-style-type:     disc;
-  }
-  DD {
-    margin-bottom: 1em;
-    margin-top:    1em
-  }
-</style>
-</head>
-<body>
+  <head>
+    <title>Yadex hacker's guide</title>
+    <meta http-equiv="Content-Style-Type" content="text/css">
+    <style type="text/css">
+      DT {
+	margin-bottom:       1em;
+	margin-top:          1em;
+	display:             list-item;
+	list-style-image:    none;
+	list-style-position: inside;
+	list-style-type:     disc;
+      }
+      DD {
+	margin-bottom: 1em;
+	margin-top:    1em
+      }
+    </style>
+  </head>
+  <body>
 
-<div align="center">
-<img src="logo_small.png" alt="Fancy logo">
-<br>Yadex $VERSION ($SOURCE_DATE)
-<h1>Hacker's guide</h1>
-</div>
-<br>
-<br>
-<br>
+    <div align="center">
+    <img src="logo_small.png" alt="Fancy logo">
+    <br>Yadex $VERSION ($SOURCE_DATE)
+    <h1>Hacker's guide</h1>
+    </div>
+    <br>
+    <br>
+    <br>
 
-		<h2>Read this first</h2>
+    <h2>Read this first</h2>
 
-Before you start hacking&mdash;no, before you even
-<em>think</em> about hacking&mdash;Yadex, you should do
-this&nbsp;:
+    <p>
+      Before you start hacking&mdash;no, before you even <em>think</em> about
+      hacking&mdash;Yadex, you should do this&nbsp;:
+    </p>
 
 <dl>
   <dt>Read the <a href="TODO"><code>TODO</code></a> file
@@ -135,11 +136,11 @@ Unix-and-X11 platforms provided that
 <ul>
 <li>you have GNU make,
 <li>you have a C compiler and a C++ compiler,
-<li>$c short is 16-bit long,
-<li>$c long is 32-bit long.
+<li>$ty short is 16-bit long,
+<li>$ty long is 32-bit long.
 </ul>
-To compile on platforms where $c short
-or $c long don't have the needed size,
+To compile on platforms where $ty short
+or $ty long don't have the needed size,
 just change the definitions of $c u16,
 $c i16, $c u32 and $c i32
 in $c yadex.h.
@@ -228,34 +229,33 @@ change the version number much&nbsp;: you can just change
 
 			<h3>Memory allocation</h3>
 
-You're not supposed to use $c malloc() and $c free() but $c
-GetMemory(), $c FreeMemory(), $c GetFarMemory() and $c
-FreeFarMemory() instead. Why ?
+You're not supposed to use $fn malloc and $fn free but $(fn GetMemory), $(fn
+FreeMemory), $fn GetFarMemory and $fn FreeFarMemory instead. Why&nbsp;?
 
-<p>$c GetMemory() and friends manage more things for you.  They
+<p>$fn GetMemory and friends manage more things for you.  They
 include an anti-fragmentation system, they try to swap things
 out when memory is tight (this is an only an issue for the
-16-bit DOS version) and if they fail, they call $c fatal_error()
+16-bit DOS version) and if they fail, they call $fn fatal_error
 so you don't need to check their return value.
 
-<p>The reason for $c GetFarMemory() is that, for the 16-bit DOS
-version, it can allocate more than 64 kB ($c GetMemory()
-cannot). I must say that I don't use $c GetFarMemory() a lot
+<p>The reason for $fn GetFarMemory is that, for the 16-bit DOS
+version, it can allocate more than 64 kB ($fn GetMemory
+cannot). I must say that I don't use $fn GetFarMemory a lot
 myself because I don't like the idea of having to use two
 different memory allocation routines depending on the size I
-expect to allocate. I modified $c GetMemory() so that it accepts
-an <code>unsigned long</code> but checks that the passed value
-fits in $c size_t. In other words, if you call $c GetMemory()
+expect to allocate. I modified $fn GetMemory so that it accepts
+an $ty unsigned long but checks that the passed value
+fits in $ty size_t. In other words, if you call $fn GetMemory
 with a size of 65,536 the 16-bit DOS version will trigger a
 fatal error immediately instead of silently allocating 1 byte
 and letting you search afterwards why the program behaves
-strangely. A better fix would be to make $c GetMemory() call $c
-GetFarMemory() when the block is too large for $c malloc(). Any
+strangely. A better fix would be to make $fn GetMemory call $c
+GetFarMemory() when the block is too large for $(fn malloc). Any
 volunteers ?
 
-<p>Memory allocated with $c GetMemory() is guaranteed to be
-freeable with $c free().  On the other hand, memory allocated
-with $c GetFarMemory() must be freeed with $c FreeFarMemory().
+<p>Memory allocated with $fn GetMemory is guaranteed to be
+freeable with $(fn free).  On the other hand, memory allocated
+with $fn GetFarMemory must be freeed with $(fn FreeFarMemory).
 
 			<h3><a name="endianness">Endianness</a></h3>
 
@@ -268,7 +268,7 @@ little-endian machines and in big-endian format on big-endian
 machines.
 
 <p>The wad endianness &lt;-&gt; native endianness conversion is
-done automagically by $c wad_read_i16() and $c wad_read_i32().
+done automagically by $fn wad_read_i16 and $(fn wad_read_i32).
 
 <p><u>To maintain compatibility with big-endian platforms, all
 I/O of multibyte integers should be done with those
@@ -291,7 +291,7 @@ one wad, it has only one directory entry, pointing to the last
 occurence.
 
 <p>When you need to load a lump by name, you call
-<code>FindMasterDir()</code>.  It returns you a pointer on its
+$(fn FindMasterDir).  It returns you a pointer on its
 entry in the directory, which in turn contains everything you
 need to read it.
 
@@ -315,18 +315,18 @@ scratch. This "feature" is discussed in the Comments section
 below. Anyway, here is the API.
 
 <dl>
-<dt><code>OpenMainWad()</code>
+<dt>$fn OpenMainWad
 <dd>Create the directory and fill it with the contents of the
 directory of the iwad.
 
-<dt><code>OpenPatchWad()</code> 
+<dt>$fn OpenPatchWad
 <dd>Add a pwad to the list of the open wads and to the
 directory.
 
-<dt><code>CloseUnusedWadFiles()</code>
+<dt>$fn CloseUnusedWadFiles
 <dd>Close all wads that are not used in the directory anymore.
 
-<dt><code>CloseWadFiles()</code>
+<dt>$fn CloseWadFiles
 <dd>Close all open wads and delete the list of open wads and the
 directory.
 </dl>
@@ -335,9 +335,9 @@ directory.
 
 It has not been said explicitly so far but Yadex maintains a
 list of all open wads (iwads and pwads). It is a linked list of
-the <code>WadFileInfo</code> structure. The global variable
+the $ty WadFileInfo structure. The global variable
 <code>WadeFileList</code> is a pointer to the first element of
-the list, which is always the iwad. The type <code>WadPtr</code>
+the list, which is always the iwad. The type $ty WadPtr
 is an alias for "<code>struct WadFileInfo *</code>" (yes, I
 know, it's confusing to have two names for the same thing).
 
@@ -357,9 +357,9 @@ extern WadPtr WadFileList;      // List of wad files
 </pre>
 
 <p>The directory itself is a linked list of the
-<code>MasterDirectory</code> structure. The global variable
+$ty MasterDirectory structure. The global variable
 <code>MasterDir</code> points to the first element of the
-directory. The type <code>MDirPtr</code> is an alias for
+directory. The type $ty MDirPtr is an alias for
 "<code>struct MasterDirectory *</code>".
 
 <pre>
@@ -400,7 +400,7 @@ has no inverse. The only way to do it is to restart Yadex.
 
 <p>Another somewhat non obvious design decision is that, in most
 places where the directory is updated,
-<code>CloseUnusedWadFiles()</code> is called too. This means
+$fn CloseUnusedWadFiles is called too. This means
 that you can't load two pwads that have exactly the same lumps.
 As the second pwad is loaded, the first one is automatically
 (and silently) unloaded. Not a big deal either but, as a user, I
@@ -472,62 +472,80 @@ level and write level routines cleaner and simpler.
 
 			<h3>Maintenance</h3>
 
-It's of paramount importance for the stability and
-reliability of Yadex that the level data be maintained
-in a consistent state at all times. In particular,
+<p>
+  It's of paramount importance for the stability and reliability of Yadex that
+  the level data be maintained in a consistent state at all times.
+  In particular,
+</p>
+
 <ul>
-<li>the $c Num* variables must remain accurate,
-<li>vertex references in linedefs must be either
-	$c OBJ_NO_NONE or the number of an existing vertex,
-<li>sidedef references in linedefs must be either
-	$c OBJ_NO_NONE or the number of an existing sidedef,
-<li>sector references in sidedefs must be either
-	$c OBJ_NO_NONE or the number of an existing sector.
+  <li>the $c Num* variables must remain accurate,
+  <li>
+    vertex references in linedefs must be either $ma OBJ_NO_NONE or the number
+    of an existing vertex,
+  <li>
+    sidedef references in linedefs must be either $ma OBJ_NO_NONE or the number
+    of an existing sidedef,
+  <li>
+    sector references in sidedefs must be either $ma OBJ_NO_NONE or the number
+    of an existing sector.
 </ul>
 
 			<h3>Loading</h3>
 
-The SEGS, SSECTORS, NODES, BLOCKMAP and REJECT lumps are
-ignored. The other lumps are read into the level data
-variables with a special case for VERTEXES ; vertices
-that are not used by any linedef are ignored (such vertices
-are believed to come from the nodes builder and therefore
-be irrelevant to level editing). The linedefs vertices
-references are updated if necessary.
 <p>
-Since the endianness of the wad files is fixed (little
-endian) and thus not necessarily identical to the endianness
-of the CPU, reading 2- and 4-byte integers from the file is
-done through special endianness-independant routines.
+  The $(lu SEGS), $(lu SSECTORS), $(lu NODES), $(lu BLOCKMAP) and $(lu REJECT)
+  lumps are ignored.
+  The other lumps are read into the level data variables with a special case
+  for $(lu VERTEXES) ; vertices that are not used by any linedef are ignored
+  (such vertices are believed to come from the nodes builder and therefore be
+  irrelevant to level editing).
+  The linedefs vertices references are updated if necessary.
+</p>
+
+<p>
+  Since the endianness of the wad files is fixed (little endian) and thus not
+  necessarily identical to the endianness of the CPU, reading 2- and 4-byte
+  integers from the file is done through special endianness-independant
+  routines.
+</p>
 
 			<h3>Saving</h3>
 
-If $c MadeMapChanges is false, the SEGS, SSECTORS, NODES,
-BLOCKMAP, REJECT and VERTEXES lumps are copied from the
-original file. Else, they are output with a length of
-zero bytes, except the VERTEXES lump that is created
-from the the level data ($c NumVertices and $c Vertices).
+<p>
+  If $c MadeMapChanges is false, the $(lu SEGS), $(lu SSECTORS), $(lu NODES),
+  $(lu BLOCKMAP), $(lu REJECT) and $(lu VERTEXES) lumps are copied from the
+  original file.
+  Otherwise, they are output with a length of zero bytes, except the $(lu
+  VERTEXES) lump that is created from the the level data ($c NumVertices and $c
+  Vertices).
+</p>
 
-<p>Since the endianness of the wad files is fixed (little
-endian) and thus not necessarily identical to the endianness of
-the CPU, writing 2- and 4-byte integers to the file is done
-through special endianness-independant routines.
+<p>
+  Since the endianness of the wad files is fixed (little endian) and thus not
+  necessarily identical to the endianness of the CPU, writing 2- and 4-byte
+  integers to the file is done through special endianness-independant routines.
+</p>
 
 		<h2>Editing windows, or the lack of it</h2>
 
-Too many global variables...
 <p>
-See "<code>_edit.h</code>".
+  Too many global variables...
+</p>
+
+<p>
+  See "<code>_edit.h</code>".
+</p>
 
 		<h2>The editor loop</h2>
 
 All the time the user spends editing a level is
 spent within a certain function, the <dfn>editor loop</dfn>,
-a.k.a. $c EditorLoop() in $c editloop.c.
+a.k.a. $fn EditorLoop in $c editloop.c.
 It's essential for you to understand it
 if you want to get how Yadex works right.
 <p>
-The $c EditorLoop() is an endless loop (okay, not
+The $fn EditorLoop is an endless loop (okay, not
 <em>really</em> endless) which, for each iteration,
 first, refreshes the display,
 second, waits for an event,
@@ -539,17 +557,17 @@ but I liked the idea of displaying something
 Because the event input and the graphical output
 are complex and not-quite-synchronous processes,
 I've tried to separate them.
-$c EditorLoop() gets input events and processes them
-and calls another function, $c edisplay_c::refresh(),
+$fn EditorLoop gets input events and processes them
+and calls another function, $(fn edisplay_c::refresh),
 to take care of everything display related.
-If you replaced $c edisplay_c::refresh() by a stub
+If you replaced $fn edisplay_c::refresh by a stub
 (and did the same with a couple of functions in $c gfx.c
 and $c input.c), you could perfectly well, if blindly,
 run Yadex without a connection to an X server.
 While you may object that this would be a pointless exercise
 (to which I agree), it still proves the modularity of the design.
 <p>
-The $c edisplay_c::refresh() function
+The $fn edisplay_c::refresh function
 is also a very important one to understand,
 at least if you work on graphical output.
 It is discussed in another section but,
@@ -558,34 +576,34 @@ here a bird's eye view of the whole thing.
 If there is a single paragraph in this document
 that you need to read, it's probably this one :
 <ul>
-<li>$c EditorLoop()
+<li>$fn EditorLoop
 	<ul>
-	<li>Call $c edisplay_c::refresh(),
+	<li>Call $(fn edisplay_c::refresh),
 		<ul>
 		<li>Do some basic geometry management,
 		<li>setup widgets according to editing session,
-		<li>call the $c need_to_clear() method of the widgets
+		<li>call the $fn need_to_clear method of the widgets
 			to determine whether we need to redisplay
 			everything from scratch,
-		<li>if so, call the $c clear() method of the widgets
-			and call $c ClearScreen() to clear the pixmap
+		<li>if so, call the $fn clear method of the widgets
+			and call $fn ClearScreen to clear the pixmap
 			(if available) and make
 			sure all subsequent graphical output will be sent
 			to the pixmap (if available),
 		<li>else, make sure all subsequent graphical ouput will
-			be sent to the window and call the $c undraw()
+			be sent to the window and call the $fn undraw
 			method of the widgets from the top down,
-		<li>call the $c draw() method of the widgets from the bottom up,
-		<li>call $c update_display() to refresh the physical display
+		<li>call the $fn draw method of the widgets from the bottom up,
+		<li>call $fn update_display to refresh the physical display
 			(if we're using the window, it's a no-op,
-			if we're using the pixmap, call $c XCopyArea()).
+			if we're using the pixmap, call $(fn XCopyArea)).
 		</ul>
-	<li>call $c get_input_status() to get the next event,
+	<li>call $fn get_input_status to get the next event,
 	<li>process that event.
 	</ul>
 </ul>
 
-Note that all graphical output is done from within $c edisplay_c::refresh().
+Note that all graphical output is done from within $(fn edisplay_c::refresh).
 
 		<h2>The display</h2>
 
@@ -619,15 +637,15 @@ we have to clear the window first which generates
 an annoying "flashing" of the screen.
 To avoid this, we instead clear a pixmap,
 do our display thing on it and then
-put the pixmap onto the window, with $c XCopyArea().
+put the pixmap onto the window, with $(fn XCopyArea).
 The result is a flicker-less refresh.
 <p>
 The graphical routines from $c gfx.c
 switch automatically to the pixmap if
-$c ClearScreen() was called.
+$fn ClearScreen was called.
 Thanks to this, that window vs. pixmap thing
 is nearly transparent to the application functions.
-$c edisplay_c::refresh() just forces
+$fn edisplay_c::refresh just forces
 widgets that can undraw themselves to use the
 window, not the pixmap.
 <p>
@@ -657,11 +675,11 @@ struct SelectionList
    int objnum;                  /* object number */
    };</pre>
 <p>
-Note that the $c SelectionList structure
+Note that the $ty SelectionList structure
 has no $c objtype field ;
 the type of the object (THING, vertex...)
 is implicit from the current mode
-(the $c obj_type field from the $c edit_t
+(the $c obj_type field from the $ty edit_t
 structure).
 As a consequence, the selection cannot contain
 objects of different types.
@@ -673,27 +691,27 @@ $c selectn.h. Here they are :
 <dl>
 <dt><code>void SelectObject (SelPtr *s, int n)</code>
 <dd>Adds object $c n at the beginning of list $c *s.
-$c *s can be $c NULL ; it means the list is empty.
+$c *s can be $ma NULL ; it means the list is empty.
 Warning : does not check that object $c n is not already
 in the list.
 
 <dt><code>void UnSelectObject (SelPtr *s, int n)</code>
 <dd>Removes from list $c *s all occurrences of
 object $c n.
-If all objects are removed, sets $c *s to $c NULL.
+If all objects are removed, sets $c *s to $(ma NULL).
 
 <dt><code>void select_unselect_obj (SelPtr *s, int n)</code>
 <dd>If the object $c n is already in the list $c *n, remove it.
 If it's not, insert it at the beginning.
-$c *s can be $c NULL ; it means the list is empty.
+$c *s can be $ma NULL ; it means the list is empty.
 
 <dt><code>Bool IsSelected (SelPtr s, int n)</code>
 <dd>Tells whether object $c n is in selection $c s.
-$c s can be $c NULL ; it means the list is empty.
+$c s can be $ma NULL ; it means the list is empty.
 
 <dt><code>void ForgetSelection (SelPtr *s)</code>
 <dd>Frees all memory allocated to list $c *s
-and sets $c *s to $c NULL.
+and sets $c *s to $ma NULL.
 
 <dt><code>void DumpSelection (SelPtr s)</code>
 <dd>Debugging function ; prints the contents of the
@@ -712,16 +730,16 @@ for (cur = list; cur; cur = cur-&gt;next)
 
 			<h3>Selecting in/out</h3>
 
-When you draw a box with [<kbd>Ctrl</kbd>] depressed, the objects in
+When you draw a box with $k ctrl depressed, the objects in
 the box are added to the selection.
 However, if some of those objects were already selected,
 they are unselected.
-So $c SelectObjectsInBox() cannot just add all
+So $fn SelectObjectsInBox cannot just add all
 the objects in the box to the list or we would end up with
 multiply selected objects. Wouldn't do us much good when
 displaying the selection or dragging objects.
 <p>
-That's when $c select_unselect_obj() is used.
+That's when $fn select_unselect_obj is used.
 
 		<h2>The highlight</h2>
 
@@ -733,14 +751,14 @@ The colour management system in very complex.
 There are lots of things to say on that topic.
 However, for most uses, you need to know only three functions :
 <dl>
-<dt>$c set_colour()
+<dt>$fn set_colour
 <dd>Set the current colour to a new value.
-<dt>$c push_colour()
+<dt>$fn push_colour
 <dd>Save the current colour on the colour stack
 and set the current colour to a new value.
-<dt>$c pop_colour()
+<dt>$fn pop_colour
 <dd>Set the current colour to the value
-it had at the moment of the last call to $c push_colour().
+it had at the moment of the last call to $(fn push_colour).
 </dl>
 
 		<h2>Menus and pop-up windows</h2>
@@ -772,12 +790,12 @@ to know the actual RGB colour of a pixel, it is necessary to
 look up its value in the <code>PLAYPAL</code> (normally, only
 the first palette is used).
 
-			<h3>The <code>Img</code> class</h3>
+			<h3>The $ty Img class</h3>
 
-<p>The <code>Img</code> class is used to store and manipulate
+<p>The $ty Img class is used to store and manipulate
 all game graphics (flats, patches, sprites and textures). It's a
 palette-encoded rectangular array of pixels. The type
-<code>img_pixel_t</code> is the type of a pixel; it's the same
+$ty img_pixel_t is the type of a pixel; it's the same
 as in the wad, that is a byte. The value of the elements of the
 array is also the same as in the wad, that is an index into
 <code>PLAYPAL</code>. Transparent areas are filled with colour
@@ -809,28 +827,28 @@ graphics would involve a lot of coding to do it in an optimized
 fashion. Therefore it's done in a somewhat wasteful way&nbsp;:
 
 <ol>
-  <li>the image is put into an <code>Img</code> object
-  <li>the <code>Img</code> is pasted onto the window or screen
+  <li>the image is put into an $ty Img object
+  <li>the $ty Img is pasted onto the window or screen
 </ol>
 
 <p>The first step is done with
-<code>DisplayFloorTexture()</code> (for flats) and
-<code>LoadPicture()</code> (for other graphics). For textures,
-<code>LoadPicture()</code> is called repeatedly on the same
-<code>Img</code> object, once for each flat.
+$fn DisplayFloorTexture (for flats) and
+$fn LoadPicture (for other graphics). For textures,
+$fn LoadPicture is called repeatedly on the same
+$ty Img object, once for each flat.
 
 <p>The second step is done with
-<code>display_img()</code>. It takes care of converting
+$(fn display_img). It takes care of converting
 Doom pixel values into actual pixel values needed by the
 graphical API (which depend on a lot of factors like the video
 mode, type and depth of visual, byte order of X server, etc.)
 and getting the graphical API to display it on the window or
 screen.
 
-<p><code>display_pic()</code> combines fetching the image into
+<p>$fn display_pic combines fetching the image into
 the game image buffer and displaying it.
 
-<p><code>spectrify_img()</code> can be used on a game
+<p>$fn spectrify_img can be used on a game
 image buffer to make it look more or less like a spectre.
 
 			<h3>Saving graphics to file (screenshots etc.)</h3>
@@ -838,10 +856,10 @@ image buffer to make it look more or less like a spectre.
 The basic idea is to
 
 <ol>
-  <li>get the image to save in an <code>Rgbbmp</code> buffer (with
-    <code>window_to_rgbbmp()</code>),
-  <li>save the <code>Rgbbmp</code> buffer to a file (with
-    <code>rgbbmp_to_ppm()</code>).
+  <li>get the image to save in an $ty Rgbbmp buffer (with
+    $(fn window_to_rgbbmp)),
+  <li>save the $ty Rgbbmp buffer to a file (with
+    $(fn rgbbmp_to_ppm)).
 </ol>
 
 This is inefficient because, in many cases, the image could be
@@ -886,67 +904,67 @@ fixed since it could cause users to lose data.
 		<h2>Compile-time variables (defines)</h2>
 
 <dl>
-<dt>$c AYM_MOUSE_HACKS
+<dt>$ma AYM_MOUSE_HACKS
 <dd>Some experimental code by me to try to understand why,
 under DOS, the mouse pointer moves 8 pixels at a time
 (seems to depend on the mouse driver ?).
 <p>
-<dt>$c CIRRUS_PATCH
+<dt>$ma CIRRUS_PATCH
 <dd>Dates back to DEU 5.21. Apparently, some code specific to
 Cirrus VGA boards.
-Does nothing unless $c Y_BGI is defined.
+Does nothing unless $ma Y_BGI is defined.
 <p>
-<dt>$c DEBUG
+<dt>$ma DEBUG
 <dd>The obvious.
 <p>
-<dt>$c DIALOG
+<dt>$ma DIALOG
 <dd>Experimental code by me to test the dialog box function
 that Jim Flynn wrote for Deth in the beginning of 1998.
 <p>
-<dt>$c NO_CIRCLES
+<dt>$ma NO_CIRCLES
 <dd>If your BGI driver does not support drawing circles,
 define this and Yadex will draw squares instead.
 <p>
-<dt>$c OLD
+<dt>$ma OLD
 <dd>Misc. obsolete stuff I didn't want to delete at the time.
 Never define it or you'll break Yadex&nbsp;!
 Code under <code>#ifdef OLD</code> should probably be removed.
 <p>
-<dt>$c OLD_GRID
+<dt>$ma OLD_GRID
 <dd>Pre-1.5 grid (no dots, only lines).
 <p>
-<dt>$c OLD_METHOD
+<dt>$ma OLD_METHOD
 <dd>My cruft. Code thus <code>#ifdef</code>'d should probably be removed.
 <p>
-<dt>$c OLD_MESSAGE
+<dt>$ma OLD_MESSAGE
 <dd>My cruft. Code thus <code>#ifdef</code>'d should probably be removed.
 <p>
-<dt>$c ROUND_THINGS
+<dt>$ma ROUND_THINGS
 <dd>Draw THINGS as circles (like DEU did), not as squares.
 <p>
-<dt>$c SWAP_TO_XMS
+<dt>$ma SWAP_TO_XMS
 <dd>Comes from DEU : related to code supposed to use XMS as
 "swap space". Apparently, was never used ?
 <p>
-<dt>$c Y_BGI
+<dt>$ma Y_BGI
 <dd>Use BGI for graphics output and BIOS for keyboard and mouse
 input. Makes senses only for DOS + Borland C++ 4.0.
-Exactly one of ($c Y_BGI, $c Y_X11) must be defined.
+Exactly one of ($(ma Y_BGI), $(ma Y_X11)) must be defined.
 <p>
-<dt>$c Y_DOS
+<dt>$ma Y_DOS
 <dd>Compile for DOS (with Borland C++ 4.0). Allows, among others,
-the $c huge and $c far pointer modifiers.
-Exactly one of ($c Y_DOS, $c Y_UNIX) must be defined.
+the $ty huge and $ty far pointer modifiers.
+Exactly one of ($(ma Y_DOS), $(ma Y_UNIX)) must be defined.
 <p>
-<dt>$c Y_UNIX
+<dt>$ma Y_UNIX
 <dd>Compile for Unix (with GCC 2.7.2). Causes, among other
 things, "huge" and "far" to be <code>#define</code>'d to "".
-Exactly one of ($c Y_DOS, $c Y_UNIX) must be defined.
+Exactly one of ($(ma Y_DOS), $(ma Y_UNIX)) must be defined.
 <p>
-<dt>$c Y_X11
+<dt>$ma Y_X11
 <dd>Use X11 (Xlib) for graphics output, keyboard and mouse
 input and other events.
-Exactly one of ($c Y_BGI, $c Y_X11) must be defined.
+Exactly one of ($(ma Y_BGI), $(ma Y_X11)) must be defined.
 </dl>
 
 		<h2>Coding standards</h2>
@@ -1000,17 +1018,23 @@ Example :
   return NULL;
 }</pre>
 
-			<h3>Identifiers</h3>
+<h3>Identifiers</h3>
 
-For variables and functions (and certain macros),
-I use all-lower-case identifiers
-with underscores where it seems appropriate.
-For enums and most macros,
-I use all-upper-case identifiers.
 <p>
-I consistently use the English spelling (E.G. "colour", not "color").
+  For variables and functions (and certain macros), all-lower-case identifiers
+  with underscores where it seems appropriate.
+  For enums and most macros, all-upper-case identifiers.
+  For classes, all lower case with underscores where appropriate and capitalise
+  the initial ($(ty Window), $(ty Editing_window)).
+  For types <code>typedef</code>s, lower case with a $ty _t suffix ($(ty
+  sometype_t)).
+</p>
 
-			<h3>Conditionals</h3>
+<p>
+  English spelling (E.G. "colour", not "color").
+</p>
+
+<h3>Conditionals</h3>
 
 The argument of <code>if</code> and <code>while</code> and the
 second argument of <code>for</code> are booleans, not integers,
@@ -1019,42 +1043,44 @@ expressions are not booleans&nbsp;:
 
 <ul>
   <li>pointers,
-  <li>the return value of <code>strcmp()</code>,
+  <li>the return value of $(fn strcmp),
   <li>the return value of functions to return 0 to indicate
   success and non-zero to indicate failure,
 </ul>
 
 Therefore, don't write
 
-<p><pre>
-if (! fopen (filename, "r"))  // Test for failure
+<blockquote>
+  <pre>if (! fopen (filename, "r"))  // Test for failure
   ...
 if (strcmp (str1, str2))  // Test for non-equality
   ...
 if (! strcmp (str1, str2))  // Test for equality
   ...
 if (remove (filename))  // Test for failure
-  ...
-</pre></p>
+  ...</pre>
+</blockquote>
 
 but
 
-<p><pre>
-if (fopen (filename, "r") <b>== NULL</b>)
+<blockquote>
+  <pre>if (fopen (filename, "r") <b>== NULL</b>)
   ...
 if (strcmp (str1, str2) <b>!= 0</b>)
   ...
 if (strcmp (str1, str2) <b>== 0</b>)
   ...
 if (remove (filename) <b>!= 0</b>)
-  ...
-</pre></p>
+  ...</pre>
+</blockquote>
   
-On the other hand, when an expression is a boolean, you don't
-need to add anything. <i>Don't</i> write <code>if (boolvar ==
-true)</code>.
+<p>
+  On the other hand, when an expression is a boolean, you don't need to add
+  anything.
+  <i>Don't</i> write <code>if (boolvar == true)</code>.
+</p>
 
-			<h3>General style</h3>
+<h3>General style</h3>
 
 My general style is to try to make it look clear and pretty. If there
 are several similar consecutive statements, I try to align what I can.
@@ -1066,77 +1092,96 @@ another_func (object, mumble, 46);
 yet_another  (object, grunt     );  // Short comment.</pre>
 
 			<h3>Code</h3>
-
-Good code ;-).
 <p>
+  Good code ;-).
+</p>
+
 <ul>
-<li>Use $c const for all arguments passed by reference
-unless they're modified.
-<li>Use $c static for all functions and variables
-unless they're extern.
-<li>Be careful with $c int,
-on some platforms, it's equivalent to $c short,
-on others, it's equivalent to $c long.
-<li>Whenever you need a fixed number of bytes,
-use $c u16, $c i32, etc.
-<li>Use prototypes.
-<li>Prototype functions that take no args with "<code>foo (void);</code>",
- not "<code>foo ();</code>" (author's note : this is C-ish !).
-<li>Try to avoid buffer overruns
-by using $c y_snprintf() instead of $c sprintf(),
-$c al_scps() instead of $c strcpy(),
-$c al_saps() instead of $c strcat(), etc.
+  <li>
+    Use $ty const for all arguments passed by reference unless they're
+    modified.
+  <li>
+    Use $ty static for all functions and variables unless they're extern.
+  <li>
+    Don't assume that $(ty int) is 32-bit wide.
+    If you need to hold values outside of (-32,767..+32,767), use a type that
+    guarantees it like $(ty long).
+  <li>
+    Whenever you need a fixed number of bytes, use one of $(ty int8_t), $(ty
+    int16_t), $(ty int32_t), $(ty uint8_t), $(ty uint16_t) or $(ty uint32_t).
+    (The old fixed-size typedefs, $(ty u16), $(ty i32), etc. have been removed
+    in 1.8.0.)
+  <li>
+    Use prototypes.
+  <li>
+    In C, prototype functions that take no args with "<code>foo
+    (void);</code>", not "<code>foo ();</code>".
+  <li>
+    Try to avoid buffer overruns by using $fn y_snprintf instead of $(fn
+    sprintf), $fn al_scps instead of $(fn strcpy), $fn al_saps instead of $(fn
+    strcat), etc.
 </ul>
 
 			<h3>Functions to avoid</h3>
 
 <dl>
-  <dt><b><code>sprintf()</code></b>
-  <dd>Prone to buffer overruns. Use <code>y_snprintf()</code> instead, as it
-    uses <code>snprintf()</code> if it's available, and falls back on
-    <code>sprintf()</code> if it isn't.
+  <dt><b>$(fn sprintf)</b>
+  <dd>
+    Prone to buffer overruns.
+    Use $fn y_snprintf instead, as it uses $fn snprintf if it's available, and
+    falls back on $fn sprintf if it isn't.
 
-  <dt><b><code>snprintf()</code></b>
-  <dd>Not supported widely enough yet. Use <code>y_snprintf()</code> instead.
-    If <code>snprintf()</code> is available, it uses it (well, at least that's
-    what it's meant to do). If not, it falls back on <code>sprintf()</code>.
+  <dt><b>$(fn snprintf)</b>
+  <dd>
+    Not supported widely enough yet.
+    Use $fn y_snprintf instead.
+    If $fn snprintf is available, it uses it (well, at least that's what it's
+    meant to do).
+    If not, it falls back on $(fn sprintf).
 
-  <dt><b><code>stricmp()</code></b> and <b><code>strcasecmp()</code></b>
-  <dd>Not portable. Use <code>y_stricmp()</code> instead.
-    <code>y_strnicmp()</code> is available as well.
-
+  <dt><b>$(fn stricmp)</b> and <b>$(fn strcasecmp)</b>
+  <dd>
+    Not portable. Use $fn y_stricmp instead.
+    $fn y_strnicmp is available as well.
 </dl>
 
 			<h3>Use the helpers</h3>
 
 <dl>
   <dt><b>Converting an ASCII digit into its value</b>
-  <dd>Don't subtract <code>'0'</code>. Use <code>dectoi()</code> or
-    <code>hextoi()</code>.
+  <dd>
+    Don't subtract <code>'0'</code>.
+    Use $fn dectoi or $(fn hextoi).
 
   <dt><b>Testing whether a value is comprised between two bounds</b>
-  <dd>Instead of <code>v &gt;= min &amp;&amp; v &lt;= max</code> you can use
-    <code>within (v, min, max)</code>. It's inlined. The inverse test is
-    provided by <code>outside()</code>.
+  <dd>
+    Instead of <code>v &gt;= min &amp;&amp; v &lt;= max</code> you can use
+    <code>within (v, min, max)</code>.
+    It's inlined.
+    The inverse test is provided by $(fn outside).
 
   <dt><b>Comparing two file names</b>
-  <dd>If you come from a Unix background, you'll be tempted to use
-    <code>strcmp()</code>. If you come from a DOS background, you'll be tempted
-    to use <code>y_stricmp()</code>. Neither is correct. Use
-    <code>fncmp()</code>. In its current implementation, it's not correct
-    either but it gets you a little bit closer. If only because it helps you
-    to say what you mean.
+  <dd>
+    If you come from a Unix background, you'll be tempted to use $(fn strcmp).
+    If you come from a DOS background, you'll be tempted to use $(fn
+    y_stricmp).
+    Neither is correct.
+    Use $(fn fncmp).
+    In its current implementation, it's not correct either but it gets you a
+    little bit closer.
+    If only because it helps you to say what you mean.
 
   <dt><b>Telling whether is file name is absolute</b>
-  <dd>This is not needed in many places. But when it is, use
-    <code>is_absolute()</code>.
+  <dd>
+    This is not needed in many places.
+    But when it is, use $(fn is_absolute).
 
   <dt><b>Comparing two lump names</b>
-  <dd>The code is peppered with <code>y_strnicmp(name1, name2,
-    WAD_NAME)</code>. This should of course be replaced by a specialized
-    function. This also applies to comparing flat names, texture names, sprite
-    names, patch names, etc.
-
+  <dd>
+    The code is peppered with <code>y_strnicmp(name1, name2, WAD_NAME)</code>.
+    This should of course be replaced by a specialized function.
+    This also applies to comparing flat names, texture names, sprite names,
+    patch names, etc.
 </dl>
 
 			<h3>Includes</h3>
@@ -1195,11 +1240,11 @@ Now, imagine the following scenario :
 you highlight a linedef and then press, say, page up to
 make the window scroll. This is not an incremental change
 to the display so everything is redrawn from scratch onto
-the pixmap. The pixmap is <code>XCopyArea()</code>'d onto the window,
+the pixmap. The pixmap is $(fn XCopyArea)'d onto the window,
 the linedef still highlighted. Then, Yadex realizes that
 the map coordinates of the pointer have changed so the
 linedef is not highlighted anymore. It dutifully unhighlights
-the linedef. But $c XDrawLine() on a window does not use the
+the linedef. But $fn XDrawLine on a window does not use the
 same algorithm as on a pixmap (attempts to use the blitter
 on the video card). So the first line and the second don't
 coincide exactly and the result is a trail of yellow pixels

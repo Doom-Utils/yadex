@@ -14,17 +14,16 @@ Yadex incorporates code from DEU 5.21 that was put in the public domain in
 The rest of Yadex is Copyright © 1997-2005 André Majorel and others.
 
 This program is free software; you can redistribute it and/or modify it under
-the terms of the GNU General Public License as published by the Free Software
-Foundation; either version 2 of the License, or (at your option) any later
-version.
+the terms of version 2 of the GNU Library General Public License as published
+by the Free Software Foundation.
 
 This program is distributed in the hope that it will be useful, but WITHOUT
 ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
 FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License along with
-this program; if not, write to the Free Software Foundation, Inc., 59 Temple
-Place, Suite 330, Boston, MA 02111-1307, USA.
+this program; if not, write to the Free Software Foundation, Inc., 51 Franklin
+Street, Fifth Floor, Boston, MA 02110-1301, USA.
 */
 
 
@@ -923,13 +922,14 @@ if (dm < DOOM_MIN_DEATHMATCH_STARTS)
    {
    if (dm == 0)
      sprintf (msg1, "Warning: there are no deathmatch starts."
-       " You need at least %d", DOOM_MIN_DEATHMATCH_STARTS);
+       " You need at least %lu", (unsigned long) DOOM_MIN_DEATHMATCH_STARTS);
    else if (dm == 1)
      sprintf (msg1, "Warning: there is only one deathmatch start."
-       " You need at least %d", DOOM_MIN_DEATHMATCH_STARTS);
+       " You need at least %lu", (unsigned long) DOOM_MIN_DEATHMATCH_STARTS);
    else
-     sprintf (msg1, "Warning: there are only %d deathmatch starts."
-       " You need at least %d", dm, DOOM_MIN_DEATHMATCH_STARTS);
+     sprintf (msg1, "Warning: there are only %lu deathmatch starts."
+       " You need at least %lu", (unsigned long) dm,
+       (unsigned long) DOOM_MIN_DEATHMATCH_STARTS);
    sprintf (msg2, "deathmatch starts to play deathmatch games."
      " Save anyway ?");
    if (! confirm_simple (-1, -1, msg1, msg2))

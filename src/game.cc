@@ -14,17 +14,16 @@ Yadex incorporates code from DEU 5.21 that was put in the public domain in
 The rest of Yadex is Copyright © 1997-2005 André Majorel and others.
 
 This program is free software; you can redistribute it and/or modify it under
-the terms of the GNU General Public License as published by the Free Software
-Foundation; either version 2 of the License, or (at your option) any later
-version.
+the terms of version 2 of the GNU Library General Public License as published
+by the Free Software Foundation.
 
 This program is distributed in the hope that it will be useful, but WITHOUT
 ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
 FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License along with
-this program; if not, write to the Free Software Foundation, Inc., 59 Temple
-Place, Suite 330, Boston, MA 02111-1307, USA.
+this program; if not, write to the Free Software Foundation, Inc., 51 Franklin
+Street, Fifth Floor, Boston, MA 02110-1301, USA.
 */
 
 
@@ -76,19 +75,23 @@ al_scps (basename, game,   sizeof basename - 1);
 al_saps (basename, ".ygd", sizeof basename - 1);
 
 /* Locate the game definition file. */
-if (ygd_user_path != NULL)
 {
-  Locate locate (ygd_user_path, basename, false);	// -G first
-  const char *pathname = locate.get_next ();
+  Locate locate;
+  const char *pathname = NULL;
+  if (ygd_user_path != NULL)
+  {
+    locate.set (ygd_user_path, basename, false);	// -G first
+    pathname = locate.get_next ();
+  }
   if (pathname == NULL)
   {
-    Locate locate (yadex_share_path, basename, false);	// System path second
+    locate.set (yadex_share_path, basename, false);	// System path second
     pathname = locate.get_next ();
   }
   if (pathname == NULL)
     fatal_error ("Game definition file \"%s\" not found", basename);
   if (strlen (pathname) > sizeof filename - 1)
-    fatal_error ("%s: file name too long");
+    fatal_error ("%s: file name too long", pathname);
   strcpy (filename, pathname);
   printf ("Reading game definition file \"%s\".\n", filename);
 }
@@ -126,7 +129,7 @@ for (lineno = 2; fgets (readbuf, sizeof readbuf, ygdfile); lineno++)
    buf = (char *) malloc (strlen (readbuf) + 1);
    if (! buf)
       fatal_error ("not enough memory");
-   
+
    /* break the line into whitespace-separated tokens.
       whitespace can be enclosed in double quotes. */
    for (in_token = 0, quoted = 0, iptr = readbuf, optr = buf, ntoks = 0;
@@ -150,8 +153,9 @@ for (lineno = 2; fgets (readbuf, sizeof readbuf, ygdfile); lineno++)
       else if (! in_token && (quoted || ! isspace (*iptr)))
 	 {
          if (ntoks >= (int) (sizeof token / sizeof *token))
-            fatal_error ("%s(%d): more than %d tokens",
-               filename, lineno, sizeof token / sizeof *token);
+            fatal_error ("%s(%d): more than %lu tokens",
+               filename, lineno,
+	       (unsigned long) (sizeof token / sizeof *token));
 	 token[ntoks] = optr;
 	 ntoks++;
 	 in_token = 1;
@@ -319,7 +323,7 @@ for (lineno = 2; fgets (readbuf, sizeof readbuf, ygdfile); lineno++)
 
       if (ntoks < 6 || ntoks > 7)
 	 fatal_error (
-            "%s(d%): directive \"%s\" takes between 5 and 6 parameters",
+            "%s(%d): directive \"%s\" takes between 5 and 6 parameters",
             filename, lineno, token[0]);
       buf.number     = atoi (token[1]);
       buf.thinggroup = *token[2];

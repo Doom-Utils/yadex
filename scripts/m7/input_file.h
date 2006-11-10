@@ -15,8 +15,8 @@ ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
 FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License along with
-this program; if not, write to the Free Software Foundation, Inc., 59 Temple
-Place, Suite 330, Boston, MA 02111-1307, USA.
+this program; if not, write to the Free Software Foundation, Inc.,
+51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 */
 
 
@@ -32,29 +32,33 @@ Place, Suite 330, Boston, MA 02111-1307, USA.
 class Input_file : public Input
 {
   public :
-    Input_file ();
-    Input_file (const char *pathname, const struct stat *s, FILE *fp);
-    void init ();
-    void init (const char *pathname, const struct stat *s, FILE *fp);
-    int peekc ();
-    int getc (const char *callerid, int nest);
-    int lastc ();
-    const char *pathname ();
-    const struct stat *stat ();
-    unsigned long line ();
-    unsigned long col ();
-    const char *where ();
-    void echo (Output *);
-    Output *echo ();
+	      Input_file ();
+	      Input_file (const char *pathname, const struct stat *s, FILE *fp);
+    void	init ();
+    void	init (const char *pathname, const struct stat *s, FILE *fp);
+    int			peekc ();
+    int			getc (const char *callerid, int nest);
+    int			lastc ();
+    const char	       *pathname ();
+    const struct stat  *stat ();
+    unsigned long	lastline ();
+    unsigned long	lastcol ();
+    const char	       *lastwhere ();
+    unsigned long	nextline ();
+    unsigned long	nextcol ();
+    const char	       *nextwhere ();
+    void		echo (Output *);
+    Output	       *echo ();
 
   private :
     const char *pathname_;
     const struct stat *stat_;
     FILE *fp;
 
-    unsigned long line_;
-    unsigned long col_;
-    bool bol;
+    unsigned long lastline_;
+    unsigned long nextline_;
+    unsigned long lastcol_;
+    unsigned long nextcol_;
 
     static const int NOCHAR = EOF - 1;
     int cnext;
@@ -84,14 +88,17 @@ inline void Input_file::init ()
   pathname_ = NULL;
   stat_ = NULL;
   fp = NULL;
-  line_ = 0;
-  col_ = 0;
+  lastline_ = 0;
+  lastcol_  = 0;
+  nextline_ = 1;
+  nextcol_  = 0;
   echo_ = NULL;
   cnext = NOCHAR;
 }
 
 
-inline void Input_file::init (const char *pathname, const struct stat *s, FILE *fp)
+inline void Input_file::init (const char *pathname, const struct stat *s,
+    FILE *fp)
 {
   init ();
   pathname_ = pathname;
@@ -108,7 +115,16 @@ inline void Input_file::init (const char *pathname, const struct stat *s, FILE *
 inline int Input_file::peekc ()
 {
   if (cnext == NOCHAR)
+  {
     cnext = std::getc (fp);
+    if (c == '\n')
+    {
+      nextline_++;
+      nextcol_ = 1;
+    }
+    else
+      nextcol_++;
+  }
   return cnext;
 }
 
@@ -120,29 +136,20 @@ inline int Input_file::peekc ()
  */
 inline int Input_file::getc (const char *callerid, int nest)
 {
-  if (bol)
-  {
-    line_++;
-    col_ = 0;
-    bol = false;
-  }
-
   c = peekc ();
-  cnext = std::getc (fp);
-  if (c != EOF)
-    col_++;
-  if (c == '\n')
-    bol = true;
+  lastcol_ = nextcol_;
+  lastline_ = nextline_;
+  cnext = NOCHAR;
 
   if (debug & DEBUG_INPUT)
   {
     if (c == EOF)
-      err ("M7610", "%s -> EOF %d %s", where (), nest, callerid);
+      err ("M7610", "%s -> EOF %d %s", lastwhere (), nest, callerid);
     else if (isascii (c) && isprint (c))
-      err ("M7620", "%s -> \"%c\" %d %s", where (), c, nest, callerid);
+      err ("M7620", "%s -> \"%c\" %d %s", lastwhere (), c, nest, callerid);
     else
       err ("M7630", "%s -> %02Xh %d %s",
-	  where (), unsigned (c), nest, callerid);
+	  lastwhere (), unsigned (c), nest, callerid);
   }
 
   if (echo_ != NULL && c != EOF)
@@ -164,18 +171,37 @@ inline int Input_file::lastc ()
 
 
 /*
- *	Input_file::where - position of the last character read
+ *	Input_file::lastwhere - position of the last character read
  */
-inline const char *Input_file::where ()
+inline const char *Input_file::lastwhere ()
 {
   char buf[22];				// Large enough for 64 bits
 
   where_ = pathname_;
   where_ += '(';
-  sprintf (buf, "%lu", line_);
+  sprintf (buf, "%lu", lastline_);
   where_ += buf;
   where_ += ',';
-  sprintf (buf, "%lu", col_);
+  sprintf (buf, "%lu", lastcol_);
+  where_ += buf;
+  where_ += ')';
+  return where_.c_str ();
+}
+
+
+/*
+ *	Input_file::nextwhere - position of the current character
+ */
+inline const char *Input_file::nextwhere ()
+{
+  char buf[22];				// Large enough for 64 bits
+
+  where_ = pathname_;
+  where_ += '(';
+  sprintf (buf, "%lu", nextline_);
+  where_ += buf;
+  where_ += ',';
+  sprintf (buf, "%lu", nextcol_);
   where_ += buf;
   where_ += ')';
   return where_.c_str ();
@@ -194,15 +220,27 @@ inline const struct stat *Input_file::stat ()
 }
 
 
-inline unsigned long Input_file::line ()
+inline unsigned long Input_file::lastline ()
 {
-  return line_;
+  return lastline_;
 }
 
 
-inline unsigned long Input_file::col ()
+inline unsigned long Input_file::nextline ()
 {
-  return col_;
+  return nextline_;
+}
+
+
+inline unsigned long Input_file::lastcol ()
+{
+  return lastcol_;
+}
+
+
+inline unsigned long Input_file::nextcol ()
+{
+  return nextcol_;
 }
 
 

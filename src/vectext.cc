@@ -13,17 +13,16 @@ Yadex incorporates code from DEU 5.21 that was put in the public domain in
 The rest of Yadex is Copyright © 1997-2005 André Majorel and others.
 
 This program is free software; you can redistribute it and/or modify it under
-the terms of the GNU General Public License as published by the Free Software
-Foundation; either version 2 of the License, or (at your option) any later
-version.
+the terms of version 2 of the GNU Library General Public License as published
+by the Free Software Foundation.
 
 This program is distributed in the hope that it will be useful, but WITHOUT
 ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
 FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License along with
-this program; if not, write to the Free Software Foundation, Inc., 59 Temple
-Place, Suite 330, Boston, MA 02111-1307, USA.
+this program; if not, write to the Free Software Foundation, Inc., 51 Franklin
+Street, Fifth Floor, Boston, MA 02110-1301, USA.
 */
 
 
@@ -35,143 +34,143 @@ Place, Suite 330, Boston, MA 02111-1307, USA.
 
 static const signed char vmin[] =
 {
-  16, 
-  'M',   0,  20, 
-  'd',  16,   0, 
+  16,
+  'M',   0,  20,
+  'd',  16,   0,
 };
 
 static const signed char v0[] =
 {
-  24, 
-  'M',   8,   0, 
-  'd',   8,   0, 
-  'd',   8,  12, 
-  'd',   0,  24, 
-  'd',  -8,  12, 
-  'd',  -8,   0, 
-  'd',  -8, -12, 
-  'd',   0, -24, 
-  'd',   8, -12, 
+  24,
+  'M',   8,   0,
+  'd',   8,   0,
+  'd',   8,  12,
+  'd',   0,  24,
+  'd',  -8,  12,
+  'd',  -8,   0,
+  'd',  -8, -12,
+  'd',   0, -24,
+  'd',   8, -12,
 };
 
 static const signed char v1[] =
 {
-  12, 
-  'M',   0,   8, 
-  'd',   8,  -8, 
-  'd',   0,  49, 
+  12,
+  'M',   0,   8,
+  'd',   8,  -8,
+  'd',   0,  49,
 };
 
 static const signed char v2[] =
 {
-  26, 
-  'M',   0,   4, 
-  'd',   8,  -4, 
-  'd',   8,   0, 
-  'd',   8,   8, 
-  'd',   0,   8, 
-  'd', -24,  32, 
-  'd',  26,   0, 
+  26,
+  'M',   0,   4,
+  'd',   8,  -4,
+  'd',   8,   0,
+  'd',   8,   8,
+  'd',   0,   8,
+  'd', -24,  32,
+  'd',  26,   0,
 };
 
 static const signed char v3[] =
 {
-  24, 
-  'M',   0,   4, 
-  'd',   8,  -4, 
-  'd',   8,   0, 
-  'd',   8,   8, 
-  'd',   0,   8, 
+  24,
+  'M',   0,   4,
+  'd',   8,  -4,
+  'd',   8,   0,
+  'd',   8,   8,
+  'd',   0,   8,
   'd',  -8,   8,
-  'm',  -8,   0, 
-  'd',   8,   0, 
-  'd',   8,   8, 
-  'd',   0,   8, 
-  'd',  -8,   8, 
-  'd',  -8,   0, 
-  'd',  -8,  -4, 
+  'm',  -8,   0,
+  'd',   8,   0,
+  'd',   8,   8,
+  'd',   0,   8,
+  'd',  -8,   8,
+  'd',  -8,   0,
+  'd',  -8,  -4,
 };
 
 static const signed char v4[] =
 {
-  24, 
-  'M',  24,  32, 
-  'd', -24,   0, 
-  'd',  20, -32, 
-  'd',   0,  48, 
+  24,
+  'M',  24,  32,
+  'd', -24,   0,
+  'd',  20, -32,
+  'd',   0,  48,
 };
 
 static const signed char v5[] =
 {
-  28, 
-  'M',  28,   0, 
-  'd', -24,   0, 
-  'd',  -4,  20, 
-  'd',  20,   0, 
-  'd',   8,   8, 
-  'd',   0,  12, 
-  'd',  -8,   8, 
-  'd', -12,   0, 
-  'd',  -8,  -4, 
+  28,
+  'M',  28,   0,
+  'd', -24,   0,
+  'd',  -4,  20,
+  'd',  20,   0,
+  'd',   8,   8,
+  'd',   0,  12,
+  'd',  -8,   8,
+  'd', -12,   0,
+  'd',  -8,  -4,
 };
 
 static const signed char v6[] =
 {
-  28, 
-  'M',  24,   0, 
-  'd', -16,   0, 
-  'd',  -8,  12, 
-  'd',   0,  24, 
-  'd',   8,  12, 
-  'd',  12,   0, 
-  'd',   8,  -8, 
-  'd',   0,  -8, 
-  'd',  -8,  -8, 
-  'd', -20,   0, 
+  28,
+  'M',  24,   0,
+  'd', -16,   0,
+  'd',  -8,  12,
+  'd',   0,  24,
+  'd',   8,  12,
+  'd',  12,   0,
+  'd',   8,  -8,
+  'd',   0,  -8,
+  'd',  -8,  -8,
+  'd', -20,   0,
 };
 
 static const signed char v7[] =
 {
-  24, 
-  'M',   0,   0, 
-  'd',  24,   0, 
-  'd', -20,  49, 
+  24,
+  'M',   0,   0,
+  'd',  24,   0,
+  'd', -20,  49,
 };
 
 static const signed char v8[] =
 {
-  28, 
-  'M',   8,  24, 
-  'd',  -8,  -6, 
-  'd',   0, -12, 
-  'd',   8,  -6, 
-  'd',  12,   0, 
-  'd',   8,   6, 
-  'd',   0,  12, 
-  'd',  -8,   6, 
-  'd', -12,   0, 
+  28,
+  'M',   8,  24,
+  'd',  -8,  -6,
+  'd',   0, -12,
+  'd',   8,  -6,
+  'd',  12,   0,
+  'd',   8,   6,
+  'd',   0,  12,
   'd',  -8,   6,
-  'd',   0,  12, 
-  'd',   8,   6, 
-  'd',  12,   0, 
-  'd',   8,  -6, 
-  'd',   0, -12, 
-  'd',  -8,  -6, 
+  'd', -12,   0,
+  'd',  -8,   6,
+  'd',   0,  12,
+  'd',   8,   6,
+  'd',  12,   0,
+  'd',   8,  -6,
+  'd',   0, -12,
+  'd',  -8,  -6,
 };
 
 static const signed char v9[] =
 {
-  28, 
-  'M',  28,  24, 
-  'd', -20,   0, 
-  'd',  -8,  -8, 
-  'd',   0,  -8, 
-  'd',   8,  -8, 
-  'd',  12,   0, 
-  'd',   8,  12, 
-  'd',   0,  24, 
-  'd',  -8,  12, 
-  'd', -16,   0, 
+  28,
+  'M',  28,  24,
+  'd', -20,   0,
+  'd',  -8,  -8,
+  'd',   0,  -8,
+  'd',   8,  -8,
+  'd',  12,   0,
+  'd',   8,  12,
+  'd',   0,  24,
+  'd',  -8,  12,
+  'd', -16,   0,
 };
 
 
@@ -224,7 +223,7 @@ void draw_vstring (const char *string, int x, int y, double scale)
   int width = 0;			// Width in units
   for (const char *s = string; *s; s++)
     width += vwidth (*s);
-  
+
   int xref = (int) (x - width  * ppu / 2);
   int yref = (int) (y - height * ppu / 2);
   for (const char *s = string; *s; s++)

@@ -14,17 +14,16 @@ Yadex incorporates code from DEU 5.21 that was put in the public domain in
 The rest of Yadex is Copyright © 1997-2005 André Majorel and others.
 
 This program is free software; you can redistribute it and/or modify it under
-the terms of the GNU General Public License as published by the Free Software
-Foundation; either version 2 of the License, or (at your option) any later
-version.
+the terms of version 2 of the GNU Library General Public License as published
+by the Free Software Foundation.
 
 This program is distributed in the hope that it will be useful, but WITHOUT
 ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
 FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License along with
-this program; if not, write to the Free Software Foundation, Inc., 59 Temple
-Place, Suite 330, Boston, MA 02111-1307, USA.
+this program; if not, write to the Free Software Foundation, Inc., 51 Franklin
+Street, Fifth Floor, Boston, MA 02110-1301, USA.
 */
 
 
@@ -72,7 +71,7 @@ inline uint16_t eight2sixteen (uint8_t v)
  */
 pcolour_t *alloc_colours (rgb_c rgb_values[], size_t count)
 {
-  verbmsg ("colours: alloc_colours: count %d\n", count);
+  verbmsg ("colours: alloc_colours: count %lu\n", (unsigned long) count);
 
   pcolour_t *pcn_table = (pcolour_t *) malloc (count * sizeof *pcn_table);
   if (pcn_table == NULL)
@@ -189,7 +188,7 @@ pcolour_t *alloc_colours (rgb_c rgb_values[], size_t count)
  */
 void free_colours (pcolour_t *pcn_table, size_t count)
 {
-  verbmsg ("colours: free_colours: count %d\n", count);
+  verbmsg ("colours: free_colours: count %lu\n", (unsigned long) count);
   if (verbose)
     dump_pcolours ();
 
@@ -205,7 +204,7 @@ void free_colours (pcolour_t *pcn_table, size_t count)
     for (i = 0; i < physical_colours; i++)
       if (pcolours[i].pcn == *pcn)
 	break;
-    
+
     if (i == physical_colours)
       fatal_error ("Trying to free pc[%d]=%ld that does not exist",
 	(int) i, (long) *pcn);
@@ -240,8 +239,9 @@ void free_colours (pcolour_t *pcn_table, size_t count)
 	new_physical_colours++;  // Number of physical colours still in use.
   }
 
-  verbmsg ("colours: freed %d of %d physical colours\n",
-    physical_colours - new_physical_colours, physical_colours);
+  verbmsg ("colours: freed %lu of %lu physical colours\n",
+    (unsigned long) (physical_colours - new_physical_colours),
+    (unsigned long) physical_colours);
 
   if (new_physical_colours == 0)
   {

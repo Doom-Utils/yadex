@@ -14,17 +14,16 @@ Yadex incorporates code from DEU 5.21 that was put in the public domain in
 The rest of Yadex is Copyright © 1997-2005 André Majorel and others.
 
 This program is free software; you can redistribute it and/or modify it under
-the terms of the GNU General Public License as published by the Free Software
-Foundation; either version 2 of the License, or (at your option) any later
-version.
+the terms of version 2 of the GNU Library General Public License as published
+by the Free Software Foundation.
 
 This program is distributed in the hope that it will be useful, but WITHOUT
 ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
 FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License along with
-this program; if not, write to the Free Software Foundation, Inc., 59 Temple
-Place, Suite 330, Boston, MA 02111-1307, USA.
+this program; if not, write to the Free Software Foundation, Inc., 51 Franklin
+Street, Fifth Floor, Boston, MA 02110-1301, USA.
 */
 
 
@@ -59,6 +58,27 @@ Place, Suite 330, Boston, MA 02111-1307, USA.
   }									\
   while (0)
 
+/* This one is used for int32_t. The C standard says that the most
+   negative value an int32_t is guaranteed to hold is -2,147,483,647,
+   not -2,147,483,648 (perhaps to accommodate one's complement or sign
+   bit platforms). Hence GCC warns that -2147483648 is "only unsigned in
+   C90".
+
+   assert_wrap2() does += 2, which on two's complement platforms should
+   wrap to -2,147_483,647 which is a "safe" constant. If this test
+   fails, your platform probably doesn't use two's complement. Need a
+   code review to know whether this would break Yadex. */
+#define assert_wrap2(type,high,low)					\
+  do									\
+  {									\
+    type n = high;							\
+    n += 2;								\
+    if (n != low)							\
+      fatal_error ("Type " #type " wraps around to %lu (should be " #low ")",\
+	(unsigned long) n);						\
+  }									\
+  while (0)
+
 void check_types ()
 {
   assert_size (uint8_t,  1);
@@ -77,7 +97,7 @@ void check_types ()
   assert_wrap (uint16_t,       65535,           0);
   assert_wrap (int16_t,        32767,      -32768);
   assert_wrap (uint32_t, 4294967295u,           0);
-  assert_wrap (int32_t,   2147483647, -2147483648);
+  assert_wrap2 (int32_t,  2147483647, -2147483647);
 }
 
 

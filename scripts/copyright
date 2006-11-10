@@ -148,6 +148,8 @@ foreach my $string (@output)
   {
     $string =~ s/\\/\\\\/g;		# Escape backslashes
     $string =~ s/©/\\(co/g;		# Encode the copyright symbol
+    $string =~ s/é/\\*(ea/g;		# String "ea" defined in yadex.6.m7
+    $string =~ s/ë/\\*(et/g;		# String "ea" defined in yadex.6.m7
     print "$string\n";
     print ".br\n";
   }

@@ -1,0 +1,7 @@
+<h3>Setting/toggling/clearing thing flags</h3>
+
+<p>
+  In things mode, press $k a to open the "set thing flags" popup menu.
+  Press $k b to open the "toggle thing flags" popup menu.
+  Press $k c to open the "clear thing flags" popup menu.
+</p>

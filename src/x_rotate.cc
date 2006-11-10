@@ -14,17 +14,16 @@ Yadex incorporates code from DEU 5.21 that was put in the public domain in
 The rest of Yadex is Copyright © 1997-2005 André Majorel and others.
 
 This program is free software; you can redistribute it and/or modify it under
-the terms of the GNU General Public License as published by the Free Software
-Foundation; either version 2 of the License, or (at your option) any later
-version.
+the terms of version 2 of the GNU Library General Public License as published
+by the Free Software Foundation.
 
 This program is distributed in the hope that it will be useful, but WITHOUT
 ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
 FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License along with
-this program; if not, write to the Free Software Foundation, Inc., 59 Temple
-Place, Suite 330, Boston, MA 02111-1307, USA.
+this program; if not, write to the Free Software Foundation, Inc., 51 Franklin
+Street, Fifth Floor, Boston, MA 02110-1301, USA.
 */
 
 
@@ -70,32 +69,107 @@ void RotateAndScaleObjects (int objtype, SelPtr obj, double angle, double scale)
   if (obj == NULL)
     return;
   ObjectsNeeded (objtype, 0);
+  bool unit = fabs (scale - 1) < 1e-4;
 
   switch (objtype)
   {
     case OBJ_THINGS:
       centre_of_things (obj, &centerx, &centery);
-      for (cur = obj; cur; cur = cur->next)
-	 {
-	 dx = Things[cur->objnum].xpos - centerx;
-	 dy = Things[cur->objnum].ypos - centery;
-	 RotateAndScaleCoords (&dx, &dy, angle, scale);
-	 Things[cur->objnum].xpos = centerx + dx;
-	 Things[cur->objnum].ypos = centery + dy;
-	 }
+      if (unit && fabs (angle) < 1e-4)				// 0 degrees
+	break;
+      if (unit && fabs (angle - HALFPI) < 1e-4)			// 90 degrees
+      {
+	for (cur = obj; cur != 0; cur = cur->next)
+	{
+	  struct Thing *t = Things + cur->objnum;
+	  dx = t->xpos - centerx;
+	  dy = t->ypos - centery;
+	  t->xpos = centerx - dy;
+	  t->ypos = centery + dx;
+	}
+      }
+      else if (unit && fabs (angle - ONEPI) < 1e-4)		// 180 degrees
+      {
+	for (cur = obj; cur != 0; cur = cur->next)
+	{
+	  struct Thing *t = Things + cur->objnum;
+	  t->xpos = 2 * centerx - t->xpos;
+	  t->ypos = 2 * centery - t->ypos;
+	}
+      }
+      else if (unit && fabs (angle - (ONEPI + HALFPI)) < 1e-4)	// 270 degrees
+      {
+	for (cur = obj; cur != 0; cur = cur->next)
+	{
+	  struct Thing *t = Things + cur->objnum;
+	  dx = t->xpos - centerx;
+	  dy = t->ypos - centery;
+	  t->xpos = centerx + dy;
+	  t->ypos = centery - dx;
+	}
+      }
+      else
+      {
+	for (cur = obj; cur != 0; cur = cur->next)
+	{
+	  struct Thing *t = Things + cur->objnum;
+	  dx = t->xpos - centerx;
+	  dy = t->ypos - centery;
+	  RotateAndScaleCoords (&dx, &dy, angle, scale);
+	  t->xpos = centerx + dx;
+	  t->ypos = centery + dy;
+	}
+      }
       MadeChanges = 1;
       break;
 
     case OBJ_VERTICES:
       centre_of_vertices (obj, &centerx, &centery);
-      for (cur = obj; cur; cur = cur->next)
-	 {
-	 dx = Vertices[cur->objnum].x - centerx;
-	 dy = Vertices[cur->objnum].y - centery;
-	 RotateAndScaleCoords (&dx, &dy, angle, scale);
-	 Vertices[cur->objnum].x = (centerx + dx + /*4*/ 2) & ~/*7*/3;
-	 Vertices[cur->objnum].y = (centery + dy + /*4*/ 2) & ~/*7*/3;
-	 }
+      if (unit && fabs (angle) < 1e-4)				// 0 degrees
+	break;
+      if (unit && fabs (angle - HALFPI) < 1e-4)			// 90 degrees
+      {
+	for (cur = obj; cur != 0; cur = cur->next)
+	{
+	  struct Vertex *v = Vertices + cur->objnum;
+	  dx = v->x - centerx;
+	  dy = v->y - centery;
+	  v->x = centerx - dy;
+	  v->y = centery + dx;
+	}
+      }
+      else if (unit && fabs (angle - ONEPI) < 1e-4)		// 180 degrees
+      {
+	for (cur = obj; cur != 0; cur = cur->next)
+	{
+	  struct Vertex *v = Vertices + cur->objnum;
+	  v->x = 2 * centerx - v->x;
+	  v->y = 2 * centery - v->y;
+	}
+      }
+      else if (unit && fabs (angle - (ONEPI + HALFPI)) < 1e-4)	// 270 degrees
+      {
+	for (cur = obj; cur != 0; cur = cur->next)
+	{
+	  struct Vertex *v = Vertices + cur->objnum;
+	  dx = v->x - centerx;
+	  dy = v->y - centery;
+	  v->x = centerx + dy;
+	  v->y = centery - dx;
+	}
+      }
+      else
+      {
+	for (cur = obj; cur != 0; cur = cur->next)
+	{
+	  struct Vertex *v = Vertices + cur->objnum;
+	  dx = v->x - centerx;
+	  dy = v->y - centery;
+	  RotateAndScaleCoords (&dx, &dy, angle, scale);
+	  v->x = centerx + dx;
+	  v->y = centery + dy;
+	}
+      }
       MadeChanges = 1;
       MadeMapChanges = 1;
       break;
@@ -114,6 +188,4 @@ void RotateAndScaleObjects (int objtype, SelPtr obj, double angle, double scale)
       break;
   }
 }
-
-
 

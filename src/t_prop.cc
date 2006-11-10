@@ -16,17 +16,16 @@ Yadex incorporates code from DEU 5.21 that was put in the public domain in
 The rest of Yadex is Copyright © 1997-2005 André Majorel and others.
 
 This program is free software; you can redistribute it and/or modify it under
-the terms of the GNU General Public License as published by the Free Software
-Foundation; either version 2 of the License, or (at your option) any later
-version.
+the terms of version 2 of the GNU Library General Public License as published
+by the Free Software Foundation.
 
 This program is distributed in the hope that it will be useful, but WITHOUT
 ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
 FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License along with
-this program; if not, write to the Free Software Foundation, Inc., 59 Temple
-Place, Suite 330, Boston, MA 02111-1307, USA.
+this program; if not, write to the Free Software Foundation, Inc., 51 Franklin
+Street, Fifth Floor, Boston, MA 02110-1301, USA.
 */
 
 
@@ -188,7 +187,8 @@ switch (val)
 	case 6:
 	case 7:
 	   for (cur = obj; cur; cur = cur->next)
-	      Things[cur->objnum].when = (Things[cur->objnum].when & 0x18) | val;
+	      Things[cur->objnum].when =
+	         (Things[cur->objnum].when & 0x18) | val;
 	   MadeChanges = 1;
 	   break;
 
@@ -279,7 +279,7 @@ for (;;)
 	 break;
       goto again;
       }
-     
+
    /* Then build a list of pointers on all things that have this
       thinggroup and let user select one. */
    list = al_lcreate (sizeof (void *));

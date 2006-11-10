@@ -1,0 +1,42 @@
+<h3>The grid</h3>
+
+<p>
+  The <dfn>grid</dfn> is a square mesh of blue dots and lines in the
+  background.
+  It's here to help you aligning your objects correctly with regard to Doom's
+  metrics, which will save you a lot of textures misalignments.
+</p>
+
+<p>
+  When you insert or drag objects, they are <dfn><i>snapped to grid</i></dfn>.
+  That is, Yadex prevents you from placing them off the grid.
+  You can toggle the <code>snap_to_grid</code> flag by pressing $(k y).
+</p>
+
+<p>
+  The grid step is always a power of 2, E.G. 128, 64, 32, etc.
+  You can get a finer grid (dividing the grid step by 2) by pressing $(k g).
+  Conversely, pressing $k G multiplies the grid step by 2.
+  If you press $k g when the grid step is already at its minimum value, it will
+  be set to its maximum value.
+  And conversely.
+  The minimum and maximum values are set in the configuration file with
+  <code>grid_min</code> and <code>grid_max</code>.
+</p>
+
+<p>
+  When you change the zoom factor, Yadex automatically changes the grid step to
+  make it what it thinks is best for the new zoom factor.
+  If you want to lock the grid step to its current value, press $(k z).
+  To unlock it, press that key again.
+</p>
+
+<p>
+  You can hide the grid by pressing $k h (but this doesn't disable
+  <code>snap_to_grid</code>).
+  Press that key again to make the grid visible again.
+</p>
+
+<p>
+  You can also use $k H to reset the grid step.
+</p>

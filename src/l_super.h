@@ -98,11 +98,10 @@ inline obj_no_t Superimposed_ld::get ()
 
   if (! is_linedef (refldno))
     return -1;
-  const struct LineDef *const pmax = LineDefs + NumLineDefs;
-  const struct LineDef *const pref = LineDefs + refldno;
+  const struct LineDef *const refld = LineDefs + refldno;
 
-  const wad_vn_t refv0 = pref->start;
-  const wad_vn_t refv1 = pref->end;
+  const wad_vn_t refv0 = refld->start;
+  const wad_vn_t refv1 = refld->end;
   if (! is_vertex (refv0) || ! is_vertex (refv1))		// Paranoia
     return -1;
 

@@ -1,0 +1,450 @@
+<h3>The prompt commands</h3>
+
+<p>
+  You can get a summary of the prompt commands by typing "<code>?</code>" at
+  the Yadex prompt.
+</p>
+
+<h4>$ycn build / $(ycn b) - create an iwad</h4>
+
+<p>Synopsis&nbsp;:</p>
+
+<blockquote>
+  $ycn build $(yca file)<br>
+  $ycn b $(yca file)
+</blockquote>
+
+<p>
+  Build a new iwad.
+  $yca file must not be in the list of open wads.
+</p>
+
+<h4>$ycn create / $ycn c - start a new level</h4>
+
+<p>Synopsis&nbsp;:</p>
+
+<blockquote>
+  $ycn create<br>
+  $ycn c
+</blockquote>
+
+<p>
+  Open an editing window on a new (empty) level.
+</p>
+
+<h4>$ycn dump / $(ycn d) - dump a lump</h4>
+
+<p>Synopsis&nbsp;:</p>
+
+<blockquote>
+  $ycn dump $(yca lumpname) [$(yca file)]<br>
+  $ycn d $(yca lumpname) [$(yca file)]
+</blockquote>
+
+<p>
+  Locate entry $(yca lumpname) in the master directory and dump it in
+  hexadecimal and ASCII.
+  If the $(yca file) argument is present, the dump is written to that file.
+</p>
+
+<h4>$(ycn dump_linedef_types) - list all linedef types</h4>
+
+<p>Synopsis&nbsp;:</p>
+
+<blockquote>
+  $ycn dump_linedef_types
+</blockquote>
+
+<p>
+  For linedef types 0 through 32,767, write a line listing&nbsp;:
+</p>
+
+<ul>
+  <li>the type in decimal
+  <li>the type in hexadecimal
+  <li>the short description (followed by an asterisk if it overflowed).
+</ul>
+
+<h4>$ycn edit / $ycn e - edit an existing level</h4>
+
+<p>Synopsis&nbsp;:</p>
+
+<blockquote>
+  $ycn edit $(yca level)<br>
+  $ycn e $yca level
+</blockquote>
+
+<p>
+  Open an editing window on an existing level.
+  $yca level may be a full level name like "$(yclit e1m1)" or "$(yclit MAP01)".
+  As a shorthand, $yca level may be just the digits of the level name.
+  For instance, "$(ycl e$ 12)" is equivalent to "$(ycl e$ e1m2)" or "$(ycl
+  e$ map12)", depending on <code>level_name</code>.
+</p>
+
+<p>
+  The argument used to be optional but that feature was lost along the way.
+</p>
+
+<h4>
+  $ycn extract / $ycn xtract / $(ycn x) - write the contents of a lump to a file
+</h4>
+
+<p>Synopsis&nbsp;:</p>
+
+<blockquote>
+  $ycn extract $yca name $(yca file)<br>
+  $ycn xtract $yca name $(yca file)<br>
+  $ycn x $yca name $(yca file)
+</blockquote>
+
+<p>
+  Locate lump $(yca name) in the master directory.
+  Write the contents of the lump to file $(yca file).
+  If $yca file already exists, it is overwritten.
+  $yca name must not contain a dot ("<code>.</code>").
+  $yca file must not be in the list of open wads.
+</p>
+
+<h4>$ycn group / $ycn g - create an iwad</h4>
+
+<p>Synopsis&nbsp;:</p>
+
+<blockquote>
+  $ycn group $(yca file)<br>
+  $ycn g $(yca file)
+</blockquote>
+
+<p>
+  Build a new iwad by combining all open wads.
+  There must be at least two open wads.
+  $yca file must not be in the list of open wads.
+</p>
+
+<h4>$ycn help / $ycn h / $(ycn ?) - help</h4>
+
+<p>Synopsis&nbsp;:</p>
+
+<blockquote>
+  $(ycn help)<br>
+  $(ycn h)<br>
+  $ycn ?<br>
+</blockquote>
+
+<p>
+  Print a summary of commands.
+</p>
+
+<h4>$ycn insert / $(ycn i) - create a new pwad from a file</h4>
+
+<p>Synopsis&nbsp;:</p>
+
+<blockquote>
+  $ycn insert $yca file $yca name<br>
+</blockquote>
+
+<p>
+  Read file $(yca file).
+  Create a new pwad $(yca name).wad with a single lump whose name is $yca name
+  and whose content is that of $(yca file).
+  If $yca file already exists, it is overwritten.
+  $yca name must not contain a dot ("<code>.</code>").
+  $yca file must not be in the list of open wads.
+</p>
+
+<h4>$ycn list / $ycn l - list a wad directory</h4>
+
+<p>Synopsis&nbsp;:</p>
+
+<blockquote>
+  $ycn list $(yca file1) [$(yca file2)]<br>
+  $ycn l $(yca file1) [$(yca file2)]
+</blockquote>
+
+<p>
+  List the wad directory of $(yca file1).
+  $(yca file1) must be in the list of open wads.
+  If a second argument is given, the list is written to $(yca file2).
+</p>
+
+<h4>$ycn make_gimp_palette - create a GIMP palette file</h4>
+
+<p>Synopsis&nbsp;:</p>
+
+<blockquote>
+  $ycn make_gimp_palette $(yca file)
+</blockquote>
+
+<p>
+  Locate the $lu PLAYPAL lump in the master directory and read the first
+  palette (i.e. the first 768 bytes).
+  Write a palette file for <a href="http://www.gimp.org/">The GIMP</a> in $(yca
+  file), based on the $lu PLAYPAL palette.
+</p>
+
+<h4>$ycn make_palette_ppm - dump the palette to a file</h4>
+
+<p>Synopsis&nbsp;:</p>
+
+<blockquote>
+  $ycn make_palette_ppm $(yca file)<br>
+</blockquote>
+
+<p>
+  Locate the $lu PLAYPAL lump in the master directory and read the first
+  palette (i.e the first 768 bytes).
+  Write a 128&times;128 packed PPM file in $(yca file) showing each colour from
+  the palette as an 8&times;8 swatch.
+  Each swatch has the top left pixel forced to black.
+</p>
+
+<h4>$ycn master / $ycn m - list the master directory</h4>
+
+<p>Synopsis&nbsp;:</p>
+
+<blockquote>
+  $ycn master [$(yca file)]<br>
+  $ycn m [$(yca file)]
+</blockquote>
+
+<p>
+  List the master directory, i.e. the notional wad directory that results from
+  combining all open wads.
+  If an argument is given, the list is written to $(yca file).
+</p>
+
+<h4>$ycn mp2 - dump the palette to a file</h4>
+
+<p>Synopsis&nbsp;:</p>
+
+<blockquote>
+  $ycn mp2 $(yca file)<br>
+</blockquote>
+
+<p>
+  Locate the $lu PLAYPAL lump in the master directory and read the first
+  palette (i.e the first 768 bytes).
+  Write a 256&times;256 packed PPM file in $(yca file) showing each colour from
+  the palette.
+  Row 0 shows palette entries 0 through 255.
+  Row 1 shows palette entries 1 through 255, then 0.
+  Row <var>i</var> shows palette entries <var>i</var> through 255 then 0
+  through <var>i</var>&nbsp;-&nbsp;1.
+</p>
+
+<h4>$ycn quit / $ycn q - exit Yadex</h4>
+
+<p>Synopsis&nbsp;:</p>
+
+<blockquote>
+  $ycn quit<br>
+  $ycn q
+</blockquote>
+
+<p>
+  Exit Yadex.
+</p>
+
+<h4>$ycn read / $(ycn r) - open a wad</h4>
+
+<p>Synopsis&nbsp;:</p>
+
+<blockquote>
+  $ycn read $(yca file)<br>
+  $ycn r $yca file
+</blockquote>
+
+<p>
+  Add $yca file to the list of open wads.
+  The entries in $yca file are added to the master directory, replacing any
+  like named entries that may already have been there.
+</p>
+
+<h4>$ycn save / $(ycn s) - write a lump to a new wad file</h4>
+
+<p>Synopsis&nbsp;:</p>
+
+<blockquote>
+  $ycn save $yca name $(yca file)<br>
+  $ycn s $yca name $(yca file)
+</blockquote>
+
+<p>
+  Locate lump $(yca name) in the master directory.
+  Create a new pwad in $yca file with a single lump which is a copy of a lump
+  $(yca name).
+  If $yca file already exists, it is overwritten.
+  $yca name must not contain a dot ("<code>.</code>").
+  $yca file must not be in the list of open wads.
+</p>
+
+<h4>$(ycn set) - list parameters</h4>
+
+<p>Synopsis&nbsp;:</p>
+
+<blockquote>
+  $ycn set
+</blockquote>
+
+<p>
+  List all parameters along with their current value and a short description.
+</p>
+
+<h4>$ycn view / $(ycn v) - open the sprite viewer</h4>
+
+<p>Synopsis&nbsp;:</p>
+
+<blockquote>
+  $(ycn view) [$(yca name)]<br>
+  $ycn v [$(yca name)]
+</blockquote>
+
+<p>
+  Open the sprite viewer.
+  If a $(yca name) is given, the name field is initialised with it.
+</p>
+
+<h4>$(ycn viewflat) - open the flat viewer</h4>
+
+<p>Synopsis&nbsp;:</p>
+
+<blockquote>
+  $ycn viewflat [$(yca name)]
+</blockquote>
+
+<p>
+  Open the flat viewer.
+  If a $(yca name) is given, the name field is initialised with it.
+</p>
+
+<h4>$(ycn viewpal) - open the palette viewer</h4>
+
+<p>Synopsis&nbsp;:</p>
+
+<blockquote>
+  $ycn viewpal
+</blockquote>
+
+<p>
+  Open the palette viewer.
+</p>
+
+<p>
+  The palette viewer is for people who do graphics hacking and want to know the
+  exact details of how the game colour system ($lu PLAYPAL and $(lu COLORMAP))
+  works.
+  It lets you know, for example&nbsp;:
+</p>
+
+<ul>
+  <li>how colour numbers are mapped to RGB values,
+  <li>how colours change with brightness,
+  <li>how many colour numbers are mapped to by a given colour number,
+  <li>how many colour numbers a given colour number maps to.
+</ul>
+
+<p>Key bindings&nbsp;:</p>
+
+<dl class="compact8">
+  <dt>$k left
+  <dd>Move the cursor left
+
+  <dt>$k right
+  <dd>Move the cursor right
+
+  <dt>$k up
+  <dd>Move the cursor up
+
+  <dt>$k down
+  <dd>Move the cursor down
+
+  <dt>$k home
+  <dd>Move the cursor to beginning of current line.
+
+  <dt>$k 0
+  <dd>Move the cursor to beginning of current line.
+
+  <dt>$k ^
+  <dd>Move the cursor to beginning of current line.
+
+  <dt>$k end
+  <dd>Move the cursor to the end of the current line.
+
+  <dt>$k $$
+  <dd>Move the cursor to the end of the current line.
+
+  <dt>$k return
+  <dd>Move the cursor to the beginning of the next line.
+
+  <dt>$k G
+  <dd>Move the cursor to beginning of the last line.
+
+  <dt>$k L
+  <dd>Move the cursor to beginning of the last line.
+
+  <dt>$k H
+  <dd>Move the cursor to beginning of the first line.
+
+  <dt>$k M
+  <dd>Move the cursor to beginning of the middle line.
+
+  <dt>$k pgup
+  <dd>Previous <code>COLORMAP</code> entry.
+
+  <dt>$k pgdn
+  <dd>Next <code>COLORMAP</code> entry.
+
+  <dt>$k m
+  <dd>Toggle <code>COLORMAP</code> mapping.
+
+  <dt>$k +
+  <dd>Rotate the palette left.
+
+  <dt>$k =
+  <dd>Rotate the palette left.
+
+  <dt>$k -
+  <dd>Rotate the palette right.
+
+  <dt>$k esc
+  <dd>Exit the palette viewer
+</dl>
+
+<h4>$(ycn viewpat) - open the patch viewer</h4>
+
+<p>Synopsis&nbsp;:</p>
+
+<blockquote>
+  $ycn viewpat [$(yca name)]
+</blockquote>
+
+<p>
+  Open the patch viewer.
+  If a $(yca name) is given, the name field is initialised with it.
+</p>
+
+<h4>$(ycn viewtex) - open the texture viewer</h4>
+
+<p>Synopsis&nbsp;:</p>
+
+<blockquote>
+  $ycn viewtex [$(yca name)]
+</blockquote>
+
+<p>
+  Open the texture viewer.
+  If a $(yca name) is given, the name field is initialised with it.
+</p>
+
+<h4>$ycn wads / $ycn w - list the open wads</h4>
+
+<p>Synopsis&nbsp;:</p>
+
+<blockquote>
+  $ycn wads<br>
+  $ycn w
+</blockquote>
+
+<p>
+  Print the list of open wads.
+</p>

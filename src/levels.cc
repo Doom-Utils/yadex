@@ -15,17 +15,16 @@ Yadex incorporates code from DEU 5.21 that was put in the public domain in
 The rest of Yadex is Copyright © 1997-2005 André Majorel and others.
 
 This program is free software; you can redistribute it and/or modify it under
-the terms of the GNU General Public License as published by the Free Software
-Foundation; either version 2 of the License, or (at your option) any later
-version.
+the terms of version 2 of the GNU Library General Public License as published
+by the Free Software Foundation.
 
 This program is distributed in the hope that it will be useful, but WITHOUT
 ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
 FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License along with
-this program; if not, write to the Free Software Foundation, Inc., 59 Temple
-Place, Suite 330, Boston, MA 02111-1307, USA.
+this program; if not, write to the Free Software Foundation, Inc., 51 Franklin
+Street, Fifth Floor, Boston, MA 02110-1301, USA.
 */
 
 
@@ -487,7 +486,7 @@ if (yg_level_format == YGLF_ALPHA)
 	    wf->read_i32 (offset_table + n);
 	    if (wf->error ())
 	       {
-	       warn ("%s: error reading offsets table\n");
+	       warn ("%s: error reading offsets table\n", lump_name);
 	       goto textures_done;
 	       }
 	    }
@@ -1060,7 +1059,7 @@ else
 l = WAD_LL_LABEL;
 lump_offset[l] = ftell (file);	// By definition
 lump_size[l]   =  0;		// By definition
- 
+
 // Write the THINGS lump
 l = WAD_LL_THINGS;
 lump_offset[l] = ftell (file);
@@ -1123,7 +1122,7 @@ if (reuse_nodes)
    wf->seek (dir->dir.start);
    if (wf->error ())
       {
-      warn ("%s: seek error\n", wad_level_lump[l]);
+      warn ("%s: seek error\n", wad_level_lump[l].name);
       }
    copy_bytes (file, wf->fp, dir->dir.size);
    }
@@ -1157,7 +1156,7 @@ for (n = 0; n < 3; n++)
       wf->seek (dir->dir.start);
       if (wf->error ())
 	 {
-	 warn ("%s: seek error\n", wad_level_lump[l]);
+	 warn ("%s: seek error\n", wad_level_lump[l].name);
 	 }
       copy_bytes (file, wf->fp, dir->dir.size);
       }
@@ -1195,7 +1194,7 @@ if (reuse_nodes)
    wf->seek (dir->dir.start);
    if (wf->error ())
       {
-      warn ("%s: seek error\n", wad_level_lump[l]);
+      warn ("%s: seek error\n", wad_level_lump[l].name);
       }
    copy_bytes (file, wf->fp, dir->dir.size);
    }
@@ -1213,7 +1212,7 @@ if (reuse_nodes)
    wf->seek (dir->dir.start);
    if (wf->error ())
       {
-      warn ("%s: seek error\n", wad_level_lump[l]);
+      warn ("%s: seek error\n", wad_level_lump[l].name);
       }
    copy_bytes (file, wf->fp, dir->dir.size);
    }

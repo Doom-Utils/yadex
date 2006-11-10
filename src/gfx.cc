@@ -14,17 +14,16 @@ Yadex incorporates code from DEU 5.21 that was put in the public domain in
 The rest of Yadex is Copyright © 1997-2005 André Majorel and others.
 
 This program is free software; you can redistribute it and/or modify it under
-the terms of the GNU General Public License as published by the Free Software
-Foundation; either version 2 of the License, or (at your option) any later
-version.
+the terms of version 2 of the GNU Library General Public License as published
+by the Free Software Foundation.
 
 This program is distributed in the hope that it will be useful, but WITHOUT
 ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
 FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License along with
-this program; if not, write to the Free Software Foundation, Inc., 59 Temple
-Place, Suite 330, Boston, MA 02111-1307, USA.
+this program; if not, write to the Free Software Foundation, Inc., 51 Franklin
+Street, Fifth Floor, Boston, MA 02110-1301, USA.
 */
 
 
@@ -302,7 +301,8 @@ int InitGfx (void)
     model.visualid = XVisualIDFromVisual (win_vis);
     vis_info = XGetVisualInfo (dpy, VisualIDMask, &model, &nvisuals);
     if (! vis_info)
-      fatal_error ("XGetVisualInfo returned NULL for ID %d", model.visualid);
+      fatal_error ("XGetVisualInfo returned NULL for ID %lu",
+	  (unsigned long) model.visualid);
     if (nvisuals != 1)
       fatal_error ("XGetVisualInfo returned %d visuals", nvisuals);
     if (vis_info->depth != win_depth)
@@ -413,18 +413,18 @@ int InitGfx (void)
       {
 	int bits_per_pixel = best->bits_per_pixel;
 	if (bits_per_pixel % 8)  // Paranoia
-	 {
-	   round_up (bits_per_pixel, 8);
-	   warn ("XImage format has bad bits_per_pixel %d. Rounding up to %d.\n",
-	      best->bits_per_pixel, bits_per_pixel);
-	 }
+	{
+	  round_up (bits_per_pixel, 8);
+	  warn ("XImage format has bad bits_per_pixel %d. Rounding up to %d.\n",
+	     best->bits_per_pixel, bits_per_pixel);
+	}
 	int scanline_pad = best->scanline_pad;
 	if (best->scanline_pad % 8)  // Paranoia
-	 {
-	   round_up (scanline_pad, 8);
-	   warn ("XImage format has bad scanline_pad %d. Rounding up to %d.\n",
-	      best->scanline_pad, scanline_pad);
-	 }
+	{
+	  round_up (scanline_pad, 8);
+	  warn ("XImage format has bad scanline_pad %d. Rounding up to %d.\n",
+	     best->scanline_pad, scanline_pad);
+	}
 	ximage_bpp     = bits_per_pixel / 8;
 	ximage_quantum = scanline_pad   / 8;
       }
@@ -871,7 +871,8 @@ void set_pcolour (pcolour_t colour)
  */
 void push_colour (acolour_t colour)
 {
-  if (colour_stack_pointer >= (int) (sizeof colour_stack / sizeof *colour_stack))
+  if (colour_stack_pointer >=
+    (int) (sizeof colour_stack / sizeof *colour_stack))
   {
     nf_bug ("Colour stack overflow");
     return;
@@ -996,7 +997,8 @@ void DrawMapCircle (int mapx, int mapy, int mapradius)
 #if defined Y_BGI
   circle (SCREENX (mapx), SCREENY (mapy), (int) (mapradius * Scale));
 #elif defined Y_X11
-  XDrawArc (dpy, drw, gc, SCREENX (mapx - mapradius), SCREENY (mapy + mapradius),
+  XDrawArc (dpy, drw, gc, SCREENX (mapx - mapradius),
+    SCREENY (mapy + mapradius),
     (unsigned int) (2 * mapradius * Scale),
     (unsigned int) (2 * mapradius * Scale), 0, 360*64);
   drw_mods++;

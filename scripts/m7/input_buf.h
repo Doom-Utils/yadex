@@ -15,8 +15,8 @@ ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
 FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License along with
-this program; if not, write to the Free Software Foundation, Inc., 59 Temple
-Place, Suite 330, Boston, MA 02111-1307, USA.
+this program; if not, write to the Free Software Foundation, Inc.,
+51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 */
 
 
@@ -32,26 +32,28 @@ Place, Suite 330, Boston, MA 02111-1307, USA.
 class Input_buf : public Input
 {
   public :
-    Input_buf (const std::string &buf);
-    void init ();
-    int peekc ();
-    int getc (const char *callerid, int nest);
-    int lastc ();
-    const char *pathname ();
-    const struct stat *stat ();
-    unsigned long line ();
-    unsigned long col ();
-    const char *where ();
-    void echo (Output *);
-    Output *echo ();
+    			Input_buf (const std::string &buf);
+    void		init ();
+    int			peekc ();
+    int			getc (const char *callerid, int nest);
+    int			lastc ();
+    const char	       *pathname ();
+    const struct stat  *stat ();
+    unsigned long	lastline ();
+    unsigned long	lastcol  ();
+    const char	       *lastwhere ();
+    unsigned long	nextline ();
+    unsigned long	nextcol  ();
+    const char	       *nextwhere ();
+    void		echo (Output *);
+    Output	       *echo ();
 
   private :
     const std::string &buf;
     std::string::const_iterator i;
 
-    unsigned long line_;
-    unsigned long col_;
-    bool bol;
+    unsigned long lastline_;
+    unsigned long lastcol_;
 
     int c;
 
@@ -71,9 +73,10 @@ inline Input_buf::Input_buf (const std::string &buf) :
 inline void Input_buf::init ()
 {
   i = buf.begin ();
-  line_ = 0;
-  col_ = 0;
+  lastline_ = 1;
+  lastcol_ = 0;
   echo_ = NULL;
+  c = UCHAR_MAX + 1;
 }
 
 
@@ -97,11 +100,10 @@ inline int Input_buf::peekc ()
  */
 inline int Input_buf::getc (const char *callerid, int nest)
 {
-  if (bol)
+  if (c == '\n')
   {
-    line_++;
-    col_ = 0;
-    bol = false;
+    lastline_++;
+    lastcol_ = 0;
   }
 
   if (i == buf.end ())
@@ -112,19 +114,17 @@ inline int Input_buf::getc (const char *callerid, int nest)
     ++i;
   }
   if (c != EOF)
-    col_++;
-  if (c == '\n')
-    bol = true;
+    lastcol_++;
 
   if (debug & DEBUG_INPUT)
   {
     if (c == EOF)
-      err ("M7530", "%s -> EOF %d %s", where (), nest, callerid);
+      err ("M7530", "%s -> EOF %d %s", lastwhere (), nest, callerid);
     else if (isascii (c) && isprint (c))
-      err ("M7540", "%s -> \"%c\" %d %s", where (), c, nest, callerid);
+      err ("M7540", "%s -> \"%c\" %d %s", lastwhere (), c, nest, callerid);
     else
       err ("M7550", "%s -> %02Xh %d %s",
-	  where (), unsigned (c), nest, callerid);
+	  lastwhere (), unsigned (c), nest, callerid);
   }
 
   if (echo_ != NULL && c != EOF)
@@ -146,17 +146,35 @@ inline int Input_buf::lastc ()
 
 
 /*
- *	Input_buf::where - position of the last character read
+ *	Input_buf::nextwhere - position of the last character read
  */
-inline const char *Input_buf::where ()
+inline const char *Input_buf::nextwhere ()
 {
   char buf[22];				// Large enough for 64 bits
 
   where_ = "buf(";
-  sprintf (buf, "%lu", line_);
+  sprintf (buf, "%lu", nextline ());
   where_ += buf;
   where_ += ',';
-  sprintf (buf, "%lu", col_);
+  sprintf (buf, "%lu", nextcol ());
+  where_ += buf;
+  where_ += ')';
+  return where_.c_str ();
+}
+
+
+/*
+ *	Input_buf::lastwhere - position of the last character read
+ */
+inline const char *Input_buf::lastwhere ()
+{
+  char buf[22];				// Large enough for 64 bits
+
+  where_ = "buf(";
+  sprintf (buf, "%lu", lastline_);
+  where_ += buf;
+  where_ += ',';
+  sprintf (buf, "%lu", lastcol_);
   where_ += buf;
   where_ += ')';
   return where_.c_str ();
@@ -175,15 +193,33 @@ inline const struct stat *Input_buf::stat ()
 }
 
 
-inline unsigned long Input_buf::line ()
+inline unsigned long Input_buf::nextline ()
 {
-  return line_;
+  if (c == '\n')
+    return lastline_ + 1;
+  else
+    return lastline_;
 }
 
 
-inline unsigned long Input_buf::col ()
+inline unsigned long Input_buf::nextcol ()
 {
-  return col_;
+  if (c == '\n')
+    return 1;
+  else
+    return lastcol_;
+}
+
+
+inline unsigned long Input_buf::lastline ()
+{
+  return lastline_;
+}
+
+
+inline unsigned long Input_buf::lastcol ()
+{
+  return lastcol_;
 }
 
 

@@ -1,0 +1,90 @@
+<h3>Highlighting objects</h3>
+
+<p>
+  At any given time, zero or one object can be "highlighted".
+  The highlighted object is the "current" object; it's the one on which
+  operations are performed if the selection is empty.
+  It's also the one whose attributes are shown in the object info box.
+</p>
+
+<p>
+  The highlighted object is indicated by a yellow outline.
+</p>
+
+<p>
+  There are several ways to control which object is highlighted but the primary
+  one is to move the pointer. 
+  Moving the pointer over an object (or sufficiently close to it) highlights
+  it.
+  Moving the pointer away from an object unhiglights it.
+  If there are several objects in the vicinity of the pointer, the one to
+  highlight is determined according to the following rules&nbsp;:
+</p>
+
+<ul>
+  <li>
+    For vertices, it's the vertex that's closest to the pointer.
+    If several vertices are equally close, it's the highest-numbered one that's
+    highlighted.
+  </li>
+
+  <li>
+    For linedefs, it's the linedef that's closest to the pointer.
+    If several linedefs seem equally close, which usually happens when there
+    are superimposed linedefs, it's the highest-numbered one that's
+    highlighted.
+  </li>
+
+  <li>
+    For things, the highlighted object is the one inside of which the pointer
+    is.
+    If this is not sufficient to arbitrate, the highlighted object is the which
+    has the smallest radius.
+    If this is still not sufficient to arbitrate, the object that's closest to
+    the pointer wins.
+    As a last resort, the highest-numbered object wins.
+  </li>
+
+  <li>
+    In global mode, all these criteria are somehow combined.
+  </li>
+</ul>
+
+<p>
+  Keeping the $k shift key pressed prevents the highlight from changing.
+  If no object is highlighted, bringing the pointer over an object does not
+  highlight it.
+  If an object is already higlighted, moving the pointer away or over another
+  object does not unhiglight it.
+  This can be useful in certain occasions, such as when you want to compare two
+  sectors that have other sectors between them.
+</p>
+
+<h3>The object info box</h3>
+
+<p>
+  The object info box is displayed in the bottom corner of the editing window
+  and shows the attributes of the highlighted object.
+  Here are the non-obvious parts of it.
+</p>
+
+<dl>
+  <dt>Linedef tag
+  <dd>
+    The parenthesised part of the field is the number of the sectors that are
+    tagged to the linedef (i.e. have the same tag).
+    If there are more than one tagged sectors, the number of the
+    lowest-numbered one is shown, followed by a plus sign
+    ("<code>+</code>").
+    If there are no tagged sectors, the string "<code>(none)</code>" is shown.
+  </dd>
+
+  <dt>Sector tag
+  <dd>Same as above (replace "linedef" by "sector" and vice-versa).
+
+  <dt><a name="ld-type-desc">Linedef type</a>
+  <dd>
+    $(source ldtypes.html.m7)
+  </dd>
+
+</dl>

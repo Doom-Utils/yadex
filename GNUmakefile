@@ -73,7 +73,7 @@ CXXFLAGS += -DY_ALPHA
 # targets. Not used by normal end-user targets.
 # Unlike CFLAGS, CXXFLAGS and LDFLAGS, assume
 # GCC/EGCS.
-DCFLAGS		= $(CFLAGS) -g -O
+DCFLAGS		= $(CFLAGS) -g -O0
 DCFLAGS		+= -Wall			# GCC warnings
 DCFLAGS		+= -pedantic			# GCC warnings
 DCFLAGS		+= -Wcast-qual			# GCC warnings
@@ -86,14 +86,13 @@ DCFLAGS		+= -Wpointer-arith		# GCC warnings
 DCFLAGS		+= -Wwrite-strings		# GCC warnings
 DCFLAGS		+= -pg				# Profiling
 
-DCXXFLAGS	= $(CXXFLAGS) -g -O
+DCXXFLAGS	= $(CXXFLAGS) -g -O0
 DCXXFLAGS	+= -Wall			# GCC warnings
 DCXXFLAGS	+= -pedantic			# GCC warnings
 DCXXFLAGS	+= -Wcast-qual			# GCC warnings
 DCXXFLAGS	+= -Wcast-align			# GCC warnings
 #DCXXFLAGS	+= -Weffc++			# GCC warnings
 #DCXXFLAGS	+= -Winline			# GCC warnings
-DCXXFLAGS	+= -Wmissing-prototypes		# GCC warnings
 DCXXFLAGS	+= -Wno-parentheses		# GCC warnings
 DCXXFLAGS	+= -Wpointer-arith		# GCC warnings
 DCXXFLAGS	+= -Wwrite-strings		# GCC warnings
@@ -167,8 +166,119 @@ SRC_YADEX  = $(addprefix src/,     $(addsuffix .cc, $(MODULES_YADEX)))
 SRC_ATCLIB = $(addprefix atclib/,  $(addsuffix .c,  $(MODULES_ATCLIB)))
 
 # The headers of Yadex and Atclib
-HEADERS_YADEX  := $(wildcard src/*.h)
-HEADERS_ATCLIB =  atclib/atclib.h
+HEADERS_ATCLIB = atclib/atclib.h
+HEADERS_YADEX =			\
+	atclib/atclib.h		\
+	src/_edit.h		\
+	src/acolours.h		\
+	src/aym.h		\
+	src/bench.h		\
+	src/bitvec.h		\
+	src/cfgfile.h		\
+	src/checks.h		\
+	src/colour.h		\
+	src/config.h		\
+	src/credits.h		\
+	src/dependcy.h		\
+	src/dialog.h		\
+	src/disppic.h		\
+	src/drawmap.h		\
+	src/edisplay.h		\
+	src/editgrid.h		\
+	src/editlev.h		\
+	src/editloop.h		\
+	src/editobj.h		\
+	src/editsave.h		\
+	src/editzoom.h		\
+	src/edwidget.h		\
+	src/endian.h		\
+	src/entry.h		\
+	src/entry2.h		\
+	src/events.h		\
+	src/flats.h		\
+	src/game.h		\
+	src/gamesky.h		\
+	src/gcolour1.h		\
+	src/gcolour2.h		\
+	src/gcolour3.h		\
+	src/gfx.h		\
+	src/gfx2.h		\
+	src/gfx3.h		\
+	src/gotoobj.h		\
+	src/help1.h		\
+	src/help2.h		\
+	src/highlt.h		\
+	src/img.h		\
+	src/imgscale.h		\
+	src/imgspect.h		\
+	src/infobar.h		\
+	src/input.h		\
+	src/l_centre.h		\
+	src/l_flags.h		\
+	src/l_merge.h		\
+	src/l_super.h		\
+	src/l_vertices.h	\
+	src/levels.h		\
+	src/lists.h		\
+	src/locate.h		\
+	src/lumpdir.h		\
+	src/macro.h		\
+	src/menu.h		\
+	src/menubar.h		\
+	src/menudata.h		\
+	src/mkpalette.h		\
+	src/modpopup.h		\
+	src/objects.h		\
+	src/objid.h		\
+	src/objinfo.h		\
+	src/oldmenus.h		\
+	src/palview.h		\
+	src/patchdir.h		\
+	src/pic2img.h		\
+	src/prefer.h		\
+	src/rgb.h		\
+	src/rgbbmp.h		\
+	src/s_centre.h		\
+	src/s_linedefs.h	\
+	src/s_slice.h		\
+	src/s_swapf.h		\
+	src/s_vertices.h	\
+	src/sanity.h		\
+	src/selbox.h		\
+	src/selectn.h		\
+	src/selpath.h		\
+	src/serialnum.h		\
+	src/spot.h		\
+	src/spritdir.h		\
+	src/sticker.h		\
+	src/t_centre.h		\
+	src/t_flags.h		\
+	src/t_spin.h		\
+	src/textures.h		\
+	src/things.h		\
+	src/trace.h		\
+	src/v_centre.h		\
+	src/vectext.h		\
+	src/wadfile.h		\
+	src/wadlist.h		\
+	src/wadname.h		\
+	src/wadnamec.h		\
+	src/wadres.h		\
+	src/wads.h		\
+	src/wads2.h		\
+	src/windim.h		\
+	src/wstructs.h		\
+	src/x11.h		\
+	src/x_centre.h		\
+	src/x_exchng.h		\
+	src/x_hover.h		\
+	src/x_mirror.h		\
+	src/x_rotate.h		\
+	src/xref.h		\
+	src/yadex.h		\
+	src/yerror.h		\
+	src/ymemory.h		\
+	src/ytime.h
 
 # All the source files, including the headers.
 SRC = $(filter-out src/config.cc, $(SRC_YADEX))				\
@@ -217,7 +327,6 @@ DOC2_M7 = 				\
 	doc/keeping_up.html		\
 	doc/legal.html			\
 	doc/packagers_guide.html	\
-	doc/palette.html		\
 	doc/reporting.html		\
 	doc/tips.html			\
 	doc/trivia.html			\
@@ -285,6 +394,7 @@ MISC_FILES =								\
 	cache/yadex.dep							\
 	configure							\
 	docsrc/copyright						\
+	docsrc/README.diff.m7						\
 	CHANGES								\
 	COPYING								\
 	COPYING.LIB							\
@@ -331,19 +441,20 @@ include cache/m7src
 SCRIPTS = $(addprefix scripts/,	\
 	copyright		\
 	htmlimg			\
-	input.h			\
-	input_buf.h		\
-	input_file.h		\
 	install.c		\
-	m7.1			\
-	m7.cc			\
-	m7.h			\
+	log2html		\
+	m7/input.h		\
+	m7/input_buf.h		\
+	m7/input_file.h		\
+	m7/m7.1			\
+	m7/m7.cc		\
+	m7/m7.h			\
+	m7/output.h		\
+	m7/output_buf.h		\
+	m7/output_file.h	\
+	m7/output_null.h	\
 	mkinstalldirs		\
 	notexist.c		\
-	output.h		\
-	output_buf.h		\
-	output_file.h		\
-	output_null.h		\
 	youngest)
 
 # The patches
@@ -420,6 +531,7 @@ install: $(OBJDIR)/install
 
 .PHONY: clean
 clean:
+	rm -f src/config.cc src/config.h
 	rm -f $(OBJ_YADEX) $(OBJ_ATCLIB) $(OBJDIR)/yadex
 	rm -f $(DOBJ_YADEX) $(DOBJ_ATCLIB) $(DOBJDIR)/yadex
 	rm -f $(OBJDIR)/install
@@ -553,7 +665,12 @@ distdiff:
 	rm -rf $(TMPPREV) $(TMPCURR) $(TMPDIFF)
 	mkdir -p $(TMP0)
 	tar -xzf                  $(ARCHIVE).tar.gz -C $(TMP0)
-	tar -xzf ../yadex-arc/pub/$(ARCPREV).tar.gz -C $(TMP0)
+	if [ -f ../yadex-arc/pub/$(ARCPREV).tar.gz ];			\
+	then								\
+	  tar -xzf ../yadex-arc/pub/$(ARCPREV).tar.gz -C $(TMP0);	\
+	else								\
+	  tar -xzf ../yadex-arc/$(ARCPREV).tar.gz -C $(TMP0);		\
+	fi
 	$(OBJDIR)/m7 docsrc/common.m7 docsrc/README.diff.m7 >$(TMP0)/$(ARCDIFF)
 	echo >>$(TMP0)/$(ARCDIFF)
 	cd $(TMP0) && (diff -uaNr $(ARCPREV) $(ARCHIVE) >>$(ARCDIFF) || true)
@@ -566,7 +683,7 @@ distdiff:
 	@# uptodate has been moved between 1.5 and 1.6 and since
 	@# it's empty it remains in $(ARCPREV).
 	cd $(TMP0) && diff -rP $(ARCHIVE) $(ARCPREV)
-	mv $(TMP0)/$(ARCDIFF).gz .
+	mv -f $(TMP0)/$(ARCDIFF).gz .
 	@echo "Cleaning up"
 	cd $(TMP0) && rm -rf $(ARCPREV)
 	cd $(TMP0) && rm -rf $(ARCHIVE)
@@ -623,12 +740,12 @@ $(OBJDIR)/config.h:
 $(OBJDIR)/files_etc.man: $(OBJDIR)/config.etc $(MAKEFILE)
 	@echo "Generating $@"
 	@sed 's/%v/$(VERSION)/g; s,.*,.B &/yadex.cfg,' $< >$(@D)/.$(@F)
-	@mv $(@D)/.$(@F) $@
+	@mv -f $(@D)/.$(@F) $@
 
 $(OBJDIR)/files_share.man: $(OBJDIR)/config.share $(MAKEFILE)
 	@echo "Generating $@"
 	@sed 's/%v/$(VERSION)/g; s,.*,.BI &/ game .ygd,' $< >$(@D)/.$(@F)
-	@mv $(@D)/.$(@F) $@
+	@mv -f $(@D)/.$(@F) $@
 
 # Dependencies of the modules of Yadex
 # -Y is here to prevent the inclusion of dependencies on
@@ -656,19 +773,19 @@ cache/yadex.dep: $(SRC_NON_GEN) src/config.h
 				print "'$(DOBJDIR)'" $$0;		\
 				next;					\
 			}' >$(@D)/.$(@F)
-	@mv $(@D)/.$(@F) $@
+	@mv -f $(@D)/.$(@F) $@
 
 cache/copyright.man: $(MAKEFILE) scripts/copyright docsrc/copyright
 	@echo "Generating $@"
 	@test -d cache || mkdir cache
 	@scripts/copyright -m docsrc/copyright >$(@D)/.$(@F)
-	@mv $(@D)/.$(@F) $@
+	@mv -f $(@D)/.$(@F) $@
 
 cache/copyright.txt: $(MAKEFILE) scripts/copyright docsrc/copyright
 	@echo "Generating $@"
 	@test -d cache || mkdir cache
 	@scripts/copyright -t docsrc/copyright | sed 's/^./    &/' >$(@D)/.$(@F)
-	@mv $(@D)/.$(@F) $@
+	@mv -f $(@D)/.$(@F) $@
 
 # The YYYY-MM-DD date indicated in the parentheses after the
 # version number is the mtime of the most recent source file
@@ -776,7 +893,7 @@ src/credits.cc: $(MAKEFILE) docsrc/copyright scripts/copyright
 	@echo "Generating $@"
 	@echo '// DO NOT EDIT -- generated from docsrc/copyright' >$(@D)/.$(@F)
 	@scripts/copyright -c docsrc/copyright >>$(@D)/.$(@F)
-	@mv $(@D)/.$(@F) $@
+	@mv -f $(@D)/.$(@F) $@
 
 # A source file containing just the date of the
 # most recent source file and the version number
@@ -788,7 +905,7 @@ src/version.cc: $(SRC_NON_GEN) VERSION cache/srcdate $(MAKEFILE)
 		`cat cache/srcdate` >>$(@D)/.$(@F)
 	@printf "extern const char *const yadex_version = \"%s\";\n" 	\
 		"$(VERSION)" >>$(@D)/.$(@F)
-	@mv $(@D)/.$(@F) $@
+	@mv -f $(@D)/.$(@F) $@
 
 
 # -------- Doc-related stuff --------
@@ -802,7 +919,7 @@ cache/pixlist: $(filter %.html, $(DOC2_M7))
 	@test -d cache || mkdir cache
 	@touch cache/.htmlimg
 	@scripts/htmlimg $^ >$(@D)/.$(@F)
-	@test -f cache/.htmlimg || mv $(@D)/.$(@F) $@
+	@test -f cache/.htmlimg || mv -f $(@D)/.$(@F) $@
 
 dummy:
 	@if perl -v >/dev/null 2>/dev/null; then			\
@@ -818,7 +935,7 @@ dummy:
 	    }								\
 	    print map "$$_\n", sort keys %imgsrc;			\
 	    ' $^ >$(@D)/.$(@F)						\
-	    && mv $(@D)/.$(@F) $@;					\
+	    && mv -f $(@D)/.$(@F) $@;				\
 	elif [ -f $@ ]; then						\
 	  echo "Sorry, you need Perl to refresh $@. Keeping old $@.";	\
 	else								\
@@ -832,8 +949,8 @@ events.html: ev evhtml
 events.txt: events.html
 	lynx -dump $< >$@
 
-changes/changes.html: changes/*.log log2html RELEASE
-	./log2html -- -r `cat RELEASE` -- $$(ls -r changes/*.log) >$@
+changes/changes.html: changes/*.log scripts/log2html RELEASE
+	scripts/log2html -- -r `cat RELEASE` -- $$(ls -r changes/*.log) >$@
 	
 # changes - update the changelog
 .PHONY: changes
@@ -899,7 +1016,7 @@ cache/m7src: $(OBJDIR)/m7 $(M7ROOTS) $(M7SRC)
 	  | uniq							\
 	  | awk 'BEGIN{print"M7SRC = \\"}{print"\t"$$0" \\"}END{print""}'\
 	  >$(@D)/.$(@F)
-	@mv $(@D)/.$(@F) $@
+	@mv -f $(@D)/.$(@F) $@
 
 PROCESS =				\
 	VERSION				\
@@ -915,16 +1032,16 @@ PROCESS =				\
 doc/README: docsrc/README.doc.m7 $(PROCESS)
 	@echo "Generating $@"
 	@test -d doc || mkdir doc
-	@$(OBJDIR)/m7 docsrc/common.m7 $< >$(@D)/.$(@F) && mv $(@D)/.$(@F) $@
+	@$(OBJDIR)/m7 docsrc/common.m7 $< >$(@D)/.$(@F) && mv -f $(@D)/.$(@F) $@
 
 doc/%: docsrc/%.m7 $(PROCESS)
 	@echo "Generating $@"
 	@test -d doc || mkdir doc
-	@$(OBJDIR)/m7 docsrc/common.m7 $< >$(@D)/.$(@F) && mv $(@D)/.$(@F) $@
+	@$(OBJDIR)/m7 docsrc/common.m7 $< >$(@D)/.$(@F) && mv -f $(@D)/.$(@F) $@
 
 %: docsrc/%.m7 $(PROCESS)
 	@echo "Generating $@"
-	@$(OBJDIR)/m7 docsrc/common.m7 $< >$(@D)/.$(@F) && mv $(@D)/.$(@F) $@
+	@$(OBJDIR)/m7 docsrc/common.m7 $< >$(@D)/.$(@F) && mv -f $(@D)/.$(@F) $@
 
 # The images are just copied from docsrc/ to doc/
 doc/%.png: docsrc/%.png
@@ -944,7 +1061,7 @@ cache/doc.dep: $(PROCESS) cache/m7src $(M7SRC)
 	      exit 1;							\
 	    };								\
 	  done >$(@D)/.$(@F)
-	@mv $(@D)/.$(@F) $@
+	@mv -f $(@D)/.$(@F) $@
 
 #
 #	Compile the "scripts"
@@ -959,6 +1076,6 @@ $(OBJDIR)/%.o: scripts/%.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
 # -g because m7 is shaky. -O costs more than it buys.
-$(OBJDIR)/%.oo: scripts/%.cc
+$(OBJDIR)/%.oo: scripts/m7/%.cc
 	$(CXX) $(filter-out -O%, $(CXXFLAGS)) -g -c $< -o $@
 

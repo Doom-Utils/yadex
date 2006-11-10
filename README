@@ -1,4 +1,4 @@
-Yadex 1.7.900 (2005-03-28)
+Yadex 1.7.901 (2006-11-09)
 
 WHAT IS YADEX ?
     Yadex is a Doom level (wad) editor for Unix systems running X,
@@ -55,26 +55,26 @@ BUILDING AND INSTALLING
     
     Beware, the installation OVERWRITES the following files (assuming
     you're installing in /usr/local) :
-           /etc/yadex/1.7.900/yadex.cfg
+           /etc/yadex/1.7.901/yadex.cfg
            /usr/local/bin/yadex
-           /usr/local/bin/yadex-1.7.900
+           /usr/local/bin/yadex-1.7.901
            /usr/local/man/man6/yadex.6
-           /usr/local/man/man6/yadex-1.7.900.6
-           /usr/local/share/games/yadex/1.7.900/doom.ygd
-           /usr/local/share/games/yadex/1.7.900/doom02.ygd
-           /usr/local/share/games/yadex/1.7.900/doom04.ygd
-           /usr/local/share/games/yadex/1.7.900/doom05.ygd
-           /usr/local/share/games/yadex/1.7.900/doom2.ygd 
-           /usr/local/share/games/yadex/1.7.900/doompr.ygd
-           /usr/local/share/games/yadex/1.7.900/heretic.ygd
-           /usr/local/share/games/yadex/1.7.900/hexen.ygd
-           /usr/local/share/games/yadex/1.7.900/strife.ygd
-           /usr/local/share/games/yadex/1.7.900/strife10.ygd
+           /usr/local/man/man6/yadex-1.7.901.6
+           /usr/local/share/games/yadex/1.7.901/doom.ygd
+           /usr/local/share/games/yadex/1.7.901/doom02.ygd
+           /usr/local/share/games/yadex/1.7.901/doom04.ygd
+           /usr/local/share/games/yadex/1.7.901/doom05.ygd
+           /usr/local/share/games/yadex/1.7.901/doom2.ygd 
+           /usr/local/share/games/yadex/1.7.901/doompr.ygd
+           /usr/local/share/games/yadex/1.7.901/heretic.ygd
+           /usr/local/share/games/yadex/1.7.901/hexen.ygd
+           /usr/local/share/games/yadex/1.7.901/strife.ygd
+           /usr/local/share/games/yadex/1.7.901/strife10.ygd
 
 CONFIGURING AND RUNNING
     Before you run Yadex, you need to tell it where to find your iwads.
     Assuming you have installed in /usr/local, open
-    /etc/yadex/1.7.900/yadex.cfg with your favourite text editor and
+    /etc/yadex/1.7.901/yadex.cfg with your favourite text editor and
     insert the appropriate values for the parameters "iwad1", "iwad2",
     etc. If you don't want Doom II to be the default iwad, also change
     the value of the "game" parameter.
@@ -146,4 +146,4 @@ LEGAL
 CONTACT
     See doc/contact.html for addresses.
 
-AYM 2005-03-15
+AYM 2005-08-05

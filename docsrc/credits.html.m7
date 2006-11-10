@@ -207,8 +207,8 @@ include, by alphabetical order&nbsp;:
   <dd>Requested scrolling with arrow keys and possibility to disable the
     autoscrolling. Helped a lot with Final Doom compatibility and porting
     issues. Wrote <a
-    href="ftp://3darchives.in-span.net/pub/idgames/source/">XDoom</a> and <a
-    href="ftp://3darchives.in-span.net/pub/idgames/source/">Xwadtools</a>.
+    href="ftp://ftp.fu-berlin.de/pc/games/idgames/source/">XDoom</a> and <a
+    href="ftp://ftp.fu-berlin.de/pc/games/idgames/source/">Xwadtools</a>.
 
   <br><br><dt>Kim "Sparky" Parrott <code>&lt;hn+gra+nfvr=zyrx&gt;</code>
   <dd>Indirect bug report.

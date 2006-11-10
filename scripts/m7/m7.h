@@ -1,10 +1,10 @@
 /*
- *	v_unshare.h - unshare vertices
- *	AYM 2004-01-19
+ *	m7.h - common definitions for m7
+ *	AYM 2005-03-05
  */
 
 /*
-This file is copyright André Majorel 2004.
+This file is copyright André Majorel 2005.
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of version 2 of the GNU General Public License as published by the
@@ -15,16 +15,27 @@ ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
 FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License along with
-this program; if not, write to the Free Software Foundation, Inc., 59 Temple
-Place, Suite 330, Boston, MA 02111-1307, USA.
+this program; if not, write to the Free Software Foundation, Inc.,
+51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 */
 
 
-#ifndef YH_V_UNSHARE  /* DO NOT INSERT ANYTHING BEFORE THIS LINE */
-#define YH_V_UNSHARE
+#ifndef M7_H  /* DO NOT INSERT ANYTHING BEFORE THIS LINE */
+#define M7_H
 
 
-void unshare_vertices (SelPtr list);
+typedef enum
+{
+  DEBUG_INPUT  = 0x0001,
+  DEBUG_SYNTAX = 0x0002,
+  DEBUG_DEFINE = 0x0004,
+  DEBUG_SUBCTX = 0x0008
+} debug_t;
+
+extern int debug;
+
+const char *quotechar (char c);
+void err (const char *code, const char *fmt, ...);
 
 
 #endif  /* DO NOT ADD ANYTHING AFTER THIS LINE */

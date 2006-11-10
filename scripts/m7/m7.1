@@ -1,4 +1,4 @@
-.TH M7 1 2005-03-12 "m7 0.0.1"
+.TH M7 1 2005-10-01 "m7 0.0.2"
 .SH NAME
 m7 \- unobtrusive macro processor
 .SH SYNOPSIS
@@ -39,10 +39,11 @@ By default, only potential nodes are listed (\fBsource\fP).
 .TP
 .B \-b
 Open all files in binary mode.
+.PP
+.RS
 On certain platforms such as MS-DOS, stdin and stdout are often in text mode by
-default.
-\fB\-b\fP doesn't change that.
-You may have to use \fB\-o\fP.
+default; \fB\-b\fP doesn't change that so you may have to use \fB\-o\fP.
+.RE
 .PP
 .RS
 On platforms such as Unix where text mode is indistinguishable from binary
@@ -106,20 +107,21 @@ When \fB\-M\fP is in effect, this option controls the target name.
 .SH SYNTAX
 .SS Long form macro references
 A macro reference may take two different forms.
-The \fIlong form\fP is:
+The \fIlong form\fP is one of:
 .PP
-.ce
+.ce 2
 \fB$(\fP[\fIflags\fP]\fIname\fP[ \fIargument\fP]...\fB)\fP
+\fB${\fP[\fIflags\fP]\fIname\fP[ \fIargument\fP]...\fB}\fP
 .PP
 The \fIflags\fP are optional characters that affect the behaviour of the macro.
 See the \fBFLAGS\fP section.
 .PP
-\fIname\fP is the name of the macro (one or more ASCII alphabetic characters
+\fIname\fP is the name of the macro (a string of ASCII alphanumeric characters
 and underscores).
 .PP
 The arguments, if any, are separated from each other and from the name by
 whitespace.
-Whitespace before the \fB)\fP is ignored.
+Whitespace before the closing \fB)\fP or \fB}\fP is ignored.
 .SS Short form macro references
 The second form is the \fIshort form\fP:
 .PP
@@ -127,7 +129,7 @@ The second form is the \fIshort form\fP:
 \fB$\fP[\fIflags\fP]\fIname\fP[ \fIargument\fP]...\fP
 .PP
 Because there is no end delimiter, the number of arguments has to be guessed.
-The rule is to use as few words as possible, unless the "\fB*\fP flag" is set
+The rule is to use as few words as possible, unless the "\fB*\fP" flag is set
 in which case the parser will use as many words as possible.
 .PP
 If the macro takes no arguments, the macro name may be immediately followed by
@@ -153,7 +155,7 @@ argument is passed to the macro.
 For example, assuming the \fBecho\fP macro expands to its arguments, "\fB$(echo
 a$(echo b)c)\fP" is equivalent to "\fB$(echo abc)\fP".
 .SS Escaping
-The metacharacter escapes itself, whitespace and "\fB)\fP".
+The metacharacter escapes itself, whitespace, "\fB)\fP" and "\fB}\fP".
 Thus, to include a literal "\fB$\fP" in the input, you may write "\fB$$\fP":
 .PP
 .RS
@@ -182,9 +184,8 @@ Out:	\fB:-)\fP
 .fi
 .RE
 .PP
-Note that the metacharacter retains its escape character status outside of
-macro references, even though "\fB)\fP" and whitespace are not special outside
-of a macro reference.
+Note that the metacharacter always escapes "\fB)\fP", "\fB}\fP" and whitespace,
+even in contexts where they have no special meaning.
 .PP
 A metacharacter not followed by a syntactically valid macro reference or an
 escapable character is an error, even at end of file.
@@ -209,22 +210,7 @@ Omit whitespace after the macro reference.
 This is similar to \fBm4\fP(1)'s \fBdnl\fP, except that leading whitespace is
 unfortunately not stripped (for the moment).
 .SH INTRINSIC MACROS
-.TP
-.BI blob \ filename
-Expands to the unprocessed contents of file \fIfilename\fP.
-The contents of the file are \fInot\fP processed in any way; any \fBm7\fP
-constructs it may contain will be ignored.
-Contrast with \fBfile\fP and \fBsource\fP.
-.PP
-.RS
-This macro has the "\fB@\fP" flag by default.
-.RE
-.TP
-\fBdate\fP [\fIformat\fP]
-The current system time.
-The time is expressed in UTC and formatted with \fBstrftime\fP(3).
-The default format is "\fB%Y\-%m\-%d\fP".
-FIXME need an option to give local time.
+.SS Setting macros
 .TP
 \fBdefine\fP \fIname\fP \fIargmin\fP \fIargmax\fP \fItext\fP
 Define a user macro which takes between \fIargmin\fP and \fIargmax\fP
@@ -297,19 +283,104 @@ For example,
 .PP
 .RS
 .nf
-\fB$(define manref 2 2 <b>$1<b>($2$))
-See $manref lart 8 for details\fP
+\fB$(define i 1 1 <i>$1</i>)
+Essuyez $i vos pieds.\fP
 .fi
 .RE
 .PP
 expands to:
 .PP
 .RS
-\fBSee <b>lart</b>(8) for details\fP
+\fBEssuyez <i>vos</i> pieds.\fP
 .RE
 .PP
 This macro has the "\fB@\fP" flag by default.
 .RE
+.TP
+\fBset\fP \fIname\fP [\fIvalue\fP]
+Assign the expansion of \fIvalue\fP to macro \fIname\fP.
+\fIname\fP must be a valid macro name.
+If \fIvalue\fP is missing, the macro is assigned the empty string.
+In the form \fB$(set\fP \fIname\fP \fIvalue\fP\fB)\fP, the \fIvalue\fP argument
+may contain whitespace.
+.PP
+.RS
+.RS
+.nf
+\fB$set TODAY $(date)
+$(set MES a well-read punk peasant)\fP
+.fi
+.RE
+.RE
+.PP
+.RS
+Note that processor constructs in the value are evaluated at assignement time,
+not at reference time.
+In other words, macros defined with \fBset\fP work like shell variables and
+simply-expanded GNU make variables (\fB:=\fP), not like traditional
+recursively-expanded \fBmake\fP(1) variables (\fB=\fP).
+.RE
+.PP
+.RS
+Attempting to \fBset\fP an intrinsic macro is an error.
+.RE
+.PP
+.RS
+This macro has the "\fB@\fP" flag by default.
+.RE
+.TP
+.BI value \ name
+The unexpanded value of macro \fIname\fP.
+For macros defined with \fBset\fP,
+.BI $( value\ name )
+is equivalent to \fB$(\fP\fIname\fP\fB)\fP.
+For macros defined with \fBdefine\fP,
+.BI $( value\ name )
+expands into the last argument of \fBdefine\fP.
+It is an error to call \fBvalue\fP on an intrinsic.
+.SS Flow control
+.TP
+.BI source \ filename
+Source the specified file as if it were part of the source file.
+The maximum allowed number of nested inclusions is only limited by the stack
+size, available memory and \fBOPEN_MAX\fP.
+Contrast with \fBblob\fP and \fBfile\fP.
+.PP
+.RS
+This macro has the "\fB@\fP" flag by default.
+.RE
+.TP
+.B where
+Expands to the position in the input file from which it was referenced, in the
+format
+.IB filename ( line , column )\c
+\&.
+FIXME Unfortunately not vey useful if referenced from a user-defined macro.
+FIXME The position reported is that of the end of the macro reference.
+.SS Miscellaneous
+.TP
+(empty)
+The null macro.
+This intrinsic takes no arguments and expands to an empty string.
+Its name is an empty string.
+It is useful to pass an empty argument to another macro: \fB$(echo foo $()
+bar)\fP.
+.TP
+.BI blob \ filename
+Expands to the unprocessed contents of file \fIfilename\fP.
+The contents of the file are \fInot\fP processed in any way; any \fBm7\fP
+constructs it may contain will be ignored.
+Contrast with \fBfile\fP and \fBsource\fP.
+.PP
+.RS
+This macro has the "\fB@\fP" flag by default.
+.RE
+.TP
+\fBdate\fP [\fIformat\fP]
+The current system time.
+The time is expressed in UTC and formatted with \fBstrftime\fP(3).
+The default format is "\fB%Y\-%m\-%d\fP".
+FIXME need an option to give local time.
 .TP
 \fBecho\fP [\fIstring\fP]
 Expands to its argument.
@@ -349,49 +420,13 @@ The time is expressed in UTC and formatted with \fBstrftime\fP(3).
 The default format is "\fB%Y\-%m\-%d\fP".
 FIXME need an option to give local time.
 FIXME need an option to give the mtime of an arbitrary file.
-.TP
-\fBset\fP \fIname\fP [\fIvalue\fP]
-Assign the expansion of \fIvalue\fP to macro \fIname\fP.
-\fIname\fP must be a valid macro name.
-If \fIvalue\fP is missing, the macro is assigned the empty string.
-In the form \fB$(set\fP \fIname\fP \fIvalue\fP\fB)\fP, the \fIvalue\fP argument
-may contain whitespace.
-.PP
-.RS
-.RS
-.nf
-\fB$set TODAY $(date)
-$(set MES a well-read punk peasant)\fP
-.fi
-.RE
-.RE
-.PP
-.RS
-Note that processor constructs in the value are evaluated at assignement time,
-not at reference time.
-In other words, macros defined with \fBset\fP work like shell variables and
-simply-expanded GNU make variables (\fB:=\fP), not like traditional
-recursively-expanded \fBmake\fP(1) variables (\fB=\fP).
-.RE
-.PP
-.RS
-Attempting to \fBset\fP an intrinsic macro is an error.
-.RE
-.PP
-.RS
-This macro has the "\fB@\fP" flag by default.
-.RE
-.TP
-.BI source \ filename
-Source the specified file as if it were part of the source file.
-The maximum allowed number of nested inclusions is only limited by the stack
-size, available memory and \fBOPEN_MAX\fP.
-Contrast with \fBblob\fP and \fBfile\fP.
-.PP
-.RS
-This macro has the "\fB@\fP" flag by default.
-.RE
 .SH TODO
+.B $"
+escape whitespace until next \fB"\fP or \fB$"\fP.
+.PP
+.B $'
+verbatim until next \fB'\fP or some user-defined string (= here-document).
+.PP
 Need error handling flags.
 If a macro cannot be expanded, the default is to abort.
 We may wish to return an empty string and resume execution.
@@ -403,39 +438,52 @@ Need a way to expand environment variables.
 What about making them indistinguishable from macros, as is done in
 \fBmake\fP(1)?
 E.G. \fB$(PATH)\fP.
-.PP
+.TP
+Options
 Need a way to pass options to macros.
-I'm leaning towards \fB\-x\fP, which is consistent with the general sh-ness of
-the syntax (whitespace as an argument separator).
-.PP
-Need to have a macro reference form any number of arguments, as in \fBsh\fP(1).
-\fBeval\fP or maybe a special flag.
+User macros need to be able to parse them easily.
+.sp
+\fB\-x\fP is consistent with the general sh-ness of the syntax (whitespace as
+an argument separator) but what if an argument begins with \fB\-\fP?
+Requiring that \fB\-\fP appear in the source prevents legitimate uses like
+\fBCFLAGS=-O; cc $CFLAGS\fP.
+.sp
+\fB$(mymacro var1=value var2=value arg1 arg2 arg3)\fP is simple but introduces
+another metacharacter (\fB=\fP).
+.sp
+\fB$(mymacro:var1=value:var2=value arg1 arg2 arg3)\fP does not look all that
+appealing and the syntactic difference between named parameters and unnamed
+parameters seems artificial.
+And there's still the problem of escaping \fB:\fP and \fB=\fP.
 .PP
 Allow macro references in the macro name, as in \fB$($\fP\fIname\fP\fB))\fP.
 \fBmake\fP(1) does and it's useful for several things, including associative
 arrays.
-\fBeval\fP would make it possible, albeit with an awkward syntax.
-.PP
-\fBdefine\fP: at the moment, there is no way to specify names or flags for the
+\fBeval\fP would also make it possible, albeit with an awkward syntax.
+.TP
+.B define
+at the moment, there is no way to specify names or flags for the
 parameters (greedy, uint, id, recursive).
 There is no way to handle a variable number of arguments.
 The fact that user macros are expanded in a subcontext makes it impossible to
 write a macro that modifies a variable in its parent's context.
-Maybe pass by reference ?
-If options are implemented, user macros need to be able to parse them easily.
+Pass by reference?
+An argument that has the \fPMAD_ID\fP is often meant to be passed by reference
+but perhaps not always: should \fB$(foreach f ...)\fP modify \fBf\fP in the
+parent?
+.sp
 User macros need to be able to set their own default flags (\fB@\fP).
+.sp
+\fBundef\fP, \fBrename\fP.
 .PP
 Should the default flags be propagated?
 \fB$(source somefile)\fP has the \fB@\fP.
 \fB$(set x $(source somefile))\fP doesn't.
 .TP
-\fB#\fP [\fIstring\fP] ...
-A comment.
-The arguments are ignored but may not contain a "\fB)\fP".
-The value is the empty string.
-FIXME allow meta to escape "\fB)\fP"
-FIXME allow comment-to-EOL.
-FIXME if alone on the line, ignore the whole line.
+Comments.
+Either \fB$# ...\fP (absolutely no parsing, terminated by EOL) or \fB$(#
+...)\fP.
+In the latter case, should \fB$\fP escape \fB)\fP?
 .PP
 Need \fB\-e\fP or \fB\-c\fP for providing source from the command line.
 At the very least, set variables from the command line, à la \fBawk\fP(1)
@@ -444,8 +492,6 @@ At the very least, set variables from the command line, à la \fBawk\fP(1)
 Need a smarter version of \fBmtime\fP that gives the most recent of all source
 files included.
 Requires two passes.
-.PP
-Need \fB$(value name)\fP or some other way to override \fBMDF_RECURSE\fP.
 .PP
 Need \fB$(origin name)\fP.
 .PP
@@ -459,14 +505,155 @@ There are bugs too.
 .TP
 .B FIXME "' dq .,;:?!  +-*/=  %&@|$#\\_  ^`~  []{}<>"
 Indent/don't indent the value of the macro like the reference.
-.PP
-Arithmetic:
+.TP
+Arithmetic
 \fBadd\fP ($1 + $2 + ...),
 \fBsub\fP ($1 - $2 - ...),
 \fBmul\fP ($1 * $2 * ...),
 \fBdiv\fP ($1 / $2 / ...),
 \fBinc\fP ($1 += $* or 1 if only one argument),
 \fBdec\fP ($1 -= $* or 1 if only one argument).
+.sp
+.BR $(( ... ))
+real expression with infix operators.
+.TP
+String manipulation
+.BR gsub ,
+.BR length ,
+.BR match ,
+.BR subst ,
+.BR substr ,
+.BR strchr ,
+.BR strcspn ,
+.BR strip ,
+.BR strrchr ,
+.BR strspn ,
+.BR strstr ,
+.BR translit .
+.sp
+.B chomp
+removes all trailing newlines.
+Redefine \fBfile\fP as \fB$(chomp $(blob $1))\fP.
+.sp
+Character class stuff (\fBlc\fP, \fBuc\fP, \fBisalnum\fP...).
+.TP
+Lists
+A list may contain zero or more elements of arbitrary type (scalars or lists).
+\fB$[\fP\fIword\fP ...\fB]\fP defines an anonymous list constant.
+A macro may be declared to have a list type, either with \fBset\fP \fIname\fP
+\fIlist\fP or \fBset\fP \fIname\fP \fIword\fP ....
+.sp
+Individual elements can be accessed by number (zero-based).
+.BI $ name [ num ]
+references a particular element.
+.BI $ name [ i .. j ]
+expands to a list made of elements \fIi\fP through \fIj\fP.
+Either bound may be omitted (\c
+.BI $ name [ i ..]\c
+).
+.sp
+Replace parameters \fIargmin\fP and \fIargmax\fP in \fBdefine\fP by a
+prototype, a single argument which is a list of argument definitions.
+The prototype may specify that the last argument be a list.
+\fBforeach\fP can then be in the macro used to mass-process the tail of the
+argument list (think "\fBchmod mode file1 file2 file3\fP").
+.sp
+To avoid quoting hell, don't automatically convert lists to scalars or generate
+more than one argument from a list.
+A list where a scalar is expected is an error.
+\fB$(join\fP \fIstring\fP \fIlist\fP\fB)\fP makes a string from a list.
+\fB$(split\fP \fIregexp\fP \fIstring\fP\fB)\fP makes a list from a string.
+To generate several argument from a single macro reference, the brute force
+approach would be to use \fBeval\fP.
+However, if we just want to split without re-expanding (think "\fBcc
+$CFLAGS\fP"), what about a macro flag like \fB$|mylist\fP?
+The beauty of it is that, since the value is a list, splitting and quoting are
+non-issues.
+.sp
+A macro may return a list.
+A macro referenced outside of a macro.
+Do we allow a macro to dynamically return a scalar or a list (\fB$(return $[a b
+c])\fP or \fB$(return a b c)\fP) or is it fixed at \fBdefine\fP time?
+.sp
+.BR shift ,
+.BR unshift ,
+.BR pop ,
+.BR push ,
+.BR grep .
+\fBsize\fP or maybe \fB$#\fP\fIname\fP or some such.
+\fBunion\fP and \fBinter\fP.
+\fBislist\fP.
+\fBdelete\fP, \fBsplice\fP.
+.sp
+Implementation: \fBOutput\fP is a string, not a list.
+Add an \fBOutput::newelt()\fP function, or pass a list of \fBOutput\fP objects?
+.TP
+Hashes
+\fB${\fP\fIkey\fP \fIvalue\fP \fIkey\fP \fIvalue\fP ...\fB}\fP defines an
+anonymous hash constant.
+FIXME how do we resolve the ambiguity with \fB${\fP?
+A macro may be declared to have a hash type. 
+.BI $ name { key }
+references a particular element.
+Macros can take hashes for options (\fB$(date ${format %H:%M:%S})\fP, \fB$(date
+${tz local})\fP, \fB$(mtime ${format %c} /some/file)\fP).
+.TP
+Logic
+False is an empty string, as in GNU make.
+True is any non-empty string.
+.BR and ,
+.BR or ,
+.BR xor ,
+.BR nor ,
+.BR nand ,
+.B nxor 
+expand to the combination of their arguments.
+.B not 
+expands to the negation of its argument.
+.TP
+Flow control
+.BI $(if " cond text" )
+.br
+.BI $(ifelse " cond text-if-true text-if-false" )
+.br
+.BI $(ifelif " cond text cond text ..." )
+.br
+.BI $(case " expr value text value text ..." )
+.br
+.BI $(for " text cond text text" )
+.br
+.BI $continue
+.br
+.BI $break
+.br
+\fB$warning\fP \fIstring\fP
+.br
+\fB$error\fP \fIstring\fP
+.TP
+Relational operators.
+Act differently depending on whether the arguments are numbers or strings?
+.B lt
+.B le
+.B gt
+.B ge
+.B eq
+.B ne
+.BR wc " (wildcard match)"
+.BR re " (BRE match)"
+.BR ere " (ERE match)"
+.B min
+.B max
+.B cmp\c
+\&.
+.TP
+Filesystem
+.B stat
+.B mkdir
+.B rmdir
+.B unlink
+.B rename
+.B symlink
+.B readlink
 .PP
 Wishlist:
 .nf
@@ -477,9 +664,9 @@ $(k word): key. In HTML, [<kbd>$1</kbd>]; in Troff, [\\fB$1\\fP].
 $(m name num): man page.
 .fi
 .SH AUTHOR
-André Majorel http://www.teaser.fr/~amajorel/
+Andr\o"\'e" Majorel http://www.teaser.fr/~amajorel/
 .PP
-\fBm7\fP is copyright André Majorel 2005.
+\fBm7\fP is copyright Andr\o"\'e" Majorel 2005.
 .PP
 This program is free software; you can redistribute it and/or modify
 it under the terms of version 2 of the GNU General Public License as

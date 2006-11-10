@@ -14,17 +14,16 @@ Yadex incorporates code from DEU 5.21 that was put in the public domain in
 The rest of Yadex is Copyright © 1997-2005 André Majorel and others.
 
 This program is free software; you can redistribute it and/or modify it under
-the terms of the GNU General Public License as published by the Free Software
-Foundation; either version 2 of the License, or (at your option) any later
-version.
+the terms of version 2 of the GNU Library General Public License as published
+by the Free Software Foundation.
 
 This program is distributed in the hope that it will be useful, but WITHOUT
 ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
 FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License along with
-this program; if not, write to the Free Software Foundation, Inc., 59 Temple
-Place, Suite 330, Boston, MA 02111-1307, USA.
+this program; if not, write to the Free Software Foundation, Inc., 51 Franklin
+Street, Fifth Floor, Boston, MA 02110-1301, USA.
 */
 
 
@@ -89,7 +88,7 @@ void flip_mirror (SelPtr list, int obj_type, char op)
     centre_of_vertices (*vert, xref, yref);
     xref *= 2;
     yref *= 2;
-    
+
     /* Change the coordinates of the
        vertices. */
     if (operation == flip)
@@ -108,7 +107,7 @@ void flip_mirror (SelPtr list, int obj_type, char op)
 	if (vert->get (n))
 	  v->x = xref - v->x;
     }
-      
+
     /* Flip all the linedefs between the
        flipped/mirrored vertices by swapping
        their start and end vertices. */
@@ -124,7 +123,7 @@ void flip_mirror (SelPtr list, int obj_type, char op)
 	  MadeMapChanges = 1;
 	}
     }
-    
+
     delete vert;
   }
 

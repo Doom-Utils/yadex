@@ -14,17 +14,16 @@ Yadex incorporates code from DEU 5.21 that was put in the public domain in
 The rest of Yadex is Copyright © 1997-2005 André Majorel and others.
 
 This program is free software; you can redistribute it and/or modify it under
-the terms of the GNU General Public License as published by the Free Software
-Foundation; either version 2 of the License, or (at your option) any later
-version.
+the terms of version 2 of the GNU Library General Public License as published
+by the Free Software Foundation.
 
 This program is distributed in the hope that it will be useful, but WITHOUT
 ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
 FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License along with
-this program; if not, write to the Free Software Foundation, Inc., 59 Temple
-Place, Suite 330, Boston, MA 02111-1307, USA.
+this program; if not, write to the Free Software Foundation, Inc., 51 Franklin
+Street, Fifth Floor, Boston, MA 02110-1301, USA.
 */
 
 
@@ -132,12 +131,12 @@ for (cur = obj; cur; cur = cur->next)
 
   /* Then position the vertices */
   angle  = atan2 (dy0, dx0);
- 
+
   /* If line to split is not longer than sidelen,
      force sidelen to 1/3 of length */
   line_len   = ComputeDist (dx0, dy0);
   real_width = line_len > width ? width : line_len / 3;
-    
+
   dx2 = (int) (real_width * cos (angle));
   dy2 = (int) (real_width * sin (angle));
 
@@ -183,7 +182,7 @@ for (prev_ld_no = linedefno; times > 0; times--, prev_ld_no = NumLineDefs-1)
   LineDefs[NumLineDefs-1].start = NumVertices - 1;
   LineDefs[NumLineDefs-1].end   = LineDefs[prev_ld_no].end;
   LineDefs[prev_ld_no   ].end   = NumVertices - 1;
-  
+
   sd = LineDefs[linedefno].sidedef1;
   if (sd >= 0)
     {

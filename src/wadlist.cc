@@ -13,17 +13,16 @@ Yadex incorporates code from DEU 5.21 that was put in the public domain in
 The rest of Yadex is Copyright © 1997-2005 André Majorel and others.and others.
 
 This program is free software; you can redistribute it and/or modify it under
-the terms of the GNU General Public License as published by the Free Software
-Foundation; either version 2 of the License, or (at your option) any later
-version.
+the terms of version 2 of the GNU Library General Public License as published
+by the Free Software Foundation.
 
 This program is distributed in the hope that it will be useful, but WITHOUT
 ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
 FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License along with
-this program; if not, write to the Free Software Foundation, Inc., 59 Temple
-Place, Suite 330, Boston, MA 02111-1307, USA.
+this program; if not, write to the Free Software Foundation, Inc., 51 Franklin
+Street, Fifth Floor, Boston, MA 02110-1301, USA.
 */
 
 
@@ -150,7 +149,7 @@ void Wad_list::insert (Wad_file *wf)
  *	the first wad is deleted. Otherwise, the wad deleted is
  *	the one returned by the last call to get().
  *
- *	After a call to del(), a call to get will return the wad
+ *	After a call to del(), a call to get() will return the wad
  *	the followed the one that was deleted.
  *
  *	If already at the end of the list, nf_bug() is called.
@@ -169,13 +168,13 @@ void Wad_list::del ()
   }
   if (i == priv->list.end ())
   {
-    nf_bug ("Wad_list::del: attempt to delete last item");
+    nf_bug ("Wad_list::del called on EOL");
     return;
   }
   priv->iter = priv->list.erase (i);
   if (priv->iter == priv->list.begin ())
   {
-    priv->iter = 0;			// Catch bugs
+    /*priv->iter = 0;			// Catch bugs*/
     priv->rewound = true;
   }
 }

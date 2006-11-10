@@ -218,49 +218,63 @@ $(define v 1 1 <code><var>$1</var></code>)
 	</table>
 
 	<p>
-	  The $fn xfer field describes the trigger model and transfer
-	  properties.
-	  Certain linedef types involve setting certain attributes of the
-	  tagged sector after a certain model sector.
+	  Some of the ceiling and floor linedef types change other attributes
+	  of the tagged sector as a side effect.
+	  The $fn xfer field describes those property transfers.
+	  The format is <code>{$(l N)|$(l T)}{$(l X)|$(l XP)|$(l XZ)}</code>.
 	</p>
 
 	<p>
-	  The first character describes how the model sector is found&nbsp;:
+	  The <code>{$(l X)|$(l XP)|$(l XZ)}</code> part indicates what is done
+	  to the tagged sector.
+	  $fv P means that the type is set to that of the model sector.
+	  $fv X means that the floor texture is set to that of the model
+	  sector.
+	  $fv Z means that the type is set to 0.
 	</p>
-
-	<dl class="compact4">
-	  <dt><code>T</code>
-	  <dd>
-	    Trigger model.
-	    The model sector is the one on the first sidedef of the tagged
-	    linedef.
-	  </dd>
-
-	  <dt><code>N</code>
-	  <dd>
-	    Numeric model.
-	    The model sector is that which faces the lowest-numbered linedef
-	    that faces both the tagged sector and any sector whose floor is at
-	    the target height.
-	  </dd>
-	</dl>
 
 	<p>
-	  The rest of the code indicates what is done to the tagged
-	  sector&nbsp;:
+	  The <code>{$(l N)|$(l T)}</code> part describes how the model sector
+	  is found.
+	  $fv N is the <dfn>numeric model</dfn>&nbsp;: the model sector is that
+	  which faces the lowest-numbered linedef that faces both the tagged
+	  sector and any sector whose floor is at the target height.
+	  $fv T is the <dfn>trigger model</dfn>&nbsp;: the model sector is the
+	  one on the first sidedef of the tagged linedef.
 	</p>
 
-	<dl class="compact4">
-	  <dt><code>P</code>
-	  <dd>The type is set to that of the model.
+	<p>
+	  The valid combinations are&nbsp;:
+	</p>
 
-	  <dt><code>X</code>
-	  <dd>The floor texture is set to that of the model.
-
-	  <dt><code>Z</code>
-	  <dd>The type is set to 0.
-	</dl>
-      </dd>
+${define brc 1 1 (Boom reference <code>$1</code>)}
+	<table border>
+	  <tr>
+	    <td rowspan=6>$fn xfer
+	    <td>$fv NX
+	    <td>Change texture only, numeric model.
+	      $brc cTn
+	  <tr>
+	    <td>$fv NXP
+	    <td>Change texture and sector type to model's, numeric model.
+	      $brc cSn
+	  <tr>
+	    <td>$fv NXZ
+	    <td>Change texture, change sector type to 0, numeric model.
+	      $brc c0n
+	  <tr>
+	    <td>$fv TX
+	    <td>Change texture only, trigger model.
+	      $brc cTt
+	  <tr>
+	    <td>$fv TXP
+	    <td>Change texture and sector type to model's, trigger model.
+	      $brc cSt
+	  <tr>
+	    <td>$fv TXZ
+	    <td>Change texture, change sector type to 0, trigger model.
+	      $brc c0t
+	</table>
 
       <dt><code>$l CDO $v delay $v speed </code>
       <dd>
