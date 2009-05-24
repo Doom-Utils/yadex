@@ -310,7 +310,7 @@ int InitGfx (void)
     win_vis_id    = vis_info->visualid;
 #if defined _cplusplus || defined __cplusplus
     win_vis_class = vis_info->c_class;
-#elif
+#else
     win_vis_class = vis_info->class;
 #endif
     win_ncolours  = vis_info->colormap_size;
