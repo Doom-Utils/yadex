@@ -392,19 +392,15 @@ test:
 
 .PHONY: install
 install: $(OBJDIR)/install
-	@scripts/mkinstalldirs $(BINDIR)
-	@scripts/mkinstalldirs $(ETCDIR)
-	@scripts/mkinstalldirs $(MANDIR)
-	@scripts/mkinstalldirs $(MANDIR)/man6
-	@scripts/mkinstalldirs $(SHAREDIR)
-	$(OBJDIR)/install -m 755 $(OBJDIR)/yadex $(BINDIR)/yadex-$(VERSION)
-	rm -f $(BINDIR)/yadex
-	ln -s yadex-$(VERSION) $(BINDIR)/yadex
-	$(OBJDIR)/install -m 644 doc/yadex.6 $(MANDIR)/man6/yadex-$(VERSION).6
-	rm -f $(MANDIR)/man6/yadex.6
-	ln -s yadex-$(VERSION).6 $(MANDIR)/man6/yadex.6
-	$(OBJDIR)/install -m 644 -d $(SHAREDIR) $(YGD)
-	$(OBJDIR)/install -m 644 -d $(ETCDIR) yadex.cfg
+	@scripts/mkinstalldirs $(DESTDIR)$(BINDIR)
+	@scripts/mkinstalldirs $(DESTDIR)$(ETCDIR)
+	@scripts/mkinstalldirs $(DESTDIR)$(MANDIR)
+	@scripts/mkinstalldirs $(DESTDIR)$(MANDIR)/man6
+	@scripts/mkinstalldirs $(DESTDIR)$(SHAREDIR)
+	$(OBJDIR)/install -m 755 $(OBJDIR)/yadex $(DESTDIR)$(BINDIR)/yadex
+	$(OBJDIR)/install -m 644 doc/yadex.6 $(DESTDIR)$(MANDIR)/man6/yadex.6
+	$(OBJDIR)/install -m 644 -d $(DESTDIR)$(SHAREDIR) $(YGD)
+	$(OBJDIR)/install -m 644 -d $(DESTDIR)$(ETCDIR) yadex.cfg
 	@echo "---------------------------------------------------------------"
 	@echo "  Yadex is now installed."
 	@echo
